@@ -1,6 +1,8 @@
 
 // script.js
 
+const endpoint = 'https://prevention2.vercel.app/api/openai';
+
 const questions = [
   { key: "eta", text: "Quanti anni hai?" },
   { key: "sesso", text: "Sei di sesso maschile o femminile?" },
