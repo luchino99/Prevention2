@@ -1,106 +1,107 @@
+
 body {
-  font-family: 'Segoe UI', Roboto, sans-serif;
-  padding: 30px;
-  background: #f0f4f8;
   margin: 0;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  background: linear-gradient(to bottom right, #e9f4f9, #ffffff);
+  color: #333;
+  background-attachment: fixed;
 }
 
 #chat {
-  max-width: 600px;
-  margin: auto;
-  background: white;
-  padding: 25px;
-  border-radius: 20px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  min-height: 80vh;
+  max-width: 800px;
+  margin: 60px auto;
+  padding: 30px;
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 0 20px rgba(0, 128, 128, 0.2);
+  position: relative;
+  z-index: 1;
 }
 
 h2 {
   text-align: center;
-  font-weight: 600;
-  font-size: 1.6rem;
-  color: #0059b3;
-  margin-bottom: 10px;
-}
-
-.bubble {
-  padding: 14px 18px;
-  border-radius: 25px;
-  max-width: 80%;
-  word-wrap: break-word;
-  font-size: 1rem;
-  line-height: 1.4;
-  transition: all 0.3s ease;
-}
-
-.bot {
-  background: #e3e9f0;
-  align-self: flex-start;
-  color: #333;
-}
-
-.user {
-  background: #007bff;
-  color: white;
-  align-self: flex-end;
-  text-align: right;
+  color: #006d77;
+  font-size: 28px;
+  margin-bottom: 20px;
 }
 
 #messages {
-  display: flex;
-  flex-direction: column;
+  max-height: 500px;
   overflow-y: auto;
-  flex: 1;
-  padding-bottom: 10px;
+  padding: 20px;
+  border: 1px solid #e0f0f3;
+  border-radius: 10px;
+  background-color: #f9fdfd;
+}
+
+.bubble {
+  padding: 14px 20px;
+  margin: 10px 0;
+  border-radius: 25px;
+  max-width: 85%;
+  word-wrap: break-word;
+  font-size: 16px;
+}
+
+.bot {
+  background-color: #dff5f2;
+  align-self: flex-start;
+  color: #004d40;
+  border: 1px solid #b2dfdb;
+}
+
+.user {
+  background-color: #e0ecf8;
+  align-self: flex-end;
+  color: #003366;
+  border: 1px solid #a0c4ff;
+  text-align: right;
+  margin-left: auto;
 }
 
 #input-container {
   display: flex;
-  gap: 10px;
-  padding-top: 10px;
+  margin-top: 20px;
 }
 
-input {
+#input {
   flex: 1;
-  padding: 12px;
+  padding: 12px 16px;
+  font-size: 16px;
   border: 1px solid #ccc;
-  border-radius: 12px;
-  font-size: 1rem;
+  border-radius: 30px 0 0 30px;
+  outline: none;
 }
 
 button {
-  padding: 12px 20px;
-  border: none;
-  border-radius: 12px;
-  background: #007bff;
+  padding: 12px 24px;
+  font-size: 16px;
+  background-color: #38b000;
   color: white;
-  font-size: 1rem;
+  border: none;
+  border-radius: 0 30px 30px 0;
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: background-color 0.3s ease;
 }
 
 button:hover {
-  background: #0056b3;
+  background-color: #2c7a00;
 }
 
+/* Responsive */
 @media (max-width: 600px) {
-  body {
-    padding: 15px;
-  }
-
   #chat {
-    padding: 20px 15px;
+    margin: 20px;
+    padding: 20px;
   }
 
   .bubble {
-    font-size: 0.95rem;
+    font-size: 15px;
+  }
+
+  button {
+    padding: 12px 16px;
+    font-size: 15px;
   }
 }
 
-
-button:hover {
-  background: #0077b6;
-}
