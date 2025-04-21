@@ -75,7 +75,7 @@ export { questions, inviaAOpenAI };
 """
 
 # Salvataggio del file
-js_path = Path("/mnt/data/script.js")
+js_path = Path("/mnt/data/chatbot-logic.js")
 js_path.write_text(js_content)
 
 js_path
