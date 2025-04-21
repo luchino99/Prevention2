@@ -1,6 +1,9 @@
 
 // script.js
+from pathlib import Path
 
+# Nuovo contenuto del file JavaScript modificato per includere invio dati a OpenAI
+js_content = """
 const endpoint = 'https://prevention2.vercel.app/api/openai';
 
 const questions = [
@@ -48,4 +51,32 @@ const questions = [
   { key: "papsmear", text: "Svolgi regolarmente il Pap test?", condition: (a) => a.sesso === "femminile" && a.eta >= 25 }
 ];
 
-export { questions };
+function inviaAOpenAI(risposteUtente) {
+  fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ risposte: risposteUtente })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.risposta) {
+      mostraMessaggio(data.risposta, "bot");
+    } else {
+      mostraMessaggio("⚠️ Nessuna risposta ricevuta dal sistema.", "bot");
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    mostraMessaggio("❌ Errore durante la comunicazione con l’intelligenza artificiale.", "bot");
+  });
+}
+
+export { questions, inviaAOpenAI };
+"""
+
+# Salvataggio del file
+js_path = Path("/mnt/data/script.js")
+js_path.write_text(js_content)
+
+js_path
+
