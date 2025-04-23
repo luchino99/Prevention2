@@ -19,10 +19,20 @@ export default async function handler(req, res) {
   const safe = (val) => val ?? "non disponibile";
 
   try {
+    let compiledPrompt = "";
+
+    if (data.sintomi) {
+      compiledPrompt = `
+Sei un assistente sanitario digitale esperto. Una persona ha descritto i seguenti sintomi:
+🩺 **Sintomi riportati:**
+${data.sintomi}
+Sulla base di questi sintomi, offri un'analisi iniziale, suggerisci possibili cause, condizioni correlate o disturbi da non escludere. Specifica quando è opportuno rivolgersi a un medico o andare al pronto soccorso. Fornisci consigli pratici per il sollievo temporaneo, se appropriati, e indica quali esami, test o specialisti potrebbero essere utili.
+Usa un linguaggio rassicurante, chiaro e tecnico ma empatico. Ricorda che la tua risposta **non sostituisce una valutazione medica professionale**.`;
+    } else {
     const compiledPrompt = `
 Sei un assistente sanitario digitale. Analizza i dati forniti per calcolare score clinici ufficiali e fornire consigli personalizzati secondo linee guida OMS, ESC, AIFA, ADA e Ministero della Salute.
 
-📥 **DATI RACCOLTI:**
+ **DATI RACCOLTI:**
 - Età: ${safe(data.eta)}
 - Sesso biologico: ${safe(data.sesso)}
 - Origine etnica: ${safe(data.origine_etnica)}
@@ -98,7 +108,7 @@ Inoltre prendi in considerazione la presenza di sindrome metabolica nel caso in 
 Se è presente chiarisci il significato di sindrome metabolica e indica al paziente tutte le problematiche correlate ad essa come : aumentata probabilità di sviluppare diabete di tipo 2, malattie cardiovascolari e ictus.
 E dai dei suggerimenti specifici e consigli su iniziative da intraprendere per far si di risolvere questa consizione.
 
-🧠 **GENERA CONSIGLI PERSONALIZZATI:**
+ **GENERA CONSIGLI PERSONALIZZATI:**
 - Screening oncologici raccomandati prendendo in considerazione l'età del paziente, andando ad elencare gli screening che dovrebbe svolgere o dovrebbe aver svolto il paziente specifici per l'età di questo.
 - Visite specialistiche necessarie in base ai risultati ottenuti dalla comilazione del test.
 - Miglioramenti nello stile di vita, con consigli specifici in base ai vari risultati del test, in tutti i campi come: dieta, attività, stress, sonno. I consigli devono essere specifici per il paziente, devono prendere in considerazione tutti i dati inseriti.
@@ -106,14 +116,14 @@ E dai dei suggerimenti specifici e consigli su iniziative da intraprendere per f
 
 Usa un linguaggio semplice, empatico, ma tecnico. Comunica con tono rassicurante, motivante, professionale. Se i dati sono incompleti, suggerisci di rivolgersi al medico curante. Termina con un messaggio positivo motivazionale.
 
-🎯 SEZIONE FINALE:
+ SEZIONE FINALE:
 > "Grazie per aver compilato questo strumento di prevenzione. Ricorda che la prevenzione è il primo passo verso una vita lunga e in salute. Per qualunque dubbio, parlane con il tuo medico."
 `;
 
     console.log("📤 Prompt generato:", compiledPrompt);
 
     const response = await openai.chat.completions.create({
-      model: 'gpt-4-turbo',
+      model: 'gpt-3.5-turbo',
       messages: [
         { role: 'system', content: 'Sei un assistente sanitario esperto in prevenzione e analisi dati clinici.' },
         { role: 'user', content: compiledPrompt }
