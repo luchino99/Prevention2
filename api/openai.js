@@ -3,12 +3,12 @@ import { OpenAI } from 'openai';
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export default async function handler(req, res) {
-  // ✅ Abilita CORS
+  // ✅ CORS headers per tutte le richieste
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  // ✅ Risposta immediata per richieste OPTIONS (preflight CORS)
+  // ✅ Gestione richiesta preflight
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
