@@ -24,8 +24,10 @@ export default async function handler(req, res) {
     if (data.sintomi) {
       compiledPrompt = `
 Sei un assistente sanitario digitale esperto. Una persona ha descritto i seguenti sintomi:
+
 🩺 **Sintomi riportati:**
 ${data.sintomi}
+
 Sulla base di questi sintomi, offri un'analisi iniziale, suggerisci possibili cause, condizioni correlate o disturbi da non escludere. Specifica quando è opportuno rivolgersi a un medico o andare al pronto soccorso. Fornisci consigli pratici per il sollievo temporaneo, se appropriati, e indica quali esami, test o specialisti potrebbero essere utili.
 Usa un linguaggio rassicurante, chiaro e tecnico ma empatico. Ricorda che la tua risposta **non sostituisce una valutazione medica professionale**.`;
     } else {
