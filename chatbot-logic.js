@@ -1,82 +1,132 @@
 
-// script.js
-from pathlib import Path
 
-# Nuovo contenuto del file JavaScript modificato per includere invio dati a OpenAI
-js_content = """
-const endpoint = 'https://prevention2.vercel.app/api/openai';
+const endpoint = '';
 
-const questions = [
-  { key: "eta", text: "Quanti anni hai?" },
-  { key: "sesso", text: "Sei di sesso maschile o femminile?" },
-  { key: "origine_etnica", text: "Qual è la tua origine etnica?" },
-  { key: "altezza", text: "Qual è la tua altezza (in cm)?" },
-  { key: "peso", text: "Qual è il tuo peso (in kg)?" },
-  { key: "giro_vita", text: "La misura del tuo giro vita è maggiore di 88 cm (donna) o 102 cm (uomo)?" },
-  { key: "glicemia", text: "La tua glicemia è inferiore a 100 mg/dl?" },
-  { key: "colesterolo_totale", text: "Qual è il tuo colesterolo totale (mg/dl)?" },
-  { key: "colesterolo_ldl", text: "Il tuo colesterolo LDL supera 70 mg/dl?" },
-  { key: "colesterolo_hdl", text: "Il tuo colesterolo HDL è inferiore a 50 (donna) o 40 (uomo)?" },
-  { key: "pressione", text: "La tua pressione è inferiore a 130/85 mmHg?" },
-  { key: "malattie_croniche", text: "Hai malattie croniche diagnosticate?" },
-  { key: "farmaci", text: "Assumi farmaci?" },
-  { key: "farmaci_dettaglio", text: "Se sì, elencali." },
-  { key: "interventi", text: "Hai subito interventi chirurgici rilevanti?" },
-  { key: "interventi_dettaglio", text: "Se sì, elencali." },
-  { key: "familiarita_tumori", text: "Ci sono casi di tumori in famiglia?" },
-  { key: "sede_tumore", text: "In quale sede ha avuto il tumore il tuo famigliare?" },
-  { key: "fumatore", text: "Fumi?" },
-  { key: "n_sigarette", text: "Quante sigarette fumi al giorno?" },
-  { key: "alcol", text: "Consumi alcolici?" },
-  { key: "unita_alcoliche", text: "Quante unità alcoliche al giorno?" },
-  { key: "attivita_fisica", text: "Fai attività fisica?" },
-  { key: "tipo_attivita", text: "Che tipo di attività svolgi?" },
-  { key: "durata_attivita", text: "Quanto dura ogni allenamento (minuti)?" },
-  { key: "alimentazione", text: "Com'è la tua alimentazione?" },
-  { key: "stanchezza", text: "Ti senti stanco/a frequentemente?", condition: (a) => a.eta >= 65 },
-  { key: "scale", text: "Riesci a salire una rampa di scale?", condition: (a) => a.eta >= 65 },
-  { key: "camminata", text: "Riesci a camminare per 100 metri?", condition: (a) => a.eta >= 65 },
-  { key: "malattie_multiple", text: "Hai più di 5 malattie croniche?", condition: (a) => a.eta >= 65 },
-  { key: "perdita_peso", text: "Hai perso più di 5kg involontariamente nell'ultimo anno?", condition: (a) => a.eta >= 65 },
-  { key: "sollevamento", text: "Hai difficoltà a sollevare oggetti pesanti?", condition: (a) => a.eta >= 65 },
-  { key: "alzarsi_sedia", text: "Hai problemi ad alzarti da una sedia?", condition: (a) => a.eta >= 65 },
-  { key: "cadute", text: "Hai avuto cadute frequenti?", condition: (a) => a.eta >= 65 },
-  { key: "debolezza", text: "Ti senti debole?", condition: (a) => a.eta >= 65 },
-  { key: "eta_menarca", text: "Quanti anni avevi al primo ciclo mestruale?", condition: (a) => a.sesso === "femminile" },
-  { key: "contraccettivi", text: "Hai mai usato contraccettivi ormonali?", condition: (a) => a.sesso === "femminile" },
-  { key: "gravidezza", text: "Hai avuto gravidanze?", condition: (a) => a.sesso === "femminile" },
-  { key: "eta_menopausa", text: "A che età hai avuto la menopausa? (facoltativo)", condition: (a) => a.sesso === "femminile" },
-  { key: "familiarita_seno", text: "Tua madre o nonna hanno avuto tumore al seno?", condition: (a) => a.sesso === "femminile" },
-  { key: "screening_seno", text: "Hai mai fatto mammografia o ecografia mammaria?", condition: (a) => a.sesso === "femminile" && a.eta >= 25 },
-  { key: "papsmear", text: "Svolgi regolarmente il Pap test?", condition: (a) => a.sesso === "femminile" && a.eta >= 25 }
-];
+  const introduzione = "Benvenuto! Questo è un test di prevenzione sanitaria completo, progettato per aiutarti a valutare il tuo stato di salute e identificare possibili fattori di rischio. Compilare il test richiederà circa 20 minuti, ma potrebbe davvero fare la differenza nella tua vita. Le tue risposte saranno utilizzate per fornirti consigli personalizzati secondo le linee guida sanitarie ufficiali. Iniziamo quando sei pronto!";
 
-function inviaAOpenAI(risposteUtente) {
-  fetch(endpoint, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ risposte: risposteUtente })
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.risposta) {
-      mostraMessaggio(data.risposta, "bot");
-    } else {
-      mostraMessaggio("⚠️ Nessuna risposta ricevuta dal sistema.", "bot");
+  const domandeBase = [
+    { key: "eta", testo: "Quanti anni hai?" },
+    { key: "sesso", testo: "Qual è il tuo sesso biologico? (maschio/femmina)" },
+    { key: "origine_etnica", testo: "Qual è la tua origine etnica?" },
+    { key: "altezza", testo: "Quanto sei alto/a in cm?" },
+    { key: "peso", testo: "Quanto pesi in kg?" },
+    { key: "vita", testo: "La misura del tuo giro vita è maggiore di 88 cm (se sei donna) o maggiore di 102 cm (se sei uomo)?" },
+    { key: "glicemia", testo: "La tua glicemia è inferiore a 100 mg/dL?" },
+    { key: "colesterolo_totale", testo: "Qual è il valore del tuo colesterolo totale (mg/dL)?" },
+    { key: "colesterolo_ldl", testo: "Il tuo colesterolo LDL supera il valore di 70 mg/dL?" },
+    { key: "colesterolo_hdl", testo: "Il tuo colesterolo HDL è inferiore a 50 mg/dL (se sei donna) o inferiore a 40 mg/dL (se sei uomo)?" },
+    { key: "pressione", testo: "La tua pressione arteriosa media è inferiore a 130/85 mmHg?" },
+    { key: "malattie_croniche", testo: "Hai malattie croniche diagnosticate?" },
+    { key: "farmaci", testo: "Assumi farmaci?" },
+    { key: "farmaci_dettaglio", testo: "Se assumi farmaci, elencali nella casella di testo sottostante." },
+    { key: "interventi", testo: "Hai subito interventi chirurgici rilevanti?" },
+    { key: "interventi_dettaglio", testo: "Se hai subito interventi chirurgici rilevanti, elencali nella casella di testo sottostante." },
+    { key: "familiarita_tumori", testo: "Ci sono in famiglia casi di tumore?" },
+    { key: "sede_tumore", testo: "In quale sede ha avuto un tumore il tuo famigliare?" },
+    { key: "fumatore", testo: "Fumi?" },
+    { key: "n_sigarette", testo: "Quante sigarette fumi al giorno?" },
+    { key: "alcol", testo: "Consumo di alcolici?" },
+    { key: "unita_alcoliche", testo: "Quante unità alcoliche bevi al giorno? (1 unità = 1 bicchiere di vino / birra / shot)" },
+    { key: "attivita_fisica", testo: "Svolgi attività fisica settimanale?" },
+    { key: "tipo_attivita", testo: "Che tipo di attività fisica svolgi?" },
+    { key: "durata_attivita", testo: "Quanto dura ogni allenamento? (in minuti)" },
+    { key: "alimentazione", testo: "Com'è la tua alimentazione?" },
+    { key: "stanchezza", testo: "In genere ti senti stanco/a?" },
+    { key: "depressione", testo: "Hai episodi di depressione?" },
+    { key: "insonnia", testo: "Hai difficoltà a dormire?" },
+    { key: "tipo_insonnia", testo: "Se hai difficoltà a dormire, descrivi la difficoltà (es. fatica ad addormentarti, risvegli notturni...)" },
+    { key: "stress", testo: "Livello percepito di stress (da 1 = niente stress a 10 = stress molto elevato)" },
+    { key: "screening_effettuati", testo: "Hai già effettuato screening preventivi?" },
+    { key: "data_ultimo_screening", testo: "Data dell'ultimo screening (formato MM-GG-AAAA):" },
+    { key: "preferenze", testo: "Vorresti ricevere consigli su aspetti specifici della tua salute?" }
+  ];
+
+  const domandeOver65 = [
+    { key: "over_stanchezza", testo: "Ti senti stanco/a frequentemente?" },
+    { key: "over_scale", testo: "Riesci a salire una rampa di scale?" },
+    { key: "over_camminata", testo: "Riesci a camminare un isolato (circa 100 metri)?" },
+    { key: "over_malattie", testo: "Hai più di 5 malattie croniche?" },
+    { key: "over_peso", testo: "Hai perso più di 5 kg nell’ultimo anno senza volerlo?" },
+    { key: "over_sollevamento", testo: "Hai difficoltà a sollevare oggetti pesanti (>4.5 kg)?" },
+    { key: "over_sedia", testo: "Hai problemi ad alzarti da una sedia?" },
+    { key: "over_cadute", testo: "Hai cadute frequenti?" },
+    { key: "over_debolezza", testo: "Ti senti debole?" }
+  ];
+
+  const domandeFemminili = [
+    { key: "eta_menarca", testo: "A che età hai avuto il primo ciclo mestruale?" },
+    { key: "contraccettivi", testo: "Hai mai usato contraccettivi ormonali?" },
+    { key: "gravidezza", testo: "Hai avuto una o più gravidanze?" },
+    { key: "eta_menopausa", testo: "A che età sei andata in menopausa? (facoltativo)" },
+    { key: "familiarita_seno", testo: "Tua madre o tua nonna hanno avuto un tumore al seno?" },
+    { key: "screening_seno", testo: "Hai mai svolto una mammografia o un'ecografia mammaria? (se hai più di 25 anni)" },
+    { key: "papsmear", testo: "Svolgi regolarmente il Pap test? (se hai più di 25 anni)" }
+  ];
+
+  let domande = [...domandeBase];
+  let risposte = {};
+  let step = -1;
+
+  function mostraMessaggio(testo, classe = "bot") {
+    const div = document.createElement("div");
+    div.className = `bubble ${classe}`;
+    div.innerText = testo;
+    document.getElementById("messages").appendChild(div);
+    div.scrollIntoView();
+  }
+
+  function next() {
+    const input = document.getElementById("input");
+    const val = input.value.trim();
+    if (!val) return;
+
+    mostraMessaggio(val, "user");
+    if (step >= 0) risposte[domande[step].key] = val;
+    input.value = "";
+
+    if (step >= 0 && domande[step].key === "eta") {
+      const etaNum = parseInt(val);
+      if (!isNaN(etaNum) && etaNum > 65) {
+        domande = [...domande.slice(0, step + 1), ...domandeOver65, ...domande.slice(step + 1)];
+      }
     }
-  })
-  .catch(err => {
-    console.error(err);
-    mostraMessaggio("❌ Errore durante la comunicazione con l’intelligenza artificiale.", "bot");
-  });
-}
 
-export { questions, inviaAOpenAI };
-"""
+    if (step >= 0 && domande[step].key === "sesso") {
+      const sesso = val.toLowerCase();
+      if (sesso === "femmina" || sesso === "donna") {
+        domande = [...domande.slice(0, step + 1), ...domandeFemminili, ...domande.slice(step + 1)];
+      }
+    }
 
-# Salvataggio del file
-js_path = Path("/mnt/data/chatbot-logic.js")
-js_path.write_text(js_content)
+    step++;
+    if (step < domande.length) {
+      setTimeout(() => mostraMessaggio(domande[step].testo), 500);
+    } else {
+      mostraMessaggio("🧠 Grazie! Sto analizzando i tuoi dati...");
+      inviaOpenAI();
+    }
+  }
 
-js_path
+  function inviaOpenAI() {
+    fetch("", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(risposte)
+    })
+    .then(res => res.json())
+    .then(data => {
+      mostraMessaggio("🧐 Risposta dell'AI:");
+      mostraMessaggio(data.risposta);
+    });
+  }
+
+  mostraMessaggio(introduzione);
+  
+document.getElementById("input").addEventListener("keypress", function (e) {
+  if (e.key === "Enter") {
+    next();
+  }
+});
+
+
 
