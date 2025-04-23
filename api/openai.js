@@ -3,12 +3,12 @@ import { OpenAI } from 'openai';
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export default async function handler(req, res) {
-  // ✅ CORS headers per tutte le richieste
+  // ✅ CORS headers
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  // ✅ Gestione richiesta preflight
+  // ✅ Risposta alle richieste preflight
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
@@ -134,7 +134,6 @@ Tono semplice, empatico, professionale. Se mancano dati, suggerisci visita dal m
     const result = response?.choices?.[0]?.message?.content;
 
     if (!result) {
-      console.warn("⚠️ Nessuna risposta ricevuta da OpenAI");
       return res.status(200).json({
         risposta: "⚠️ L'intelligenza artificiale non ha restituito una risposta valida. Riprova più tardi o contatta un professionista sanitario."
       });
@@ -149,3 +148,4 @@ Tono semplice, empatico, professionale. Se mancano dati, suggerisci visita dal m
     });
   }
 }
+
