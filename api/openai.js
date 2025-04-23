@@ -34,8 +34,8 @@ Sei un assistente sanitario digitale. Analizza i dati forniti per calcolare scor
 - Colesterolo totale: ${safe(data.colesterolo_totale)}
 - LDL >70: ${safe(data.colesterolo_ldl)}
 - HDL basso: ${safe(data.colesterolo_hdl)}
-- HDL valore: ${safe(data.colesterolo_hdl_valore)}
-- Pressione < 130/85: ${safe(data.pressione)}
+- HDL colesterolo per SCORE2 (mg/dL): ${safe(data.colesterolo_hdl_valore)}
+- Pressione arteriosa (sistolica/diastolica): ${safe(data.pressione_valore)} 
 - Pressione valore: ${safe(data.pressione_valore)}
 - Malattie croniche: ${safe(data.malattie_croniche)}
 - Farmaci: ${safe(data.farmaci)}
