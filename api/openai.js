@@ -111,21 +111,31 @@ Tono semplice, empatico, professionale. Se mancano dati, suggerisci visita dal m
 "Grazie per aver compilato questo strumento di prevenzione. Ricorda che la prevenzione è il primo passo verso una vita lunga e in salute. Per qualunque dubbio, parlane con il tuo medico."
 `;
 
-  try {
+try {
     const response = await openai.chat.completions.create({
       model: 'gpt-4-turbo',
       messages: [
         { role: 'system', content: 'Sei un assistente sanitario esperto in prevenzione e analisi dati clinici.' },
         { role: 'user', content: compiledPrompt }
       ],
-      temperature: 0.7,
+      temperature: 0.7
     });
 
-    const result = response.choices[0].message.content;
+    const result = response?.choices?.[0]?.message?.content;
+
+    if (!result) {
+      console.warn("⚠️ Nessuna risposta ricevuta da OpenAI");
+      return res.status(200).json({
+        risposta: "⚠️ L'intelligenza artificiale non ha restituito una risposta valida. Riprova più tardi o contatta un professionista sanitario."
+      });
+    }
+
     res.status(200).json({ risposta: result });
 
   } catch (error) {
-    console.error("Errore OpenAI:", error);
-    res.status(500).json({ error: 'Errore nella richiesta a OpenAI' });
+    console.error("❌ Errore OpenAI:", error);
+    res.status(500).json({
+      risposta: "⚠️ Si è verificato un errore nella comunicazione con il sistema. Verifica la connessione o riprova più tardi."
+    });
   }
 }
