@@ -30,7 +30,7 @@ Sei un assistente sanitario digitale. Analizza i dati forniti per calcolare scor
 - Peso: ${safe(data.peso)} kg
 - Vita > soglia: ${safe(data.vita)}
 - Glicemia < 100: ${safe(data.glicemia)}
-- Glicemia valore: ${safe(data.glicemia_valore)}
+- Glicemia valore per ADA Diabetes Risk Score: ${safe(data.glicemia_valore)}
 - Colesterolo totale: ${safe(data.colesterolo_totale)}
 - LDL >70: ${safe(data.colesterolo_ldl)}
 - HDL basso: ${safe(data.colesterolo_hdl)}
@@ -94,6 +94,9 @@ Se l’età è **≥ 65 anni**, calcola sempre **FRAIL** e **SARC-F** se sono pr
 Se l’età è **≥ 50 anni**, calcola sempre **FRAX** se i dati sono disponibili.
 Se uno score non è calcolabile, spiega **quale dato manca**.
 Specifica in modo dettagliato il significato di ogni risultato per ogni risultato dei vari score, e cosa potrebbe fare il paziente per migliorare la propria condizione di salute. 
+Inoltre prendi in considerazione la presenza di sindrome metabolica nel caso in cui tre di questi cinque criteri sono soddisfatti dai dati inseriti: Circonferenza vita aumentata Uomini: > 102 cm, Donne: > 88 cm; Trigliceridi elevati ≥ 150 mg/dL; Colesterolo HDL basso Uomini: < 40 mg/dL, Donne: < 50 mg/dL; Pressione arteriosa elevata ≥ 130/85 mmHg; Glicemia a digiuno elevata ≥ 100 mg/dL.
+Se è presente chiarisci il significato di sindrome metabolica e indica al paziente tutte le problematiche correlate ad essa come : aumentata probabilità di sviluppare diabete di tipo 2, malattie cardiovascolari e ictus.
+E dai dei suggerimenti specifici e consigli su iniziative da intraprendere per far si di risolvere questa consizione.
 
 🧠 **GENERA CONSIGLI PERSONALIZZATI:**
 - Screening oncologici raccomandati prendendo in considerazione l'età del paziente, andando ad elencare gli screening che dovrebbe svolgere o dovrebbe aver svolto il paziente specifici per l'età di questo.
