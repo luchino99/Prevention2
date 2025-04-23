@@ -113,7 +113,7 @@ Tono semplice, empatico, professionale. Se mancano dati, suggerisci visita dal m
 
   try {
     const response = await openai.chat.completions.create({
-      model: 'gpt-4',
+      model: 'gpt-4-turbo',
       messages: [
         { role: 'system', content: 'Sei un assistente sanitario esperto in prevenzione e analisi dati clinici.' },
         { role: 'user', content: compiledPrompt }
