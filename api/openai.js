@@ -89,12 +89,13 @@ ${data.sesso && (data.sesso.toLowerCase() === 'femmina' || data.sesso.toLowerCas
 - FRAIL (se >65 anni)
 - SARC-F (se >65 anni)
 - FRAX (se >50 anni)
+specifica in modo dettagliato il significato di ogni risultato per ogni risultato dei vari score, e cosa potrebbe fare il paziente per migliorare la propria condizione di salute. 
 
 🧠 **GENERA CONSIGLI PERSONALIZZATI:**
-- Screening oncologici raccomandati
-- Visite specialistiche necessarie
-- Miglioramenti nello stile di vita
-- Raccomandazioni su dieta, attività, stress, sonno
+- Screening oncologici raccomandati prendendo in considerazione l'età del paziente, andando ad elencare gli screening che dovrebbe svolgere o dovrebbe aver svolto il paziente specifici per l'età di questo.
+- Visite specialistiche necessarie in base ai risultati ottenuti dalla comilazione del test.
+- Miglioramenti nello stile di vita, con consigli specifici in base ai vari risultati del test, in tutti i campi come: dieta, attività, stress, sonno. I consigli devono essere specifici per il paziente, devono prendere in considerazione tutti i dati inseriti.
+
 
 Usa un linguaggio semplice, empatico, ma tecnico. Comunica con tono rassicurante, motivante, professionale. Se i dati sono incompleti, suggerisci di rivolgersi al medico curante. Termina con un messaggio positivo motivazionale.
 
