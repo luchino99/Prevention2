@@ -109,7 +109,7 @@ function next() {
   if (step < domande.length) {
     setTimeout(() => mostraMessaggio(domande[step].testo), 500);
   } else {
-    mostraMessaggio("🧠 Grazie! Sto analizzando i tuoi dati...");
+    mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi dati...");
     inviaOpenAI();
   }
 }
@@ -125,12 +125,19 @@ function inviaOpenAI() {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(risposte)
   })
-    .then(res => res.json())
-    .then(data => {
-      console.log("📦 Risposta ricevuta dall'AI:", data); // LOG PER DEBUG
-
+    .then(async res => {
       loader.remove();
-      mostraMessaggio("🤮 Risposta dell'AI:");
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Errore dal server:", errorText);
+        mostraMessaggio("⚠️ Errore dal server: " + errorText);
+        return;
+      }
+
+      const data = await res.json();
+      console.log("📦 Risposta ricevuta dall'AI:", data);
+      mostraMessaggio("🧐 Risposta dell'AI:");
       mostraMessaggio(data.risposta || "⚠️ Nessuna risposta valida ricevuta.");
     })
     .catch(err => {
@@ -162,4 +169,3 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 });
-
