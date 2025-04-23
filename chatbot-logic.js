@@ -77,9 +77,10 @@ const domandeFemminili = [
   { key: "papsmear", testo: "Svolgi regolarmente il Pap test? (se hai più di 25 anni)" }
 ];
 
-let domande = [...domandeBase];
+let domande = [];
 let risposte = {};
 let step = -1;
+let modalita = null;
 
 function mostraMessaggio(testo, classe = "bot") {
   const div = document.createElement("div");
@@ -94,11 +95,57 @@ function mostraMessaggio(testo, classe = "bot") {
   div.scrollIntoView();
 }
 
+function mostraScelteIniziali() {
+  mostraMessaggio("👋 Ciao! Come posso aiutarti oggi?\n\n🔹 Hai bisogno di aiuto per ricevere consigli su una *situazione medica attuale* o sintomi?\n\n🔹 Oppure vuoi ricevere consigli per la *prevenzione della salute*?");
+
+  const btnContainer = document.createElement("div");
+  btnContainer.className = "button-container";
+
+  const sintomiBtn = document.createElement("button");
+  sintomiBtn.innerText = "🩺 Ti voglio descrivere i miei sintomi";
+  sintomiBtn.onclick = () => selezionaModalita("sintomi");
+
+  const prevenzioneBtn = document.createElement("button");
+  prevenzioneBtn.innerText = "🛡️ Voglio fare prevenzione";
+  prevenzioneBtn.onclick = () => selezionaModalita("prevenzione");
+
+  btnContainer.appendChild(sintomiBtn);
+  btnContainer.appendChild(prevenzioneBtn);
+  document.getElementById("messages").appendChild(btnContainer);
+}
+
+function selezionaModalita(tipo) {
+  modalita = tipo;
+  document.querySelectorAll(".button-container").forEach(el => el.remove());
+
+  if (tipo === "sintomi") {
+    mostraMessaggio("🩺 Perfetto! Per aiutarti al meglio, descrivimi i tuoi sintomi o i sintomi della persona che vuoi aiutare.");
+  } else if (tipo === "prevenzione") {
+    domande = [...domandeBase];
+    mostraMessaggio(introduzione);
+  }
+}
+
 function next() {
   const input = document.getElementById("input");
   const val = input.value.trim();
 
-  // Se è la prima chiamata o il valore è presente, salva e mostra
+  if (modalita === "sintomi") {
+    if (val) {
+      mostraMessaggio(val, "user");
+      input.value = "";
+      fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sintomi: val })
+      })
+        .then(res => res.json())
+        .then(data => mostraMessaggio(data.risposta || "⚠️ Nessuna risposta ricevuta."))
+        .catch(err => mostraMessaggio("⚠️ Errore nella risposta."));
+    }
+    return;
+  }
+
   if (step === -1 || val) {
     if (step >= 0) {
       mostraMessaggio(val, "user");
@@ -106,7 +153,6 @@ function next() {
     }
     input.value = "";
 
-    // Aggiunta domande extra
     if (step >= 0 && domande[step].key === "eta") {
       const etaNum = parseInt(val);
       if (!isNaN(etaNum) && etaNum > 65) {
@@ -122,8 +168,6 @@ function next() {
   }
 
   step++;
-
-  // Loop salta domande con condizione non soddisfatta
   while (step < domande.length && domande[step].condizione) {
     const cond = domande[step].condizione;
     const risposta = risposte[cond];
@@ -176,7 +220,7 @@ function inviaOpenAI() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  mostraMessaggio(introduzione);
+  mostraScelteIniziali();
 
   document.getElementById("input").addEventListener("keypress", function (e) {
     if (e.key === "Enter") {
