@@ -84,16 +84,12 @@ let step = -1;
 function mostraMessaggio(testo, classe = "bot") {
   const div = document.createElement("div");
   div.className = `bubble ${classe}`;
-
   const avatar = document.createElement("div");
   avatar.className = `avatar`;
-
   const span = document.createElement("span");
   span.innerText = testo;
-
   div.appendChild(avatar);
   div.appendChild(span);
-
   document.getElementById("messages").appendChild(div);
   div.scrollIntoView();
 }
@@ -102,7 +98,6 @@ function next() {
   const input = document.getElementById("input");
   const val = input.value.trim();
   if (!val) return;
-
   mostraMessaggio(val, "user");
   if (step >= 0) risposte[domande[step].key] = val;
   input.value = "";
@@ -118,6 +113,17 @@ function next() {
     const sesso = val.toLowerCase();
     if (sesso === "femmina" || sesso === "donna") {
       domande = [...domande.slice(0, step + 1), ...domandeFemminili, ...domande.slice(step + 1)];
+    }
+  }
+
+  // Salta le domande condizionali se la condizione è "no"
+  const prossimaDomanda = domande[step + 1];
+  if (prossimaDomanda?.condizione) {
+    const rispostaCondizione = risposte[prossimaDomanda.condizione];
+    if (rispostaCondizione && rispostaCondizione.toLowerCase() === "no") {
+      step++;
+      next();
+      return;
     }
   }
 
