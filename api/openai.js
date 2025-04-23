@@ -24,102 +24,192 @@ Sei un assistente sanitario digitale progettato per analizzare dati raccolti tra
 
 📥 Di seguito ci sono i dati raccolti:
 
-- Nome: ${data.nome || "-"}
-- Età: ${data.eta || "-"}
-- Sesso biologico: ${data.sesso || "-"}
-- Origine etnica: ${data.origine_etnica || "-"}
+- Nome: {{nome}}
+- Età: {{età}}
+- Sesso biologico: {{sesso}}
+- Origine etnica (inclusa eventuale razza nera): {{origine_etnica}}
 
 🔹 ANTROPOMETRIA
-- Altezza (cm): ${data.altezza || "-"}
-- Peso (kg): ${data.peso || "-"}
-- Circonferenza vita: ${data.vita || "-"}
-- Glicemia: ${data.glicemia || "-"}
-- Colesterolo totale: ${data.colesterolo_totale || "-"}
-- Colesterolo LDL >70: ${data.colesterolo_ldl || "-"}
-- Colesterolo HDL basso: ${data.colesterolo_hdl || "-"}
-- Pressione arteriosa (inferiore a 130/85?): ${data.pressione || "-"}
+- Altezza (cm): {{altezza}}
+- Peso (kg): {{peso}}
+- BMI = peso / (altezza in m)^2
+- Circonferenza vita aumentata: {{vita}}
+- Circonferenza vita (valore): {{circonferenza_vita}}
+- Glicemia <100 mg/dL: {{glicemia}}
+- Valore glicemia: {{glicemia_valore}}
+- Colesterolo totale: {{colesterolo_totale}}
+- Colesterolo LDL >70: {{colesterolo_ldl}}
+- Colesterolo HDL basso: {{colesterolo_hdl}}
+- Valore colesterolo HDL: {{colesterolo_hdl_valore}}
+- Pressione arteriosa <130/85: {{pressione}}
+- Pressione arteriosa (valore): {{pressione_valore}}
 
 🔹 STORIA CLINICA
-- Malattie croniche: ${data.malattie_croniche || "-"}
-- Assunzione farmaci: ${data.farmaci || "-"}
-- Dettaglio farmaci: ${data.farmaci_dettaglio || "-"}
-- Interventi chirurgici rilevanti: ${data.interventi || "-"}
-- Dettaglio interventi: ${data.interventi_dettaglio || "-"}
+- Malattie croniche: {{malattie_croniche}}
+- Assunzione farmaci: {{farmaci}}
+- Dettaglio farmaci: {{farmaci_dettaglio}}
+- Interventi chirurgici: {{interventi}}
+- Dettaglio interventi: {{interventi_dettaglio}}
 
 🔹 STORIA FAMILIARE E TUMORI
-- Familiarità con tumori: ${data.familiarita_tumori || "-"}
-- Tipo e sede tumore famigliare: ${data.sede_tumore || "-"}
+- Familiarità con tumori: {{familiarita_tumori}}
+- Tipo/sede tumore: {{sede_tumore}}
 
 🔹 STILE DI VITA
-- Fumatore: ${data.fumatore || "-"}
-- Quante sigarette: ${data.n_sigarette || "-"}
-- Consumo alcolici: ${data.alcol || "-"}
-- Quante unità alcoliche al giorno: ${data.unita_alcoliche || "-"}
-- Attività fisica: ${data.attivita_fisica || "-"}
-- Tipo di attività fisica: ${data.tipo_attivita || "-"}
-- Durata allenamenti: ${data.durata_attivita || "-"}
-- Alimentazione: ${data.alimentazione || "-"}
+- Fumatore: {{fumatore}}
+- Quante sigarette: {{n_sigarette}}
+- Alcol: {{alcol}}
+- Unità alcoliche al giorno: {{unita_alcoliche}}
+- Attività fisica: {{attivita_fisica}}
+- Frequenza attività fisica: {{frequenza_attivita_fisica}}
+- Tipo attività fisica: {{tipo_attivita}}
+- Durata attività fisica (minuti): {{durata_attivita}}
+
+🔹 ALIMENTAZIONE (PREDIMED)
+- predimed_1: {{predimed_1}}
+- predimed_2: {{predimed_2}}
+- predimed_3: {{predimed_3}}
+- predimed_4: {{predimed_4}}
+- predimed_5: {{predimed_5}}
+- predimed_6: {{predimed_6}}
+- predimed_7: {{predimed_7}}
+- predimed_8: {{predimed_8}}
+- predimed_9: {{predimed_9}}
+- predimed_10: {{predimed_10}}
+- predimed_11: {{predimed_11}}
+- predimed_12: {{predimed_12}}
+- predimed_13: {{predimed_13}}
+- predimed_14: {{predimed_14}}
 
 🔹 SALUTE FEMMINILE (se applicabile)
-- Età menarca: ${data.eta_menarca || "-"}
-- Età menopausa: ${data.eta_menopausa || "-"}
-- Uso contraccettivi ormonali: ${data.contraccettivi || "-"}
-- Gravidanze: ${data.gravidezza || "-"}
-- Familiarità tumore al seno: ${data.familiarita_seno || "-"}
-- Hai fatto mammografia/ecografia mammaria?: ${data.screening_seno || "-"}
-- Svolgi regolarmente Pap test?: ${data.papsmear || "-"}
+- Età menarca: {{eta_menarca}}
+- Età menopausa: {{eta_menopausa}}
+- Contraccettivi ormonali: {{contraccettivi}}
+- Gravidanze: {{gravidezza}}
+- Familiarità tumore seno: {{familiarita_seno}}
+- Mammografia/ecografia: {{screening_seno}}
+- Pap test: {{papsmear}}
 
-🔹 PREVENZIONE - SCREENING
-- Screening già effettuati: ${data.screening_effettuati || "-"}
-- Data ultimo screening: ${data.data_ultimo_screening || "-"}
+🔹 SCREENING
+- Screening effettuati: {{screening_effettuati}}
+- Data ultimo screening: {{data_ultimo_screening}}
 
 🔹 STATO PSICOFISICO
-- Ti senti spesso stanco/a?: ${data.stanchezza || "-"}
-- Episodi depressivi: ${data.depressione || "-"}
-- Difficoltà a dormire: ${data.insonnia || "-"}
-- Tipo di disturbo del sonno: ${data.tipo_insonnia || "-"}
-- Livello percepito di stress: ${data.stress || "-"}
+- Stanchezza: {{stanchezza}}
+- Episodi depressivi: {{depressione}}
+- Insonnia: {{insonnia}}
+- Tipo insonnia: {{tipo_insonnia}}
+- Stress (1–10): {{stress}}
 
 🔹 VALUTAZIONE DI FRAGILITÀ (score)
-- Riesci a salire una rampa di scale?: ${data.over_scale || "-"}
-- Cammini almeno 100m?: ${data.over_camminata || "-"}
-- Hai >5 patologie croniche?: ${data.over_malattie || "-"}
-- Perdita involontaria di peso >5kg?: ${data.over_peso || "-"}
-- Difficoltà a sollevare oggetti pesanti?: ${data.over_sollevamento || "-"}
-- Problemi ad alzarti da sedia?: ${data.over_sedia || "-"}
-- Cadute frequenti?: ${data.over_cadute || "-"}
-- Ti senti debole?: ${data.over_debolezza || "-"}
+- Scale: {{scale}}
+- Camminata: {{camminata}}
+- >5 patologie croniche: {{malattie_multiple}}
+- Perdita peso >5kg: {{perdita_peso}}
+- Difficoltà sollevamento: {{sollevamento}}
+- Alzarsi da sedia: {{alzarsi_sedia}}
+- Cadute frequenti: {{cadute}}
+- Debolezza: {{debolezza}}
 
----
+📊 JSON STRUCTURED SCORE INPUT:
 
-📊 CALCOLA I SEGUENTI SCORE (se applicabili):
-
-- BMI = peso / (altezza in m)^2 → Classifica peso (OMS)
-- FRAIL scale (0-5)
-- SARC-F (0-10)
-- SCORE2 (cardiovascolare europeo)
-- ADA Risk Score
-- QRISK3 (se applicabile)
-- FRAX (se età >50)
-- Indice di fragilità geriatrica (>65)
-
----
+[{
+    "nome": "BMI",
+    "descrizione": "Indice di massa corporea",
+    "requisiti": ["peso", "altezza"],
+    "formula": "peso / (altezza in metri)^2",
+    "soglie": {
+      "Sottopeso": "<18.5",
+      "Normopeso": "18.5–24.9",
+      "Sovrappeso": "25–29.9",
+      "Obeso": ">=30"
+    },
+    "linee_guida": "OMS"
+  },
+  {
+    "nome": "FRAIL scale",
+    "descrizione": "Valutazione della fragilità fisica",
+    "requisiti": ["over_stanchezza", "over_scale", "over_malattie", "over_peso", "over_sedia"],
+    "formula": "1 punto per ogni risposta negativa",
+    "soglie": {
+      "Robusto": 0,
+      "Pre-frail": "1–2",
+      "Frail": "3–5"
+    },
+    "età_minima": 65,
+    "linee_guida": "Geriatric Research Society"
+  },
+  {
+    "nome": "SARC-F",
+    "descrizione": "Valutazione del rischio di sarcopenia",
+    "requisiti": ["over_scale", "over_sollevamento", "over_camminata", "over_sedia", "over_cadute"],
+    "formula": "1–2 punti per ogni funzione compromessa",
+    "soglie": {
+      "Basso rischio": "<4",
+      "Alto rischio": ">=4"
+    },
+    "età_minima": 65,
+    "linee_guida": "EWGSOP2"
+  },
+  {
+    "nome": "FRAX",
+    "descrizione": "Rischio di frattura osteoporotica",
+    "requisiti": ["eta", "sesso", "peso", "altezza", "familiarita_tumori", "farmaci_dettaglio", "over_cadute", "over_sollevamento"],
+    "condizione": "età >= 50",
+    "output": ["Probabilità frattura maggiore", "Probabilità frattura femore"],
+    "linee_guida": "OMS"
+  },
+  {
+    "nome": "SCORE2",
+    "descrizione": "Rischio cardiovascolare a 10 anni",
+    "requisiti": ["eta", "sesso", "fumatore", "pressione_valore", "colesterolo_totale", "colesterolo_hdl"],
+    "condizione": "età >= 40 e <= 69",
+    "output": "Percentuale rischio 10 anni",
+    "linee_guida": "ESC 2021"
+  },
+  {
+    "nome": "ADA Diabetes Risk Score",
+    "descrizione": "Probabilità di sviluppare il diabete di tipo 2",
+    "requisiti": ["eta", "sesso", "vita", "attivita_fisica", "alimentazione", "familiarita_tumori"],
+    "output": "Punteggio da 0 a 11",
+    "soglie": {
+      "Rischio basso": "0–4",
+      "Rischio moderato": "5–8",
+      "Rischio alto": "9–11"
+    },
+    "linee_guida": "American Diabetes Association"
+  },
+  {
+    "nome": "PREDIMED",
+    "descrizione": "Aderenza alla dieta mediterranea",
+    "requisiti": [
+      "predimed_1", "predimed_2", "predimed_3", "predimed_4", "predimed_5",
+      "predimed_6", "predimed_7", "predimed_8", "predimed_9", "predimed_10",
+      "predimed_11", "predimed_12", "predimed_13", "predimed_14"
+    ],
+    "formula": "1 punto per ogni risposta positiva (max 14)",
+    "soglie": {
+      "Bassa aderenza": "0–5",
+      "Media aderenza": "6–9",
+      "Alta aderenza": "10–14"
+    },
+    "linee_guida": "PREDIMED Study – España"
+  }
+]
+]
 
 🧠 GENERA CONSIGLI PERSONALIZZATI:
+- Screening oncologici raccomandati per età/sesso/storia
+- Visite specialistiche consigliate (es. cardiologica, metabolica, ginecologica, geriatrica)
+- Miglioramenti dello stile di vita (dieta, attività fisica, sonno, stress)
+- Strategie di prevenzione attiva (es. dieta DASH, attività aerobica, controllo glicemico)
+- Quando è opportuno effettuare follow-up o controlli
 
-- Screening oncologici raccomandati
-- Visite specialistiche consigliate
-- Miglioramenti dello stile di vita
-- Strategie di prevenzione attiva
-- Follow-up consigliati
+Usa un linguaggio semplice, empatico, ma tecnico. Comunica con tono rassicurante, motivante, professionale. Se i dati sono incompleti, suggerisci di rivolgersi al medico curante. Termina con un messaggio positivo motivazionale.
 
-Tono semplice, empatico, professionale. Se mancano dati, suggerisci visita dal medico.
-
----
-
-🎯 MESSAGGIO FINALE:
-"Grazie per aver compilato questo strumento di prevenzione. Ricorda che la prevenzione è il primo passo verso una vita lunga e in salute. Per qualunque dubbio, parlane con il tuo medico."
-`;
+🎯 SEZIONE FINALE:
+> "Grazie per aver compilato questo strumento di prevenzione. Ricorda che la prevenzione è il primo passo verso una vita lunga e in salute. Per qualunque dubbio, parlane con il tuo medico."
+;
 
   try {
     const response = await openai.chat.completions.create({
