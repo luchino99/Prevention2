@@ -127,14 +127,16 @@ function inviaOpenAI() {
   })
     .then(res => res.json())
     .then(data => {
+      console.log("📦 Risposta ricevuta dall'AI:", data); // LOG PER DEBUG
+
       loader.remove();
-      mostraMessaggio("🧐 Risposta dell'AI:");
-      mostraMessaggio(data.risposta);
+      mostraMessaggio("🤮 Risposta dell'AI:");
+      mostraMessaggio(data.risposta || "⚠️ Nessuna risposta valida ricevuta.");
     })
     .catch(err => {
       loader.remove();
       mostraMessaggio("⚠️ Errore durante la comunicazione con l'AI. Riprova più tardi.");
-      console.error(err);
+      console.error("❌ Errore durante la fetch:", err);
     });
 }
 
@@ -160,3 +162,4 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 });
+
