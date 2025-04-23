@@ -3,12 +3,10 @@ import { OpenAI } from 'openai';
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export default async function handler(req, res) {
-  // ✅ CORS headers
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  // ✅ Risposta alle richieste preflight
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
@@ -18,74 +16,71 @@ export default async function handler(req, res) {
   }
 
   const data = req.body;
+  const safe = (val) => val ?? "non disponibile";
 
-  const compiledPrompt = `
-  
+  try {
+    const compiledPrompt = `
 Sei un assistente sanitario digitale. Analizza i dati forniti per calcolare score clinici ufficiali e fornire consigli personalizzati secondo linee guida OMS, ESC, AIFA, ADA e Ministero della Salute.
 
 📥 **DATI RACCOLTI:**
-- Età: ${data.eta}
-- Sesso biologico: ${data.sesso}
-- Origine etnica: ${data.origine_etnica}
-- Altezza: ${data.altezza} cm
-- Peso: ${data.peso} kg
-- Vita > soglia: ${data.vita}
-- Glicemia < 100: ${data.glicemia}
-- Glicemia valore: ${data.glicemia_valore}
-- Colesterolo totale: ${data.colesterolo_totale}
-- LDL >70: ${data.colesterolo_ldl}
-- HDL basso: ${data.colesterolo_hdl}
-- HDL valore: ${data.colesterolo_hdl_valore}
-- Pressione < 130/85: ${data.pressione}
-- Pressione valore: ${data.pressione_valore}
-- Malattie croniche: ${data.malattie_croniche}
-- Farmaci: ${data.farmaci}
-- Dettaglio farmaci: ${data.farmaci_dettaglio}
-- Interventi: ${data.interventi}
-- Dettaglio interventi: ${data.interventi_dettaglio}
-- Familiarità tumori: ${data.familiarita_tumori}
-- Sede tumore: ${data.sede_tumore}
-- Fumatore: ${data.fumatore}
-- Sigarette/die: ${data.n_sigarette}
-- Alcol: ${data.alcol}
-- Unità alcoliche/die: ${data.unita_alcoliche}
-- Attività fisica: ${data.attivita_fisica}
-- Frequenza attività: ${data.frequenza_attivita_fisica}
-- Tipo attività: ${data.tipo_attivita}
-- Durata attività: ${data.durata_attivita}
-- Alimentazione (Predimed): ${[...Array(14)].map((_, i) => `predimed_${i + 1}: ${data[`predimed_${i + 1}`]}`).join(" | ")}
-- Stanchezza: ${data.stanchezza}
-- Depressione: ${data.depressione}
-- Insonnia: ${data.insonnia}
-- Tipo insonnia: ${data.tipo_insonnia}
-- Stress: ${data.stress}
-- Preferenze: ${data.preferenze}
+- Età: ${safe(data.eta)}
+- Sesso biologico: ${safe(data.sesso)}
+- Origine etnica: ${safe(data.origine_etnica)}
+- Altezza: ${safe(data.altezza)} cm
+- Peso: ${safe(data.peso)} kg
+- Vita > soglia: ${safe(data.vita)}
+- Glicemia < 100: ${safe(data.glicemia)}
+- Glicemia valore: ${safe(data.glicemia_valore)}
+- Colesterolo totale: ${safe(data.colesterolo_totale)}
+- LDL >70: ${safe(data.colesterolo_ldl)}
+- HDL basso: ${safe(data.colesterolo_hdl)}
+- HDL valore: ${safe(data.colesterolo_hdl_valore)}
+- Pressione < 130/85: ${safe(data.pressione)}
+- Pressione valore: ${safe(data.pressione_valore)}
+- Malattie croniche: ${safe(data.malattie_croniche)}
+- Farmaci: ${safe(data.farmaci)}
+- Dettaglio farmaci: ${safe(data.farmaci_dettaglio)}
+- Interventi: ${safe(data.interventi)}
+- Dettaglio interventi: ${safe(data.interventi_dettaglio)}
+- Familiarità tumori: ${safe(data.familiarita_tumori)}
+- Sede tumore: ${safe(data.sede_tumore)}
+- Fumatore: ${safe(data.fumatore)}
+- Sigarette/die: ${safe(data.n_sigarette)}
+- Alcol: ${safe(data.alcol)}
+- Unità alcoliche/die: ${safe(data.unita_alcoliche)}
+- Attività fisica: ${safe(data.attivita_fisica)}
+- Frequenza attività: ${safe(data.frequenza_attivita_fisica)}
+- Tipo attività: ${safe(data.tipo_attivita)}
+- Durata attività: ${safe(data.durata_attivita)}
+- Alimentazione (Predimed): ${[...Array(14)].map((_, i) => `predimed_${i + 1}: ${safe(data[`predimed_${i + 1}`])}`).join(" | ")}
+- Stanchezza: ${safe(data.stanchezza)}
+- Depressione: ${safe(data.depressione)}
+- Insonnia: ${safe(data.insonnia)}
+- Tipo insonnia: ${safe(data.tipo_insonnia)}
+- Stress: ${safe(data.stress)}
+- Preferenze: ${safe(data.preferenze)}
 
-${
-    data.eta > 65 ? `
+${data.eta > 65 ? `
 🔹 **VALUTAZIONE OVER 65:**
-- over_stanchezza: ${data.over_stanchezza}
-- over_scale: ${data.over_scale}
-- over_camminata: ${data.over_camminata}
-- over_malattie: ${data.over_malattie}
-- over_peso: ${data.over_peso}
-- over_sollevamento: ${data.over_sollevamento}
-- over_sedia: ${data.over_sedia}
-- over_cadute: ${data.over_cadute}
-- over_debolezza: ${data.over_debolezza}` : ""
-}
-${
-    data.sesso.toLowerCase() === 'femmina' || data.sesso.toLowerCase() === 'donna'
-      ? `
+- over_stanchezza: ${safe(data.over_stanchezza)}
+- over_scale: ${safe(data.over_scale)}
+- over_camminata: ${safe(data.over_camminata)}
+- over_malattie: ${safe(data.over_malattie)}
+- over_peso: ${safe(data.over_peso)}
+- over_sollevamento: ${safe(data.over_sollevamento)}
+- over_sedia: ${safe(data.over_sedia)}
+- over_cadute: ${safe(data.over_cadute)}
+- over_debolezza: ${safe(data.over_debolezza)}` : ""}
+
+${data.sesso && (data.sesso.toLowerCase() === 'femmina' || data.sesso.toLowerCase() === 'donna') ? `
 🔹 **SALUTE FEMMINILE:**
-- Età menarca: ${data.eta_menarca}
-- Età menopausa: ${data.eta_menopausa}
-- Contraccettivi: ${data.contraccettivi}
-- Gravidanze: ${data.gravidezza}
-- Familiarità seno: ${data.familiarita_seno}
-- Screening seno: ${data.screening_seno}
-- Pap test: ${data.papsmear}` : ""
-}
+- Età menarca: ${safe(data.eta_menarca)}
+- Età menopausa: ${safe(data.eta_menopausa)}
+- Contraccettivi: ${safe(data.contraccettivi)}
+- Gravidanze: ${safe(data.gravidezza)}
+- Familiarità seno: ${safe(data.familiarita_seno)}
+- Screening seno: ${safe(data.screening_seno)}
+- Pap test: ${safe(data.papsmear)}` : ""}
 
 📊 **CALCOLA I SEGUENTI SCORE CLINICI (se disponibili):**
 - BMI
@@ -102,14 +97,14 @@ ${
 - Miglioramenti nello stile di vita
 - Raccomandazioni su dieta, attività, stress, sonno
 
-
 Usa un linguaggio semplice, empatico, ma tecnico. Comunica con tono rassicurante, motivante, professionale. Se i dati sono incompleti, suggerisci di rivolgersi al medico curante. Termina con un messaggio positivo motivazionale.
 
 🎯 SEZIONE FINALE:
 > "Grazie per aver compilato questo strumento di prevenzione. Ricorda che la prevenzione è il primo passo verso una vita lunga e in salute. Per qualunque dubbio, parlane con il tuo medico."
-;
+`;
 
-  try {
+    console.log("📤 Prompt generato:", compiledPrompt);
+
     const response = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
