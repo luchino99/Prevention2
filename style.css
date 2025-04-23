@@ -1,7 +1,7 @@
 body {
   margin: 0;
   font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  background: url('https://images.unsplash.com/photo-1588776814546-ec9fdfa6a793?ixlib=rb-4.0.3&auto=format&fit=crop&w=1950&q=80') no-repeat center center fixed;
+  background: url('https://source.unsplash.com/1600x900/?hospital,healthcare') no-repeat center center fixed;
   background-size: cover;
   color: #e2e8f0;
   height: 100vh;
@@ -135,12 +135,6 @@ button:hover {
   100% { transform: rotate(360deg); }
 }
 
-/* Digitazione simulata (solo estetica per ora) */
-.typing {
-  font-style: italic;
-  color: #94a3b8;
-}
-
 /* Fade-in */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
@@ -183,6 +177,35 @@ button:hover {
 .light-theme .user {
   background-color: #bae6fd;
   color: #0c4a6e;
+}
+
+/* Pulsante Tema */
+.theme-switcher {
+  align-self: flex-end;
+  background-color: transparent;
+  color: #38bdf8;
+  border: 1px solid #38bdf8;
+  padding: 6px 12px;
+  font-size: 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 10px;
+}
+
+.theme-switcher:hover {
+  background-color: #38bdf8;
+  color: #0f172a;
+}
+
+.light-theme .theme-switcher {
+  color: #0f172a;
+  border-color: #0f172a;
+}
+
+.light-theme .theme-switcher:hover {
+  background-color: #0f172a;
+  color: #fff;
 }
 
 /* Responsive */
