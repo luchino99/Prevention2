@@ -68,7 +68,16 @@ let step = -1;
 function mostraMessaggio(testo, classe = "bot") {
   const div = document.createElement("div");
   div.className = `bubble ${classe}`;
-  div.innerText = testo;
+
+  const avatar = document.createElement("div");
+  avatar.className = `avatar`;
+
+  const span = document.createElement("span");
+  span.innerText = testo;
+
+  div.appendChild(avatar);
+  div.appendChild(span);
+
   document.getElementById("messages").appendChild(div);
   div.scrollIntoView();
 }
@@ -106,20 +115,27 @@ function next() {
 }
 
 function inviaOpenAI() {
+  const loader = document.createElement("div");
+  loader.className = "loader";
+  document.getElementById("messages").appendChild(loader);
+  loader.scrollIntoView();
+
   fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(risposte)
   })
-  .then(res => res.json())
-  .then(data => {
-    mostraMessaggio("🧐 Risposta dell'AI:");
-    mostraMessaggio(data.risposta);
-  })
-  .catch(err => {
-    mostraMessaggio("⚠️ Errore durante la comunicazione con l'AI. Riprova più tardi.");
-    console.error(err);
-  });
+    .then(res => res.json())
+    .then(data => {
+      loader.remove();
+      mostraMessaggio("🧐 Risposta dell'AI:");
+      mostraMessaggio(data.risposta);
+    })
+    .catch(err => {
+      loader.remove();
+      mostraMessaggio("⚠️ Errore durante la comunicazione con l'AI. Riprova più tardi.");
+      console.error(err);
+    });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -130,5 +146,17 @@ document.addEventListener("DOMContentLoaded", () => {
       next();
     }
   });
-});
 
+  const toggleBtn = document.getElementById("theme-toggle");
+  if (toggleBtn) {
+    toggleBtn.addEventListener("click", () => {
+      document.documentElement.classList.toggle("light-theme");
+      const isLight = document.documentElement.classList.contains("light-theme");
+      localStorage.setItem("theme", isLight ? "light" : "dark");
+    });
+
+    if (localStorage.getItem("theme") === "light") {
+      document.documentElement.classList.add("light-theme");
+    }
+  }
+});
