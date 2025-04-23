@@ -128,6 +128,18 @@ function next() {
   }
 
   step++;
+  
+  while (true) {
+  const prossima = domande[step + 1];
+  if (!prossima?.condizione) break;
+
+  const rispostaCondizione = risposte[prossima.condizione];
+  if (rispostaCondizione && rispostaCondizione.toLowerCase() === "no") {
+    step++;
+    continue;
+  }
+  break;
+}
   if (step < domande.length) {
     setTimeout(() => mostraMessaggio(domande[step].testo), 500);
   } else {
