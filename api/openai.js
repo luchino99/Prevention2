@@ -89,10 +89,11 @@ ${data.sesso && (data.sesso.toLowerCase() === 'femmina' || data.sesso.toLowerCas
 - FRAIL (se >65 anni)
 - SARC-F (se >65 anni)
 - FRAX (se >50 anni)
-Se l’età del paziente è maggiore o uguale a 65 anni, calcola sempre FRAIL e SARC-F se i dati necessari sono disponibili.
-Se è maggiore o uguale a 50 anni, calcola sempre FRAX se i dati sono presenti.
-Se mancano dei dati, segnala esattamente quali impediscono il calcolo.
-specifica in modo dettagliato il significato di ogni risultato per ogni risultato dei vari score, e cosa potrebbe fare il paziente per migliorare la propria condizione di salute. 
+**Istruzioni importanti per il calcolo degli score:**
+Se l’età è **≥ 65 anni**, calcola sempre **FRAIL** e **SARC-F** se sono presenti i dati richiesti.
+Se l’età è **≥ 50 anni**, calcola sempre **FRAX** se i dati sono disponibili.
+Se uno score non è calcolabile, spiega **quale dato manca**.
+Specifica in modo dettagliato il significato di ogni risultato per ogni risultato dei vari score, e cosa potrebbe fare il paziente per migliorare la propria condizione di salute. 
 
 🧠 **GENERA CONSIGLI PERSONALIZZATI:**
 - Screening oncologici raccomandati prendendo in considerazione l'età del paziente, andando ad elencare gli screening che dovrebbe svolgere o dovrebbe aver svolto il paziente specifici per l'età di questo.
