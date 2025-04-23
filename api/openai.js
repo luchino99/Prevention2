@@ -20,6 +20,7 @@ export default async function handler(req, res) {
   const data = req.body;
 
   const compiledPrompt = `
+  
 Sei un assistente sanitario digitale progettato per analizzare dati raccolti tramite un modulo di prevenzione, calcolare gli score clinici e restituire consigli personalizzati secondo le linee guida ufficiali (OMS, ESC, AIFA, ADA, Ministero della Salute).
 
 📥 Di seguito ci sono i dati raccolti:
@@ -113,7 +114,8 @@ Sei un assistente sanitario digitale progettato per analizzare dati raccolti tra
 
 📊 JSON STRUCTURED SCORE INPUT:
 
-[{
+[
+{
     "nome": "BMI",
     "descrizione": "Indice di massa corporea",
     "requisiti": ["peso", "altezza"],
@@ -196,7 +198,7 @@ Sei un assistente sanitario digitale progettato per analizzare dati raccolti tra
     "linee_guida": "PREDIMED Study – España"
   }
 ]
-]
+
 
 🧠 GENERA CONSIGLI PERSONALIZZATI:
 - Screening oncologici raccomandati per età/sesso/storia
