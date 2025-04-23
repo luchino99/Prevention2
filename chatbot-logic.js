@@ -97,49 +97,43 @@ function mostraMessaggio(testo, classe = "bot") {
 function next() {
   const input = document.getElementById("input");
   const val = input.value.trim();
-  if (!val) return;
-  mostraMessaggio(val, "user");
-  if (step >= 0) risposte[domande[step].key] = val;
-  input.value = "";
 
-  if (step >= 0 && domande[step].key === "eta") {
-    const etaNum = parseInt(val);
-    if (!isNaN(etaNum) && etaNum > 65) {
-      domande = [...domande.slice(0, step + 1), ...domandeOver65, ...domande.slice(step + 1)];
+  // Se è la prima chiamata o il valore è presente, salva e mostra
+  if (step === -1 || val) {
+    if (step >= 0) {
+      mostraMessaggio(val, "user");
+      risposte[domande[step].key] = val;
     }
-  }
+    input.value = "";
 
-  if (step >= 0 && domande[step].key === "sesso") {
-    const sesso = val.toLowerCase();
-    if (sesso === "femmina" || sesso === "donna") {
-      domande = [...domande.slice(0, step + 1), ...domandeFemminili, ...domande.slice(step + 1)];
+    // Aggiunta domande extra
+    if (step >= 0 && domande[step].key === "eta") {
+      const etaNum = parseInt(val);
+      if (!isNaN(etaNum) && etaNum > 65) {
+        domande = [...domande.slice(0, step + 1), ...domandeOver65, ...domande.slice(step + 1)];
+      }
     }
-  }
-
-  // Salta le domande condizionali se la condizione è "no"
-  const prossimaDomanda = domande[step + 1];
-  if (prossimaDomanda?.condizione) {
-    const rispostaCondizione = risposte[prossimaDomanda.condizione];
-    if (rispostaCondizione && rispostaCondizione.toLowerCase() === "no") {
-      step++;
-      next();
-      return;
+    if (step >= 0 && domande[step].key === "sesso") {
+      const sesso = val.toLowerCase();
+      if (sesso === "femmina" || sesso === "donna") {
+        domande = [...domande.slice(0, step + 1), ...domandeFemminili, ...domande.slice(step + 1)];
+      }
     }
   }
 
   step++;
-  
-  while (true) {
-  const prossima = domande[step + 1];
-  if (!prossima?.condizione) break;
 
-  const rispostaCondizione = risposte[prossima.condizione];
-  if (rispostaCondizione && rispostaCondizione.toLowerCase() === "no") {
-    step++;
-    continue;
+  // Loop salta domande con condizione non soddisfatta
+  while (step < domande.length && domande[step].condizione) {
+    const cond = domande[step].condizione;
+    const risposta = risposte[cond];
+    if (risposta && risposta.toLowerCase() === "no") {
+      step++;
+    } else {
+      break;
+    }
   }
-  break;
-}
+
   if (step < domande.length) {
     setTimeout(() => mostraMessaggio(domande[step].testo), 500);
   } else {
