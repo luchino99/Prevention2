@@ -1,8 +1,15 @@
 {
   "name": "chatbot-sanitario",
   "version": "1.0.0",
+  "description": "Chatbot sanitario per prevenzione con AI",
   "type": "module",
+  "scripts": {
+    "dev": "vercel dev",
+    "start": "node index.js"
+  },
   "dependencies": {
     "openai": "^4.0.0"
-  }
+  },
+  "keywords": ["chatbot", "sanità", "prevenzione", "openai", "vercel"],
+  "license": "MIT"
 }
