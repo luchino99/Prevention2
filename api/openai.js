@@ -3,6 +3,16 @@ import { OpenAI } from 'openai';
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export default async function handler(req, res) {
+  // ✅ Abilita CORS
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  // ✅ Risposta immediata per richieste OPTIONS (preflight CORS)
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Solo richieste POST sono accettate' });
   }
@@ -111,7 +121,7 @@ Tono semplice, empatico, professionale. Se mancano dati, suggerisci visita dal m
 "Grazie per aver compilato questo strumento di prevenzione. Ricorda che la prevenzione è il primo passo verso una vita lunga e in salute. Per qualunque dubbio, parlane con il tuo medico."
 `;
 
-try {
+  try {
     const response = await openai.chat.completions.create({
       model: 'gpt-4-turbo',
       messages: [
