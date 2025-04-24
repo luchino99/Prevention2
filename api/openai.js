@@ -34,7 +34,21 @@ Ricorda che la tua risposta **non sostituisce una valutazione medica professiona
   
   } else if (data.dieta) {
     compiledPrompt = `
-Sei un nutrizionista esperto. Una persona ha richiesto un piano alimentare personalizzato. I suoi dati sono i seguenti:
+Sei un nutrizionista clinico esperto in nutrizione personalizzata. In base ai dati forniti di seguito, calcola il fabbisogno calorico giornaliero (BMR e TDEE) del paziente secondo le formule Mifflin-St Jeor e le linee guida LARN/SINU. Successivamente, crea un piano alimentare settimanale completo, bilanciato secondo i principi della dieta mediterranea. 
+
+Il piano deve essere coerente con l'obiettivo indicato (dimagrimento, mantenimento, massa), tener conto di eventuali patologie, preferenze, allergie, e fornire suggerimenti e sostituzioni intelligenti. 
+
+Ogni giorno deve contenere:
+- Colazione, spuntino mattina, pranzo, spuntino pomeriggio, cena
+- Grammature indicative degli alimenti
+- Varietà tra i giorni e utilizzo di ingredienti stagionali
+- Almeno 1 proposta alternativa per ogni pasto
+
+In fondo, includi:
+- Note generali e motivazionali
+- Suggerimenti per l’idratazione, attività fisica e stile di vita
+
+Ricorda: la tua risposta NON sostituisce una consulenza clinica, ma si basa sulle più recenti evidenze scientifiche e linee guida ufficiali.
 
 - Età: ${data.eta}
 - Sesso: ${data.sesso}
@@ -51,14 +65,6 @@ Sei un nutrizionista esperto. Una persona ha richiesto un piano alimentare perso
 - Patologie: ${data.patologie}
 - Farmaci: ${data.farmaci}
 - Motivazione: ${data.motivazione}
-
-Sulla base di queste informazioni, genera un piano alimentare settimanale personalizzato secondo le linee guida SINU, LARN e dieta mediterranea equilibrata. Il piano deve includere:
-- Un esempio di giornata tipo con colazione, spuntini, pranzo e cena
-- Un menu settimanale variato
-- Porzioni indicative (grammature)
-- Suggerimenti per sostituzioni e varietà
-- Preferenze alimentari e restrizioni rispettate
-- Uno stile comunicativo chiaro, motivante, professionale e adatto all’utilizzo quotidiano.
 
 Il piano sarà usato per essere trasformato in PDF.`;
 
