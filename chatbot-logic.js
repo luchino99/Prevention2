@@ -199,6 +199,7 @@ function next() {
   }
 
   step++;
+  
   while (step < domande.length && domande[step].condizione) {
     const cond = domande[step].condizione;
     const risposta = risposte[cond];
@@ -247,11 +248,11 @@ function inviaOpenAI() {
       mostraMessaggio("🧐 Risposta dell'AI:");
       mostraMessaggio(data.risposta || "⚠️ Nessuna risposta valida ricevuta.");
       if (modalita === "dieta") {
-  const downloadBtn = document.createElement("button");
-  downloadBtn.innerText = "📄 Scarica piano alimentare in PDF";
-  downloadBtn.style.marginTop = "15px";
-  downloadBtn.onclick = () => generaPDF(data.risposta);
-  document.getElementById("messages").appendChild(downloadBtn);
+      const downloadBtn = document.createElement("button");
+      downloadBtn.innerText = "📄 Scarica piano alimentare in PDF";
+      downloadBtn.style.marginTop = "15px";
+      downloadBtn.onclick = () => generaPDF(data.risposta);
+      document.getElementById("messages").appendChild(downloadBtn);
 }
     })
     .catch(err => {
@@ -265,7 +266,7 @@ function inviaOpenAI() {
   console.log("JS caricato");
   mostraScelteIniziali();
 
-  function generaPDF(contenuto) {
+ function generaPDF(contenuto) {
     const pdfElement = document.getElementById("pdf-content");
     pdfElement.innerHTML = `
   <div style="font-family: Arial, sans-serif; padding: 30px; max-width: 800px; margin: auto; line-height: 1.6;">
@@ -283,9 +284,7 @@ function inviaOpenAI() {
     </footer>
   </div>
 `;
-
-
-    html2pdf().set({
+      html2pdf().set({
       margin: 10,
       filename: 'Piano_Alimentare_Personalizzato.pdf',
       html2canvas: { scale: 2 },
@@ -293,11 +292,10 @@ function inviaOpenAI() {
     }).from(pdfElement).save();
   }
   document.getElementById("input").addEventListener("keypress", function (e) {
-    if (e.key === "Enter") {
+  if (e.key === "Enter") {
       next();
     }
   });
-
   const toggleBtn = document.getElementById("theme-toggle");
   if (toggleBtn) {
     toggleBtn.addEventListener("click", () => {
@@ -305,8 +303,7 @@ function inviaOpenAI() {
       const isLight = document.documentElement.classList.contains("light-theme");
       localStorage.setItem("theme", isLight ? "light" : "dark");
     });
-
-    if (localStorage.getItem("theme") === "light") {
+  if (localStorage.getItem("theme") === "light") {
       document.documentElement.classList.add("light-theme");
     }
   }
