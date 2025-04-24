@@ -34,15 +34,14 @@ Ricorda che la tua risposta **non sostituisce una valutazione medica professiona
   
   } else if (data.dieta) {
     compiledPrompt = `
-Sei un nutrizionista clinico esperto in nutrizione personalizzata. In base ai dati forniti di seguito, calcola il fabbisogno calorico giornaliero (BMR e TDEE) del paziente secondo le formule Mifflin-St Jeor e le linee guida LARN/SINU. Successivamente, crea un piano alimentare settimanale completo, bilanciato secondo i principi della dieta mediterranea. 
-Il piano deve essere coerente con l'obiettivo indicato (dimagrimento, mantenimento, massa), tener conto di eventuali patologie, preferenze, allergie, e fornire suggerimenti e sostituzioni intelligenti. 
+Sei un nutrizionista clinico esperto in nutrizione personalizzata. In base ai dati forniti di seguito, calcola il fabbisogno calorico giornaliero (BMR e TDEE) del paziente secondo le formule Mifflin-St Jeor e le linee guida LARN/SINU, non scrivere i vari calcoli nella risposta, ma mostra soltando il risultato. Successivamente, crea un piano alimentare settimanale variabile per ogni giorno della settimana dal lunedi fino alla domenica compresa.
+Che sia completo, bilanciato basandoti sul risulatato di questi score e sugli obbiettivi del paziente (dimagrimento, mantenimento, massa), eventuali patologie, preferenze, allergie. 
 Ogni giorno deve contenere:
 - Colazione, spuntino mattina, pranzo, spuntino pomeriggio, cena
 - Grammature indicative degli alimenti
 - Varietà tra i giorni e utilizzo di ingredienti stagionali
-- Almeno 1 proposta alternativa per ogni pasto
 In fondo, includi:
-- Note generali e motivazionali
+- Note generali 
 - Suggerimenti per l’idratazione, attività fisica e stile di vita
 Dati da utilizzare per programmare la dieta:
 - Età: ${data.eta}
@@ -55,8 +54,6 @@ Dati da utilizzare per programmare la dieta:
 - Intolleranze/allergie: ${data.intolleranze}
 - Alimenti esclusi: ${data.alimenti_esclusi}
 - Patologie: ${data.patologie}
-- Farmaci: ${data.farmaci}
-- Motivazione: ${data.motivazione}
 Il piano sarà usato per essere trasformato in PDF.`;
 
   } else {
