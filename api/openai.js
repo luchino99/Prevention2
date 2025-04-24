@@ -22,7 +22,9 @@ export default async function handler(req, res) {
     let compiledPrompt = "";
 
     if (data.sintomi) {
+      
       compiledPrompt = `
+      
 Sei un assistente sanitario digitale esperto. Una persona ha descritto i seguenti sintomi:
 
 🩺 **Sintomi riportati:**
