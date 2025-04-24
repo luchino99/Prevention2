@@ -5,6 +5,8 @@
   <title>Chatbot Sanitario</title>
   <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
 </head>
 
 <body>
@@ -12,6 +14,7 @@
     <button id="theme-toggle" class="theme-switcher">🌓 Cambia tema</button>
     <h2>🩺 PREVENTION TEST 🩸</h2>
     <div id="messages"></div>
+    <div id="pdf-content" style="display: none;"></div>
 
     <div id="input-container">
       <label for="input" class="sr-only">Scrivi un messaggio</label>
