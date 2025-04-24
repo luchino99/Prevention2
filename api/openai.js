@@ -39,9 +39,7 @@ Che sia completo, bilanciato basandoti sul risulatato di questi score e sugli ob
 Ogni giorno deve contenere:
 - Colazione, spuntino mattina, pranzo, spuntino pomeriggio, cena
 - Grammature indicative degli alimenti
-- Varietà tra i giorni e utilizzo di ingredienti stagionali
-In fondo, includi:
-- Note generali 
+In fondo, includi: 
 - Suggerimenti per l’idratazione, attività fisica e stile di vita
 Dati da utilizzare per programmare la dieta:
 - Età: ${data.eta}
