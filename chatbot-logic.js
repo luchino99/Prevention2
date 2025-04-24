@@ -100,19 +100,27 @@ function mostraScelteIniziali() {
 
   const btnContainer = document.createElement("div");
   btnContainer.className = "button-container";
+  btnContainer.style.display = "flex";
+  btnContainer.style.gap = "20px";
+  btnContainer.style.marginTop = "20px";
+  btnContainer.style.flexWrap = "wrap";
+  btnContainer.style.justifyContent = "center";
 
   const sintomiBtn = document.createElement("button");
-  sintomiBtn.innerText = "🩺 Ti voglio descrivere i miei sintomi";
+  sintomiBtn.innerHTML = "🩺<br><strong>Sintomi</strong><br><small>Descrivi la situazione attuale</small>";
+  sintomiBtn.className = "styled-btn";
   sintomiBtn.onclick = () => selezionaModalita("sintomi");
 
   const prevenzioneBtn = document.createElement("button");
-  prevenzioneBtn.innerText = "🛡️ Voglio fare prevenzione";
+  prevenzioneBtn.innerHTML = "🛡️<br><strong>Prevenzione</strong><br><small>Ricevi consigli personalizzati</small>";
+  prevenzioneBtn.className = "styled-btn";
   prevenzioneBtn.onclick = () => selezionaModalita("prevenzione");
 
   btnContainer.appendChild(sintomiBtn);
   btnContainer.appendChild(prevenzioneBtn);
   document.getElementById("messages").appendChild(btnContainer);
 }
+
 
 function selezionaModalita(tipo) {
   modalita = tipo;
