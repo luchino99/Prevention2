@@ -267,13 +267,22 @@ document.addEventListener("DOMContentLoaded", () => {
   function generaPDF(contenuto) {
     const pdfElement = document.getElementById("pdf-content");
     pdfElement.innerHTML = `
-      <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 800px; line-height: 1.6;">
-        <h2 style="text-align: center; color: #0f172a;">Piano Alimentare Personalizzato</h2>
-        <p style="font-size: 14px; color: #475569;">${contenuto.replace(/\n/g, "<br/>")}</p>
-        <hr style="margin-top: 40px;" />
-        <p style="text-align: center; font-size: 12px; color: #94a3b8;">Generato da ChatBot Sanitario – non sostituisce una visita medica.</p>
-      </div>
-    `;
+  <div style="font-family: Arial, sans-serif; padding: 30px; max-width: 800px; margin: auto; line-height: 1.6;">
+    <h1 style="text-align: center; color: #2c3e50;">🧾 Piano Alimentare Personalizzato</h1>
+    
+    <div style="margin: 30px 0; font-size: 15px; color: #34495e;">
+      ${contenuto
+        .split("\n")
+        .map(par => par.trim() !== "" ? `<p style="margin-bottom: 10px;">${par}</p>` : "<hr style='margin: 20px 0;'>")
+        .join("")}
+    </div>
+    
+    <footer style="margin-top: 40px; text-align: center; font-size: 12px; color: #95a5a6;">
+      Generato automaticamente da ChatBot Sanitario | Non sostituisce una consulenza medica
+    </footer>
+  </div>
+`;
+
 
     html2pdf().set({
       margin: 10,
