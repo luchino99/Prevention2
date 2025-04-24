@@ -261,7 +261,8 @@ function inviaOpenAI() {
     });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+  document.addEventListener("DOMContentLoaded", () => {
+  console.log("JS caricato");
   mostraScelteIniziali();
 
   function generaPDF(contenuto) {
