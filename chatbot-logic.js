@@ -264,6 +264,7 @@ function inviaOpenAI() {
 }
 
 function generaPDF(contenuto) {
+  console.log("Contenuto ricevuto per il PDF:", contenuto); 
   const pdfElement = document.getElementById("pdf-content");
   pdfElement.innerHTML = `
     <div style="font-family: Arial, sans-serif; padding: 30px; max-width: 800px; margin: auto; line-height: 1.6;">
