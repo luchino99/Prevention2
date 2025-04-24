@@ -226,7 +226,7 @@ function inviaOpenAI() {
   fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(risposte)
+    body: JSON.stringify({ ...risposte, dieta: true })
   })
     .then(async res => {
       loader.remove();
