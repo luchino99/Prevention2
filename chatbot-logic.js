@@ -77,6 +77,25 @@ const domandeFemminili = [
   { key: "papsmear", testo: "Svolgi regolarmente il Pap test? (se hai più di 25 anni)" }
 ];
 
+const domandePianoAlimentare = [
+  { key: "eta", testo: "Quanti anni hai?" },
+  { key: "sesso", testo: "Qual è il tuo sesso biologico? (maschio/femmina)" },
+  { key: "altezza", testo: "Quanto sei alto/a in cm?" },
+  { key: "peso", testo: "Quanto pesi in kg?" },
+  { key: "obiettivo", testo: "Qual è il tuo obiettivo? (dimagrimento / mantenimento / aumento massa muscolare)" },
+  { key: "attivita_fisica", testo: "Che livello di attività fisica hai? (sedentario / leggero / moderato / intenso)" },
+  { key: "tipo_lavoro", testo: "Che tipo di lavoro svolgi? (sedentario, attivo, fisico)" },
+  { key: "preferenze", testo: "Hai uno stile alimentare preferito? (es: mediterranea, vegetariana, vegana, keto, nessuna)" },
+  { key: "intolleranze", testo: "Hai intolleranze o allergie alimentari? (es: glutine, lattosio, ecc.)" },
+  { key: "alimenti_esclusi", testo: "Ci sono alimenti che non vuoi includere nella dieta?" },
+  { key: "pasti", testo: "Quanti pasti al giorno preferisci fare? (includi colazione e spuntini)" },
+  { key: "orari_pasti", testo: "Hai orari fissi per i pasti principali? (opzionale)" },
+  { key: "patologie", testo: "Hai patologie diagnosticate? (es: diabete, ipertensione, gastrite, ecc.)" },
+  { key: "farmaci", testo: "Stai assumendo farmaci al momento? (opzionale)" },
+  { key: "motivazione", testo: "Cosa ti spinge a richiedere questo piano? Hai già seguito diete in passato?" }
+];
+
+
 let domande = [];
 let risposte = {};
 let step = -1;
@@ -96,25 +115,29 @@ function mostraMessaggio(testo, classe = "bot") {
 }
 
 function mostraScelteIniziali() {
-  mostraMessaggio("👋 Ciao! Come posso aiutarti oggi?\n\n🔹 Hai bisogno di aiuto per ricevere consigli su una *situazione medica attuale* o sintomi?\n\n🔹 Oppure vuoi ricevere consigli per la *prevenzione della salute*?");
+  mostraMessaggio("👋 Ciao! Come posso aiutarti oggi?\n\n🔹 Hai bisogno di aiuto per ricevere consigli su una *situazione medica attuale* o sintomi?\n\n🔹 Vuoi ricevere consigli per la *prevenzione della salute*?\n\n🔹 Oppure vuoi un *piano alimentare personalizzato*?");
 
   const btnContainer = document.createElement("div");
-  btnContainer.className = "button-container"; // 👈 necessario per applicare lo stile CSS
+  btnContainer.className = "button-container";
 
   const sintomiBtn = document.createElement("button");
-  sintomiBtn.className = "scelta-btn"; // 👈 classe aggiuntiva se vuoi applicare stile extra
   sintomiBtn.innerText = "🩺 Ti voglio descrivere i miei sintomi";
   sintomiBtn.onclick = () => selezionaModalita("sintomi");
 
   const prevenzioneBtn = document.createElement("button");
-  prevenzioneBtn.className = "scelta-btn";
   prevenzioneBtn.innerText = "🛡️ Voglio fare prevenzione";
   prevenzioneBtn.onclick = () => selezionaModalita("prevenzione");
 
+  const dietaBtn = document.createElement("button");
+  dietaBtn.innerText = "🍽️ Voglio un piano alimentare su misura";
+  dietaBtn.onclick = () => selezionaModalita("dieta");
+
   btnContainer.appendChild(sintomiBtn);
   btnContainer.appendChild(prevenzioneBtn);
+  btnContainer.appendChild(dietaBtn);
   document.getElementById("messages").appendChild(btnContainer);
 }
+
 
 
 
@@ -127,8 +150,12 @@ function selezionaModalita(tipo) {
   } else if (tipo === "prevenzione") {
     domande = [...domandeBase];
     mostraMessaggio(introduzione);
+  } else if (tipo === "dieta") {
+    domande = [...domandePianoAlimentare];
+    mostraMessaggio("🍽️ Ottimo! Per creare un piano alimentare personalizzato, rispondi alle seguenti domande:");
   }
 }
+
 
 function next() {
   const input = document.getElementById("input");
