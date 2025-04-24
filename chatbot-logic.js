@@ -265,6 +265,8 @@ function inviaOpenAI() {
 
 function generaPDF(contenuto) {
   const pdfElement = document.getElementById("pdf-content");
+  
+  pdfElement.style.display = "block"; 
 
   pdfElement.innerHTML = `
     <div style="font-family: Arial, sans-serif; padding: 30px; max-width: 800px; margin: auto; line-height: 1.6;">
@@ -280,14 +282,18 @@ function generaPDF(contenuto) {
       </footer>
     </div>
   `;
+
   setTimeout(() => {
     html2pdf().set({
       margin: 10,
       filename: 'Piano_Alimentare_Personalizzato.pdf',
       html2canvas: { scale: 2 },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    }).from(pdfElement).save();
-  }, 100); // 100ms bastano, ma puoi aumentare se necessario
+    }).from(pdfElement).save()
+      .then(() => {
+        pdfElement.style.display = "none"; // 👈 nascondilo di nuovo dopo
+      });
+  }, 100);
 }
 
 
