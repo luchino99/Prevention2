@@ -115,27 +115,33 @@ function mostraMessaggio(testo, classe = "bot") {
 }
 
 function mostraScelteIniziali() {
-  mostraMessaggio("👋 Ciao! Come posso aiutarti oggi?\n\n🔹 Hai bisogno di aiuto per ricevere consigli su una *situazione medica attuale* o sintomi?\n\n🔹 Vuoi ricevere consigli per la *prevenzione della salute*?\n\n🔹 Oppure vuoi un *piano alimentare personalizzato*?");
+  mostraMessaggio("👋 Ciao! Come posso aiutarti oggi?\n\n🔹 Hai bisogno di aiuto per ricevere consigli su una *situazione medica attuale* o sintomi?\n\n🔹 Oppure vuoi ricevere consigli per la *prevenzione della salute*?\n\n🔹 O desideri un *piano alimentare personalizzato*?");
 
   const btnContainer = document.createElement("div");
   btnContainer.className = "button-container";
 
   const sintomiBtn = document.createElement("button");
+  sintomiBtn.className = "scelta-btn";
   sintomiBtn.innerText = "🩺 Ti voglio descrivere i miei sintomi";
   sintomiBtn.onclick = () => selezionaModalita("sintomi");
 
   const prevenzioneBtn = document.createElement("button");
+  prevenzioneBtn.className = "scelta-btn";
   prevenzioneBtn.innerText = "🛡️ Voglio fare prevenzione";
   prevenzioneBtn.onclick = () => selezionaModalita("prevenzione");
 
-  const dietaBtn = document.createElement("button");
+  const dietaBtn = document.createElement("button"); 
+  dietaBtn.className = "scelta-btn";
   dietaBtn.innerText = "🍽️ Voglio un piano alimentare su misura";
   dietaBtn.onclick = () => selezionaModalita("dieta");
 
   btnContainer.appendChild(sintomiBtn);
   btnContainer.appendChild(prevenzioneBtn);
-  btnContainer.appendChild(dietaBtn);
+  btnContainer.appendChild(dietaBtn); 
+
   document.getElementById("messages").appendChild(btnContainer);
+}
+
 }
 
 
