@@ -99,27 +99,23 @@ function mostraScelteIniziali() {
   mostraMessaggio("👋 Ciao! Come posso aiutarti oggi?\n\n🔹 Hai bisogno di aiuto per ricevere consigli su una *situazione medica attuale* o sintomi?\n\n🔹 Oppure vuoi ricevere consigli per la *prevenzione della salute*?");
 
   const btnContainer = document.createElement("div");
-  btnContainer.className = "button-container";
-  btnContainer.style.display = "flex";
-  btnContainer.style.gap = "20px";
-  btnContainer.style.marginTop = "20px";
-  btnContainer.style.flexWrap = "wrap";
-  btnContainer.style.justifyContent = "center";
+  btnContainer.className = "button-container"; // 👈 necessario per applicare lo stile CSS
 
   const sintomiBtn = document.createElement("button");
-  sintomiBtn.innerHTML = "🩺<br><strong>Sintomi</strong><br><small>Descrivi la situazione attuale</small>";
-  sintomiBtn.className = "styled-btn";
+  sintomiBtn.className = "scelta-btn"; // 👈 classe aggiuntiva se vuoi applicare stile extra
+  sintomiBtn.innerText = "🩺 Ti voglio descrivere i miei sintomi";
   sintomiBtn.onclick = () => selezionaModalita("sintomi");
 
   const prevenzioneBtn = document.createElement("button");
-  prevenzioneBtn.innerHTML = "🛡️<br><strong>Prevenzione</strong><br><small>Ricevi consigli personalizzati</small>";
-  prevenzioneBtn.className = "styled-btn";
+  prevenzioneBtn.className = "scelta-btn";
+  prevenzioneBtn.innerText = "🛡️ Voglio fare prevenzione";
   prevenzioneBtn.onclick = () => selezionaModalita("prevenzione");
 
   btnContainer.appendChild(sintomiBtn);
   btnContainer.appendChild(prevenzioneBtn);
   document.getElementById("messages").appendChild(btnContainer);
 }
+
 
 
 function selezionaModalita(tipo) {
