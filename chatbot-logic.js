@@ -246,6 +246,13 @@ function inviaOpenAI() {
       console.log("📦 Risposta ricevuta dall'AI:", data);
       mostraMessaggio("🧐 Risposta dell'AI:");
       mostraMessaggio(data.risposta || "⚠️ Nessuna risposta valida ricevuta.");
+      if (modalita === "dieta") {
+  const downloadBtn = document.createElement("button");
+  downloadBtn.innerText = "📄 Scarica piano alimentare in PDF";
+  downloadBtn.style.marginTop = "15px";
+  downloadBtn.onclick = () => generaPDF(data.risposta);
+  document.getElementById("messages").appendChild(downloadBtn);
+}
     })
     .catch(err => {
       loader.remove();
@@ -257,6 +264,24 @@ function inviaOpenAI() {
 document.addEventListener("DOMContentLoaded", () => {
   mostraScelteIniziali();
 
+  function generaPDF(contenuto) {
+    const pdfElement = document.getElementById("pdf-content");
+    pdfElement.innerHTML = `
+      <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 800px; line-height: 1.6;">
+        <h2 style="text-align: center; color: #0f172a;">Piano Alimentare Personalizzato</h2>
+        <p style="font-size: 14px; color: #475569;">${contenuto.replace(/\n/g, "<br/>")}</p>
+        <hr style="margin-top: 40px;" />
+        <p style="text-align: center; font-size: 12px; color: #94a3b8;">Generato da ChatBot Sanitario – non sostituisce una visita medica.</p>
+      </div>
+    `;
+
+    html2pdf().set({
+      margin: 10,
+      filename: 'Piano_Alimentare_Personalizzato.pdf',
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    }).from(pdfElement).save();
+  }
   document.getElementById("input").addEventListener("keypress", function (e) {
     if (e.key === "Enter") {
       next();
