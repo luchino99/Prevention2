@@ -142,11 +142,6 @@ function mostraScelteIniziali() {
   document.getElementById("messages").appendChild(btnContainer);
 }
 
-}
-
-
-
-
 function selezionaModalita(tipo) {
   modalita = tipo;
   document.querySelectorAll(".button-container").forEach(el => el.remove());
