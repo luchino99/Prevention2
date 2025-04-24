@@ -31,7 +31,7 @@ ${data.sintomi}
 Sulla base di questi sintomi, offri un'analisi iniziale, suggerisci possibili cause, condizioni correlate o disturbi da non escludere. Specifica quando è opportuno rivolgersi a un medico o andare al pronto soccorso. Fornisci consigli pratici per il sollievo temporaneo, se appropriati, e indica quali esami, test o specialisti potrebbero essere utili.
 Usa un linguaggio rassicurante, chiaro e tecnico ma empatico. Ricorda che la tua risposta **non sostituisce una valutazione medica professionale**.`;
     } else {
-      compiledPrompt = `
+      compiledPrompt =  `
 Sei un assistente sanitario digitale. Analizza i dati forniti per calcolare score clinici ufficiali e fornire consigli personalizzati secondo linee guida OMS, ESC, AIFA, ADA e Ministero della Salute.
 
  **DATI RACCOLTI:**
@@ -121,6 +121,8 @@ Usa un linguaggio semplice, empatico, ma tecnico. Comunica con tono rassicurante
  SEZIONE FINALE:
 > "Grazie per aver compilato questo strumento di prevenzione. Ricorda che la prevenzione è il primo passo verso una vita lunga e in salute. Per qualunque dubbio, parlane con il tuo medico."
 `;
+
+    }
 
     console.log("📤 Prompt generato:", compiledPrompt);
 
