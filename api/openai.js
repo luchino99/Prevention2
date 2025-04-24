@@ -35,21 +35,16 @@ Ricorda che la tua risposta **non sostituisce una valutazione medica professiona
   } else if (data.dieta) {
     compiledPrompt = `
 Sei un nutrizionista clinico esperto in nutrizione personalizzata. In base ai dati forniti di seguito, calcola il fabbisogno calorico giornaliero (BMR e TDEE) del paziente secondo le formule Mifflin-St Jeor e le linee guida LARN/SINU. Successivamente, crea un piano alimentare settimanale completo, bilanciato secondo i principi della dieta mediterranea. 
-
 Il piano deve essere coerente con l'obiettivo indicato (dimagrimento, mantenimento, massa), tener conto di eventuali patologie, preferenze, allergie, e fornire suggerimenti e sostituzioni intelligenti. 
-
 Ogni giorno deve contenere:
 - Colazione, spuntino mattina, pranzo, spuntino pomeriggio, cena
 - Grammature indicative degli alimenti
 - Varietà tra i giorni e utilizzo di ingredienti stagionali
 - Almeno 1 proposta alternativa per ogni pasto
-
 In fondo, includi:
 - Note generali e motivazionali
 - Suggerimenti per l’idratazione, attività fisica e stile di vita
-
-Ricorda: la tua risposta NON sostituisce una consulenza clinica, ma si basa sulle più recenti evidenze scientifiche e linee guida ufficiali.
-
+Dati da utilizzare per programmare la dieta:
 - Età: ${data.eta}
 - Sesso: ${data.sesso}
 - Altezza: ${data.altezza} cm
@@ -57,15 +52,11 @@ Ricorda: la tua risposta NON sostituisce una consulenza clinica, ma si basa sull
 - Obiettivo: ${data.obiettivo}
 - Attività fisica: ${data.attivita_fisica}
 - Tipo di lavoro: ${data.tipo_lavoro}
-- Stile alimentare: ${data.preferenze}
 - Intolleranze/allergie: ${data.intolleranze}
 - Alimenti esclusi: ${data.alimenti_esclusi}
-- Numero pasti: ${data.pasti}
-- Orari pasti: ${data.orari_pasti}
 - Patologie: ${data.patologie}
 - Farmaci: ${data.farmaci}
 - Motivazione: ${data.motivazione}
-
 Il piano sarà usato per essere trasformato in PDF.`;
 
   } else {
