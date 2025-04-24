@@ -223,10 +223,14 @@ function inviaOpenAI() {
   document.getElementById("messages").appendChild(loader);
   loader.scrollIntoView();
 
+  const payload = { ...risposte };
+  if (modalita === "dieta") payload.dieta = true;
+  if (modalita === "sintomi") payload.sintomi = risposte.sintomi;
+
   fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ...risposte, dieta: true })
+    body: JSON.stringify(payload)
   })
     .then(async res => {
       loader.remove();
