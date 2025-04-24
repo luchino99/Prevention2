@@ -264,8 +264,8 @@ function inviaOpenAI() {
 }
 
 function generaPDF(contenuto) {
-  console.log("Contenuto ricevuto per il PDF:", contenuto); 
   const pdfElement = document.getElementById("pdf-content");
+
   pdfElement.innerHTML = `
     <div style="font-family: Arial, sans-serif; padding: 30px; max-width: 800px; margin: auto; line-height: 1.6;">
       <h1 style="text-align: center; color: #2c3e50;">🧾 Piano Alimentare Personalizzato</h1>
@@ -280,14 +280,16 @@ function generaPDF(contenuto) {
       </footer>
     </div>
   `;
-  
-  html2pdf().set({
-    margin: 10,
-    filename: 'Piano_Alimentare_Personalizzato.pdf',
-    html2canvas: { scale: 2 },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  }).from(pdfElement).save();
+  setTimeout(() => {
+    html2pdf().set({
+      margin: 10,
+      filename: 'Piano_Alimentare_Personalizzato.pdf',
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    }).from(pdfElement).save();
+  }, 100); // 100ms bastano, ma puoi aumentare se necessario
 }
+
 
   document.addEventListener("DOMContentLoaded", () => {
   console.log("JS caricato");
