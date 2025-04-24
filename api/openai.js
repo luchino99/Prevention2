@@ -18,13 +18,11 @@ export default async function handler(req, res) {
   const data = req.body;
   const safe = (val) => val ?? "non disponibile";
 
-  try {
-    let compiledPrompt = "";
+try {
+  let compiledPrompt = "";
 
-    if (data.sintomi) {
-      
-      compiledPrompt = `
-      
+  if (data.sintomi) {
+    compiledPrompt = `
 Sei un assistente sanitario digitale esperto. Una persona ha descritto i seguenti sintomi:
 
 🩺 **Sintomi riportati:**
@@ -32,8 +30,39 @@ ${data.sintomi}
 
 Sulla base di questi sintomi, offri un'analisi iniziale, suggerisci possibili cause. Specifica quando è opportuno rivolgersi a un medico o andare al pronto soccorso. 
 Ricorda che la tua risposta **non sostituisce una valutazione medica professionale**.`;
-    } else {
-      compiledPrompt =  `
+  
+  } else if (data.dieta) {
+    compiledPrompt = `
+Sei un nutrizionista esperto. Una persona ha richiesto un piano alimentare personalizzato. I suoi dati sono i seguenti:
+
+- Età: ${data.eta}
+- Sesso: ${data.sesso}
+- Altezza: ${data.altezza} cm
+- Peso: ${data.peso} kg
+- Obiettivo: ${data.obiettivo}
+- Attività fisica: ${data.attivita_fisica}
+- Tipo di lavoro: ${data.tipo_lavoro}
+- Stile alimentare: ${data.preferenze}
+- Intolleranze/allergie: ${data.intolleranze}
+- Alimenti esclusi: ${data.alimenti_esclusi}
+- Numero pasti: ${data.pasti}
+- Orari pasti: ${data.orari_pasti}
+- Patologie: ${data.patologie}
+- Farmaci: ${data.farmaci}
+- Motivazione: ${data.motivazione}
+
+Sulla base di queste informazioni, genera un piano alimentare settimanale personalizzato secondo le linee guida SINU, LARN e dieta mediterranea equilibrata. Il piano deve includere:
+- Un esempio di giornata tipo con colazione, spuntini, pranzo e cena
+- Un menu settimanale variato
+- Porzioni indicative (grammature)
+- Suggerimenti per sostituzioni e varietà
+- Preferenze alimentari e restrizioni rispettate
+- Uno stile comunicativo chiaro, motivante, professionale e adatto all’utilizzo quotidiano.
+
+Il piano sarà usato per essere trasformato in PDF.`;
+
+  } else {
+    compiledPrompt =   `
 Sei un assistente sanitario digitale. Analizza i dati forniti per calcolare score clinici ufficiali e fornire consigli personalizzati secondo linee guida OMS, ESC, AIFA, ADA e Ministero della Salute.
 
  **DATI RACCOLTI:**
