@@ -30,8 +30,8 @@ Sei un assistente sanitario digitale esperto. Una persona ha descritto i seguent
 🩺 **Sintomi riportati:**
 ${data.sintomi}
 
-Sulla base di questi sintomi, offri un'analisi iniziale, suggerisci possibili cause, condizioni correlate o disturbi da non escludere. Specifica quando è opportuno rivolgersi a un medico o andare al pronto soccorso. Fornisci consigli pratici per il sollievo temporaneo, se appropriati, e indica quali esami, test o specialisti potrebbero essere utili.
-Usa un linguaggio rassicurante, chiaro e tecnico ma empatico. Ricorda che la tua risposta **non sostituisce una valutazione medica professionale**.`;
+Sulla base di questi sintomi, offri un'analisi iniziale, suggerisci possibili cause. Specifica quando è opportuno rivolgersi a un medico o andare al pronto soccorso. 
+Ricorda che la tua risposta **non sostituisce una valutazione medica professionale**.`;
     } else {
       compiledPrompt =  `
 Sei un assistente sanitario digitale. Analizza i dati forniti per calcolare score clinici ufficiali e fornire consigli personalizzati secondo linee guida OMS, ESC, AIFA, ADA e Ministero della Salute.
@@ -129,7 +129,7 @@ Usa un linguaggio semplice, empatico, ma tecnico. Comunica con tono rassicurante
     console.log("📤 Prompt generato:", compiledPrompt);
 
     const response = await openai.chat.completions.create({
-      model: 'gpt-4',
+      model: 'gpt-3.5-turbo',
       messages: [
         { role: 'system', content: 'Sei un assistente sanitario esperto in prevenzione e analisi dati clinici.' },
         { role: 'user', content: compiledPrompt }
