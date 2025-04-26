@@ -18,12 +18,11 @@ export default async function handler(req, res) {
   const data = req.body;
   const safe = (val) => val ?? "non disponibile";
 
-try {
-  let compiledPrompt = "";
+  try {
+    let compiledPrompt = "";
 
-  if (data.sintomi && data.sintomi.trim() !== "") {
-      
-      compiledPrompt = `
+    if (data.sintomi && data.sintomi.trim() !== "") {
+      compiledPrompt =  `
 Sei un assistente sanitario digitale esperto. Una persona ha descritto i seguenti sintomi:
 
 🩺 **Sintomi riportati:**
@@ -54,7 +53,41 @@ Dati da utilizzare per programmare la dieta:
 - Patologie: ${data.patologie}
 Il piano sarà usato per essere trasformato in PDF.`;
 
-  } else {
+  } else if (data.allenamento) {
+      compiledPrompt = `
+Sei un personal trainer certificato NSCA, ACSM e NASM. In base ai dati raccolti crea un programma di allenamento settimanale altamente personalizzato.
+
+Dati utente:
+- Età: ${safe(data.eta)}
+- Sesso: ${safe(data.sesso)}
+- Altezza: ${safe(data.altezza)} cm
+- Peso: ${safe(data.peso)} kg
+- Obiettivo: ${safe(data.obiettivo)}
+- Livello di esperienza: ${safe(data.esperienza)}
+- Frequenza allenamenti/settimana: ${safe(data.frequenza)}
+- Durata sessioni: ${safe(data.durata)}
+- Luogo allenamento: ${safe(data.luogo)}
+- Attrezzatura disponibile: ${safe(data.attrezzatura)}
+- Vuole cardio: ${safe(data.cardio)}
+- Focus principale: ${safe(data.focus)}
+- Infortuni o limitazioni: ${safe(data.infortuni)}
+- Patologie croniche: ${safe(data.patologie)}
+- Test funzionali:
+  - Pushups: ${safe(data.pushups)}
+  - Squats: ${safe(data.squats)}
+  - Plank: ${safe(data.plank)}
+  - Step Test (frequenza cardiaca): ${safe(data.step_test)}
+
+Crea:
+- Allenamenti divisi per giorno
+- Esercizi specifici, serie, ripetizioni
+- Consigli di progressione
+- Modifiche per eventuali infortuni
+- Programmazione cardio se richiesto
+
+Tono: motivante, preciso, chiaro per utenti non esperti.`;
+
+      } else {
     compiledPrompt =   `
 Sei un assistente sanitario digitale. Analizza i dati forniti per calcolare score clinici ufficiali e fornire consigli personalizzati secondo linee guida OMS, ESC, AIFA, ADA e Ministero della Salute.
 
@@ -153,7 +186,7 @@ Usa un linguaggio semplice, empatico, ma tecnico. Comunica con tono rassicurante
     const response = await openai.chat.completions.create({
       model: 'gpt-4-turbo',
       messages: [
-        { role: 'system', content: 'Sei un assistente sanitario esperto in prevenzione e analisi dati clinici.' },
+        { role: 'system', content: 'Sei un assistente sanitario esperto in prevenzione e analisi dati clinici, nutrizione e allenamento.' },
         { role: 'user', content: compiledPrompt }
       ],
       temperature: 0.7
