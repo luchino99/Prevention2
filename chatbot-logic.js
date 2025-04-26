@@ -370,38 +370,48 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const input = document.getElementById("input");
   input.addEventListener("keypress", async function (e) {
-    if (e.key === "Enter") {
-      const val = input.value.trim();
-      if (!val) return;  
+  if (e.key === "Enter") {
+    const val = input.value.trim();
+    if (!val) return;
 
+    if (!emailInserita) {
       if (!val.includes("@")) {
         mostraMessaggio("⚠️ Inserisci un indirizzo email valido (esempio@email.com).");
         input.value = "";
         return;
-        }
-      if (!emailInserita) {
-        emailUtente = val;
-        risposte.email = emailUtente;
-        mostraMessaggio(emailUtente, "user");
-        input.value = "";
-
-        const datiRecuperati = await recuperaAnagraficaDalDatabase(emailUtente);
-        
-        if (datiRecuperati) {
-          risposte = datiRecuperati;
-          mostraMessaggio("✅ Bentornato! Abbiamo recuperato i tuoi dati.");
-        } else {
-          mostraMessaggio("👋 Non abbiamo trovato dati salvati. Procediamo con un nuovo profilo.");
-        }
-
-        emailInserita = true;  // <<<<< Indica che l'email è stata inserita!
-        setTimeout(mostraScelteIniziali, 1000);  // Dopo email ➔ mostra scelta modalità
-
-      } else {
-        next();
       }
+
+      emailUtente = val;
+      risposte.email = emailUtente;
+      mostraMessaggio(emailUtente, "user");
+      input.value = "";
+
+      const datiRecuperati = await recuperaAnagraficaDalDatabase(emailUtente);
+
+      if (datiRecuperati) {
+        risposte = datiRecuperati;
+        mostraMessaggio("✅ Bentornato! Abbiamo recuperato i tuoi dati.");
+      } else {
+        mostraMessaggio("👋 Non abbiamo trovato dati salvati. Procediamo con un nuovo profilo.");
+      }
+
+      emailInserita = true;   // dopo aver finito fase email
+      setTimeout(mostraScelteIniziali, 1000);
+
+    } else {
+      // Qui controlliamo: se modalita NON è stata ancora scelta, ignoriamo input
+      if (modalita === null) {
+        mostraMessaggio("❗ Seleziona prima una modalità cliccando uno dei bottoni.");
+        input.value = "";
+        return;
+      }
+
+      // Se modalita è già scelta allora vai con next()
+      next();
     }
-  });
+  }
+});
+
 
   const toggleBtn = document.getElementById("theme-toggle");
   if (toggleBtn) {
