@@ -92,8 +92,29 @@ const domandePianoAlimentare = [
   { key: "orari_pasti", testo: "Hai orari fissi per i pasti principali? (opzionale)" },
   { key: "patologie", testo: "Hai patologie diagnosticate? (es: diabete, ipertensione, gastrite, ecc.)" },
   { key: "farmaci", testo: "Stai assumendo farmaci al momento? Se si, elencali (opzionale)" },
-  
+
+  const domandeAllenamento = [
+  { key: "eta", testo: "Quanti anni hai?" },
+  { key: "sesso", testo: "Qual è il tuo sesso biologico? (maschio/femmina)" },
+  { key: "altezza", testo: "Quanto sei alto/a in cm?" },
+  { key: "peso", testo: "Quanto pesi in kg?" },
+  { key: "obiettivo", testo: "Qual è il tuo obiettivo principale? (dimagrimento/aumento massa/definizione/resistenza/postura/preparazione atletica)" },
+  { key: "esperienza", testo: "Che livello di esperienza hai? (principiante/intermedio/avanzato)" },
+  { key: "frequenza", testo: "Quanti allenamenti a settimana vuoi fare? (1-2/3-4/5-6)" },
+  { key: "durata", testo: "Quanto tempo dedichi a ogni sessione? (20 min/30-45 min/1 ora o più)" },
+  { key: "luogo", testo: "Dove ti alleni? (palestra/casa/all'aperto)" },
+  { key: "attrezzatura", testo: "Quali attrezzi hai? (manubri/bilanciere/elastici/kettlebell/tappetino/nessuno)" },
+  { key: "cardio", testo: "Vuoi includere esercizi cardio? (sì/no)" },
+  { key: "focus", testo: "Preferisci forza muscolare, resistenza cardio o entrambi?" },
+  { key: "infortuni", testo: "Hai infortuni o limitazioni fisiche? (es. schiena/ginocchia/spalle)" },
+  { key: "patologie", testo: "Hai patologie croniche? (diabete/ipertensione/altre)" },
+  { key: "pushups", testo: "Quanti piegamenti consecutivi riesci a fare?" },
+  { key: "squats", testo: "Quanti squat a corpo libero completi senza pausa?" },
+  { key: "plank", testo: "Quanto tempo mantieni la posizione plank?" },
+  { key: "step_test", testo: "Dopo 3 minuti di step, misura il battito cardiaco (opzionale)" }
 ];
+  
+
 
 
 let domande = [];
@@ -115,7 +136,7 @@ function mostraMessaggio(testo, classe = "bot") {
 }
 
 function mostraScelteIniziali() {
-  mostraMessaggio("👋 Ciao! Come posso aiutarti oggi?\n\n🔹 Hai bisogno di aiuto per ricevere consigli su una *situazione medica attuale* o sintomi?\n\n🔹 Oppure vuoi ricevere consigli per la *prevenzione della salute*?\n\n🔹 O desideri un *piano alimentare personalizzato*?");
+  mostraMessaggio("👋 Ciao! Come posso aiutarti oggi?\n\n🔹 Hai bisogno di aiuto per ricevere consigli su una *situazione medica attuale* o sintomi?\n\n🔹 Oppure vuoi ricevere consigli per la *prevenzione della salute*?\n\n🔹 O desideri un *piano alimentare* o *programma di allenamento* personalizzato?");
 
   const btnContainer = document.createElement("div");
   btnContainer.className = "button-container";
@@ -130,14 +151,20 @@ function mostraScelteIniziali() {
   prevenzioneBtn.innerText = "🛡️ Voglio fare prevenzione";
   prevenzioneBtn.onclick = () => selezionaModalita("prevenzione");
 
-  const dietaBtn = document.createElement("button"); 
+  const dietaBtn = document.createElement("button");
   dietaBtn.className = "scelta-btn";
   dietaBtn.innerText = "🍽️ Voglio un piano alimentare su misura";
   dietaBtn.onclick = () => selezionaModalita("dieta");
 
+  const allenamentoBtn = document.createElement("button");
+  allenamentoBtn.className = "scelta-btn";
+  allenamentoBtn.innerText = "🏋️‍♂️ Voglio un piano di allenamento su misura";
+  allenamentoBtn.onclick = () => selezionaModalita("allenamento");
+
   btnContainer.appendChild(sintomiBtn);
   btnContainer.appendChild(prevenzioneBtn);
-  btnContainer.appendChild(dietaBtn); 
+  btnContainer.appendChild(dietaBtn);
+  btnContainer.appendChild(allenamentoBtn);
 
   document.getElementById("messages").appendChild(btnContainer);
 }
@@ -147,13 +174,16 @@ function selezionaModalita(tipo) {
   document.querySelectorAll(".button-container").forEach(el => el.remove());
 
   if (tipo === "sintomi") {
-    mostraMessaggio("🩺 Perfetto! Per aiutarti al meglio, descrivimi i tuoi sintomi o i sintomi della persona che vuoi aiutare.");
+    mostraMessaggio("🩺 Perfetto! Per aiutarti al meglio, descrivimi i tuoi sintomi.");
   } else if (tipo === "prevenzione") {
     domande = [...domandeBase];
     mostraMessaggio(introduzione);
   } else if (tipo === "dieta") {
     domande = [...domandePianoAlimentare];
-    mostraMessaggio("🍽️ Ottimo! Per creare un piano alimentare personalizzato, rispondi alle seguenti domande:");
+    mostraMessaggio("🍽️ Ottimo! Rispondi a queste domande per il piano alimentare su misura:");
+  } else if (tipo === "allenamento") {
+    domande = [...domandeAllenamento];
+    mostraMessaggio("🏋️‍♂️ Fantastico! Rispondi a queste domande per creare il tuo piano di allenamento:");
   }
 }
 
@@ -228,6 +258,7 @@ function inviaOpenAI() {
   const payload = { ...risposte };
   if (modalita === "dieta") payload.dieta = true;
   if (modalita === "sintomi") payload.sintomi = risposte.sintomi;
+  if (modalita === "allenamento") payload.allenamento = true;
 
   fetch(endpoint, {
     method: "POST",
@@ -245,21 +276,13 @@ function inviaOpenAI() {
       }
 
       const data = await res.json();
-      console.log("📦 Risposta ricevuta dall'AI:", data);
-      mostraMessaggio("🧐 Risposta dell'AI:");
+      console.log("📦 Risposta ricevuta:", data);
       mostraMessaggio(data.risposta || "⚠️ Nessuna risposta valida ricevuta.");
-      if (modalita === "dieta") {
-      const downloadBtn = document.createElement("button");
-      downloadBtn.innerText = "📄 Scarica piano alimentare in PDF";
-      downloadBtn.style.marginTop = "15px";
-      downloadBtn.onclick = () => generaPDF(data.risposta);
-      document.getElementById("messages").appendChild(downloadBtn);
-}
     })
     .catch(err => {
       loader.remove();
-      mostraMessaggio("⚠️ Errore durante la comunicazione con l'AI. Riprova più tardi.");
-      console.error("❌ Errore durante la fetch:", err);
+      console.error("❌ Errore fetch:", err);
+      mostraMessaggio("⚠️ Errore nella comunicazione col server.");
     });
 }
 
