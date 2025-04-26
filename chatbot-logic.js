@@ -91,7 +91,8 @@ const domandePianoAlimentare = [
   { key: "pasti", testo: "Quanti pasti al giorno preferisci fare? (includi colazione e spuntini)" },
   { key: "orari_pasti", testo: "Hai orari fissi per i pasti principali? (opzionale)" },
   { key: "patologie", testo: "Hai patologie diagnosticate? (es: diabete, ipertensione, gastrite, ecc.)" },
-  { key: "farmaci", testo: "Stai assumendo farmaci al momento? Se si, elencali (opzionale)" },
+  { key: "farmaci", testo: "Stai assumendo farmaci al momento? Se si, elencali (opzionale)" }, 
+  ];
 
   const domandeAllenamento = [
   { key: "eta", testo: "Quanti anni hai?" },
