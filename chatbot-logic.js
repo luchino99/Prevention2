@@ -317,6 +317,11 @@ function generaPDF(contenuto) {
   const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
 async function salvaAnagraficaNelDatabase(dati) {
+  if (!dati.eta || !dati.sesso) {
+    console.error("Dati insufficienti, non salvo nel database.");
+    return;
+  }
+  
   const { data, error } = await supabase
     .from('anagrafica_utenti')
     .insert([dati]);
