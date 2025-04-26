@@ -320,18 +320,28 @@ const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
 async function salvaAnagraficaNelDatabase(dati) {
   try {
+    const datiAnagrafica = {
+      email: dati.email,
+      eta: dati.eta,
+      sesso: dati.sesso,
+      altezza: dati.altezza,
+      peso: dati.peso
+    };
+
     const { data, error } = await supabaseClient
       .from('users')
-      .insert([dati]);
+      .insert([datiAnagrafica]);
+
     if (error) {
       console.error("Errore API salvataggio:", error);
     } else {
-      console.log("✅ Dati salvati correttamente:", data);
+      console.log("✅ Dati anagrafici salvati correttamente:", data);
     }
   } catch (error) {
     console.error("❌ Errore di rete salvataggio:", error);
   }
 }
+
 
 
 async function recuperaAnagraficaDalDatabase(email) {
