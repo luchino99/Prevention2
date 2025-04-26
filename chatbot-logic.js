@@ -232,7 +232,7 @@ function next() {
 
   step++;
   
-  while (step < domande.length && domande[step].condizione) {
+ while (step < domande.length && domande[step].condizione) {
     const cond = domande[step].condizione;
     const risposta = risposte[cond];
     if (risposta && risposta.toLowerCase() === "no") {
@@ -241,11 +241,8 @@ function next() {
       break;
     }
   }
-
+ 
   if (step < domande.length) {
-    setTimeout(() => mostraMessaggio(domande[step].testo), 500);
-  } else {
-    if (step < domande.length) {
   setTimeout(() => mostraMessaggio(domande[step].testo), 500);
 } else {
   salvaAnagraficaNelDatabase(risposte);  // <<< AGGIUNGI QUI!!!
