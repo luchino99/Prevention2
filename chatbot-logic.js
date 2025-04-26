@@ -389,11 +389,21 @@ document.addEventListener("DOMContentLoaded", () => {
       const datiRecuperati = await recuperaAnagraficaDalDatabase(emailUtente);
 
       if (datiRecuperati) {
-        risposte = datiRecuperati;
-        mostraMessaggio("✅ Bentornato! Abbiamo recuperato i tuoi dati.");
-      } else {
-        mostraMessaggio("👋 Non abbiamo trovato dati salvati. Procediamo con un nuovo profilo.");
-      }
+  risposte = datiRecuperati;
+  mostraMessaggio("✅ Bentornato! Abbiamo recuperato i tuoi dati.");
+
+  // ⚡️ Se ci sono già abbastanza dati salvati, chiedi se vogliono aggiornare o procedere
+  if (risposte && Object.keys(risposte).length > 5) {  // (5 è indicativo, puoi cambiarlo)
+    mostraMessaggio("Vuoi aggiornare il tuo profilo oppure iniziare un nuovo test?");
+    mostraScelteIniziali();  // Mostra comunque le scelte
+  } else {
+    mostraScelteIniziali();
+  }
+} else {
+  mostraMessaggio("👋 Non abbiamo trovato dati salvati. Procediamo con un nuovo profilo.");
+  mostraScelteIniziali();
+}
+
 
       emailInserita = true;   // dopo aver finito fase email
       setTimeout(mostraScelteIniziali, 1000);
