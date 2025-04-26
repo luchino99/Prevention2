@@ -317,37 +317,48 @@ function generaPDF(contenuto) {
   const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
 async function salvaAnagraficaNelDatabase(dati) {
-  if (!dati.eta || !dati.sesso) {
-    console.error("Dati insufficienti, non salvo nel database.");
-    return;
-  }
-  
-  const { data, error } = await supabase
-    .from('anagrafica_utenti')
-    .insert([dati]);
+  try {
+    const res = await fetch('https://TUO_DOMINIO_VERCEL.app/api/salvaAnagrafica', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dati)
+    });
 
-  if (error) {
-    console.error("Errore salvataggio dati:", error);
-  } else {
-    console.log("Dati salvati correttamente:", data);
+    const result = await res.json();
+
+    if (!res.ok) {
+      console.error("Errore API salvataggio:", result.error);
+    } else {
+      console.log("Dati salvati correttamente:", result.data);
+    }
+  } catch (error) {
+    console.error("Errore di rete salvataggio:", error);
   }
 }
 
 async function recuperaAnagraficaDalDatabase(email) {
-  const { data, error } = await supabase
-    .from('anagrafica_utenti')
-    .select('*')
-    .eq('email', email)
-    .single();
+  try {
+    const res = await fetch('https://TUO_DOMINIO_VERCEL.app/api/recuperaAnagrafica', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
 
-  if (error) {
-    console.error("Errore recupero dati:", error);
+    const result = await res.json();
+
+    if (!res.ok) {
+      console.error("Errore API recupero:", result.error);
+      return null;
+    } else {
+      console.log("Dati recuperati:", result.data);
+      return result.data;
+    }
+  } catch (error) {
+    console.error("Errore di rete recupero:", error);
     return null;
-  } else {
-    console.log("Dati recuperati:", data);
-    return data;
   }
 }
+
 
   document.addEventListener("DOMContentLoaded", () => {
   console.log("JS caricato");
