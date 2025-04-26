@@ -318,46 +318,46 @@ function generaPDF(contenuto) {
 
 async function salvaAnagraficaNelDatabase(dati) {
   try {
-    const res = await fetch('https://prevention2.vercel.app/api/salvaAnagrafica', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(dati)
-    });
+    const { data, error } = await supabaseClient
+      .from('users')   // <<< QUI users, non anagrafica
+      .insert([dati]);
 
-    const result = await res.json();
-
-    if (!res.ok) {
-      console.error("Errore API salvataggio:", result.error);
+    if (error) {
+      console.error("Errore API salvataggio:", error);
     } else {
-      console.log("Dati salvati correttamente:", result.data);
+      console.log("✅ Dati salvati correttamente:", data);
     }
   } catch (error) {
-    console.error("Errore di rete salvataggio:", error);
+    console.error("❌ Errore di rete salvataggio:", error);
   }
 }
 
 async function recuperaAnagraficaDalDatabase(email) {
   try {
-    const res = await fetch('https://prevention2.vercel.app/api/recuperaAnagrafica'
-  , { method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
-    });
+    const { data, error } = await supabaseClient
+      .from('users')   // <<< QUI users, non anagrafica
+      .select('*')
+      .eq('email', email)
+      .single();
 
-    const result = await res.json();
-
-    if (!res.ok) {
-      console.error("Errore API recupero:", result.error);
+    if (error && error.code !== 'PGRST116') {
+      console.error("Errore API recupero:", error);
       return null;
-    } else {
-      console.log("Dati recuperati:", result.data);
-      return result.data;
     }
+
+    if (!data) {
+      console.log("ℹ️ Nessun dato trovato per questa email.");
+      return null;
+    }
+
+    console.log("✅ Dati recuperati:", data);
+    return data;
   } catch (error) {
-    console.error("Errore di rete recupero:", error);
+    console.error("❌ Errore di rete recupero:", error);
     return null;
   }
 }
+
 
 
 let emailUtente = "";
