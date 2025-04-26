@@ -392,10 +392,9 @@ document.addEventListener("DOMContentLoaded", () => {
   risposte = datiRecuperati;
   mostraMessaggio("✅ Bentornato! Abbiamo recuperato i tuoi dati.");
 
-  // ⚡️ Se ci sono già abbastanza dati salvati, chiedi se vogliono aggiornare o procedere
-  if (risposte && Object.keys(risposte).length > 5) {  // (5 è indicativo, puoi cambiarlo)
+  if (risposte && Object.keys(risposte).length > 5) {
     mostraMessaggio("Vuoi aggiornare il tuo profilo oppure iniziare un nuovo test?");
-   
+    mostraScelteIniziali();  // ✅ AGGIUNGI QUESTO
   } else {
     mostraScelteIniziali();
   }
@@ -403,6 +402,7 @@ document.addEventListener("DOMContentLoaded", () => {
   mostraMessaggio("👋 Non abbiamo trovato dati salvati. Procediamo con un nuovo profilo.");
   mostraScelteIniziali();
 }
+
 
 
       emailInserita = true;   // dopo aver finito fase email
