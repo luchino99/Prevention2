@@ -338,8 +338,8 @@ async function salvaAnagraficaNelDatabase(dati) {
 
 async function recuperaAnagraficaDalDatabase(email) {
   try {
-    const res = await fetch('https://TUO_DOMINIO_VERCEL.app/api/recuperaAnagrafica', {
-      method: 'POST',
+    const res = await fetch('https://prevention2.vercel.app/api/recuperaAnagrafica'
+  , { method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email })
     });
