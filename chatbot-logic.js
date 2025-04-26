@@ -318,7 +318,7 @@ function generaPDF(contenuto) {
 
 async function salvaAnagraficaNelDatabase(dati) {
   try {
-    const { data, error } = await supabaseClient
+    const { data, error } = await supabase
       .from('users')   // <<< QUI users, non anagrafica
       .insert([dati]);
 
@@ -334,7 +334,7 @@ async function salvaAnagraficaNelDatabase(dati) {
 
 async function recuperaAnagraficaDalDatabase(email) {
   try {
-    const { data, error } = await supabaseClient
+    const { data, error } = await supabase
       .from('users')   // <<< QUI users, non anagrafica
       .select('*')
       .eq('email', email)
@@ -395,7 +395,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ⚡️ Se ci sono già abbastanza dati salvati, chiedi se vogliono aggiornare o procedere
   if (risposte && Object.keys(risposte).length > 5) {  // (5 è indicativo, puoi cambiarlo)
     mostraMessaggio("Vuoi aggiornare il tuo profilo oppure iniziare un nuovo test?");
-    mostraScelteIniziali();  // Mostra comunque le scelte
+   
   } else {
     mostraScelteIniziali();
   }
@@ -406,7 +406,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
       emailInserita = true;   // dopo aver finito fase email
-      setTimeout(mostraScelteIniziali, 1000);
+      
 
     } else {
       // Qui controlliamo: se modalita NON è stata ancora scelta, ignoriamo input
