@@ -315,18 +315,14 @@ function generaPDF(contenuto) {
   const supabaseUrl = 'https://lwuhdgrkaoyvejmzfbtx.supabase.co';  // ➔ Cambia con la tua URL
   const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3dWhkZ3JrYW95dmVqbXpmYnR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2NzU1MDcsImV4cCI6MjA2MTI1MTUwN30.1c5iH4PYW-HeigfXkPSgnVK3t02Gv3krSeo7dDSqqsk';                  // ➔ Cambia con la tua API KEY
   
-const { createClient } = supabase;
-const supabaseClient = createClient(supabaseUrl, supabaseKey);
-
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = window.supabase;  // caricato da CDN
+const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
 async function salvaAnagraficaNelDatabase(dati) {
   try {
     const { data, error } = await supabaseClient
-  .from('users')
-  .insert([dati]);
-
-
+      .from('users')
+      .insert([dati]);
     if (error) {
       console.error("Errore API salvataggio:", error);
     } else {
@@ -337,25 +333,22 @@ async function salvaAnagraficaNelDatabase(dati) {
   }
 }
 
+
 async function recuperaAnagraficaDalDatabase(email) {
   try {
-    const { data, error } =await supabaseClient
-  .from('users')
-  .select('*')
-  .eq('email', email)
-  .single();
-
-
+    const { data, error } = await supabaseClient
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .single();
     if (error && error.code !== 'PGRST116') {
       console.error("Errore API recupero:", error);
       return null;
     }
-
     if (!data) {
       console.log("ℹ️ Nessun dato trovato per questa email.");
       return null;
     }
-
     console.log("✅ Dati recuperati:", data);
     return data;
   } catch (error) {
@@ -363,6 +356,7 @@ async function recuperaAnagraficaDalDatabase(email) {
     return null;
   }
 }
+
 
 
 
