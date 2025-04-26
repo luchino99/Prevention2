@@ -360,15 +360,49 @@ async function recuperaAnagraficaDalDatabase(email) {
 }
 
 
-  document.addEventListener("DOMContentLoaded", () => {
-  console.log("JS caricato");
-  mostraScelteIniziali();
+let emailUtente = "";
+let emailInserita = false;
 
-  document.getElementById("input").addEventListener("keypress", function (e) {
-  if (e.key === "Enter") {
-      next();
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("JS caricato");
+
+  mostraMessaggio("📧 Prima di iniziare, inserisci il tuo indirizzo email:");
+
+  const input = document.getElementById("input");
+  input.addEventListener("keypress", async function (e) {
+    if (e.key === "Enter") {
+      const val = input.value.trim();
+      if (!val) return;  
+
+      if (!val.includes("@")) {
+        mostraMessaggio("⚠️ Inserisci un indirizzo email valido (esempio@email.com).");
+        input.value = "";
+        return;
+        }
+      if (!emailInserita) {
+        emailUtente = val;
+        risposte.email = emailUtente;
+        mostraMessaggio(emailUtente, "user");
+        input.value = "";
+
+        const datiRecuperati = await recuperaAnagraficaDalDatabase(emailUtente);
+        
+        if (datiRecuperati) {
+          risposte = datiRecuperati;
+          mostraMessaggio("✅ Bentornato! Abbiamo recuperato i tuoi dati.");
+        } else {
+          mostraMessaggio("👋 Non abbiamo trovato dati salvati. Procediamo con un nuovo profilo.");
+        }
+
+        emailInserita = true;  // <<<<< Indica che l'email è stata inserita!
+        setTimeout(mostraScelteIniziali, 1000);  // Dopo email ➔ mostra scelta modalità
+
+      } else {
+        next();
+      }
     }
   });
+
   const toggleBtn = document.getElementById("theme-toggle");
   if (toggleBtn) {
     toggleBtn.addEventListener("click", () => {
@@ -376,8 +410,10 @@ async function recuperaAnagraficaDalDatabase(email) {
       const isLight = document.documentElement.classList.contains("light-theme");
       localStorage.setItem("theme", isLight ? "light" : "dark");
     });
-  if (localStorage.getItem("theme") === "light") {
+    if (localStorage.getItem("theme") === "light") {
       document.documentElement.classList.add("light-theme");
     }
   }
 });
+
+  
