@@ -227,6 +227,7 @@ function next() {
         domande = [...domande.slice(0, step + 1), ...domandeFemminili, ...domande.slice(step + 1)];
       }
     }
+    
   }
 
   step++;
@@ -244,8 +245,12 @@ function next() {
   if (step < domande.length) {
     setTimeout(() => mostraMessaggio(domande[step].testo), 500);
   } else {
-    mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi dati...");
-    inviaOpenAI();
+    if (step < domande.length) {
+  setTimeout(() => mostraMessaggio(domande[step].testo), 500);
+} else {
+  salvaAnagraficaNelDatabase(risposte);  // <<< AGGIUNGI QUI!!!
+  mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi dati...");
+  inviaOpenAI();
   }
 }
 
@@ -328,7 +333,7 @@ async function salvaAnagraficaNelDatabase(dati) {
 
 async function recuperaAnagraficaDalDatabase(email) {
   const { data, error } = await supabase
-    .from('users')
+    .from('anagrafica_utenti')
     .select('*')
     .eq('email', email)
     .single();
