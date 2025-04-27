@@ -378,9 +378,6 @@ async function recuperaAnagraficaDalDatabase(email) {
   }
 }
 
-
-
-
 let emailUtente = "";
 let emailInserita = false;
 let attesaConfermaAggiornamento = false;
@@ -390,92 +387,80 @@ document.addEventListener("DOMContentLoaded", () => {
 
   mostraMessaggio("📧 Prima di iniziare, inserisci il tuo indirizzo email:");
 
-  const input = document.getElementById("input");
-  input.addEventListener("keypress", async function (e) {
-    if (e.key === "Enter") {
-      const val = input.value.trim();
-      if (!val) return;
+const input = document.getElementById("input");
+input.addEventListener("keypress", async function (e) {
+  if (e.key === "Enter") {
+    const val = input.value.trim();
+    if (!val) return;
 
-      if (!emailInserita) {
-        if (!val.includes("@")) {
-          mostraMessaggio("⚠️ Inserisci un indirizzo email valido (esempio@email.com).");
-          input.value = "";
-          return;
-        }
-
-        emailUtente = val;
-        risposte.email = emailUtente;
-        mostraMessaggio(emailUtente, "user");
+    if (!emailInserita) {
+      if (!val.includes("@")) {
+        mostraMessaggio("⚠️ Inserisci un indirizzo email valido (esempio@email.com).");
         input.value = "";
+        return;
+      }
 
-        const datiRecuperati = await recuperaAnagraficaDalDatabase(emailUtente);
+      emailUtente = val;
+      risposte.email = emailUtente;
+      mostraMessaggio(emailUtente, "user");
+      input.value = "";
 
-        if (datiRecuperati) {
-          risposte = datiRecuperati;
-          mostraMessaggio(`✅ Bentornato! Abbiamo trovato questi dati:\n
+      const datiRecuperati = await recuperaAnagraficaDalDatabase(emailUtente);
+
+      if (datiRecuperati) {
+        risposte = datiRecuperati;
+        mostraMessaggio(`✅ Bentornato! Abbiamo trovato questi dati:\n
 - Età: ${risposte.eta}
 - Sesso: ${risposte.sesso}
 - Altezza: ${risposte.altezza} cm
 - Peso: ${risposte.peso} kg\n
 Vuoi aggiornarli? (sì / no)`);
-          
-          attesaConfermaAggiornamento = true;
-        } else {
-          mostraMessaggio("👋 Non abbiamo trovato dati salvati. Procediamo con un nuovo profilo.");
-          mostraScelteIniziali();
-        }
         
-        emailInserita = true;
-        return;  // FERMIAMOCI QUI, aspettiamo la risposta dell'utente
+        attesaConfermaAggiornamento = true;
+      } else {
+        mostraMessaggio("👋 Non abbiamo trovato dati salvati. Procediamo con un nuovo profilo.");
+        mostraScelteIniziali();
       }
       
-
-    } else {
-      // Qui controlliamo: se modalita NON è stata ancora scelta, ignoriamo input
-      if (modalita === null) {
-        mostraMessaggio("❗ Seleziona prima una modalità cliccando uno dei bottoni.");
-        input.value = "";
-        return;
-      }
-
-            if (attesaConfermaAggiornamento) {
-        const risposta = val.toLowerCase();
-        if (risposta === "no") {
-          mostraMessaggio("👌 Perfetto, manteniamo i dati esistenti.");
-          mostraScelteIniziali();
-          attesaConfermaAggiornamento = false;
-        } else if (risposta === "sì" || risposta === "si") {
-          mostraMessaggio("✏️ Procediamo ad aggiornare i tuoi dati.");
-          domande = [
-            { key: "eta", testo: "Aggiorna la tua età:" },
-            { key: "sesso", testo: "Aggiorna il tuo sesso biologico:" },
-            { key: "altezza", testo: "Aggiorna la tua altezza in cm:" },
-            { key: "peso", testo: "Aggiorna il tuo peso in kg:" }
-          ];
-          step = -1;
-          attesaConfermaAggiornamento = false;
-          next();
-        } else {
-          mostraMessaggio("❗ Per favore rispondi 'sì' o 'no'.");
-        }
-        input.value = "";
-        return;
-      }
-
-      // Se siamo qui: email è inserita, non siamo in attesa ➔ continua col test
-      if (modalita === null) {
-        mostraMessaggio("❗ Seleziona prima una modalità cliccando uno dei bottoni.");
-        input.value = "";
-        return;
-      }
-      
-      next();
+      emailInserita = true;
+      return; // aspettiamo la risposta sì / no
     }
+
+    if (attesaConfermaAggiornamento) {
+      const risposta = val.toLowerCase();
+      if (risposta === "no") {
+        mostraMessaggio("👌 Perfetto, manteniamo i dati esistenti.");
+        mostraScelteIniziali();
+        attesaConfermaAggiornamento = false;
+      } else if (risposta === "sì" || risposta === "si") {
+        mostraMessaggio("✏️ Procediamo ad aggiornare i tuoi dati.");
+        domande = [
+          { key: "eta", testo: "Aggiorna la tua età:" },
+          { key: "sesso", testo: "Aggiorna il tuo sesso biologico:" },
+          { key: "altezza", testo: "Aggiorna la tua altezza in cm:" },
+          { key: "peso", testo: "Aggiorna il tuo peso in kg:" }
+        ];
+        step = -1;
+        attesaConfermaAggiornamento = false;
+        next();
+      } else {
+        mostraMessaggio("❗ Per favore rispondi 'sì' o 'no'.");
+      }
+      input.value = "";
+      return;
+    }
+
+    if (modalita === null) {
+      mostraMessaggio("❗ Seleziona prima una modalità cliccando uno dei bottoni.");
+      input.value = "";
+      return;
+    }
+
+    next(); // --> se tutto ok, si va avanti col test
   }
 });
 
-
-  const toggleBtn = document.getElementById("theme-toggle");
+const toggleBtn = document.getElementById("theme-toggle");
   if (toggleBtn) {
     toggleBtn.addEventListener("click", () => {
       document.documentElement.classList.toggle("light-theme");
