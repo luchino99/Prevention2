@@ -383,6 +383,7 @@ async function recuperaAnagraficaDalDatabase(email) {
 
 let emailUtente = "";
 let emailInserita = false;
+let attesaConfermaAggiornamento = false;
 
 document.addEventListener("DOMContentLoaded", () => {
   console.log("JS caricato");
@@ -391,42 +392,42 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const input = document.getElementById("input");
   input.addEventListener("keypress", async function (e) {
-  if (e.key === "Enter") {
-    const val = input.value.trim();
-    if (!val) return;
+    if (e.key === "Enter") {
+      const val = input.value.trim();
+      if (!val) return;
 
-    if (!emailInserita) {
-      if (!val.includes("@")) {
-        mostraMessaggio("⚠️ Inserisci un indirizzo email valido (esempio@email.com).");
+      if (!emailInserita) {
+        if (!val.includes("@")) {
+          mostraMessaggio("⚠️ Inserisci un indirizzo email valido (esempio@email.com).");
+          input.value = "";
+          return;
+        }
+
+        emailUtente = val;
+        risposte.email = emailUtente;
+        mostraMessaggio(emailUtente, "user");
         input.value = "";
-        return;
+
+        const datiRecuperati = await recuperaAnagraficaDalDatabase(emailUtente);
+
+        if (datiRecuperati) {
+          risposte = datiRecuperati;
+          mostraMessaggio(`✅ Bentornato! Abbiamo trovato questi dati:\n
+- Età: ${risposte.eta}
+- Sesso: ${risposte.sesso}
+- Altezza: ${risposte.altezza} cm
+- Peso: ${risposte.peso} kg\n
+Vuoi aggiornarli? (sì / no)`);
+          
+          attesaConfermaAggiornamento = true;
+        } else {
+          mostraMessaggio("👋 Non abbiamo trovato dati salvati. Procediamo con un nuovo profilo.");
+          mostraScelteIniziali();
+        }
+        
+        emailInserita = true;
+        return;  // FERMIAMOCI QUI, aspettiamo la risposta dell'utente
       }
-
-      emailUtente = val;
-      risposte.email = emailUtente;
-      mostraMessaggio(emailUtente, "user");
-      input.value = "";
-
-      const datiRecuperati = await recuperaAnagraficaDalDatabase(emailUtente);
-
-      if (datiRecuperati) {
-  risposte = datiRecuperati;
-  mostraMessaggio("✅ Bentornato! Abbiamo recuperato i tuoi dati.");
-
-  if (risposte && Object.keys(risposte).length > 5) {
-    mostraMessaggio("Vuoi aggiornare il tuo profilo oppure iniziare un nuovo test?");
-    mostraScelteIniziali();  // ✅ AGGIUNGI QUESTO
-  } else {
-    mostraScelteIniziali();
-  }
-} else {
-  mostraMessaggio("👋 Non abbiamo trovato dati salvati. Procediamo con un nuovo profilo.");
-  mostraScelteIniziali();
-}
-
-
-
-      emailInserita = true;   // dopo aver finito fase email
       
 
     } else {
@@ -437,7 +438,37 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // Se modalita è già scelta allora vai con next()
+            if (attesaConfermaAggiornamento) {
+        const risposta = val.toLowerCase();
+        if (risposta === "no") {
+          mostraMessaggio("👌 Perfetto, manteniamo i dati esistenti.");
+          mostraScelteIniziali();
+          attesaConfermaAggiornamento = false;
+        } else if (risposta === "sì" || risposta === "si") {
+          mostraMessaggio("✏️ Procediamo ad aggiornare i tuoi dati.");
+          domande = [
+            { key: "eta", testo: "Aggiorna la tua età:" },
+            { key: "sesso", testo: "Aggiorna il tuo sesso biologico:" },
+            { key: "altezza", testo: "Aggiorna la tua altezza in cm:" },
+            { key: "peso", testo: "Aggiorna il tuo peso in kg:" }
+          ];
+          step = -1;
+          attesaConfermaAggiornamento = false;
+          next();
+        } else {
+          mostraMessaggio("❗ Per favore rispondi 'sì' o 'no'.");
+        }
+        input.value = "";
+        return;
+      }
+
+      // Se siamo qui: email è inserita, non siamo in attesa ➔ continua col test
+      if (modalita === null) {
+        mostraMessaggio("❗ Seleziona prima una modalità cliccando uno dei bottoni.");
+        input.value = "";
+        return;
+      }
+      
       next();
     }
   }
