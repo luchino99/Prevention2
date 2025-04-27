@@ -338,6 +338,11 @@ const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
 async function salvaAnagraficaNelDatabase(dati) {
   try {
+    if (!dati.email) {
+      console.warn("⚠️ Email non presente, salto il salvataggio anagrafica.");
+      return;
+    }
+
     const datiAnagrafica = {
       email: dati.email,
       eta: dati.eta,
@@ -359,8 +364,18 @@ async function salvaAnagraficaNelDatabase(dati) {
     console.error("❌ Errore di rete salvataggio:", error);
   }
 }
+
 async function salvaCompilazioneNelDatabase(risposte, modalita) {
   try {
+    if (!modalita) {
+      console.warn("⚠️ Modalità non definita, non salvo la compilazione.");
+      return;
+    }
+    if (!risposte.email) {
+      console.warn("⚠️ Email non presente, non salvo la compilazione.");
+      return;
+    }
+
     const { data, error } = await supabaseClient
       .from('compilazioni')
       .insert([{
@@ -378,6 +393,7 @@ async function salvaCompilazioneNelDatabase(risposte, modalita) {
     console.error("❌ Errore di rete salvataggio compilazione:", error);
   }
 }
+
 
 
 async function recuperaAnagraficaDalDatabase(email) {
