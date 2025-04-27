@@ -257,6 +257,7 @@ async function next() {
     setTimeout(() => mostraMessaggio(domande[step].testo), 500);
   } else {
     salvaAnagraficaNelDatabase(risposte);
+    salvaCompilazioneNelDatabase(risposte, modalita); 
     mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi dati...");
     inviaOpenAI();
   }
@@ -353,7 +354,25 @@ async function salvaAnagraficaNelDatabase(dati) {
   }
 }
 
+async function salvaCompilazioneNelDatabase(risposte, modalita) {
+  try {
+    const { data, error } = await supabaseClient
+      .from('compilazioni')
+      .insert([{
+        email: risposte.email,
+        modalita: modalita,
+        risposte: risposte
+      }]);
 
+    if (error) {
+      console.error("Errore salvataggio compilazione:", error);
+    } else {
+      console.log("✅ Compilazione salvata:", data);
+    }
+  } catch (error) {
+    console.error("❌ Errore di rete salvataggio compilazione:", error);
+  }
+}
 
 async function recuperaAnagraficaDalDatabase(email) {
   try {
