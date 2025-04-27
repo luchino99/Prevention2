@@ -461,40 +461,43 @@ Vuoi aggiornarli? (sì / no)`);
         
         attesaConfermaAggiornamento = true;
       } else {
-        mostraMessaggio("👋 Non abbiamo trovato dati salvati. Procediamo con un nuovo profilo.");
-  risposte = { email: emailUtente }; // <--- aggiunto
-  modalita = null; // <--- aggiunto
-  step = -1; // <--- aggiunto
+         mostraMessaggio("👋 Non abbiamo trovato dati salvati. Procediamo con un nuovo profilo.");
+  risposte = { email: emailUtente };
+  modalita = null;
+  step = -1;
   mostraScelteIniziali();
+  emailInserita = true;
+  return;
       }
       
-      emailInserita = true;
-      return; // aspettiamo la risposta sì / no
-    }
+if (attesaConfermaAggiornamento) {
+  const risposta = val.toLowerCase();
+  if (risposta === "no") {
+    mostraMessaggio("👌 Perfetto, manteniamo i dati esistenti.");
+    mostraScelteIniziali();
+    attesaConfermaAggiornamento = false;
+    input.value = "";
+    return; 
+  } else if (risposta === "sì" || risposta === "si") {
+    mostraMessaggio("✏️ Procediamo ad aggiornare i tuoi dati.");
+    domande = [
+      { key: "eta", testo: "Aggiorna la tua età:" },
+      { key: "sesso", testo: "Aggiorna il tuo sesso biologico:" },
+      { key: "altezza", testo: "Aggiorna la tua altezza in cm:" },
+      { key: "peso", testo: "Aggiorna il tuo peso in kg:" }
+    ];
+    step = -1;
+    attesaConfermaAggiornamento = false;
+    input.value = "";
+    next();
+    return; 
+  } else {
+    mostraMessaggio("❗ Per favore rispondi 'sì' o 'no'.");
+    input.value = "";
+    return; 
+  }
+}
 
-    if (attesaConfermaAggiornamento) {
-      const risposta = val.toLowerCase();
-      if (risposta === "no") {
-        mostraMessaggio("👌 Perfetto, manteniamo i dati esistenti.");
-        mostraScelteIniziali();
-        attesaConfermaAggiornamento = false;
-      } else if (risposta === "sì" || risposta === "si") {
-        mostraMessaggio("✏️ Procediamo ad aggiornare i tuoi dati.");
-        domande = [
-          { key: "eta", testo: "Aggiorna la tua età:" },
-          { key: "sesso", testo: "Aggiorna il tuo sesso biologico:" },
-          { key: "altezza", testo: "Aggiorna la tua altezza in cm:" },
-          { key: "peso", testo: "Aggiorna il tuo peso in kg:" }
-        ];
-        step = -1;
-        attesaConfermaAggiornamento = false;
-        next();
-      } else {
-        mostraMessaggio("❗ Per favore rispondi 'sì' o 'no'.");
-      }
-      input.value = "";
-      return;
-    }
 
     if (modalita === null) {
       mostraMessaggio("❗ Seleziona prima una modalità cliccando uno dei bottoni.");
