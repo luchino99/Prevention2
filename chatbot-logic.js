@@ -330,29 +330,6 @@ function generaPDF(contenuto) {
 const supabase = window.supabase;  // caricato da CDN
 const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
-async function salvaAnagraficaNelDatabase(dati) {
-  try {
-    const datiAnagrafica = {
-      email: dati.email,
-      eta: dati.eta,
-      sesso: dati.sesso,
-      altezza: dati.altezza,
-      peso: dati.peso
-    };
-
-    const { data, error } = await supabaseClient
-      .from('users')
-      .insert([datiAnagrafica]);
-
-    if (error) {
-      console.error("Errore API salvataggio:", error);
-    } else {
-      console.log("✅ Dati anagrafici salvati correttamente:", data);
-    }
-  } catch (error) {
-    console.error("❌ Errore di rete salvataggio:", error);
-  }
-}
 
 async function salvaAnagraficaNelDatabase(dati) {
   try {
@@ -375,6 +352,25 @@ async function salvaAnagraficaNelDatabase(dati) {
     }
   } catch (error) {
     console.error("❌ Errore di rete salvataggio:", error);
+  }
+}
+async function salvaCompilazioneNelDatabase(risposte, modalita) {
+  try {
+    const { data, error } = await supabaseClient
+      .from('compilazioni')
+      .insert([{
+        email: risposte.email,
+        modalita: modalita,
+        risposte: risposte
+      }]);
+
+    if (error) {
+      console.error("Errore salvataggio compilazione:", error);
+    } else {
+      console.log("✅ Compilazione salvata:", data);
+    }
+  } catch (error) {
+    console.error("❌ Errore di rete salvataggio compilazione:", error);
   }
 }
 
