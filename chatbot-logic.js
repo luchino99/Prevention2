@@ -188,7 +188,7 @@ function selezionaModalita(tipo) {
 }
 
 
-function next() {
+async function next() {
   const input = document.getElementById("input");
   const val = input.value.trim();
 
@@ -227,27 +227,38 @@ function next() {
         domande = [...domande.slice(0, step + 1), ...domandeFemminili, ...domande.slice(step + 1)];
       }
     }
-    
   }
 
   step++;
   
- while (step < domande.length && domande[step].condizione) {
-    const cond = domande[step].condizione;
-    const risposta = risposte[cond];
-    if (risposta && risposta.toLowerCase() === "no") {
-      step++;
-    } else {
-      break;
+ while (step < domande.length) {
+    const domanda = domande[step];
+    const rispostaPrecompilata = risposte[domanda.key];
+
+    if (domanda.condizione) {
+      const condizioneRisposta = risposte[domanda.condizione];
+      if (condizioneRisposta && condizioneRisposta.toLowerCase() === "no") {
+        step++;
+        continue;
+      }
     }
+
+    if (rispostaPrecompilata !== undefined && rispostaPrecompilata !== null && rispostaPrecompilata !== "") {
+      console.log(`🔄 Campo ${domanda.key} già compilato, salto...`);
+      step++;
+      continue;
+    }
+
+    break; // Se non dobbiamo skippare, esci dal while
   }
- 
+  
+
   if (step < domande.length) {
-  setTimeout(() => mostraMessaggio(domande[step].testo), 500);
-} else {
-  salvaAnagraficaNelDatabase(risposte);  // <<< AGGIUNGI QUI!!!
-  mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi dati...");
-  inviaOpenAI();
+    setTimeout(() => mostraMessaggio(domande[step].testo), 500);
+  } else {
+    salvaAnagraficaNelDatabase(risposte);
+    mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi dati...");
+    inviaOpenAI();
   }
 }
 
