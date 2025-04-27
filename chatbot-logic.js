@@ -256,8 +256,13 @@ async function next() {
   if (step < domande.length) {
     setTimeout(() => mostraMessaggio(domande[step].testo), 500);
   } else {
-    salvaAnagraficaNelDatabase(risposte);
-    salvaCompilazioneNelDatabase(risposte, modalita); 
+  await salvaAnagraficaNelDatabase(risposte);
+  if (modalita) {
+  await salvaCompilazioneNelDatabase(risposte, modalita);
+} else {
+  console.error("⚠️ Modalità non definita, non salvo la compilazione.");
+}
+ 
     mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi dati...");
     inviaOpenAI();
   }
