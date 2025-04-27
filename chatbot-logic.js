@@ -354,25 +354,30 @@ async function salvaAnagraficaNelDatabase(dati) {
   }
 }
 
-async function salvaCompilazioneNelDatabase(risposte, modalita) {
+async function salvaAnagraficaNelDatabase(dati) {
   try {
+    const datiAnagrafica = {
+      email: dati.email,
+      eta: dati.eta,
+      sesso: dati.sesso,
+      altezza: dati.altezza,
+      peso: dati.peso
+    };
+
     const { data, error } = await supabaseClient
-      .from('compilazioni')
-      .insert([{
-        email: risposte.email,
-        modalita: modalita,
-        risposte: risposte
-      }]);
+      .from('users')
+      .upsert([datiAnagrafica], { onConflict: 'email' });
 
     if (error) {
-      console.error("Errore salvataggio compilazione:", error);
+      console.error("Errore API salvataggio:", error);
     } else {
-      console.log("✅ Compilazione salvata:", data);
+      console.log("✅ Dati anagrafici salvati o aggiornati correttamente:", data);
     }
   } catch (error) {
-    console.error("❌ Errore di rete salvataggio compilazione:", error);
+    console.error("❌ Errore di rete salvataggio:", error);
   }
 }
+
 
 async function recuperaAnagraficaDalDatabase(email) {
   try {
