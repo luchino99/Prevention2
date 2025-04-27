@@ -462,7 +462,10 @@ Vuoi aggiornarli? (sì / no)`);
         attesaConfermaAggiornamento = true;
       } else {
         mostraMessaggio("👋 Non abbiamo trovato dati salvati. Procediamo con un nuovo profilo.");
-        mostraScelteIniziali();
+  risposte = { email: emailUtente }; // <--- aggiunto
+  modalita = null; // <--- aggiunto
+  step = -1; // <--- aggiunto
+  mostraScelteIniziali();
       }
       
       emailInserita = true;
