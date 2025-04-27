@@ -435,13 +435,12 @@ input.addEventListener("keypress", async function (e) {
     if (!val) return;
 
     if (!emailInserita) {
-     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(val)) {
-    mostraMessaggio("⚠️ Inserisci un indirizzo email valido (esempio@email.com).");
-    input.value = "";
-    return;
-    }
-
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(val)) {
+        mostraMessaggio("⚠️ Inserisci un indirizzo email valido (esempio@email.com).");
+        input.value = "";
+        return;
+      }
 
       emailUtente = val;
       risposte.email = emailUtente;
@@ -458,46 +457,43 @@ input.addEventListener("keypress", async function (e) {
 - Altezza: ${risposte.altezza} cm
 - Peso: ${risposte.peso} kg\n
 Vuoi aggiornarli? (sì / no)`);
-        
         attesaConfermaAggiornamento = true;
       } else {
-         mostraMessaggio("👋 Non abbiamo trovato dati salvati. Procediamo con un nuovo profilo.");
-  risposte = { email: emailUtente };
-  modalita = null;
-  step = -1;
-  mostraScelteIniziali();
-  emailInserita = true;
-  return;
+        mostraMessaggio("👋 Non abbiamo trovato dati salvati. Procediamo con un nuovo profilo.");
+        risposte = { email: emailUtente };
+        modalita = null;
+        step = -1;
+        mostraScelteIniziali();
       }
-      
-if (attesaConfermaAggiornamento) {
-  const risposta = val.toLowerCase();
-  if (risposta === "no") {
-    mostraMessaggio("👌 Perfetto, manteniamo i dati esistenti.");
-    mostraScelteIniziali();
-    attesaConfermaAggiornamento = false;
-    input.value = "";
-    return; 
-  } else if (risposta === "sì" || risposta === "si") {
-    mostraMessaggio("✏️ Procediamo ad aggiornare i tuoi dati.");
-    domande = [
-      { key: "eta", testo: "Aggiorna la tua età:" },
-      { key: "sesso", testo: "Aggiorna il tuo sesso biologico:" },
-      { key: "altezza", testo: "Aggiorna la tua altezza in cm:" },
-      { key: "peso", testo: "Aggiorna il tuo peso in kg:" }
-    ];
-    step = -1;
-    attesaConfermaAggiornamento = false;
-    input.value = "";
-    next();
-    return; 
-  } else {
-    mostraMessaggio("❗ Per favore rispondi 'sì' o 'no'.");
-    input.value = "";
-    return; 
-  }
-}
 
+      emailInserita = true;
+      return; // <-- IMPORTANTE chiudere qui l'emailInserita
+    }
+
+    // 🔥🔥 Ora controlliamo se aspettiamo la conferma aggiornamento
+    if (attesaConfermaAggiornamento) {
+      const risposta = val.toLowerCase();
+      if (risposta === "no") {
+        mostraMessaggio("👌 Perfetto, manteniamo i dati esistenti.");
+        mostraScelteIniziali();
+        attesaConfermaAggiornamento = false;
+      } else if (risposta === "sì" || risposta === "si") {
+        mostraMessaggio("✏️ Procediamo ad aggiornare i tuoi dati.");
+        domande = [
+          { key: "eta", testo: "Aggiorna la tua età:" },
+          { key: "sesso", testo: "Aggiorna il tuo sesso biologico:" },
+          { key: "altezza", testo: "Aggiorna la tua altezza in cm:" },
+          { key: "peso", testo: "Aggiorna il tuo peso in kg:" }
+        ];
+        step = -1;
+        attesaConfermaAggiornamento = false;
+        next();
+      } else {
+        mostraMessaggio("❗ Per favore rispondi 'sì' o 'no'.");
+      }
+      input.value = "";
+      return;
+    }
 
     if (modalita === null) {
       mostraMessaggio("❗ Seleziona prima una modalità cliccando uno dei bottoni.");
