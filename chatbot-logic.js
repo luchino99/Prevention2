@@ -419,11 +419,13 @@ input.addEventListener("keypress", async function (e) {
     if (!val) return;
 
     if (!emailInserita) {
-      if (!val.includes("@")) {
-        mostraMessaggio("⚠️ Inserisci un indirizzo email valido (esempio@email.com).");
-        input.value = "";
-        return;
-      }
+     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(val)) {
+    mostraMessaggio("⚠️ Inserisci un indirizzo email valido (esempio@email.com).");
+    input.value = "";
+    return;
+    }
+
 
       emailUtente = val;
       risposte.email = emailUtente;
