@@ -29,10 +29,10 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  align-items: center;  /* 👈 centro contenuti */
+  text-align: center;
   padding: 30px 20px;
   box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
-  align-items: center; 
-  text-align: center;   
 }
 
 
