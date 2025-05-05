@@ -212,41 +212,36 @@ function selezionaModalita(tipo) {
 
 }
 
-
-
-
 async function next() {
   const input = document.getElementById("input");
-  let val = input.value.trim();
+  const val = input.value.trim(); // ✅ Unica dichiarazione
 
-if (modalita === "sintomi") {
-  const val = input.value.trim(); // assicurati sia qui
+  if (modalita === "sintomi") {
+    if (!val) {
+      mostraMessaggio("❗ Per favore descrivi i tuoi sintomi prima di premere invio.");
+      return;
+    }
 
-  if (!val) {
-    mostraMessaggio("❗ Per favore descrivi i tuoi sintomi prima di premere invio.");
-    return; // 🔴 questo return è ESSENZIALE
+    mostraMessaggio(val, "user");
+    input.value = "";
+    risposte.sintomi = val;
+
+    mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi dati...");
+
+    fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sintomi: val, email: risposte.email })
+    })
+      .then(res => res.json())
+      .then(data => mostraMessaggio(data.risposta || "⚠️ Nessuna risposta ricevuta."))
+      .catch(err => {
+        console.error("❌ Errore fetch sintomi:", err);
+        mostraMessaggio("⚠️ Errore nella comunicazione col server.");
+      });
+
+    return; // ✅ Ferma qui
   }
-
-  mostraMessaggio(val, "user");
-  input.value = "";
-  risposte.sintomi = val;
-
-  mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi dati...");
-
-  fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ sintomi: val })
-  })
-    .then(res => res.json())
-    .then(data => mostraMessaggio(data.risposta || "⚠️ Nessuna risposta ricevuta."))
-    .catch(err => {
-      console.error("❌ Errore fetch sintomi:", err);
-      mostraMessaggio("⚠️ Errore nella comunicazione col server.");
-    });
-
-  return; // 🔴 questo impedisce che esegua altro codice dopo
-}
 
 
   if (step === -1 && (!modalita || !domande || domande.length === 0)) {
