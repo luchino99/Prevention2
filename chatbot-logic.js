@@ -171,21 +171,41 @@ function mostraScelteIniziali() {
 
 function selezionaModalita(tipo) {
   modalita = tipo;
+  step = -1; // 🔄 Reset step ogni volta che cambia modalità
+  risposte = { email: emailUtente }; // Reinizializza mantenendo email
+
+  // Rimuove pulsanti precedenti
   document.querySelectorAll(".button-container").forEach(el => el.remove());
 
-  if (tipo === "sintomi") {
-    mostraMessaggio("🩺 Perfetto! Per aiutarti al meglio, descrivimi i tuoi sintomi.");
-  } else if (tipo === "prevenzione") {
-    domande = [...domandeBase];
-    mostraMessaggio(introduzione);
-  } else if (tipo === "dieta") {
-    domande = [...domandePianoAlimentare];
-    mostraMessaggio("🍽️ Ottimo! Rispondi a queste domande per il piano alimentare su misura:");
-  } else if (tipo === "allenamento") {
-    domande = [...domandeAllenamento];
-    mostraMessaggio("🏋️‍♂️ Fantastico! Rispondi a queste domande per creare il tuo piano di allenamento:");
+  // Assegna domande e mostra introduzione
+  switch (tipo) {
+    case "sintomi":
+      mostraMessaggio("🩺 Perfetto! Per aiutarti al meglio, descrivimi i tuoi sintomi.");
+      break;
+
+    case "prevenzione":
+      domande = [...domandeBase];
+      mostraMessaggio(introduzione);
+      break;
+
+    case "dieta":
+      domande = [...domandePianoAlimentare];
+      mostraMessaggio("🍽️ Ottimo! Rispondi a queste domande per il piano alimentare su misura:");
+      break;
+
+    case "allenamento":
+      domande = [...domandeAllenamento];
+      mostraMessaggio("🏋️‍♂️ Fantastico! Rispondi a queste domande per creare il tuo piano di allenamento:");
+      break;
+
+    default:
+      mostraMessaggio("❗ Modalità non riconosciuta.");
+      return;
   }
+
+  
 }
+
 
 
 async function next() {
