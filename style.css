@@ -124,17 +124,17 @@ body {
 }
 
 .chat-container {
-  flex: 1;
+  flex-grow: 1;
   display: flex;
   flex-direction: column;
   padding: 40px;
   background-color: #ffffff;
   overflow: hidden;
   position: relative;
-  width: 100%;              /* ✅ usa tutto lo spazio disponibile */
-  max-width: 1000px;        /* ✅ limite massimo visivo */
-  min-width: 700px;         /* ✅ evita che si restringa troppo */
-  margin: auto;
+  min-width: 0;               /* ✅ evita stretching automatico */
+  width: calc(100% - 300px);  /* ✅ lascia spazio alla sidebar */
+  max-width: 1100px;
+  margin: 0 auto;
   border-radius: 20px;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.08);
 }
