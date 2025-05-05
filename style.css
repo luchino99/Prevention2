@@ -273,7 +273,9 @@ body {
 
 @media (min-width: 600px) {
   .button-container {
-    grid-template-columns: 1fr 1fr;
+    flex-wrap: nowrap;
+    gap: 24px;
+    justify-content: space-around;
   }
 }
 
