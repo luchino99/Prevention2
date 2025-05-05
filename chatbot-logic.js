@@ -220,9 +220,11 @@ async function next() {
   let val = input.value.trim();
 
 if (modalita === "sintomi") {
+  const val = input.value.trim(); // assicurati sia qui
+
   if (!val) {
     mostraMessaggio("❗ Per favore descrivi i tuoi sintomi prima di premere invio.");
-    return;
+    return; // 🔴 questo return è ESSENZIALE
   }
 
   mostraMessaggio(val, "user");
@@ -243,8 +245,9 @@ if (modalita === "sintomi") {
       mostraMessaggio("⚠️ Errore nella comunicazione col server.");
     });
 
-  return;
+  return; // 🔴 questo impedisce che esegua altro codice dopo
 }
+
 
   if (step === -1 && (!modalita || !domande || domande.length === 0)) {
     console.warn("⛔ Avanzamento bloccato: modalità non scelta o domande non inizializzate.");
