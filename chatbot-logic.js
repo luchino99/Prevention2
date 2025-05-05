@@ -257,20 +257,22 @@ async function next() {
     mostraMessaggio(val, "user");
     risposte[domande[step].key] = val;
 
-    // Inserimento dinamico di domande extra
-if (step >= 0 && domande[step].key === "eta") {
+if (step >= 0 && domande[step].key === "eta" && !domandeOver65Aggiunte) {
   const etaNum = parseInt(val);
-  if (!isNaN(etaNum) && etaNum > 65 && !domande.some(d => d.key === "over_stanchezza")) {
+  if (!isNaN(etaNum) && etaNum > 65) {
     domande.splice(step + 1, 0, ...domandeOver65);
+    domandeOver65Aggiunte = true;
   }
 }
 
-if (step >= 0 && domande[step].key === "sesso") {
+if (step >= 0 && domande[step].key === "sesso" && !domandeFemminiliAggiunte) {
   const sesso = val.toLowerCase();
-  if ((sesso === "femmina" || sesso === "donna") && !domande.some(d => d.key === "eta_menarca")) {
+  if (sesso === "femmina" || sesso === "donna") {
     domande.splice(step + 1, 0, ...domandeFemminili);
+    domandeFemminiliAggiunte = true;
   }
 }
+
 
 
     step++;
