@@ -226,34 +226,7 @@ body {
   gap: 12px;
   margin-top: 20px;
 }
-.nav-header {
-  display: flex;
-  justify-content: center;
-  padding: 10px 0;
-  border-bottom: 1px solid #e2e8f0;
-  background-color: #ffffff;
-}
 
-.nav-menu {
-  display: flex;
-  gap: 20px;
-  list-style: none;
-  padding: 0;
-}
-
-.nav-menu li button {
-  background: none;
-  border: none;
-  font-size: 15px;
-  cursor: pointer;
-  color: #0f172a;
-  font-weight: 600;
-  transition: color 0.3s;
-}
-
-.nav-menu li button:hover {
-  color: #0ea5e9;
-}
 
 
 @media (min-width: 600px) {
