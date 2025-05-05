@@ -131,7 +131,9 @@ body {
   background-color: #ffffff;
   overflow: hidden;
   position: relative;
-  max-width: 900px;
+  width: 100%;              /* ✅ usa tutto lo spazio disponibile */
+  max-width: 1000px;        /* ✅ limite massimo visivo */
+  min-width: 700px;         /* ✅ evita che si restringa troppo */
   margin: auto;
   border-radius: 20px;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.08);
