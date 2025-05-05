@@ -239,28 +239,9 @@ body {
 }
 
 .scelta-btn {
-  display: block;
   width: 100%;
-  margin: 15px 0;
-  padding: 18px 24px;
-  font-size: 16px;
-  font-weight: 600;
-  border: none;
-  border-radius: 20px;
-  background-color: #0ea5e9;
-  color: white;
-  cursor: pointer;
-  text-align: center;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-  transition: all 0.3s ease;
-  backdrop-filter: blur(3px);
-}
-
-.scelta-btn {
-  width: 100%;
-  max-width: 300px;    /* ✅ uniforma larghezza */
-  height: auto;
-  padding: 20px 24px;  /* ✅ spazio uniforme */
+  max-width: 260px;
+  padding: 20px 24px;
   font-size: 16px;
   font-weight: 600;
   border: none;
@@ -276,11 +257,13 @@ body {
 
 
 .button-container {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 16px;
-  justify-items: center;
+  margin-top: 20px;
 }
+
 
 .scelta-btn,
 .sidebar-btn {
