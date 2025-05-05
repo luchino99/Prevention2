@@ -81,15 +81,15 @@ body {
   color: #e2e8f0;
   border: 1px solid #334155;
   border-radius: 16px;
-  padding: 12px 20px;
+  padding: 14px 24px;
   font-size: 15px;
   cursor: pointer;
   text-align: center;
   transition: background 0.3s;
-  width: 280px;      
-  max-width: 90%;     
-  margin: 0 auto;     
-  display: block;   
+  width: 240px;        
+  display: block;
+  margin: 0 auto;      
+  box-sizing: border-box; 
 }
 
 .sidebar-btn:hover {
