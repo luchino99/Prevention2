@@ -308,14 +308,15 @@ body {
 
   .chat-container {
     padding: 20px;
-    height: 100vh; /* Mantieni proporzione anche su mobile */
+    height: 100vh; /* ✅ fissa anche su mobile */
   }
 
+  /* ❌ Rimuoviamo l'altezza forzata */
   .chat-messages {
-   
     margin: 16px 0;
   }
 }
+
 
 
 /* Tema chiaro/scuro con toggle */
