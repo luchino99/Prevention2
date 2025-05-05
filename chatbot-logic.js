@@ -212,6 +212,9 @@ function selezionaModalita(tipo) {
 
 }
 
+let domandeOver65Aggiunte = false;
+let domandeFemminiliAggiunte = false;
+
 async function next() {
   const input = document.getElementById("input");
   const val = input.value.trim(); // ✅ Unica dichiarazione
@@ -243,8 +246,7 @@ async function next() {
     return; // ✅ Ferma qui
   }
 
-
-  if (step === -1 && (!modalita || !domande || domande.length === 0)) {
+    if (step === -1 && (!modalita || !domande || domande.length === 0)) {
     console.warn("⛔ Avanzamento bloccato: modalità non scelta o domande non inizializzate.");
     input.value = "";
     return;
@@ -258,17 +260,19 @@ async function next() {
 
     input.value = "";
 
-    if (step >= 0 && domande[step].key === "eta") {
+    if (step >= 0 && domande[step].key === "eta" && !domandeOver65Aggiunte) {
       const etaNum = parseInt(val);
       if (!isNaN(etaNum) && etaNum > 65) {
         domande = [...domande.slice(0, step + 1), ...domandeOver65, ...domande.slice(step + 1)];
+        domandeOver65Aggiunte = true;
       }
     }
 
-    if (step >= 0 && domande[step].key === "sesso") {
+    if (step >= 0 && domande[step].key === "sesso" && !domandeFemminiliAggiunte) {
       const sesso = val.toLowerCase();
       if (sesso === "femmina" || sesso === "donna") {
         domande = [...domande.slice(0, step + 1), ...domandeFemminili, ...domande.slice(step + 1)];
+        domandeFemminiliAggiunte = true;
       }
     }
   }
