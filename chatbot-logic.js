@@ -470,19 +470,29 @@ let emailUtente = "";
 let emailInserita = false;
 let attesaConfermaAggiornamento = false;
 
-document.addEventListener("DOMContentLoaded", () => {
-  console.log("JS caricato");
+const toggleBtn = document.getElementById("theme-toggle");
+  if (toggleBtn) {
+    toggleBtn.addEventListener("click", () => {
+      document.documentElement.classList.toggle("light-theme");
+      const isLight = document.documentElement.classList.contains("light-theme");
+      localStorage.setItem("theme", isLight ? "light" : "dark");
+    });
 
-  mostraMessaggio("📧 Prima di iniziare, inserisci il tuo indirizzo email:");
-  const input = document.getElementById("input");
+    if (localStorage.getItem("theme") === "light") {
+      document.documentElement.classList.add("light-theme");
+    }
+  }
 
-  input.addEventListener("keypress", async function (e) {
-    if (e.key !== "Enter") return;
+  // ✅ Blocca il comportamento predefinito del submit del form
+const form = document.getElementById("input-form");
+if (form) {
+  form.addEventListener("submit", async function (e) {
+    e.preventDefault();
 
+    const input = document.getElementById("input");
     const val = input.value.trim();
     if (!val) return;
 
-    // Inserimento email
     if (!emailInserita) {
       const emailRegex = /^[^\s@]+@[^\s@]+$/;
       if (!emailRegex.test(val)) {
@@ -517,7 +527,6 @@ Vuoi aggiornarli? (sì / no)`);
       return;
     }
 
-    // Conferma aggiornamento anagrafica
     if (attesaConfermaAggiornamento) {
       const risposta = val.toLowerCase();
       if (risposta === "no") {
@@ -542,37 +551,16 @@ Vuoi aggiornarli? (sì / no)`);
       return;
     }
 
-    // Controllo che una modalità sia stata selezionata
     if (!modalita) {
       mostraMessaggio("❗ Seleziona prima una modalità cliccando uno dei bottoni.");
       input.value = "";
       return;
     }
 
-    // A questo punto, tutto è pronto: gestisce sintomi o domande in base alla modalità
+    // Tutto è pronto, vai avanti
     next();
   });
+}
 
-  const toggleBtn = document.getElementById("theme-toggle");
-  if (toggleBtn) {
-    toggleBtn.addEventListener("click", () => {
-      document.documentElement.classList.toggle("light-theme");
-      const isLight = document.documentElement.classList.contains("light-theme");
-      localStorage.setItem("theme", isLight ? "light" : "dark");
-    });
-
-    if (localStorage.getItem("theme") === "light") {
-      document.documentElement.classList.add("light-theme");
-    }
-  }
-
-  // ✅ Blocca il comportamento predefinito del submit del form
-  const form = document.getElementById("input-form");
-  if (form) {
-    form.addEventListener("submit", function (e) {
-      e.preventDefault();
-      next();
-    });
-  }
 
 });
