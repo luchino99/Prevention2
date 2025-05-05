@@ -191,6 +191,27 @@ body {
   background-color: #0284c7;
 }
 
+.scelta-btn {
+  display: block;
+  width: 100%;
+  margin: 10px 0;
+  padding: 14px 20px;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 30px;
+  background-color: #0ea5e9;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2);
+}
+
+.scelta-btn:hover {
+  background-color: #0284c7;
+  transform: scale(1.02);
+}
 /* Animazioni */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
