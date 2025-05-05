@@ -88,10 +88,11 @@ body {
   cursor: pointer;
   text-align: center;
   transition: background 0.3s;
-  width: 240px;        
+  width: 100%;
+  max-width: 240px;
   display: block;
-  margin: 0 auto;      
-  box-sizing: border-box; 
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .sidebar-btn:hover {
@@ -267,13 +268,7 @@ body {
 
 
 
-.sidebar-btn {
-  width: 100%;
-  max-width: 240px;
-  margin: 0 auto;
-  text-align: center;
-  display: block;
-}
+
 
 
 @media (min-width: 600px) {
