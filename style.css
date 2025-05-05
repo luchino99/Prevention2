@@ -17,9 +17,10 @@ body {
 
 .app-wrapper {
   display: flex;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 .sidebar {
@@ -126,10 +127,14 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 30px;
+  padding: 40px;
   background-color: #ffffff;
   overflow: hidden;
   position: relative;
+  max-width: 900px;
+  margin: auto;
+  border-radius: 20px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.08);
 }
 
 .chat-header {
@@ -157,7 +162,8 @@ body {
   padding: 14px 20px; /* leggero aumento per compensare */
   margin: 10px 0;     /* più aria sopra e sotto */
   border-radius: 20px;
-  max-width: 90%;
+  max-width: 96%;
+  width: auto;
   font-size: 15px;
   animation: fadeIn 0.3s ease;
   line-height: 1.5;
@@ -248,17 +254,30 @@ body {
   backdrop-filter: blur(3px);
 }
 
-.scelta-btn:hover {
-  background-color: #0284c7;
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+.scelta-btn {
+  width: 100%;
+  max-width: 300px;    /* ✅ uniforma larghezza */
+  height: auto;
+  padding: 20px 24px;  /* ✅ spazio uniforme */
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 20px;
+  background-color: #0ea5e9;
+  color: white;
+  cursor: pointer;
+  text-align: center;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  backdrop-filter: blur(3px);
 }
+
 
 .button-container {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
-  margin-top: 20px;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  justify-items: center;
 }
 
 .scelta-btn,
