@@ -298,19 +298,25 @@ body {
   .app-wrapper {
     flex-direction: column;
   }
+
   .sidebar {
     width: 100%;
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
   }
+
   .chat-container {
     padding: 20px;
+    height: 100vh; /* Mantieni proporzione anche su mobile */
   }
+
   .chat-messages {
-    height: 50vh;
+   
+    margin: 16px 0;
   }
 }
+
 
 /* Tema chiaro/scuro con toggle */
 body.light-theme {
