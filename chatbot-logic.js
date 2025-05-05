@@ -258,21 +258,20 @@ async function next() {
     risposte[domande[step].key] = val;
 
     // Inserimento dinamico di domande extra
-    if (domande[step].key === "eta" && !domandeOver65Aggiunte) {
-      const etaNum = parseInt(val);
-      if (!isNaN(etaNum) && etaNum > 65) {
-        domande = [...domande.slice(0, step + 1), ...domandeOver65, ...domande.slice(step + 1)];
-        domandeOver65Aggiunte = true;
-      }
-    }
+if (step >= 0 && domande[step].key === "eta") {
+  const etaNum = parseInt(val);
+  if (!isNaN(etaNum) && etaNum > 65 && !domande.some(d => d.key === "over_stanchezza")) {
+    domande.splice(step + 1, 0, ...domandeOver65);
+  }
+}
 
-    if (domande[step].key === "sesso" && !domandeFemminiliAggiunte) {
-      const sesso = val.toLowerCase();
-      if (sesso === "femmina" || sesso === "donna") {
-        domande = [...domande.slice(0, step + 1), ...domandeFemminili, ...domande.slice(step + 1)];
-        domandeFemminiliAggiunte = true;
-      }
-    }
+if (step >= 0 && domande[step].key === "sesso") {
+  const sesso = val.toLowerCase();
+  if ((sesso === "femmina" || sesso === "donna") && !domande.some(d => d.key === "eta_menarca")) {
+    domande.splice(step + 1, 0, ...domandeFemminili);
+  }
+}
+
 
     step++;
   } else if (step === -1) {
