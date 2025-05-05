@@ -41,15 +41,15 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px; /* spazio preciso tra logo e testo */
+  gap: 4px;
 }
 
+
 .logo {
-  width: 200px;
+  max-width: 180px;
   height: auto;
-  margin: 0;
-  padding: 0;
   display: block;
+  margin: 0 auto;
 }
 
 .branding h1 {
