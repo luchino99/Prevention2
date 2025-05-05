@@ -465,15 +465,20 @@ input.addEventListener("keypress", async function (e) {
   const val = input.value.trim();
   if (!val) return;
 
-  // ✅ Se email già valida e modalità scelta, vai direttamente avanti
+  // Se email già inserita e modalità scelta, procedi direttamente
   if (emailInserita && modalita !== null) {
+    // Protezione extra: se step e domande non validi, blocca
+    if (step === -1 && (!domande || domande.length === 0)) {
+      input.value = "";
+      return;
+    }
     next();
     return;
   }
 
-  // ⛔️ BLOCCO VALIDAZIONE EMAIL
+  // Inserimento email
   if (!emailInserita) {
-    const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+$/;
     if (!emailRegex.test(val)) {
       mostraMessaggio("⚠️ Inserisci un indirizzo email valido (esempio@email.com).");
       input.value = "";
@@ -506,7 +511,7 @@ Vuoi aggiornarli? (sì / no)`);
     return;
   }
 
-  // 🛑 Conferma aggiornamento
+  // Conferma aggiornamento
   if (attesaConfermaAggiornamento) {
     const risposta = val.toLowerCase();
     if (risposta === "no") {
@@ -531,24 +536,22 @@ Vuoi aggiornarli? (sì / no)`);
     return;
   }
 
-  // 🔐 Se tutto ok ma manca la modalità, avvisa
+  // Blocco se modalità non scelta
   if (modalita === null) {
     mostraMessaggio("❗ Seleziona prima una modalità cliccando uno dei bottoni.");
     input.value = "";
     return;
   }
-});
 
-
-    // BLOCCO se step = -1 e nessuna domanda caricata (es. errore anomalo)
-    if (step === -1 && (!domande || domande.length === 0)) {
-      input.value = "";
-      return;
-    }
-
-    next();
+  // Avanza se tutto è coerente
+  if (step === -1 && (!domande || domande.length === 0)) {
+    input.value = "";
+    return;
   }
+
+  next();
 });
+
 
 
 const toggleBtn = document.getElementById("theme-toggle");
