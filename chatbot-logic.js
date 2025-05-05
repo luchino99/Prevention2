@@ -467,114 +467,82 @@ document.addEventListener("DOMContentLoaded", () => {
   mostraMessaggio("📧 Prima di iniziare, inserisci il tuo indirizzo email:");
   const input = document.getElementById("input");
 
-input.addEventListener("keypress", async function (e) {
-  if (e.key !== "Enter") return;
+  input.addEventListener("keypress", async function (e) {
+    if (e.key !== "Enter") return;
 
-  const val = input.value.trim();
-  if (!val) return;
+    const val = input.value.trim();
+    if (!val) return;
 
-  // Se email già inserita e modalità scelta, procedi direttamente
-if (emailInserita && modalita !== null) {
-  if (modalita === "sintomi") {
-    if (!val) {
-      mostraMessaggio("❗ Per favore descrivi i tuoi sintomi prima di premere invio.");
-      return;
-    }
+    // Inserimento email
+    if (!emailInserita) {
+      const emailRegex = /^[^\s@]+@[^\s@]+$/;
+      if (!emailRegex.test(val)) {
+        mostraMessaggio("⚠️ Inserisci un indirizzo email valido (esempio@email.com).");
+        input.value = "";
+        return;
+      }
 
-    mostraMessaggio(val, "user");
-    risposte.sintomi = val;
-    input.value = "";
-
-    fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sintomi: val, email: risposte.email })
-    })
-      .then(res => res.json())
-      .then(data => mostraMessaggio(data.risposta || "⚠️ Nessuna risposta ricevuta."))
-      .catch(err => {
-        console.error("Errore nella fetch:", err);
-        mostraMessaggio("⚠️ Errore nella comunicazione col server.");
-      });
-
-    return;
-  }
-
-  // Inserimento email
-  if (!emailInserita) {
-    const emailRegex = /^[^\s@]+@[^\s@]+$/;
-    if (!emailRegex.test(val)) {
-      mostraMessaggio("⚠️ Inserisci un indirizzo email valido (esempio@email.com).");
+      emailUtente = val;
+      risposte.email = emailUtente;
+      mostraMessaggio(emailUtente, "user");
       input.value = "";
-      return;
-    }
 
-    emailUtente = val;
-    risposte.email = emailUtente;
-    mostraMessaggio(emailUtente, "user");
-    input.value = "";
+      const datiRecuperati = await recuperaAnagraficaDalDatabase(emailUtente);
 
-    const datiRecuperati = await recuperaAnagraficaDalDatabase(emailUtente);
-
-    if (datiRecuperati) {
-      risposte = datiRecuperati;
-      mostraMessaggio(`✅ Bentornato! Abbiamo trovato questi dati:\n
+      if (datiRecuperati) {
+        risposte = datiRecuperati;
+        mostraMessaggio(`✅ Bentornato! Abbiamo trovato questi dati:\n
 - Età: ${risposte.eta}
 - Sesso: ${risposte.sesso}
 - Altezza: ${risposte.altezza} cm
 - Peso: ${risposte.peso} kg\n
 Vuoi aggiornarli? (sì / no)`);
-      attesaConfermaAggiornamento = true;
-    } else {
-      mostraMessaggio("👋 Non abbiamo trovato dati salvati. Procediamo con un nuovo profilo.");
-      risposte = { email: emailUtente };
-      mostraScelteIniziali();
+        attesaConfermaAggiornamento = true;
+      } else {
+        mostraMessaggio("👋 Non abbiamo trovato dati salvati. Procediamo con un nuovo profilo.");
+        risposte = { email: emailUtente };
+        mostraScelteIniziali();
+      }
+
+      emailInserita = true;
+      return;
     }
 
-    emailInserita = true;
-    return;
-  }
-
-  // Conferma aggiornamento
-  if (attesaConfermaAggiornamento) {
-    const risposta = val.toLowerCase();
-    if (risposta === "no") {
-      mostraMessaggio("👌 Perfetto, manteniamo i dati esistenti.");
-      mostraScelteIniziali();
-      attesaConfermaAggiornamento = false;
-    } else if (risposta === "sì" || risposta === "si") {
-      mostraMessaggio("✏️ Procediamo ad aggiornare i tuoi dati.");
-      domande = [
-        { key: "eta", testo: "Aggiorna la tua età:" },
-        { key: "sesso", testo: "Aggiorna il tuo sesso biologico:" },
-        { key: "altezza", testo: "Aggiorna la tua altezza in cm:" },
-        { key: "peso", testo: "Aggiorna il tuo peso in kg:" }
-      ];
-      step = -1;
-      attesaConfermaAggiornamento = false;
-      next();
-    } else {
-      mostraMessaggio("❗ Per favore rispondi 'sì' o 'no'.");
+    // Conferma aggiornamento anagrafica
+    if (attesaConfermaAggiornamento) {
+      const risposta = val.toLowerCase();
+      if (risposta === "no") {
+        mostraMessaggio("👌 Perfetto, manteniamo i dati esistenti.");
+        mostraScelteIniziali();
+        attesaConfermaAggiornamento = false;
+      } else if (risposta === "sì" || risposta === "si") {
+        mostraMessaggio("✏️ Procediamo ad aggiornare i tuoi dati.");
+        domande = [
+          { key: "eta", testo: "Aggiorna la tua età:" },
+          { key: "sesso", testo: "Aggiorna il tuo sesso biologico:" },
+          { key: "altezza", testo: "Aggiorna la tua altezza in cm:" },
+          { key: "peso", testo: "Aggiorna il tuo peso in kg:" }
+        ];
+        step = -1;
+        attesaConfermaAggiornamento = false;
+        next();
+      } else {
+        mostraMessaggio("❗ Per favore rispondi 'sì' o 'no'.");
+      }
+      input.value = "";
+      return;
     }
-    input.value = "";
-    return;
-  }
 
-  // Blocco se modalità non scelta
-  if (modalita === null) {
-    mostraMessaggio("❗ Seleziona prima una modalità cliccando uno dei bottoni.");
-    input.value = "";
-    return;
-  }
+    // Controllo che una modalità sia stata selezionata
+    if (!modalita) {
+      mostraMessaggio("❗ Seleziona prima una modalità cliccando uno dei bottoni.");
+      input.value = "";
+      return;
+    }
 
-  // Avanza se tutto è coerente
-  if (step === -1 && (!domande || domande.length === 0)) {
-    input.value = "";
-    return;
-  }
-
-  next();
-});
+    // A questo punto, tutto è pronto: gestisce sintomi o domande in base alla modalità
+    next();
+  });
 });
 
 
