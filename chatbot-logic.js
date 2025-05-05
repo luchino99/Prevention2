@@ -170,14 +170,20 @@ function mostraScelteIniziali() {
 }
 
 function selezionaModalita(tipo) {
-  modalita = tipo;
-  step = -1; // 🔄 Reset step ogni volta che cambia modalità
-  risposte = { email: emailUtente }; // Reinizializza mantenendo email
+  // ✅ Blocca se l'email non è ancora stata inserita
+  if (!emailUtente || !risposte.email) {
+    mostraMessaggio("⚠️ Per favore, inserisci prima un indirizzo email valido.");
+    return;
+  }
 
-  // Rimuove pulsanti precedenti
+  modalita = tipo;
+  step = -1; // resetta ogni volta che si seleziona una modalità
+  risposte = { ...risposte, email: emailUtente }; // assicura che l'email resti
+
+  // Rimuove eventuali pulsanti precedenti
   document.querySelectorAll(".button-container").forEach(el => el.remove());
 
-  // Assegna domande e mostra introduzione
+  // Assegna le domande e mostra il messaggio introduttivo
   switch (tipo) {
     case "sintomi":
       mostraMessaggio("🩺 Perfetto! Per aiutarti al meglio, descrivimi i tuoi sintomi.");
@@ -203,8 +209,8 @@ function selezionaModalita(tipo) {
       return;
   }
 
-  
 }
+
 
 
 
