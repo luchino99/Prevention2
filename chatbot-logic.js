@@ -220,23 +220,29 @@ async function next() {
   let val = input.value.trim();
 
 if (modalita === "sintomi") {
-  if (val) {
-    mostraMessaggio(val, "user");
-    risposte.sintomi = val;
-    input.value = "";
-
-    fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sintomi: val })
-    })
-      .then(res => res.json())
-      .then(data => mostraMessaggio(data.risposta || "⚠️ Nessuna risposta ricevuta."))
-      .catch(err => mostraMessaggio("⚠️ Errore nella risposta."));
-  } else {
+  if (!val) {
     mostraMessaggio("❗ Per favore descrivi i tuoi sintomi prima di premere invio.");
-    return; // 🔴 Questo mancava
+    return;
   }
+
+  mostraMessaggio(val, "user");
+  input.value = "";
+  risposte.sintomi = val;
+
+  mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi dati...");
+
+  fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sintomi: val })
+  })
+    .then(res => res.json())
+    .then(data => mostraMessaggio(data.risposta || "⚠️ Nessuna risposta ricevuta."))
+    .catch(err => {
+      console.error("❌ Errore fetch sintomi:", err);
+      mostraMessaggio("⚠️ Errore nella comunicazione col server.");
+    });
+
   return;
 }
 
