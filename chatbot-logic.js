@@ -247,11 +247,7 @@ async function next() {
     return; // ✅ Ferma qui
   }
 
-    if (step === -1 && (!modalita || !domande || domande.length === 0)) {
-    console.warn("⛔ Avanzamento bloccato: modalità non scelta o domande non inizializzate.");
-    input.value = "";
-    return;
-  }
+
 
   if (step === -1 || val) {
     if (step >= 0) {
