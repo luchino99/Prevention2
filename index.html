@@ -1,24 +1,23 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>HealthAI</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js" defer></script>
   <script src="chatbot-logic.js" defer></script>
 </head>
 <body>
   <div class="app-wrapper">
-    
     <aside class="sidebar">
       <div class="branding">
-        <img src="logo.png" alt="Logo HealthAI" class="logo">
+        <img src="logo.png" alt="Logo HealthAI" class="logo" />
         <p class="subtitle">Prevenzione. Nutrizione. Allenamento.</p>
       </div>
-      
+
       <div class="sidebar-actions">
         <button id="btn-nuovo" class="sidebar-btn">💬 Nuova chat</button>
         <button id="btn-profilo" class="sidebar-btn">👤 Profilo utente</button>
@@ -32,24 +31,20 @@
     </aside>
 
     <main class="chat-container">
-      
-      <div class="button-container">
+      <section class="button-container">
         <button class="scelta-btn">🛡️ Prevenzione</button>
         <button class="scelta-btn">🍎 Nutrizione</button>
         <button class="scelta-btn">🏋️ Allenamento</button>
         <button class="scelta-btn">🔬 Sintomi</button>
-      </div>
+      </section>
 
-      
-      <section id="messages" class="chat-messages"></section>
+      <section id="messages" class="chat-messages" aria-live="polite" aria-label="Conversazione con il chatbot"></section>
 
-      
-      <div id="pdf-content" style="display: none;"></div>
+      <div id="pdf-content" hidden></div>
 
-     
-      <form id="input-form" class="input-form">
-        <label for="input" style="display: none;">Inserisci un messaggio</label>
-        <input id="input" placeholder="Digita qui la tua risposta..." autocomplete="off" />
+      <form id="input-form" class="input-form" autocomplete="off">
+        <label for="input" class="visually-hidden">Inserisci un messaggio</label>
+        <input id="input" name="input" placeholder="Digita qui la tua risposta..." />
         <button type="submit" class="btn-send">Invia</button>
       </form>
     </main>
