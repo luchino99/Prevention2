@@ -220,15 +220,15 @@ async function next() {
   let val = input.value.trim();
 
 if (modalita === "sintomi") {
-  const val = input.value.trim(); // assicurati sia qui
+  const val = input.value.trim();
 
   if (!val) {
     mostraMessaggio("❗ Per favore descrivi i tuoi sintomi prima di premere invio.");
-    return; // 🔴 questo return è ESSENZIALE
+    return;
   }
 
   mostraMessaggio(val, "user");
-  input.value = "";
+  input.value = ""; 
   risposte.sintomi = val;
 
   mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi dati...");
@@ -236,7 +236,7 @@ if (modalita === "sintomi") {
   fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ sintomi: val })
+    body: JSON.stringify({ sintomi: val, email: risposte.email })
   })
     .then(res => res.json())
     .then(data => mostraMessaggio(data.risposta || "⚠️ Nessuna risposta ricevuta."))
@@ -245,7 +245,7 @@ if (modalita === "sintomi") {
       mostraMessaggio("⚠️ Errore nella comunicazione col server.");
     });
 
-  return; // 🔴 questo impedisce che esegua altro codice dopo
+  return;
 }
 
 
