@@ -152,11 +152,15 @@ body {
 }
 
 .bot .avatar {
-  background-image: url('https://cdn-icons-png.flaticon.com/512/3870/3870822.png');
+  background-image: url('avatar-medico.png');
+  background-size: cover;
+  background-position: center;
 }
 
 .user .avatar {
-  background-image: url('https://cdn-icons-png.flaticon.com/512/847/847969.png');
+  background-image: url('avatar-paziente.png');
+  background-size: cover;
+  background-position: center;
 }
 
 .input-form {
