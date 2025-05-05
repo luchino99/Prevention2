@@ -553,15 +553,26 @@ Vuoi aggiornarli? (sì / no)`);
     next();
   });
 
-const toggleBtn = document.getElementById("theme-toggle");
-if (toggleBtn) {
-  toggleBtn.addEventListener("click", () => {
-    document.documentElement.classList.toggle("light-theme");
-    const isLight = document.documentElement.classList.contains("light-theme");
-    localStorage.setItem("theme", isLight ? "light" : "dark");
-  });
-  if (localStorage.getItem("theme") === "light") {
-    document.documentElement.classList.add("light-theme");
+  const toggleBtn = document.getElementById("theme-toggle");
+  if (toggleBtn) {
+    toggleBtn.addEventListener("click", () => {
+      document.documentElement.classList.toggle("light-theme");
+      const isLight = document.documentElement.classList.contains("light-theme");
+      localStorage.setItem("theme", isLight ? "light" : "dark");
+    });
+
+    if (localStorage.getItem("theme") === "light") {
+      document.documentElement.classList.add("light-theme");
+    }
   }
-}
+
+  // ✅ Blocca il comportamento predefinito del submit del form
+  const form = document.getElementById("input-form");
+  if (form) {
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      next();
+    });
+  }
+
 });
