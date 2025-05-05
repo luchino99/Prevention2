@@ -219,25 +219,26 @@ async function next() {
   const input = document.getElementById("input");
   let val = input.value.trim();
 
-  if (modalita === "sintomi") {
-    if (val) {
-      mostraMessaggio(val, "user");
-      risposte.sintomi = val;
-      input.value = "";
+if (modalita === "sintomi") {
+  if (val) {
+    mostraMessaggio(val, "user");
+    risposte.sintomi = val;
+    input.value = "";
 
-      fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sintomi: val })
-      })
-        .then(res => res.json())
-        .then(data => mostraMessaggio(data.risposta || "⚠️ Nessuna risposta ricevuta."))
-        .catch(err => mostraMessaggio("⚠️ Errore nella risposta."));
-    } else {
-      mostraMessaggio("❗ Per favore descrivi i tuoi sintomi prima di premere invio.");
-    }
-    return; 
+    fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sintomi: val })
+    })
+      .then(res => res.json())
+      .then(data => mostraMessaggio(data.risposta || "⚠️ Nessuna risposta ricevuta."))
+      .catch(err => mostraMessaggio("⚠️ Errore nella risposta."));
+  } else {
+    mostraMessaggio("❗ Per favore descrivi i tuoi sintomi prima di premere invio.");
+    return; // 🔴 Questo mancava
   }
+  return;
+}
 
   if (step === -1 && (!modalita || !domande || domande.length === 0)) {
     console.warn("⛔ Avanzamento bloccato: modalità non scelta o domande non inizializzate.");
