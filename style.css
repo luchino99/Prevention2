@@ -119,15 +119,16 @@ body {
 .bubble {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 12px 18px;
-  margin: 8px 0;
+  gap: 16px; /* aumentato da 12px */
+  padding: 14px 20px; /* leggero aumento per compensare */
+  margin: 10px 0;     /* più aria sopra e sotto */
   border-radius: 20px;
   max-width: 90%;
   font-size: 15px;
   animation: fadeIn 0.3s ease;
   line-height: 1.5;
 }
+
 
 .bot {
   background-color: #e0f2fe;
@@ -144,13 +145,13 @@ body {
 }
 
 .avatar {
-  width: 36px;
-  height: 36px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   background-size: cover;
+  background-position: center;
   flex-shrink: 0;
 }
-
 .bot .avatar {
   background-image: url('avatar-medico.png');
   background-size: cover;
