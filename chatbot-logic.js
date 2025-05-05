@@ -218,7 +218,7 @@ let domandeFemminiliAggiunte = false;
 
 async function next() {
   const input = document.getElementById("input");
-  const val = input.value.trim(); // ✅ Unica dichiarazione
+  const val = input.value.trim();
 
   if (modalita === "sintomi") {
     if (!val) {
@@ -244,20 +244,21 @@ async function next() {
         mostraMessaggio("⚠️ Errore nella comunicazione col server.");
       });
 
-    return; // ✅ Ferma qui
+    return;
   }
 
-
-
-  if (step === -1 || val) {
-    if (step >= 0) {
-      mostraMessaggio(val, "user");
-      risposte[domande[step].key] = val;
-    }
-
+  if (step === -1 && (!modalita || !domande || domande.length === 0)) {
+    console.warn("⛔ Avanzamento bloccato: modalità non scelta o domande non inizializzate.");
     input.value = "";
+    return;
+  }
 
-    if (step >= 0 && domande[step].key === "eta" && !domandeOver65Aggiunte) {
+  if (step >= 0 && val) {
+    mostraMessaggio(val, "user");
+    risposte[domande[step].key] = val;
+
+    // Inserimento dinamico di domande extra
+    if (domande[step].key === "eta" && !domandeOver65Aggiunte) {
       const etaNum = parseInt(val);
       if (!isNaN(etaNum) && etaNum > 65) {
         domande = [...domande.slice(0, step + 1), ...domandeOver65, ...domande.slice(step + 1)];
@@ -265,16 +266,18 @@ async function next() {
       }
     }
 
-    if (step >= 0 && domande[step].key === "sesso" && !domandeFemminiliAggiunte) {
+    if (domande[step].key === "sesso" && !domandeFemminiliAggiunte) {
       const sesso = val.toLowerCase();
       if (sesso === "femmina" || sesso === "donna") {
         domande = [...domande.slice(0, step + 1), ...domandeFemminili, ...domande.slice(step + 1)];
         domandeFemminiliAggiunte = true;
       }
     }
-  }
 
-  step++;
+    step++;
+  } else if (step === -1) {
+    step = 0; // primo avanzamento dopo scelta modalità
+  }
 
   while (step < domande.length) {
     const domanda = domande[step];
@@ -296,6 +299,8 @@ async function next() {
     break;
   }
 
+  input.value = "";
+
   if (step < domande.length) {
     setTimeout(() => mostraMessaggio(domande[step].testo), 500);
   } else {
@@ -310,7 +315,6 @@ async function next() {
     inviaOpenAI();
   }
 }
-
 
 function inviaOpenAI() {
   const loader = document.createElement("div");
