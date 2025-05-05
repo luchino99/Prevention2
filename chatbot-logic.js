@@ -486,15 +486,15 @@ let attesaConfermaAggiornamento = false;
 const toggleBtn = document.getElementById("theme-toggle");
   if (toggleBtn) {
     toggleBtn.addEventListener("click", () => {
-      document.documentElement.classList.toggle("light-theme");
-      const isLight = document.documentElement.classList.contains("light-theme");
+      document.body.classList.toggle("light-theme");
+      const isLight = document.body.classList.contains("light-theme");
       localStorage.setItem("theme", isLight ? "light" : "dark");
     });
-
     if (localStorage.getItem("theme") === "light") {
-      document.documentElement.classList.add("light-theme");
+  document.body.classList.add("light-theme");
     }
-  }
+
+}
 
 mostraMessaggio("📧 Per iniziare, inserisci il tuo indirizzo email.");
 const form = document.getElementById("input-form");
