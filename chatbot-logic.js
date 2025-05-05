@@ -219,18 +219,10 @@ async function next() {
   const input = document.getElementById("input");
   let val = input.value.trim();
 
-  // 🔐 Se modalità non valida o domande non inizializzate, blocca
-  if (step === -1 && (!modalita || !domande || domande.length === 0)) {
-    console.warn("⛔ Avanzamento bloccato: modalità non scelta o domande non inizializzate.");
-    input.value = "";
-    return;
-  }
-
-  // 🩺 Modalità sintomi: invia subito i sintomi a OpenAI
-  if (modalita !== "sintomi" && step === -1 && (!modalita || !domande || domande.length === 0)) {
+  if (modalita === "sintomi") {
     if (val) {
       mostraMessaggio(val, "user");
-      risposte.sintomi = val;  // ⬅️ salva i sintomi in caso servano
+      risposte.sintomi = val;
       input.value = "";
 
       fetch(endpoint, {
@@ -244,10 +236,15 @@ async function next() {
     } else {
       mostraMessaggio("❗ Per favore descrivi i tuoi sintomi prima di premere invio.");
     }
+    return; 
+  }
+
+  if (step === -1 && (!modalita || !domande || domande.length === 0)) {
+    console.warn("⛔ Avanzamento bloccato: modalità non scelta o domande non inizializzate.");
+    input.value = "";
     return;
   }
 
-  // 🧠 Modalità normale (prevenzione, dieta, allenamento)
   if (step === -1 || val) {
     if (step >= 0) {
       mostraMessaggio(val, "user");
