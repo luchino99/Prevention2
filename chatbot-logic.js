@@ -564,8 +564,4 @@ if (toggleBtn) {
     document.documentElement.classList.add("light-theme");
   }
 }
-
-document.getElementById("input-form").addEventListener("submit", function (e) {
-  e.preventDefault();
-  next();
 });
