@@ -428,14 +428,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   mostraMessaggio("📧 Prima di iniziare, inserisci il tuo indirizzo email:");
 
-const input = document.getElementById("input");
 input.addEventListener("keypress", async function (e) {
   if (e.key === "Enter") {
     const val = input.value.trim();
     if (!val) return;
 
+    // PRIMA VOLTA: Inserimento email
     if (!emailInserita) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const emailRegex = /^[^\s@]+@[^\s@]+$/;
       if (!emailRegex.test(val)) {
         mostraMessaggio("⚠️ Inserisci un indirizzo email valido (esempio@email.com).");
         input.value = "";
@@ -464,14 +464,14 @@ Vuoi aggiornarli? (sì / no)`);
         modalita = null;
         step = -1;
         mostraScelteIniziali();
-        return;
+        return; // 🔒 BLOCCA avanzamento automatico
       }
 
       emailInserita = true;
-      return; // <-- IMPORTANTE chiudere qui l'emailInserita
+      return;
     }
 
-    // 🔥🔥 Ora controlliamo se aspettiamo la conferma aggiornamento
+    // CONFERMA AGGIORNAMENTO DATI
     if (attesaConfermaAggiornamento) {
       const risposta = val.toLowerCase();
       if (risposta === "no") {
@@ -496,15 +496,23 @@ Vuoi aggiornarli? (sì / no)`);
       return;
     }
 
+    // BLOCCO se l'utente non ha ancora scelto una modalità
     if (modalita === null) {
       mostraMessaggio("❗ Seleziona prima una modalità cliccando uno dei bottoni.");
       input.value = "";
       return;
     }
 
-    next(); // --> se tutto ok, si va avanti col test
+    // BLOCCO se step = -1 e nessuna domanda caricata (es. errore anomalo)
+    if (step === -1 && (!domande || domande.length === 0)) {
+      input.value = "";
+      return;
+    }
+
+    next();
   }
 });
+
 
 const toggleBtn = document.getElementById("theme-toggle");
   if (toggleBtn) {
