@@ -554,16 +554,21 @@ Vuoi aggiornarli? (sì / no)`);
   });
 
 const toggleBtn = document.getElementById("theme-toggle");
-  if (toggleBtn) {
-    toggleBtn.addEventListener("click", () => {
-      document.documentElement.classList.toggle("light-theme");
-      const isLight = document.documentElement.classList.contains("light-theme");
-      localStorage.setItem("theme", isLight ? "light" : "dark");
-    });
-    if (localStorage.getItem("theme") === "light") {
-      document.documentElement.classList.add("light-theme");
-    }
+if (toggleBtn) {
+  toggleBtn.addEventListener("click", () => {
+    document.documentElement.classList.toggle("light-theme");
+    const isLight = document.documentElement.classList.contains("light-theme");
+    localStorage.setItem("theme", isLight ? "light" : "dark");
+  });
+  if (localStorage.getItem("theme") === "light") {
+    document.documentElement.classList.add("light-theme");
   }
+}
+
+// ✅ AGGIUNGI QUESTO:
+document.getElementById("input-form").addEventListener("submit", function (e) {
+  e.preventDefault();
+  next();
 });
 
   
