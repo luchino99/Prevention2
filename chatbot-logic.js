@@ -186,6 +186,7 @@ function selezionaModalita(tipo) {
   // Assegna le domande e mostra il messaggio introduttivo
   switch (tipo) {
     case "sintomi":
+      domande = [];
       mostraMessaggio("🩺 Perfetto! Per aiutarti al meglio, descrivimi i tuoi sintomi.");
       break;
 
@@ -226,7 +227,7 @@ async function next() {
   }
 
   // 🩺 Modalità sintomi: invia subito i sintomi a OpenAI
-  if (modalita === "sintomi") {
+  if (modalita !== "sintomi" && step === -1 && (!modalita || !domande || domande.length === 0)) {
     if (val) {
       mostraMessaggio(val, "user");
       risposte.sintomi = val;  // ⬅️ salva i sintomi in caso servano
