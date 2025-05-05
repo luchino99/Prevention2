@@ -218,7 +218,7 @@ let domandeOver65Aggiunte = false;
 let domandeFemminiliAggiunte = false;
 
 async function next() {
-  const input = document.getElementById("input");
+  
   const val = input.value.trim();
 
   if (modalita === "sintomi") {
