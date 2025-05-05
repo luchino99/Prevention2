@@ -543,9 +543,6 @@ Vuoi aggiornarli? (sì / no)`);
     // A questo punto, tutto è pronto: gestisce sintomi o domande in base alla modalità
     next();
   });
-});
-
-
 
 const toggleBtn = document.getElementById("theme-toggle");
   if (toggleBtn) {
