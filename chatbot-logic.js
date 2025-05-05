@@ -258,6 +258,16 @@ async function next() {
     mostraMessaggio(val, "user");
     risposte[domande[step].key] = val;
 
+  if (
+    risposte.email &&
+    risposte.eta &&
+    risposte.sesso &&
+    risposte.altezza &&
+    risposte.peso
+     ) {
+    await salvaAnagraficaNelDatabase(risposte);
+  }
+
 if (step >= 0 && domande[step].key === "eta" && !domandeOver65Aggiunte) {
   const etaNum = parseInt(val);
   if (!isNaN(etaNum) && etaNum > 65) {
