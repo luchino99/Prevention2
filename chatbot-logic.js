@@ -465,6 +465,7 @@ document.addEventListener("DOMContentLoaded", () => {
   console.log("JS caricato");
 
   mostraMessaggio("📧 Prima di iniziare, inserisci il tuo indirizzo email:");
+  const input = document.getElementById("input");
 
 input.addEventListener("keypress", async function (e) {
   if (e.key !== "Enter") return;
@@ -473,13 +474,29 @@ input.addEventListener("keypress", async function (e) {
   if (!val) return;
 
   // Se email già inserita e modalità scelta, procedi direttamente
-  if (emailInserita && modalita !== null) {
-    // Protezione extra: se step e domande non validi, blocca
-    if (step === -1 && (!domande || domande.length === 0)) {
-      input.value = "";
+if (emailInserita && modalita !== null) {
+  if (modalita === "sintomi") {
+    if (!val) {
+      mostraMessaggio("❗ Per favore descrivi i tuoi sintomi prima di premere invio.");
       return;
     }
-    next();
+
+    mostraMessaggio(val, "user");
+    risposte.sintomi = val;
+    input.value = "";
+
+    fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sintomi: val, email: risposte.email })
+    })
+      .then(res => res.json())
+      .then(data => mostraMessaggio(data.risposta || "⚠️ Nessuna risposta ricevuta."))
+      .catch(err => {
+        console.error("Errore nella fetch:", err);
+        mostraMessaggio("⚠️ Errore nella comunicazione col server.");
+      });
+
     return;
   }
 
