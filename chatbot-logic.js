@@ -215,19 +215,23 @@ function selezionaModalita(tipo) {
 
 
 async function next() {
-  // 🔒 Protezione: non andare avanti se non c'è una modalità valida o domande caricate
+  const input = document.getElementById("input");
+  let val = input.value.trim();
+
+  // 🔐 Se modalità non valida o domande non inizializzate, blocca
   if (step === -1 && (!modalita || !domande || domande.length === 0)) {
     console.warn("⛔ Avanzamento bloccato: modalità non scelta o domande non inizializzate.");
+    input.value = "";
     return;
   }
 
-  const input = document.getElementById("input");
-  const val = input.value.trim();
-
+  // 🩺 Modalità sintomi: invia subito i sintomi a OpenAI
   if (modalita === "sintomi") {
     if (val) {
       mostraMessaggio(val, "user");
+      risposte.sintomi = val;  // ⬅️ salva i sintomi in caso servano
       input.value = "";
+
       fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -236,15 +240,19 @@ async function next() {
         .then(res => res.json())
         .then(data => mostraMessaggio(data.risposta || "⚠️ Nessuna risposta ricevuta."))
         .catch(err => mostraMessaggio("⚠️ Errore nella risposta."));
+    } else {
+      mostraMessaggio("❗ Per favore descrivi i tuoi sintomi prima di premere invio.");
     }
     return;
   }
 
+  // 🧠 Modalità normale (prevenzione, dieta, allenamento)
   if (step === -1 || val) {
     if (step >= 0) {
       mostraMessaggio(val, "user");
       risposte[domande[step].key] = val;
     }
+
     input.value = "";
 
     if (step >= 0 && domande[step].key === "eta") {
@@ -253,6 +261,7 @@ async function next() {
         domande = [...domande.slice(0, step + 1), ...domandeOver65, ...domande.slice(step + 1)];
       }
     }
+
     if (step >= 0 && domande[step].key === "sesso") {
       const sesso = val.toLowerCase();
       if (sesso === "femmina" || sesso === "donna") {
