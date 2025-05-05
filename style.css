@@ -35,12 +35,18 @@ body {
 
 .branding {
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px; /* spazio preciso tra logo e testo */
 }
 
 .logo {
   width: 200px;
   height: auto;
-  margin-bottom: 0px;
+  margin: 0;
+  padding: 0;
+  display: block;
 }
 
 .branding h1 {
@@ -51,7 +57,9 @@ body {
 .subtitle {
   font-size: 14px;
   color: #94a3b8;
-  margin-top: 0px;
+  margin: 0;
+  padding: 0;
+  line-height: 1.2;
 }
 
 .sidebar-footer {
