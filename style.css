@@ -124,17 +124,17 @@ body {
 }
 
 .chat-container {
-  flex-grow: 1;
+  flex: 1;
   display: flex;
   flex-direction: column;
   padding: 40px;
   background-color: #ffffff;
   overflow: hidden;
   position: relative;
-  min-width: 0;               /* ✅ evita stretching automatico */
-  width: calc(100% - 300px);  /* ✅ lascia spazio alla sidebar */
-  max-width: 1100px;
-  margin: 0 auto;
+  width: 100%;
+  max-width: 1000px;
+  min-width: 700px;
+  margin: auto;
   border-radius: 20px;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.08);
 }
@@ -253,6 +253,7 @@ body {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
   transition: all 0.3s ease;
   backdrop-filter: blur(3px);
+  margin: 0 auto;
 }
 
 
@@ -265,11 +266,10 @@ body {
 }
 
 
-.scelta-btn,
+
 .sidebar-btn {
-  width: auto;
-  min-width: 180px;
-  max-width: 220px;
+  width: 100%;
+  max-width: 240px;
   margin: 0 auto;
   text-align: center;
   display: block;
