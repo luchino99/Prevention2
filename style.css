@@ -31,7 +31,10 @@ body {
   justify-content: space-between;
   padding: 30px 20px;
   box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
+  align-items: center; 
+  text-align: center;   
 }
+
 
 .branding {
   text-align: center;
@@ -253,6 +256,15 @@ body {
   margin-top: 20px;
 }
 
+.scelta-btn,
+.sidebar-btn {
+  width: auto;
+  min-width: 180px;
+  max-width: 220px;
+  margin: 0 auto;
+  text-align: center;
+  display: block;
+}
 
 
 @media (min-width: 600px) {
