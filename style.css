@@ -257,6 +257,11 @@ body {
   margin: 0 auto;
 }
 
+.scelta-btn:hover {
+  background-color: #0284c7; /* Colore leggermente più scuro */
+  transform: translateY(-3px); /* Effetto di sollevamento */
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2); /* Ombra più ampia */
+}
 
 .button-container {
   display: flex;
