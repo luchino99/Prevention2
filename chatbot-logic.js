@@ -464,6 +464,7 @@ Vuoi aggiornarli? (sì / no)`);
         modalita = null;
         step = -1;
         mostraScelteIniziali();
+        return;
       }
 
       emailInserita = true;
