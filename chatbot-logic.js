@@ -486,7 +486,7 @@ const toggleBtn = document.getElementById("theme-toggle");
     }
   }
 
-  // ✅ Blocca il comportamento predefinito del submit del form
+mostraMessaggio("📧 Per iniziare, inserisci il tuo indirizzo email.");
 const form = document.getElementById("input-form");
 if (form) {
   form.addEventListener("submit", async function (e) {
