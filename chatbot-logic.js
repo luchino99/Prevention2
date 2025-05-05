@@ -449,7 +449,7 @@ async function recuperaAnagraficaDalDatabase(email) {
     const { data, error } = await supabaseClient
       .from('users')
       .select('*')
-      .eq('email', encodeURIComponent(email))
+      .eq('email', encodeURIComponent(email.trim().toLowerCase()))
       .single();
     if (error && error.code !== 'PGRST116') {
       console.error("Errore API recupero:", error);
