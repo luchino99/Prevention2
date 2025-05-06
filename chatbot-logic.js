@@ -337,7 +337,8 @@ if (step >= 0 && domande[step].key === "sesso" && !domandeFemminiliAggiunte) {
     } else {
       console.error("⚠️ Modalità non definita, non salvo la compilazione.");
     }
-
+  if (modalita === "aggiorna") return;
+    
     mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi dati...");
     inviaOpenAI();
   }
