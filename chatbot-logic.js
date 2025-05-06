@@ -123,7 +123,6 @@ let domande = [];
 let risposte = {};
 let step = -1;
 let modalita = null;
-let ultimaRispostaAI = "";
 
 function mostraMessaggio(testo, classe = "bot") {
   const div = document.createElement("div");
@@ -381,13 +380,19 @@ if (step < domande.length) {
     return; // 🛑 BLOCCA la chiamata a OpenAI
   }
 
+  if (modalita) {
+    await salvaCompilazioneNelDatabase(risposte, modalita);
+  } else {
+    console.error("⚠️ Modalità non definita, non salvo la compilazione.");
+  }
+
   mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi dati...");
   inviaOpenAI();
   }
 
 }
 
-async function inviaOpenAI() {
+function inviaOpenAI() {
   const loader = document.createElement("div");
   loader.className = "loader";
   document.getElementById("messages").appendChild(loader);
@@ -398,44 +403,31 @@ async function inviaOpenAI() {
   if (modalita === "sintomi") payload.sintomi = risposte.sintomi;
   if (modalita === "allenamento") payload.allenamento = true;
 
-  try {
-    const res = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
+  fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  })
+    .then(async res => {
+      loader.remove();
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Errore dal server:", errorText);
+        mostraMessaggio("⚠️ Errore dal server: " + errorText);
+        return;
+      }
+
+      const data = await res.json();
+      console.log("📦 Risposta ricevuta:", data);
+      mostraMessaggio(data.risposta || "⚠️ Nessuna risposta valida ricevuta.");
+    })
+    .catch(err => {
+      loader.remove();
+      console.error("❌ Errore fetch:", err);
+      mostraMessaggio("⚠️ Errore nella comunicazione col server.");
     });
-
-    loader.remove();
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error("Errore dal server:", errorText);
-      mostraMessaggio("⚠️ Errore dal server: " + errorText);
-      return;
-    }
-
-    const data = await res.json();
-    console.log("📦 Risposta ricevuta:", data);
-    ultimaRispostaAI = data.risposta || "";
-mostraMessaggio(ultimaRispostaAI || "⚠️ Nessuna risposta valida ricevuta.");
-
-if (modalita) {
-  console.log("💾 Chiamata salvataggio compilazione con modalita:", modalita);
-  await salvaCompilazioneNelDatabase(risposte, modalita);
-} else {
-  console.warn("⚠️ Nessuna modalità definita al momento del salvataggio.");
 }
-
-modalita = null;
-
-
-  } catch (err) {
-    loader.remove();
-    console.error("❌ Errore fetch:", err);
-    mostraMessaggio("⚠️ Errore nella comunicazione col server.");
-  }
-}
-
 
 function generaPDF(contenuto) {
   const pdfElement = document.getElementById("pdf-content");
@@ -498,11 +490,6 @@ async function salvaAnagraficaNelDatabase(dati) {
 }
 
 async function salvaCompilazioneNelDatabase(risposte, modalita) {
-  console.log("🔍 Tentativo di salvataggio su Supabase:");
-  console.log("Risposte:", risposte);
-  console.log("Modalità:", modalita);
-  console.log("Ultima risposta AI:", ultimaRispostaAI);
-
   try {
     if (!modalita) {
       console.warn("⚠️ Modalità non definita, non salvo la compilazione.");
@@ -518,36 +505,19 @@ async function salvaCompilazioneNelDatabase(risposte, modalita) {
       .insert([{
         email: risposte.email,
         modalita: modalita,
-        risposte: risposte,
-        risposta_ai: ultimaRispostaAI  // ✅ questa riga è fondamentale
+        risposte: risposte
       }]);
 
     if (error) {
       console.error("Errore salvataggio compilazione:", error);
     } else {
-      console.log("✅ Compilazione salvata con risposta AI:", data);
+      console.log("✅ Compilazione salvata:", data);
     }
   } catch (error) {
     console.error("❌ Errore di rete salvataggio compilazione:", error);
   }
 }
 
-
-async function salvaInterazione(email, messaggioUtente, rispostaAI) {
-  try {
-    const { data, error } = await supabaseClient
-      .from('interazioni')
-      .insert([{ email, messaggio_utente: messaggioUtente, risposta_ai: rispostaAI }]);
-
-    if (error) {
-      console.error("Errore salvataggio interazione:", error);
-    } else {
-      console.log("✅ Interazione salvata:", data);
-    }
-  } catch (error) {
-    console.error("❌ Errore rete salvataggio interazione:", error);
-  }
-}
 
 
 async function recuperaAnagraficaDalDatabase(email) {
@@ -660,61 +630,6 @@ Vuoi aggiornarli? (sì / no)`);
       input.value = "";
       return;
     }
-
-    
-if (ultimaRispostaAI && modalita === null) {
-  mostraMessaggio(val, "user");
-  input.value = "";
-
-const messaggioContestuale = `
-L'utente ti ha precedentemente descritto i seguenti sintomi:
-"${risposte.sintomi}"
-
-Tu hai fornito questa risposta:
-"${ultimaRispostaAI}"
-
-Ora l'utente aggiunge questa richiesta o domanda:
-"${val}"
-
-Fornisci una nuova risposta che tenga conto dei sintomi iniziali, della tua risposta precedente e della nuova domanda. Sii chiaro, empatico e professionale.`;
-
-
-  const loader = document.createElement("div");
-  loader.className = "loader";
-  document.getElementById("messages").appendChild(loader);
-  loader.scrollIntoView();
-
-  fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ sintomi: messaggioContestuale, email: risposte.email })  // Usa il campo sintomi per inviare testo libero
-  })
-    .then(async res => {
-      loader.remove();
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.error("Errore dal server:", errorText);
-        mostraMessaggio("⚠️ Errore dal server: " + errorText);
-        return;
-      }
-
-      const data = await res.json();
-      console.log("📦 Risposta contestuale ricevuta:", data);
-      mostraMessaggio(data.risposta || "⚠️ Nessuna risposta valida ricevuta.");
-      ultimaRispostaAI = data.risposta || ultimaRispostaAI;
-
-      
-      salvaInterazione(risposte.email, val, data.risposta);
-    })
-    .catch(err => {
-      loader.remove();
-      console.error("❌ Errore fetch contestuale:", err);
-      mostraMessaggio("⚠️ Errore nella comunicazione col server.");
-    });
-
-  return;
-}
 
     if (!modalita) {
       mostraMessaggio("❗ Seleziona prima una modalità cliccando uno dei bottoni.");
