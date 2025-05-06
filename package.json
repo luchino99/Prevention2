@@ -4,8 +4,8 @@
   "description": "Chatbot sanitario per prevenzione con AI",
   "type": "module",
   "scripts": {
-    "dev": "vercel dev",
-    },
+    "dev": "vercel dev"
+  },
   "dependencies": {
     "openai": "^4.0.0"
   },
