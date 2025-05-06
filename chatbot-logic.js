@@ -129,13 +129,20 @@ function mostraMessaggio(testo, classe = "bot") {
   div.className = `bubble ${classe}`;
   const avatar = document.createElement("div");
   avatar.className = `avatar`;
+
   const span = document.createElement("span");
-  span.innerText = testo;
+  if (classe === "bot") {
+    span.innerHTML = marked.parse(testo);
+  } else {
+    span.innerText = testo;
+  }
+
   div.appendChild(avatar);
   div.appendChild(span);
   document.getElementById("messages").appendChild(div);
   div.scrollIntoView();
 }
+
 
 function mostraScelteIniziali() {
   mostraMessaggio("👋 Ciao! Come posso aiutarti oggi?\n\n🔹 Hai bisogno di aiuto per ricevere consigli su una *situazione medica attuale* o sintomi?\n\n🔹 Oppure vuoi ricevere consigli per la *prevenzione della salute*?\n\n🔹 O desideri un *piano alimentare* o *programma di allenamento* personalizzato?");
