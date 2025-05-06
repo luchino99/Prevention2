@@ -507,13 +507,14 @@ async function salvaCompilazioneNelDatabase(risposte, modalita) {
       .insert([{
         email: risposte.email,
         modalita: modalita,
-        risposte: risposte
+        risposte: risposte,
+        risposta_ai: ultimaRispostaAI  // ✅ salviamo anche la prima risposta AI
       }]);
 
     if (error) {
       console.error("Errore salvataggio compilazione:", error);
     } else {
-      console.log("✅ Compilazione salvata:", data);
+      console.log("✅ Compilazione salvata con risposta AI:", data);
     }
   } catch (error) {
     console.error("❌ Errore di rete salvataggio compilazione:", error);
