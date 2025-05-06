@@ -506,45 +506,45 @@ if (form) {
     const val = input.value.trim();
     if (!val) return;
 
-if (!emailInserita) {
-  const emailRegex = /^[^\s@]+@[^\s@]+$/;
-  if (!emailRegex.test(val)) {
-    mostraMessaggio("⚠️ Inserisci un indirizzo email valido (esempio@email.com).");
-    input.value = "";
-    return;
-  }
+    if (!emailInserita) {
+      const emailRegex = /^[^\s@]+@[^\s@]+$/;
+      if (!emailRegex.test(val)) {
+        mostraMessaggio("⚠️ Inserisci un indirizzo email valido (esempio@email.com).");
+        input.value = "";
+        return;
+      }
 
-  emailUtente = val;
-  risposte.email = emailUtente;
-  mostraMessaggio(emailUtente, "user");
-  input.value = "";
+      emailUtente = val;
+      risposte.email = emailUtente;
+      mostraMessaggio(emailUtente, "user");
+      input.value = "";
 
-  const datiRecuperati = await recuperaAnagraficaDalDatabase(emailUtente);
+      const datiRecuperati = await recuperaAnagraficaDalDatabase(emailUtente);
 
-  if (datiRecuperati) {
-    risposte = datiRecuperati;
-    mostraMessaggio(`✅ Bentornato! Abbiamo trovato questi dati:\n
+      if (datiRecuperati) {
+        risposte = datiRecuperati;
+        mostraMessaggio(`✅ Bentornato! Abbiamo trovato questi dati:\n
 - Età: ${risposte.eta}
 - Sesso: ${risposte.sesso}
 - Altezza: ${risposte.altezza} cm
 - Peso: ${risposte.peso} kg\n
 Vuoi aggiornarli? (sì / no)`);
-    attesaConfermaAggiornamento = true;
-  } else {
-    mostraMessaggio("👋 Non abbiamo trovato dati salvati. Procediamo con un nuovo profilo.");
-    risposte = { email: emailUtente };
-    setTimeout(mostraScelteIniziali, 500); // 👈 SOLO QUI MOSTRA I BOTTONI
-  }
+        attesaConfermaAggiornamento = true;
+      } else {
+        mostraMessaggio("👋 Non abbiamo trovato dati salvati. Procediamo con un nuovo profilo.");
+        risposte = { email: emailUtente };
+        mostraScelteIniziali();
+      }
 
-  emailInserita = true;
-  return;
-}
+      emailInserita = true;
+      return;
+    }
 
     if (attesaConfermaAggiornamento) {
       const risposta = val.toLowerCase();
       if (risposta === "no") {
         mostraMessaggio("👌 Perfetto, manteniamo i dati esistenti.");
-        setTimeout(mostraScelteIniziali, 500);
+        mostraScelteIniziali();
         attesaConfermaAggiornamento = false;
       } else if (risposta === "sì" || risposta === "si") {
         mostraMessaggio("✏️ Procediamo ad aggiornare i tuoi dati.");
