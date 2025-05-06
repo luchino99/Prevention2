@@ -490,6 +490,11 @@ async function salvaAnagraficaNelDatabase(dati) {
 }
 
 async function salvaCompilazioneNelDatabase(risposte, modalita) {
+  console.log("🔍 Tentativo di salvataggio su Supabase:");
+  console.log("Risposte:", risposte);
+  console.log("Modalità:", modalita);
+  console.log("Ultima risposta AI:", ultimaRispostaAI);
+
   try {
     if (!modalita) {
       console.warn("⚠️ Modalità non definita, non salvo la compilazione.");
