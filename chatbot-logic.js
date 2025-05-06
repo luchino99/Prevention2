@@ -520,6 +520,21 @@ async function salvaCompilazioneNelDatabase(risposte, modalita) {
   }
 }
 
+async function salvaInterazione(email, messaggioUtente, rispostaAI) {
+  try {
+    const { data, error } = await supabaseClient
+      .from('interazioni')
+      .insert([{ email, messaggio_utente: messaggioUtente, risposta_ai: rispostaAI }]);
+
+    if (error) {
+      console.error("Errore salvataggio interazione:", error);
+    } else {
+      console.log("✅ Interazione salvata:", data);
+    }
+  } catch (error) {
+    console.error("❌ Errore rete salvataggio interazione:", error);
+  }
+}
 
 
 async function recuperaAnagraficaDalDatabase(email) {
@@ -632,6 +647,58 @@ Vuoi aggiornarli? (sì / no)`);
       input.value = "";
       return;
     }
+
+    // 🔁 Gestione richiesta aggiuntiva dell'utente dopo una risposta già ricevuta
+if (ultimaRispostaAI && modalita === null) {
+  mostraMessaggio(val, "user");
+  input.value = "";
+
+  const messaggioContestuale = `
+Questa è la risposta precedente che hai fornito all’utente:
+
+${ultimaRispostaAI}
+
+L’utente ora aggiunge questo commento/domanda:
+"${val}"
+
+Fornisci una nuova risposta coerente, tenendo conto sia della risposta precedente che della nuova richiesta. Usa un linguaggio empatico, preciso e tecnico come prima.`;
+
+  const loader = document.createElement("div");
+  loader.className = "loader";
+  document.getElementById("messages").appendChild(loader);
+  loader.scrollIntoView();
+
+  fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sintomi: messaggioContestuale, email: risposte.email })  // Usa il campo sintomi per inviare testo libero
+  })
+    .then(async res => {
+      loader.remove();
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Errore dal server:", errorText);
+        mostraMessaggio("⚠️ Errore dal server: " + errorText);
+        return;
+      }
+
+      const data = await res.json();
+      console.log("📦 Risposta contestuale ricevuta:", data);
+      mostraMessaggio(data.risposta || "⚠️ Nessuna risposta valida ricevuta.");
+      ultimaRispostaAI = data.risposta || ultimaRispostaAI;
+
+      // 💾 Salva la conversazione in Supabase
+      salvaInterazione(risposte.email, val, data.risposta);
+    })
+    .catch(err => {
+      loader.remove();
+      console.error("❌ Errore fetch contestuale:", err);
+      mostraMessaggio("⚠️ Errore nella comunicazione col server.");
+    });
+
+  return;
+}
 
     if (!modalita) {
       mostraMessaggio("❗ Seleziona prima una modalità cliccando uno dei bottoni.");
