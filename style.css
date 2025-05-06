@@ -289,7 +289,42 @@ body {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
 
-/* Animazioni */
+.bubble span p {
+  margin-bottom: 10px;
+  line-height: 1.6;
+}
+
+.bubble span ul,
+.bubble span ol {
+  padding-left: 20px;
+  margin: 10px 0;
+}
+
+.bubble span li {
+  margin-bottom: 6px;
+}
+
+.bubble span strong {
+  font-weight: 600;
+}
+
+.bubble span em {
+  font-style: italic;
+}
+
+.bubble span h1,
+.bubble span h2,
+.bubble span h3 {
+  margin: 10px 0 5px;
+  font-weight: 600;
+}
+
+.bubble span a {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
