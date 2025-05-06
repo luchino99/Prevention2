@@ -210,36 +210,42 @@ body {
 }
 
 .input-form {
-  display: flex;
-  border: 1px solid var(--border);
-  border-radius: 30px;
-  overflow: hidden;
-  background-color: var(--bg-light);
-  margin-top: auto;
-  padding: 0;
   height: 50px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  min-height: 50px;
+  max-height: 50px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  border-radius: 30px;
+  padding: 0;
 }
 
 #input {
-  flex: 1;
+  height: 100%;
+  min-height: 50px;
+  max-height: 50px;
+  line-height: 1.5;
+  overflow: hidden;
   padding: 0 20px;
   font-size: 16px;
   border: none;
   outline: none;
   background-color: transparent;
   color: var(--text-dark);
-  height: 100%;
   border-radius: 0;
 }
 
+
 .btn-send {
+  height: 100%;
+  min-height: 50px;
+  max-height: 50px;
+  white-space: nowrap;
   padding: 0 24px;
   font-size: 16px;
   background-color: var(--primary);
   color: white;
   border: none;
-  height: 100%;
   cursor: pointer;
   transition: background 0.3s;
   border-left: 1px solid var(--border);
