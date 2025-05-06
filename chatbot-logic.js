@@ -417,9 +417,17 @@ async function inviaOpenAI() {
     const data = await res.json();
     console.log("📦 Risposta ricevuta:", data);
     ultimaRispostaAI = data.risposta || "";
-    mostraMessaggio(ultimaRispostaAI || "⚠️ Nessuna risposta valida ricevuta.");
-    await salvaCompilazioneNelDatabase(risposte, modalita);
-    modalita = null;
+mostraMessaggio(ultimaRispostaAI || "⚠️ Nessuna risposta valida ricevuta.");
+
+if (modalita) {
+  console.log("💾 Chiamata salvataggio compilazione con modalita:", modalita);
+  await salvaCompilazioneNelDatabase(risposte, modalita);
+} else {
+  console.warn("⚠️ Nessuna modalità definita al momento del salvataggio.");
+}
+
+modalita = null;
+
 
   } catch (err) {
     loader.remove();
