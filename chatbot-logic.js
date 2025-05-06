@@ -123,6 +123,7 @@ let domande = [];
 let risposte = {};
 let step = -1;
 let modalita = null;
+let ultimaRispostaAI = "";
 
 function mostraMessaggio(testo, classe = "bot") {
   const div = document.createElement("div");
@@ -421,6 +422,7 @@ function inviaOpenAI() {
       const data = await res.json();
       console.log("📦 Risposta ricevuta:", data);
       mostraMessaggio(data.risposta || "⚠️ Nessuna risposta valida ricevuta.");
+      ultimaRispostaAI = data.risposta || "";
     })
     .catch(err => {
       loader.remove();
