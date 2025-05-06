@@ -222,6 +222,19 @@ async function next() {
   
   const val = input.value.trim();
 
+  if (modalita === "aggiorna" && step >= domande.length) {
+  await salvaAnagraficaNelDatabase(risposte);
+  mostraMessaggio("✅ Dati aggiornati con successo! Ora puoi scegliere un'opzione per continuare.");
+
+  const datiAggiornati = { ...risposte };
+  risposte = { ...datiAggiornati };
+  modalita = null;
+  step = -1;
+  mostraScelteIniziali();
+  return;
+}
+
+  
   if (modalita === "sintomi") {
     if (!val) {
       mostraMessaggio("❗ Per favore descrivi i tuoi sintomi prima di premere invio.");
@@ -314,17 +327,6 @@ if (step >= 0 && domande[step].key === "sesso" && !domandeFemminiliAggiunte) {
 
   input.value = "";
 
-  if (modalita === "aggiorna" && step >= domande.length) {
-  await salvaAnagraficaNelDatabase(risposte);
-  mostraMessaggio("✅ Dati aggiornati con successo! Ora puoi scegliere un'opzione per continuare.");
-
-  const datiAggiornati = { ...risposte };
-  risposte = { ...datiAggiornati };
-  modalita = null;
-  step = -1;
-  mostraScelteIniziali();
-  return;
-}
 
   if (step < domande.length) {
     setTimeout(() => mostraMessaggio(domande[step].testo), 500);
