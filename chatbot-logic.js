@@ -508,7 +508,7 @@ async function salvaCompilazioneNelDatabase(risposte, modalita) {
         email: risposte.email,
         modalita: modalita,
         risposte: risposte,
-        risposta_ai: ultimaRispostaAI  // ✅ salviamo anche la prima risposta AI
+        risposta_ai: ultimaRispostaAI  // ✅ questa riga è fondamentale
       }]);
 
     if (error) {
@@ -520,6 +520,7 @@ async function salvaCompilazioneNelDatabase(risposte, modalita) {
     console.error("❌ Errore di rete salvataggio compilazione:", error);
   }
 }
+
 
 async function salvaInterazione(email, messaggioUtente, rispostaAI) {
   try {
