@@ -417,6 +417,13 @@ function inviaOpenAI() {
       console.log("📦 Risposta ricevuta:", data);
       mostraMessaggio(data.risposta || "⚠️ Nessuna risposta valida ricevuta.");
       ultimaRispostaAI = data.risposta || "";
+
+      // ✅ Ora che abbiamo la risposta AI, salviamo la compilazione
+      if (modalita) {
+        await salvaCompilazioneNelDatabase(risposte, modalita);
+      } else {
+        console.error("⚠️ Modalità non definita, non salvo la compilazione.");
+      }
     })
     .catch(err => {
       loader.remove();
