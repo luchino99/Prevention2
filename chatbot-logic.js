@@ -328,20 +328,29 @@ if (step >= 0 && domande[step].key === "sesso" && !domandeFemminiliAggiunte) {
   input.value = "";
 
 
-  if (step < domande.length) {
-    setTimeout(() => mostraMessaggio(domande[step].testo), 500);
-  } else {
-    await salvaAnagraficaNelDatabase(risposte);
-    if (modalita) {
-      await salvaCompilazioneNelDatabase(risposte, modalita);
-    } else {
-      console.error("⚠️ Modalità non definita, non salvo la compilazione.");
-    }
-  if (modalita === "aggiorna") return;
-    
-    mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi dati...");
-    inviaOpenAI();
+if (step < domande.length) {
+  setTimeout(() => mostraMessaggio(domande[step].testo), 500);
+} else {
+  await salvaAnagraficaNelDatabase(risposte);
+
+  if (modalita === "aggiorna") {
+    mostraMessaggio("✅ Dati aggiornati! Scegli ora cosa vuoi fare.");
+    modalita = null;
+    step = -1;
+    mostraScelteIniziali();
+    return; // 🛑 BLOCCA la chiamata a OpenAI
   }
+
+  if (modalita) {
+    await salvaCompilazioneNelDatabase(risposte, modalita);
+  } else {
+    console.error("⚠️ Modalità non definita, non salvo la compilazione.");
+  }
+
+  mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi dati...");
+  inviaOpenAI();
+  }
+
 }
 
 function inviaOpenAI() {
