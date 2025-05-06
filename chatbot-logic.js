@@ -387,7 +387,7 @@ if (step < domande.length) {
 
 }
 
-function inviaOpenAI() {
+async function inviaOpenAI() {
   const loader = document.createElement("div");
   loader.className = "loader";
   document.getElementById("messages").appendChild(loader);
@@ -398,39 +398,37 @@ function inviaOpenAI() {
   if (modalita === "sintomi") payload.sintomi = risposte.sintomi;
   if (modalita === "allenamento") payload.allenamento = true;
 
-  fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  })
-    .then(async res => {
-      loader.remove();
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.error("Errore dal server:", errorText);
-        mostraMessaggio("⚠️ Errore dal server: " + errorText);
-        return;
-      }
-
-      const data = await res.json();
-      console.log("📦 Risposta ricevuta:", data);
-      mostraMessaggio(data.risposta || "⚠️ Nessuna risposta valida ricevuta.");
-      ultimaRispostaAI = data.risposta || "";
-
-      // ✅ Ora che abbiamo la risposta AI, salviamo la compilazione
-      if (modalita) {
-        await salvaCompilazioneNelDatabase(risposte, modalita);
-      } else {
-        console.error("⚠️ Modalità non definita, non salvo la compilazione.");
-      }
-    })
-    .catch(err => {
-      loader.remove();
-      console.error("❌ Errore fetch:", err);
-      mostraMessaggio("⚠️ Errore nella comunicazione col server.");
+  try {
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
     });
+
+    loader.remove();
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("Errore dal server:", errorText);
+      mostraMessaggio("⚠️ Errore dal server: " + errorText);
+      return;
+    }
+
+    const data = await res.json();
+    console.log("📦 Risposta ricevuta:", data);
+    ultimaRispostaAI = data.risposta || "";
+    mostraMessaggio(ultimaRispostaAI || "⚠️ Nessuna risposta valida ricevuta.");
+
+    // 💾 Ora salviamo nel database
+    await salvaCompilazioneNelDatabase(risposte, modalita);
+
+  } catch (err) {
+    loader.remove();
+    console.error("❌ Errore fetch:", err);
+    mostraMessaggio("⚠️ Errore nella comunicazione col server.");
+  }
 }
+
 
 function generaPDF(contenuto) {
   const pdfElement = document.getElementById("pdf-content");
