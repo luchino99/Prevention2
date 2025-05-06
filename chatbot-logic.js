@@ -573,18 +573,22 @@ Vuoi aggiornarli? (sì / no)`);
         attesaConfermaAggiornamento = false;
       } else if (risposta === "sì" || risposta === "si") {
   mostraMessaggio("✏️ Procediamo ad aggiornare i tuoi dati.");
+
+  modalita = "aggiorna";
   domande = [
     { key: "eta", testo: "Aggiorna la tua età:" },
     { key: "sesso", testo: "Aggiorna il tuo sesso biologico:" },
     { key: "altezza", testo: "Aggiorna la tua altezza in cm:" },
     { key: "peso", testo: "Aggiorna il tuo peso in kg:" }
   ];
-  step = 0;
-  modalita = "aggiorna";
+  // 🔴 NON azzerare l'oggetto risposte, così l'email resta salvata!
+  step = -1;
   attesaConfermaAggiornamento = false;
-  next(); 
+  input.value = "";
+
+  setTimeout(() => next(), 300);  // Avvia la prima domanda
   return;
-    } else {
+} else {
         mostraMessaggio("❗ Per favore rispondi 'sì' o 'no'.");
       }
       input.value = "";
