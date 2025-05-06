@@ -317,10 +317,16 @@ if (step >= 0 && domande[step].key === "sesso" && !domandeFemminiliAggiunte) {
       }
     }
 
-    if (rispostaPrecompilata !== undefined && rispostaPrecompilata !== null && rispostaPrecompilata !== "") {
-      step++;
-      continue;
-    }
+    if (
+  modalita !== "aggiorna" &&
+  rispostaPrecompilata !== undefined &&
+  rispostaPrecompilata !== null &&
+  rispostaPrecompilata !== ""
+) {
+  step++;
+  continue;
+}
+
 
     break;
   }
