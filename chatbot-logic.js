@@ -418,9 +418,8 @@ async function inviaOpenAI() {
     console.log("📦 Risposta ricevuta:", data);
     ultimaRispostaAI = data.risposta || "";
     mostraMessaggio(ultimaRispostaAI || "⚠️ Nessuna risposta valida ricevuta.");
-
-    // 💾 Ora salviamo nel database
     await salvaCompilazioneNelDatabase(risposte, modalita);
+    modalita = null;
 
   } catch (err) {
     loader.remove();
@@ -692,7 +691,7 @@ Fornisci una nuova risposta che tenga conto dei sintomi iniziali, della tua risp
       mostraMessaggio(data.risposta || "⚠️ Nessuna risposta valida ricevuta.");
       ultimaRispostaAI = data.risposta || ultimaRispostaAI;
 
-      // 💾 Salva la conversazione in Supabase
+      
       salvaInterazione(risposte.email, val, data.risposta);
     })
     .catch(err => {
