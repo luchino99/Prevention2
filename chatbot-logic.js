@@ -548,18 +548,19 @@ Vuoi aggiornarli? (sì / no)`);
         mostraScelteIniziali();
         attesaConfermaAggiornamento = false;
       } else if (risposta === "sì" || risposta === "si") {
-        mostraMessaggio("✏️ Procediamo ad aggiornare i tuoi dati.");
-        domande = [
-          { key: "eta", testo: "Aggiorna la tua età:" },
-          { key: "sesso", testo: "Aggiorna il tuo sesso biologico:" },
-          { key: "altezza", testo: "Aggiorna la tua altezza in cm:" },
-          { key: "peso", testo: "Aggiorna il tuo peso in kg:" }
-        ];
-        step = -1;
-        modalita = "aggiorna";
-        attesaConfermaAggiornamento = false;
-        next();
-      } else {
+  mostraMessaggio("✏️ Procediamo ad aggiornare i tuoi dati.");
+  domande = [
+    { key: "eta", testo: "Aggiorna la tua età:" },
+    { key: "sesso", testo: "Aggiorna il tuo sesso biologico:" },
+    { key: "altezza", testo: "Aggiorna la tua altezza in cm:" },
+    { key: "peso", testo: "Aggiorna il tuo peso in kg:" }
+  ];
+  step = 0;
+  modalita = "aggiorna";
+  attesaConfermaAggiornamento = false;
+  next(); 
+  return;
+    } else {
         mostraMessaggio("❗ Per favore rispondi 'sì' o 'no'.");
       }
       input.value = "";
@@ -572,13 +573,21 @@ Vuoi aggiornarli? (sì / no)`);
       return;
     }
 
-    if (modalita === "aggiorna" && step >= domande.length) {
+if (modalita === "aggiorna" && step >= domande.length) {
   await salvaAnagraficaNelDatabase(risposte);
   mostraMessaggio("✅ Dati aggiornati con successo! Ora puoi scegliere un'opzione per continuare.");
+  
+  // Salva temporaneamente i dati aggiornati
+  const datiAggiornati = { ...risposte };
+
+  // Reset stato per permettere nuova compilazione
+  risposte = { ...datiAggiornati }; // ✅ Mantiene i 4 dati base
   modalita = null;
+  step = -1;
   mostraScelteIniziali();
   return;
 }
+
 
     
     next();
