@@ -344,6 +344,14 @@ body {
   font-size: 90%;
 }
 
+.bubble span blockquote {
+  border-left: 4px solid #94a3b8;
+  padding-left: 12px;
+  margin: 10px 0;
+  color: #475569;
+  font-style: italic;
+}
+
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
