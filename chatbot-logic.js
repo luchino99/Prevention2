@@ -180,20 +180,20 @@ domandeFemminiliAggiunte = false;
   }
 
   modalita = tipo;
-  step = -1; // resetta ogni volta che si seleziona una modalità
-  risposte = { ...risposte, email: emailUtente }; // assicura che l'email resti
+  step = -1; 
+  risposte = { ...risposte, email: emailUtente }; 
 
-  // Rimuove eventuali pulsanti precedenti
+  
   document.querySelectorAll(".button-container").forEach(el => el.remove());
 
-  // Assegna le domande e mostra il messaggio introduttivo
+  
   switch (tipo) {
-    case "sintomi":
+  case "sintomi":
       domande = [];
       mostraMessaggio("🩺 Perfetto! Per aiutarti al meglio, descrivimi i tuoi sintomi.");
       break;
 
-case "prevenzione":
+  case "prevenzione":
   domande = [...domandeBase];
 
   
@@ -210,17 +210,20 @@ case "prevenzione":
   }
 
   mostraMessaggio(introduzione);
+  setTimeout(() => next(), 500);
   break;
 
 
     case "dieta":
       domande = [...domandePianoAlimentare];
       mostraMessaggio("🍽️ Ottimo! Rispondi a queste domande per il piano alimentare su misura:");
+      setTimeout(() => next(), 500);
       break;
 
     case "allenamento":
       domande = [...domandeAllenamento];
       mostraMessaggio("🏋️‍♂️ Fantastico! Rispondi a queste domande per creare il tuo piano di allenamento:");
+      setTimeout(() => next(), 500);
       break;
 
     default:
