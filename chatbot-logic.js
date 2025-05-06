@@ -381,12 +381,6 @@ if (step < domande.length) {
     return; // 🛑 BLOCCA la chiamata a OpenAI
   }
 
-  if (modalita) {
-    await salvaCompilazioneNelDatabase(risposte, modalita);
-  } else {
-    console.error("⚠️ Modalità non definita, non salvo la compilazione.");
-  }
-
   mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi dati...");
   inviaOpenAI();
   }
