@@ -649,20 +649,23 @@ Vuoi aggiornarli? (sì / no)`);
       return;
     }
 
-    // 🔁 Gestione richiesta aggiuntiva dell'utente dopo una risposta già ricevuta
+    
 if (ultimaRispostaAI && modalita === null) {
   mostraMessaggio(val, "user");
   input.value = "";
 
-  const messaggioContestuale = `
-Questa è la risposta precedente che hai fornito all’utente:
+const messaggioContestuale = `
+L'utente ti ha precedentemente descritto i seguenti sintomi:
+"${risposte.sintomi}"
 
-${ultimaRispostaAI}
+Tu hai fornito questa risposta:
+"${ultimaRispostaAI}"
 
-L’utente ora aggiunge questo commento/domanda:
+Ora l'utente aggiunge questa richiesta o domanda:
 "${val}"
 
-Fornisci una nuova risposta coerente, tenendo conto sia della risposta precedente che della nuova richiesta. Usa un linguaggio empatico, preciso e tecnico come prima.`;
+Fornisci una nuova risposta che tenga conto dei sintomi iniziali, della tua risposta precedente e della nuova domanda. Sii chiaro, empatico e professionale.`;
+
 
   const loader = document.createElement("div");
   loader.className = "loader";
