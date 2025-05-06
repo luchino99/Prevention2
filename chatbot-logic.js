@@ -314,6 +314,18 @@ if (step >= 0 && domande[step].key === "sesso" && !domandeFemminiliAggiunte) {
 
   input.value = "";
 
+  if (modalita === "aggiorna" && step >= domande.length) {
+  await salvaAnagraficaNelDatabase(risposte);
+  mostraMessaggio("✅ Dati aggiornati con successo! Ora puoi scegliere un'opzione per continuare.");
+
+  const datiAggiornati = { ...risposte };
+  risposte = { ...datiAggiornati };
+  modalita = null;
+  step = -1;
+  mostraScelteIniziali();
+  return;
+}
+
   if (step < domande.length) {
     setTimeout(() => mostraMessaggio(domande[step].testo), 500);
   } else {
@@ -572,24 +584,7 @@ Vuoi aggiornarli? (sì / no)`);
       input.value = "";
       return;
     }
-
-if (modalita === "aggiorna" && step >= domande.length) {
-  await salvaAnagraficaNelDatabase(risposte);
-  mostraMessaggio("✅ Dati aggiornati con successo! Ora puoi scegliere un'opzione per continuare.");
-  
-  // Salva temporaneamente i dati aggiornati
-  const datiAggiornati = { ...risposte };
-
-  // Reset stato per permettere nuova compilazione
-  risposte = { ...datiAggiornati }; // ✅ Mantiene i 4 dati base
-  modalita = null;
-  step = -1;
-  mostraScelteIniziali();
-  return;
-}
-
-
-    
+   
     next();
   });
 }
