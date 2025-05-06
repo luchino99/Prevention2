@@ -193,10 +193,25 @@ domandeFemminiliAggiunte = false;
       mostraMessaggio("🩺 Perfetto! Per aiutarti al meglio, descrivimi i tuoi sintomi.");
       break;
 
-    case "prevenzione":
-      domande = [...domandeBase];
-      mostraMessaggio(introduzione);
-      break;
+case "prevenzione":
+  domande = [...domandeBase];
+
+  
+  const etaNum = parseInt(risposte.eta);
+  if (!isNaN(etaNum) && etaNum > 65 && !domandeOver65Aggiunte) {
+    domande.push(...domandeOver65);
+    domandeOver65Aggiunte = true;
+  }
+
+  const sesso = risposte.sesso?.toLowerCase();
+  if ((sesso === "femmina" || sesso === "donna") && !domandeFemminiliAggiunte) {
+    domande.push(...domandeFemminili);
+    domandeFemminiliAggiunte = true;
+  }
+
+  mostraMessaggio(introduzione);
+  break;
+
 
     case "dieta":
       domande = [...domandePianoAlimentare];
@@ -282,7 +297,12 @@ async function next() {
     await salvaAnagraficaNelDatabase(risposte);
   }
 
-if (step >= 0 && domande[step].key === "eta" && !domandeOver65Aggiunte) {
+if (
+  modalita !== "aggiorna" &&
+  step >= 0 &&
+  domande[step].key === "eta" &&
+  !domandeOver65Aggiunte
+) {
   const etaNum = parseInt(val);
   if (!isNaN(etaNum) && etaNum > 65) {
     domande.splice(step + 1, 0, ...domandeOver65);
@@ -290,15 +310,18 @@ if (step >= 0 && domande[step].key === "eta" && !domandeOver65Aggiunte) {
   }
 }
 
-if (step >= 0 && domande[step].key === "sesso" && !domandeFemminiliAggiunte) {
+if (
+  modalita !== "aggiorna" &&
+  step >= 0 &&
+  domande[step].key === "sesso" &&
+  !domandeFemminiliAggiunte
+) {
   const sesso = val.toLowerCase();
   if (sesso === "femmina" || sesso === "donna") {
     domande.splice(step + 1, 0, ...domandeFemminili);
     domandeFemminiliAggiunte = true;
   }
 }
-
-
 
     step++;
   } else if (step === -1) {
