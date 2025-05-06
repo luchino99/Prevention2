@@ -233,6 +233,7 @@ body {
   background-color: transparent;
   color: var(--text-dark);
   border-radius: 0;
+  flex: 1;
 }
 
 
