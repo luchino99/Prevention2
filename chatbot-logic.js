@@ -555,6 +555,7 @@ Vuoi aggiornarli? (sì / no)`);
           { key: "peso", testo: "Aggiorna il tuo peso in kg:" }
         ];
         step = -1;
+        modalita = "aggiorna";
         attesaConfermaAggiornamento = false;
         next();
       } else {
@@ -570,7 +571,15 @@ Vuoi aggiornarli? (sì / no)`);
       return;
     }
 
-    // Tutto è pronto, vai avanti
+    if (modalita === "aggiorna" && step >= domande.length) {
+  await salvaAnagraficaNelDatabase(risposte);
+  mostraMessaggio("✅ Dati aggiornati con successo! Ora puoi scegliere un'opzione per continuare.");
+  modalita = null;
+  mostraScelteIniziali();
+  return;
+}
+
+    
     next();
   });
 }
