@@ -205,8 +205,13 @@ const completeMessages = [
     content: `Sei un assistente sanitario digitale esperto in prevenzione, nutrizione e allenamento.
 Rispondi in modo coerente tenendo conto dell’intera conversazione. Se vengono forniti nuovi dati clinici, aggiornali nel ragionamento. Mantieni tono rassicurante, tecnico ma semplice.`
   },
-  ...(messages?.slice(-10) || []) // usa solo gli ultimi 10 messaggi per contesto
+  ...((messages?.slice(-5)) || []) // limita a 5 messaggi per contenere token
 ];
+
+
+if (compiledPrompt && compiledPrompt.trim().length > 0) {
+  completeMessages.push({ role: 'user', content: compiledPrompt });
+}
 
 const response = await openai.chat.completions.create({
   model: 'gpt-4-turbo',
