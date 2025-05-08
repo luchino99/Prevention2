@@ -399,23 +399,6 @@ function inviaOpenAI() {
   loader.scrollIntoView();
 
   const payload = { ...risposte };
-  // Recupera il contesto della chat precedente
-const { data: messaggiPassati, error } = await supabaseClient
-  .from('conversazioni')
-  .select('messaggio_utente, risposta_ai')
-  .eq('email', risposte.email)
-  .order('timestamp', { ascending: true });
-
-let contesto = "";
-if (messaggiPassati && messaggiPassati.length > 0) {
-  contesto = messaggiPassati.map(conv => 
-    `Utente: ${conv.messaggio_utente}\nAI: ${conv.risposta_ai}`
-  ).join("\n\n");
-}
-
-// Aggiungiamo il contesto al payload
-payload.contesto = contesto;
-
   if (modalita === "dieta") payload.dieta = true;
   if (modalita === "sintomi") payload.sintomi = risposte.sintomi;
   if (modalita === "allenamento") payload.allenamento = true;
@@ -437,10 +420,7 @@ payload.contesto = contesto;
 
       const data = await res.json();
       console.log("📦 Risposta ricevuta:", data);
-      const rispostaFinale = data.risposta || "⚠️ Nessuna risposta valida ricevuta.";
-mostraMessaggio(rispostaFinale);
-salvaMessaggioConversazione(risposte.email, payload.sintomi || payload.input || "N/A", rispostaFinale);
-
+      mostraMessaggio(data.risposta || "⚠️ Nessuna risposta valida ricevuta.");
     })
     .catch(err => {
       loader.remove();
@@ -538,18 +518,6 @@ async function salvaCompilazioneNelDatabase(risposte, modalita) {
   }
 }
 
-async function salvaMessaggioConversazione(email, messaggioUtente, rispostaAI) {
-  if (!email || !messaggioUtente || !rispostaAI) return;
-  try {
-    const { data, error } = await supabaseClient
-      .from('conversazioni')
-      .insert([{ email, messaggio_utente: messaggioUtente, risposta_ai: rispostaAI }]);
-    if (error) console.error("Errore salvataggio conversazione:", error);
-    else console.log("✅ Conversazione salvata:", data);
-  } catch (e) {
-    console.error("❌ Errore rete salvataggio conversazione:", e);
-  }
-}
 
 
 async function recuperaAnagraficaDalDatabase(email) {
