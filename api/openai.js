@@ -187,14 +187,15 @@ Usa un linguaggio semplice, empatico, ma tecnico. Comunica con tono rassicurante
 
     console.log("📤 Prompt generato:", compiledPrompt);
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4-turbo',
-      messages: [
-        { role: 'system', content: 'Sei un assistente sanitario esperto in prevenzione e analisi dati clinici, nutrizione e allenamento.' },
-        { role: 'user', content: compiledPrompt }
-      ],
-      temperature: 0.7
-    });
+const response = await openai.chat.completions.create({
+  model: 'gpt-4-turbo',
+  messages: [
+    { role: 'system', content: 'Sei un assistente sanitario esperto in prevenzione e analisi dati clinici, nutrizione e allenamento.' },
+    ...messages
+  ],
+  temperature: 0.7
+});
+
 
     const result = response?.choices?.[0]?.message?.content;
 
