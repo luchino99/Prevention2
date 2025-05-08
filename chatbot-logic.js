@@ -267,6 +267,8 @@ async function next() {
     }
 
     mostraMessaggio(val, "user");
+await salvaMessaggioConversazione(emailUtente, val, "utente");
+
     input.value = "";
     risposte.sintomi = val;
 
@@ -299,6 +301,8 @@ async function next() {
 
   if (step >= 0 && val) {
     mostraMessaggio(val, "user");
+await salvaMessaggioConversazione(emailUtente, val, "utente");
+
     risposte[domande[step].key] = val;
 
   if (
