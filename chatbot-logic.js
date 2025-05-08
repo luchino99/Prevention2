@@ -267,6 +267,8 @@ async function next() {
     }
 
     mostraMessaggio(val, "user");
+    await salvaMessaggioChat(emailUtente, "user", val);
+
     input.value = "";
     risposte.sintomi = val;
 
@@ -295,6 +297,7 @@ async function next() {
 
   if (step >= 0 && val) {
     mostraMessaggio(val, "user");
+    await salvaMessaggioChat(emailUtente, "user", val);
     risposte[domande[step].key] = val;
 
   if (
@@ -421,6 +424,8 @@ function inviaOpenAI() {
       const data = await res.json();
       console.log("📦 Risposta ricevuta:", data);
       mostraMessaggio(data.risposta || "⚠️ Nessuna risposta valida ricevuta.");
+      await salvaMessaggioChat(emailUtente, "assistant", data.risposta || "⚠️ Nessuna risposta valida ricevuta.");
+
     })
     .catch(err => {
       loader.remove();
