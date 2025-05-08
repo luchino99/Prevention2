@@ -399,6 +399,23 @@ function inviaOpenAI() {
   loader.scrollIntoView();
 
   const payload = { ...risposte };
+  // Recupera il contesto della chat precedente
+const { data: messaggiPassati, error } = await supabaseClient
+  .from('conversazioni')
+  .select('messaggio_utente, risposta_ai')
+  .eq('email', risposte.email)
+  .order('timestamp', { ascending: true });
+
+let contesto = "";
+if (messaggiPassati && messaggiPassati.length > 0) {
+  contesto = messaggiPassati.map(conv => 
+    `Utente: ${conv.messaggio_utente}\nAI: ${conv.risposta_ai}`
+  ).join("\n\n");
+}
+
+// Aggiungiamo il contesto al payload
+payload.contesto = contesto;
+
   if (modalita === "dieta") payload.dieta = true;
   if (modalita === "sintomi") payload.sintomi = risposte.sintomi;
   if (modalita === "allenamento") payload.allenamento = true;
