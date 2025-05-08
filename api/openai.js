@@ -28,6 +28,8 @@ const messages = data.cronologia?.length > 0
       baseSystemPrompt,
       { role: 'user', content: data.sintomi || 'Fornisci assistenza sanitaria' }
     ];
+  console.log("✅ Messaggi ricevuti da frontend:", messages);
+
 
 
   const safe = (val) => val ?? "non disponibile";
