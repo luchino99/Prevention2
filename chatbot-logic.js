@@ -275,22 +275,35 @@ async function next() {
     input.value = "";
     risposte.sintomi = val;
 
-    mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi dati...");
+  conversazione.push({ ruolo: "user", contenuto: val });
 
-    fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sintomi: val, email: risposte.email })
+  mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi dati...");
+
+  fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      sintomi: val,
+      email: risposte.email,
+      cronologia: conversazione 
     })
-      .then(res => res.json())
-      .then(data => mostraMessaggio(data.risposta || "⚠️ Nessuna risposta ricevuta."))
-      .catch(err => {
-        console.error("❌ Errore fetch sintomi:", err);
-        mostraMessaggio("⚠️ Errore nella comunicazione col server.");
-      });
+  })
+    .then(res => res.json())
+    .then(data => {
+      mostraMessaggio(data.risposta || "⚠️ Nessuna risposta ricevuta.");
 
-    return;
-  }
+      conversazione.push({
+        ruolo: "assistant",
+        contenuto: data.risposta || ""
+      });
+    })
+    .catch(err => {
+      console.error("❌ Errore fetch sintomi:", err);
+      mostraMessaggio("⚠️ Errore nella comunicazione col server.");
+    });
+
+  return;
+}
 
   if (step === -1 && (!modalita || !domande || domande.length === 0)) {
     console.warn("⛔ Avanzamento bloccato: modalità non scelta o domande non inizializzate.");
