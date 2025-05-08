@@ -16,6 +16,10 @@ export default async function handler(req, res) {
   }
 
   const data = req.body;
+  const messages = data.cronologia?.length > 0
+  ? data.cronologia
+  : [{ role: 'user', content: data.sintomi || 'Fornisci assistenza sanitaria' }];
+
   const safe = (val) => val ?? "non disponibile";
 
   try {
