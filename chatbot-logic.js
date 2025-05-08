@@ -417,9 +417,8 @@ function inviaOpenAI() {
       content: item.messaggio
     }));
 
-    if (modalita === "sintomi") {
-      messages.push({ role: "user", content: risposte.sintomi });
-    }
+    // DEBUG: stampa cosa viene mandato
+    console.log("📤 Messaggi inviati a OpenAI:", messages);
 
     const invio = {
       ...payload,
