@@ -403,11 +403,41 @@ function inviaOpenAI() {
   if (modalita === "sintomi") payload.sintomi = risposte.sintomi;
   if (modalita === "allenamento") payload.allenamento = true;
 
+  recuperaConversazione(emailUtente).then(cronologia => {
+  const messages = cronologia.map(item => ({
+    role: item.ruolo === "utente" ? "user" : "assistant",
+    content: item.messaggio
+  }));
+
+  // Aggiungi l’ultimo messaggio utente
+  if (modalita === "sintomi") {
+    messages.push({ role: "user", content: risposte.sintomi });
+  }
+
+  const invio = {
+    ...payload,
+    cronologia: messages
+  };
+
   fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(invio)
   })
+    .then(async res => {
+      loader.remove();
+      const data = await res.json();
+      const rispostaAI = data.risposta || "⚠️ Nessuna risposta valida ricevuta.";
+      mostraMessaggio(rispostaAI);
+      await salvaMessaggioConversazione(emailUtente, rispostaAI, "ai");
+    })
+    .catch(err => {
+      loader.remove();
+      console.error("❌ Errore fetch:", err);
+      mostraMessaggio("⚠️ Errore nella comunicazione col server.");
+    });
+});
+
     .then(async res => {
       loader.remove();
 
