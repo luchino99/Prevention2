@@ -518,6 +518,26 @@ async function salvaCompilazioneNelDatabase(risposte, modalita) {
   }
 }
 
+  async function salvaConversazione(email, domanda, risposta) {
+  try {
+    const { data, error } = await supabaseClient
+      .from('chat_storico')
+      .insert([{
+        email: email,
+        messaggio_utente: domanda,
+        risposta_ai: risposta
+      }]);
+
+    if (error) {
+      console.error("Errore salvataggio chat:", error);
+    } else {
+      console.log("✅ Conversazione salvata:", data);
+    }
+  } catch (error) {
+    console.error("❌ Errore di rete salvataggio chat:", error);
+  }
+}
+
 
 
 async function recuperaAnagraficaDalDatabase(email) {
