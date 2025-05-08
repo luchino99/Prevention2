@@ -416,6 +416,9 @@ function inviaOpenAI() {
       role: item.ruolo === "utente" ? "user" : "assistant",
       content: item.messaggio
     }));
+    
+    console.log("✅ Cronologia recuperata per OpenAI:");
+console.log(messages);
 
     // DEBUG: stampa cosa viene mandato
     console.log("📤 Messaggi inviati a OpenAI:", messages);
