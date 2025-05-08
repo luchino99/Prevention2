@@ -420,7 +420,10 @@ function inviaOpenAI() {
 
       const data = await res.json();
       console.log("📦 Risposta ricevuta:", data);
-      mostraMessaggio(data.risposta || "⚠️ Nessuna risposta valida ricevuta.");
+      const rispostaFinale = data.risposta || "⚠️ Nessuna risposta valida ricevuta.";
+mostraMessaggio(rispostaFinale);
+salvaMessaggioConversazione(risposte.email, payload.sintomi || payload.input || "N/A", rispostaFinale);
+
     })
     .catch(err => {
       loader.remove();
@@ -518,6 +521,18 @@ async function salvaCompilazioneNelDatabase(risposte, modalita) {
   }
 }
 
+async function salvaMessaggioConversazione(email, messaggioUtente, rispostaAI) {
+  if (!email || !messaggioUtente || !rispostaAI) return;
+  try {
+    const { data, error } = await supabaseClient
+      .from('conversazioni')
+      .insert([{ email, messaggio_utente: messaggioUtente, risposta_ai: rispostaAI }]);
+    if (error) console.error("Errore salvataggio conversazione:", error);
+    else console.log("✅ Conversazione salvata:", data);
+  } catch (e) {
+    console.error("❌ Errore rete salvataggio conversazione:", e);
+  }
+}
 
 
 async function recuperaAnagraficaDalDatabase(email) {
