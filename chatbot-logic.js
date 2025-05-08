@@ -260,38 +260,24 @@ async function next() {
 }
 
   
-  if (modalita === "sintomi") {
-    if (!val) {
-      mostraMessaggio("❗ Per favore descrivi i tuoi sintomi prima di premere invio.");
-      return;
-    }
-
-    mostraMessaggio(val, "user");
-await salvaMessaggioConversazione(emailUtente, val, "utente");
-
-    input.value = "";
-    risposte.sintomi = val;
-
-    mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi dati...");
-
-    fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sintomi: val, email: risposte.email })
-    })
-      .then(res => res.json())
-      .then(async data => {
-  const rispostaAI = data.risposta || "⚠️ Nessuna risposta ricevuta.";
-  mostraMessaggio(rispostaAI);
-  await salvaMessaggioConversazione(emailUtente, rispostaAI, "ai");
-         })
-      .catch(err => {
-        console.error("❌ Errore fetch sintomi:", err);
-        mostraMessaggio("⚠️ Errore nella comunicazione col server.");
-      });
-
+if (modalita === "sintomi") {
+  if (!val) {
+    mostraMessaggio("❗ Per favore descrivi i tuoi sintomi prima di premere invio.");
     return;
   }
+
+  mostraMessaggio(val, "user");
+  await salvaMessaggioConversazione(emailUtente, val, "utente");
+
+  input.value = "";
+  risposte.sintomi = val;
+
+  mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi dati...");
+
+  inviaOpenAI(); // ✅ questa chiamata passa la cronologia corretta
+
+  return;
+}
 
   if (step === -1 && (!modalita || !domande || domande.length === 0)) {
     console.warn("⛔ Avanzamento bloccato: modalità non scelta o domande non inizializzate.");
