@@ -25,8 +25,11 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Solo richieste POST sono accettate' });
   }
 
-  const data = req.body;
+  const data = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+
   const safe = (val) => val ?? "non disponibile";
+  const escape = (str) => (str || "").toString().replace(/[`$]/g, "");
+
 
   try {
     let compiledPrompt = "";
@@ -36,7 +39,7 @@ export default async function handler(req, res) {
 Sei un assistente sanitario digitale esperto. Una persona ha descritto i seguenti sintomi:
 
 🩺 **Sintomi riportati:**
-${data.sintomi}
+${escape(data.sintomi)}
 
 Sulla base di questi sintomi, offri un'analisi iniziale, suggerisci possibili cause. Specifica quando è opportuno rivolgersi a un medico o andare al pronto soccorso. 
 Ricorda che la tua risposta **non sostituisce una valutazione medica professionale**.`;
@@ -136,7 +139,7 @@ Sei un assistente sanitario digitale. Analizza i dati forniti per calcolare scor
 - Insonnia: ${safe(data.insonnia)}
 - Tipo insonnia: ${safe(data.tipo_insonnia)}
 - Stress: ${safe(data.stress)}
-- Preferenze: ${safe(data.preferenze)}
+- Preferenze: ${safe(escape(data.preferenze))}
 
 ${data.eta > 65 ? `
 🔹 **VALUTAZIONE OVER 65:**
@@ -203,6 +206,10 @@ Usa un linguaggio semplice, empatico, ma tecnico. Comunica con tono rassicurante
     });
 
     const result = response?.choices?.[0]?.message?.content;
+    if (!response?.choices || !response.choices.length) {
+  throw new Error("Nessuna risposta valida da OpenAI");
+}
+
 
     if (!result) {
       return res.status(200).json({
