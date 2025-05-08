@@ -563,6 +563,25 @@ async function salvaCompilazioneNelDatabase(risposte, modalita) {
     console.error("❌ Errore di rete salvataggio messaggio:", err);
   }
 }
+  async function recuperaConversazione(email) {
+  try {
+    const { data, error } = await supabaseClient
+      .from('conversazioni')
+      .select('messaggio, ruolo')
+      .eq('email', email)
+      .order('timestamp', { ascending: true });
+
+    if (error) {
+      console.error("❌ Errore recupero conversazione:", error);
+      return [];
+    }
+    return data;
+  } catch (err) {
+    console.error("❌ Errore rete recupero conversazione:", err);
+    return [];
+  }
+}
+
 
 
 
