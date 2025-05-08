@@ -523,25 +523,22 @@ async function salvaCompilazioneNelDatabase(risposte, modalita) {
   }
 }
 
-  async function salvaConversazione(email, domanda, risposta) {
+async function salvaMessaggioChat(email, ruolo, messaggio) {
   try {
     const { data, error } = await supabaseClient
       .from('chat_storico')
-      .insert([{
-        email: email,
-        messaggio_utente: domanda,
-        risposta_ai: risposta
-      }]);
+      .insert([{ email, ruolo, messaggio }]);
 
     if (error) {
-      console.error("Errore salvataggio chat:", error);
+      console.error("Errore salvataggio messaggio chat:", error);
     } else {
-      console.log("✅ Conversazione salvata:", data);
+      console.log(`💾 Messaggio ${ruolo} salvato:`, data);
     }
-  } catch (error) {
-    console.error("❌ Errore di rete salvataggio chat:", error);
+  } catch (err) {
+    console.error("❌ Errore di rete salvataggio messaggio:", err);
   }
 }
+
 
 
 
