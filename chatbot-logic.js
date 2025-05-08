@@ -499,8 +499,8 @@ async function salvaAnagraficaNelDatabase(dati) {
     };
 
     const { data, error } = await supabaseClient
-      .from('users')
-      .upsert([datiAnagrafica], { onConflict: 'email' });
+        .from('anagrafica_utenti')
+        .upsert([datiAnagrafica], { onConflict: 'email' });
 
     if (error) {
       console.error("Errore API salvataggio:", error);
@@ -563,7 +563,7 @@ async function salvaMessaggioChat(email, ruolo, messaggio) {
 async function recuperaAnagraficaDalDatabase(email) {
   try {
     const { data, error } = await supabaseClient
-      .from('users')
+      .from('anagrafica_utenti')
       .select('*')
       .eq('email', email.trim().toLowerCase())
       .single();
