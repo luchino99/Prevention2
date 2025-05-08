@@ -123,6 +123,7 @@ let domande = [];
 let risposte = {};
 let step = -1;
 let modalita = null;
+let conversazione = [];
 
 function mostraMessaggio(testo, classe = "bot") {
   const div = document.createElement("div");
@@ -141,6 +142,10 @@ function mostraMessaggio(testo, classe = "bot") {
   div.appendChild(span);
   document.getElementById("messages").appendChild(div);
   div.scrollIntoView();
+  const ruolo = classe === "bot" ? "assistant" : "user";
+conversazione.push({ ruolo, contenuto: testo });
+salvaMessaggioChat(emailUtente, ruolo, testo); // salva su Supabase
+
 }
 
 
@@ -515,6 +520,28 @@ async function salvaCompilazioneNelDatabase(risposte, modalita) {
     }
   } catch (error) {
     console.error("❌ Errore di rete salvataggio compilazione:", error);
+  }
+}
+
+  async function salvaMessaggioChat(email, ruolo, contenuto) {
+  try {
+    if (!email || !contenuto || !ruolo) return;
+
+    const { data, error } = await supabaseClient
+      .from('messaggi_chat')
+      .insert([{
+        email: email,
+        ruolo: ruolo,
+        contenuto: contenuto
+      }]);
+
+    if (error) {
+      console.error("❌ Errore salvataggio messaggio:", error);
+    } else {
+      console.log("💾 Messaggio salvato:", data);
+    }
+  } catch (error) {
+    console.error("❌ Errore rete salvataggio messaggio:", error);
   }
 }
 
