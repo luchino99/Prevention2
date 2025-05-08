@@ -475,96 +475,82 @@ const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
 
 async function salvaAnagraficaNelDatabase(dati) {
+  if (!dati.email) return;
+
   try {
-    if (!dati.email) {
-      console.warn("⚠️ Email non presente, salto il salvataggio anagrafica.");
-      return;
-    }
-
-    const datiAnagrafica = {
-      email: dati.email,
-      eta: dati.eta,
-      sesso: dati.sesso,
-      altezza: dati.altezza,
-      peso: dati.peso
-    };
-
-    const { data, error } = await supabaseClient
-      .from('users')
-      .upsert([datiAnagrafica], { onConflict: 'email' });
-
-    if (error) {
-      console.error("Errore API salvataggio:", error);
-    } else {
-      console.log("✅ Dati anagrafici salvati o aggiornati correttamente:", data);
-    }
+    const response = await fetch(`${supabaseUrl}/rest/v1/users`, {
+      method: 'POST',
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json',
+        email: dati.email
+      },
+      body: JSON.stringify([dati])
+    });
+    const data = await response.json();
+    console.log("✅ Anagrafica salvata:", data);
   } catch (error) {
-    console.error("❌ Errore di rete salvataggio:", error);
+    console.error("❌ Errore salvataggio anagrafica:", error);
   }
 }
+
 
 async function salvaCompilazioneNelDatabase(risposte, modalita) {
+  if (!risposte.email || !modalita) return;
+
   try {
-    if (!modalita) {
-      console.warn("⚠️ Modalità non definita, non salvo la compilazione.");
-      return;
-    }
-    if (!risposte.email) {
-      console.warn("⚠️ Email non presente, non salvo la compilazione.");
-      return;
-    }
-
-    const { data, error } = await supabaseClient
-      .from('compilazioni')
-      .insert([{
-        email: risposte.email,
-        modalita: modalita,
-        risposte: risposte
-      }]);
-
-    if (error) {
-      console.error("Errore salvataggio compilazione:", error);
-    } else {
-      console.log("✅ Compilazione salvata:", data);
-    }
+    const response = await fetch(`${supabaseUrl}/rest/v1/compilazioni`, {
+      method: 'POST',
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json',
+        email: risposte.email
+      },
+      body: JSON.stringify([{ email: risposte.email, modalita, risposte }])
+    });
+    const data = await response.json();
+    console.log("✅ Compilazione salvata:", data);
   } catch (error) {
-    console.error("❌ Errore di rete salvataggio compilazione:", error);
+    console.error("❌ Errore salvataggio compilazione:", error);
   }
 }
+
 
   async function salvaMessaggioConversazione(email, messaggio, ruolo = "utente") {
   try {
-    const { data, error } = await supabaseClient
-      .from('conversazioni')
-      .insert([{ email, messaggio, ruolo }]);
-
-    if (error) {
-      console.error("❌ Errore salvataggio conversazione:", error);
-    } else {
-      console.log(`💾 Messaggio ${ruolo} salvato:`, data);
-    }
-  } catch (err) {
-    console.error("❌ Errore di rete salvataggio messaggio:", err);
+    const response = await fetch(`${supabaseUrl}/rest/v1/conversazioni`, {
+      method: 'POST',
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json',
+        email: email
+      },
+      body: JSON.stringify([{ email, messaggio, ruolo }])
+    });
+    const data = await response.json();
+    console.log(`💾 Messaggio ${ruolo} salvato:`, data);
+  } catch (error) {
+    console.error("❌ Errore salvataggio messaggio:", error);
   }
 }
 
+
 async function recuperaConversazione(email) {
-  console.log("📥 Sto recuperando la conversazione per:", email);
+  console.log("📥 Recupero conversazione per:", email);
   try {
     const response = await fetch(`${supabaseUrl}/rest/v1/conversazioni?select=messaggio,ruolo&email=eq.${encodeURIComponent(email)}&order=timestamp.asc`, {
-headers: {
-  apikey: supabaseKey,
-  Authorization: `Bearer ${supabaseKey}`,
-  email: emailUtente  // 👈 intestazione personalizzata usata dalla policy
-}
-
-});
-const data = await response.json();
-return data;
- // 👈 passa l'email come intestazione
-    return data;
-  } catch (err) {
-    console.error("❌ Errore rete recupero conversazione:", err);
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+        email: email
+      }
+    });
+    return await response.json();
+  } catch (error) {
+    console.error("❌ Errore recupero conversazioni:", error);
     return [];
   }
 }
@@ -574,33 +560,21 @@ return data;
 
 
 
+
 async function recuperaAnagraficaDalDatabase(email) {
   try {
-const response = await fetch(`${supabaseUrl}/rest/v1/users?email=eq.${encodeURIComponent(email.trim().toLowerCase())}&select=*`, {
-headers: {
-  apikey: supabaseKey,
-  Authorization: `Bearer ${supabaseKey}`,
-  email: emailUtente  // 👈 intestazione personalizzata usata dalla policy
-}
-
-});
-const data = await response.json();
-if (!data || data.length === 0) return null;
-return data[0];
-
-
-    if (error && error.code !== 'PGRST116') {
-      console.error("Errore API recupero:", error);
-      return null;
-    }
-    if (!data) {
-      console.log("ℹ️ Nessun dato trovato per questa email.");
-      return null;
-    }
-    console.log("✅ Dati recuperati:", data);
-    return data;
+    const response = await fetch(`${supabaseUrl}/rest/v1/users?email=eq.${encodeURIComponent(email)}&select=*`, {
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+        email: email  // intestazione per policy RLS
+      }
+    });
+    const data = await response.json();
+    if (!data || data.length === 0) return null;
+    return data[0];
   } catch (error) {
-    console.error("❌ Errore di rete recupero:", error);
+    console.error("❌ Errore recupero anagrafica:", error);
     return null;
   }
 }
