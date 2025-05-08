@@ -197,6 +197,7 @@ const response = await openai.chat.completions.create({
 });
 
 
+
     const result = response?.choices?.[0]?.message?.content;
 
     if (!result) {
