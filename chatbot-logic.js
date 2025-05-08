@@ -403,7 +403,14 @@ function inviaOpenAI() {
   document.getElementById("messages").appendChild(loader);
   loader.scrollIntoView();
 
-  const payload = { ...risposte };
+  const payload = {
+  ...risposte,
+  cronologia: conversazione.map(msg => ({
+    role: msg.ruolo,
+    content: msg.contenuto
+  }))
+};
+
   if (modalita === "dieta") payload.dieta = true;
   if (modalita === "sintomi") payload.sintomi = risposte.sintomi;
   if (modalita === "allenamento") payload.allenamento = true;
