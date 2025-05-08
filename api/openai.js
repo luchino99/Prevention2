@@ -183,26 +183,14 @@ Usa un linguaggio semplice, empatico, ma tecnico. Comunica con tono rassicurante
 
     console.log("📤 Prompt generato:", compiledPrompt);
 
-
-const history = [
-  {
-    role: 'system',
-    content: 'Sei un assistente sanitario esperto. Rispondi con chiarezza, empatia e precisione, tenendo conto di tutto il contesto della conversazione.'
-  },
-  {
-    role: 'user',
-    content: compiledPrompt // ✅ prompt iniziale basato sulla modalità scelta
-  },
-  ...(Array.isArray(data.cronologia) ? data.cronologia : [])
-];
-
-console.log("📤 Messaggi inviati a OpenAI:", history);
-
-const response = await openai.chat.completions.create({
-  model: 'gpt-4-turbo',
-  messages: history,
-  temperature: 0.7
-});
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4-turbo',
+      messages: [
+        { role: 'system', content: 'Sei un assistente sanitario esperto in prevenzione e analisi dati clinici, nutrizione e allenamento.' },
+        { role: 'user', content: compiledPrompt }
+      ],
+      temperature: 0.7
+    });
 
     const result = response?.choices?.[0]?.message?.content;
 
