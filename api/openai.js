@@ -16,7 +16,6 @@ export default async function handler(req, res) {
   }
 
   const data = req.body;
-  const contesto = data.contesto?.trim() || "";
   const safe = (val) => val ?? "non disponibile";
 
   try {
@@ -31,9 +30,6 @@ ${data.sintomi}
 
 Sulla base di questi sintomi, offri un'analisi iniziale, suggerisci possibili cause. Specifica quando è opportuno rivolgersi a un medico o andare al pronto soccorso. 
 Ricorda che la tua risposta **non sostituisce una valutazione medica professionale**.`;
-      if (contesto) {
-    compiledPrompt = `📌 CONTINUA QUESTA CONVERSAZIONE:\n${contesto}\n\n🔁 NUOVA DOMANDA:\n${compiledPrompt}`;
-  }
   
   } else if (data.dieta) {
     compiledPrompt = `
@@ -56,9 +52,6 @@ Dati da utilizzare per programmare la dieta:
 - Alimenti esclusi: ${data.alimenti_esclusi}
 - Patologie: ${data.patologie}
 Il piano sarà usato per essere trasformato in PDF.`;
-      if (contesto) {
-    compiledPrompt = `📌 CONTINUA QUESTA CONVERSAZIONE:\n${contesto}\n\n🔁 NUOVA DOMANDA:\n${compiledPrompt}`;
-  }
 
   } else if (data.allenamento) {
       compiledPrompt = `
@@ -93,9 +86,6 @@ Crea:
 - Programmazione cardio se richiesto
 
 Tono: motivante, preciso, chiaro per utenti non esperti.`;
-      if (contesto) {
-    compiledPrompt = `📌 CONTINUA QUESTA CONVERSAZIONE:\n${contesto}\n\n🔁 NUOVA DOMANDA:\n${compiledPrompt}`;
-  }
 
       } else {
     compiledPrompt =   `
@@ -188,9 +178,6 @@ Usa un linguaggio semplice, empatico, ma tecnico. Comunica con tono rassicurante
  SEZIONE FINALE:
 > "Grazie per aver compilato questo strumento di prevenzione. Ricorda che la prevenzione è il primo passo verso una vita lunga e in salute. Per qualunque dubbio, parlane con il tuo medico."
 `;
-      if (contesto) {
-    compiledPrompt = `📌 CONTINUA QUESTA CONVERSAZIONE:\n${contesto}\n\n🔁 NUOVA DOMANDA:\n${compiledPrompt}`;
-  }
 
     }
 
