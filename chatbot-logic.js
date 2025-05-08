@@ -278,7 +278,11 @@ async function next() {
       body: JSON.stringify({ sintomi: val, email: risposte.email })
     })
       .then(res => res.json())
-      .then(data => mostraMessaggio(data.risposta || "⚠️ Nessuna risposta ricevuta."))
+      .then(async data => {
+  const rispostaAI = data.risposta || "⚠️ Nessuna risposta ricevuta.";
+  mostraMessaggio(rispostaAI);
+  await salvaMessaggioConversazione(emailUtente, rispostaAI, "ai");
+         })
       .catch(err => {
         console.error("❌ Errore fetch sintomi:", err);
         mostraMessaggio("⚠️ Errore nella comunicazione col server.");
