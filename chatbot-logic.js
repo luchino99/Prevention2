@@ -123,7 +123,6 @@ let domande = [];
 let risposte = {};
 let step = -1;
 let modalita = null;
-let conversazione = [];
 
 function mostraMessaggio(testo, classe = "bot") {
   const div = document.createElement("div");
@@ -142,10 +141,6 @@ function mostraMessaggio(testo, classe = "bot") {
   div.appendChild(span);
   document.getElementById("messages").appendChild(div);
   div.scrollIntoView();
-  const ruolo = classe === "bot" ? "assistant" : "user";
-conversazione.push({ ruolo, contenuto: testo });
-salvaMessaggioChat(emailUtente, ruolo, testo); // salva su Supabase
-
 }
 
 
@@ -275,35 +270,22 @@ async function next() {
     input.value = "";
     risposte.sintomi = val;
 
-  conversazione.push({ ruolo: "user", contenuto: val });
+    mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi dati...");
 
-  mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi dati...");
-
-  fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      sintomi: val,
-      email: risposte.email,
-      cronologia: conversazione 
+    fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sintomi: val, email: risposte.email })
     })
-  })
-    .then(res => res.json())
-    .then(data => {
-      mostraMessaggio(data.risposta || "⚠️ Nessuna risposta ricevuta.");
-
-      conversazione.push({
-        ruolo: "assistant",
-        contenuto: data.risposta || ""
+      .then(res => res.json())
+      .then(data => mostraMessaggio(data.risposta || "⚠️ Nessuna risposta ricevuta."))
+      .catch(err => {
+        console.error("❌ Errore fetch sintomi:", err);
+        mostraMessaggio("⚠️ Errore nella comunicazione col server.");
       });
-    })
-    .catch(err => {
-      console.error("❌ Errore fetch sintomi:", err);
-      mostraMessaggio("⚠️ Errore nella comunicazione col server.");
-    });
 
-  return;
-}
+    return;
+  }
 
   if (step === -1 && (!modalita || !domande || domande.length === 0)) {
     console.warn("⛔ Avanzamento bloccato: modalità non scelta o domande non inizializzate.");
@@ -416,14 +398,7 @@ function inviaOpenAI() {
   document.getElementById("messages").appendChild(loader);
   loader.scrollIntoView();
 
-  const payload = {
-  ...risposte,
-  cronologia: conversazione.map(msg => ({
-    role: msg.ruolo,
-    content: msg.contenuto
-  }))
-};
-
+  const payload = { ...risposte };
   if (modalita === "dieta") payload.dieta = true;
   if (modalita === "sintomi") payload.sintomi = risposte.sintomi;
   if (modalita === "allenamento") payload.allenamento = true;
@@ -540,28 +515,6 @@ async function salvaCompilazioneNelDatabase(risposte, modalita) {
     }
   } catch (error) {
     console.error("❌ Errore di rete salvataggio compilazione:", error);
-  }
-}
-
-  async function salvaMessaggioChat(email, ruolo, contenuto) {
-  try {
-    if (!email || !contenuto || !ruolo) return;
-
-    const { data, error } = await supabaseClient
-      .from('messaggi_chat')
-      .insert([{
-        email: email,
-        ruolo: ruolo,
-        contenuto: contenuto
-      }]);
-
-    if (error) {
-      console.error("❌ Errore salvataggio messaggio:", error);
-    } else {
-      console.log("💾 Messaggio salvato:", data);
-    }
-  } catch (error) {
-    console.error("❌ Errore rete salvataggio messaggio:", error);
   }
 }
 
