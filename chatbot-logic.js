@@ -518,6 +518,22 @@ async function salvaCompilazioneNelDatabase(risposte, modalita) {
   }
 }
 
+  async function salvaMessaggioConversazione(email, messaggio, ruolo = "utente") {
+  try {
+    const { data, error } = await supabaseClient
+      .from('conversazioni')
+      .insert([{ email, messaggio, ruolo }]);
+
+    if (error) {
+      console.error("❌ Errore salvataggio conversazione:", error);
+    } else {
+      console.log(`💾 Messaggio ${ruolo} salvato:`, data);
+    }
+  } catch (err) {
+    console.error("❌ Errore di rete salvataggio messaggio:", err);
+  }
+}
+
 
 
 async function recuperaAnagraficaDalDatabase(email) {
