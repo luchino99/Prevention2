@@ -16,22 +16,6 @@ export default async function handler(req, res) {
   }
 
   const data = req.body;
-const baseSystemPrompt = {
-  role: 'system',
-  content: `Sei un assistente sanitario digitale esperto in prevenzione e sintomi.
-Usa sempre la cronologia precedente per rispondere in modo coerente e contestuale.`
-};
-
-const messages = data.cronologia?.length > 0
-  ? [baseSystemPrompt, ...data.cronologia.slice(-10)]
-  : [
-      baseSystemPrompt,
-      { role: 'user', content: data.sintomi || 'Fornisci assistenza sanitaria' }
-    ];
-  console.log("✅ Messaggi ricevuti da frontend:", messages);
-
-
-
   const safe = (val) => val ?? "non disponibile";
 
   try {
@@ -199,30 +183,14 @@ Usa un linguaggio semplice, empatico, ma tecnico. Comunica con tono rassicurante
 
     console.log("📤 Prompt generato:", compiledPrompt);
 
-const completeMessages = [
-  {
-    role: 'system',
-    content: `Sei un assistente sanitario digitale esperto in prevenzione, nutrizione e allenamento.
-Rispondi in modo coerente tenendo conto dell’intera conversazione. Se vengono forniti nuovi dati clinici, aggiornali nel ragionamento. Mantieni tono rassicurante, tecnico ma semplice.`
-  },
-  ...((messages?.slice(-5)) || []) // limita a 5 messaggi per contenere token
-];
-
-
-if (compiledPrompt && compiledPrompt.trim().length > 0) {
-  completeMessages.push({ role: 'user', content: compiledPrompt });
-}
-
-const response = await openai.chat.completions.create({
-  model: 'gpt-4-turbo',
-  messages: completeMessages,
-  temperature: 0.7
-});
-
-
-
-
-
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4-turbo',
+      messages: [
+        { role: 'system', content: 'Sei un assistente sanitario esperto in prevenzione e analisi dati clinici, nutrizione e allenamento.' },
+        { role: 'user', content: compiledPrompt }
+      ],
+      temperature: 0.7
+    });
 
     const result = response?.choices?.[0]?.message?.content;
 
