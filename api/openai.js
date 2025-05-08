@@ -187,14 +187,21 @@ Usa un linguaggio semplice, empatico, ma tecnico. Comunica con tono rassicurante
 
     console.log("📤 Prompt generato:", compiledPrompt);
 
+const completeMessages = [
+  {
+    role: 'system',
+    content: `Sei un assistente sanitario digitale esperto in prevenzione, nutrizione e allenamento.
+Rispondi in modo coerente tenendo conto dell’intera conversazione. Se vengono forniti nuovi dati clinici, aggiornali nel ragionamento. Mantieni tono rassicurante, tecnico ma semplice.`
+  },
+  ...(messages?.slice(-10) || []) // usa solo gli ultimi 10 messaggi per contesto
+];
+
 const response = await openai.chat.completions.create({
   model: 'gpt-4-turbo',
-  messages: [
-    { role: 'system', content: 'Sei un assistente sanitario esperto in prevenzione e analisi dati clinici, nutrizione e allenamento.' },
-    ...messages
-  ],
+  messages: completeMessages,
   temperature: 0.7
 });
+
 
 
 
