@@ -208,9 +208,10 @@ Rispondi in modo coerente tenendo conto dell’intera conversazione. Se vengono 
 
 const response = await openai.chat.completions.create({
   model: 'gpt-4-turbo',
-  messages: messages,
+  messages: completeMessages,
   temperature: 0.7
 });
+
 
 
 
