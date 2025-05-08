@@ -548,14 +548,13 @@ async function salvaCompilazioneNelDatabase(risposte, modalita) {
   }
 }
 
-  async function recuperaConversazione(email) {
-  console.log("📥 Sto recuperando la conversazione per:", email); // <== aggiungi questo
+async function recuperaConversazione(email) {
+  console.log("📥 Sto recuperando la conversazione per:", email);
   try {
     const { data, error } = await supabaseClient
       .from('conversazioni')
       .select('messaggio, ruolo')
-      .eq('email', email)
-      .order('timestamp', { ascending: true });
+      .headers({ email }); // 👈 passa l'email come intestazione
 
     if (error) {
       console.error("❌ Errore recupero conversazione:", error);
@@ -572,13 +571,16 @@ async function salvaCompilazioneNelDatabase(risposte, modalita) {
 
 
 
+
 async function recuperaAnagraficaDalDatabase(email) {
   try {
-    const { data, error } = await supabaseClient
-      .from('users')
-      .select('*')
-      .eq('email', email.trim().toLowerCase())
-      .single();
+const { data, error } = await supabaseClient
+  .from('users')
+  .select('*', { head: false })
+  .headers({ email }) // 👈 importante
+  .eq('email', email.trim().toLowerCase())
+  .single();
+
     if (error && error.code !== 'PGRST116') {
       console.error("Errore API recupero:", error);
       return null;
