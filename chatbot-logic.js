@@ -551,15 +551,17 @@ async function salvaCompilazioneNelDatabase(risposte, modalita) {
 async function recuperaConversazione(email) {
   console.log("📥 Sto recuperando la conversazione per:", email);
   try {
-    const { data, error } = await supabaseClient
-      .from('conversazioni')
-      .select('messaggio, ruolo')
-      .headers({ email }); // 👈 passa l'email come intestazione
+    const response = await fetch(`${supabaseUrl}/rest/v1/conversazioni?select=messaggio,ruolo&email=eq.${encodeURIComponent(email)}&order=timestamp.asc`, {
+headers: {
+  apikey: supabaseKey,
+  Authorization: `Bearer ${supabaseKey}`,
+  email: emailUtente  // 👈 intestazione personalizzata usata dalla policy
+}
 
-    if (error) {
-      console.error("❌ Errore recupero conversazione:", error);
-      return [];
-    }
+});
+const data = await response.json();
+return data;
+ // 👈 passa l'email come intestazione
     return data;
   } catch (err) {
     console.error("❌ Errore rete recupero conversazione:", err);
@@ -574,12 +576,18 @@ async function recuperaConversazione(email) {
 
 async function recuperaAnagraficaDalDatabase(email) {
   try {
-const { data, error } = await supabaseClient
-  .from('users')
-  .select('*', { head: false })
-  .headers({ email }) // 👈 importante
-  .eq('email', email.trim().toLowerCase())
-  .single();
+const response = await fetch(`${supabaseUrl}/rest/v1/users?email=eq.${encodeURIComponent(email.trim().toLowerCase())}&select=*`, {
+headers: {
+  apikey: supabaseKey,
+  Authorization: `Bearer ${supabaseKey}`,
+  email: emailUtente  // 👈 intestazione personalizzata usata dalla policy
+}
+
+});
+const data = await response.json();
+if (!data || data.length === 0) return null;
+return data[0];
+
 
     if (error && error.code !== 'PGRST116') {
       console.error("Errore API recupero:", error);
