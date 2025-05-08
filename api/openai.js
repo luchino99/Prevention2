@@ -16,9 +16,19 @@ export default async function handler(req, res) {
   }
 
   const data = req.body;
-  const messages = data.cronologia?.length > 0
-  ? data.cronologia
-  : [{ role: 'user', content: data.sintomi || 'Fornisci assistenza sanitaria' }];
+const baseSystemPrompt = {
+  role: 'system',
+  content: `Sei un assistente sanitario digitale esperto in prevenzione e sintomi.
+Usa sempre la cronologia precedente per rispondere in modo coerente e contestuale.`
+};
+
+const messages = data.cronologia?.length > 0
+  ? [baseSystemPrompt, ...data.cronologia.slice(-10)]
+  : [
+      baseSystemPrompt,
+      { role: 'user', content: data.sintomi || 'Fornisci assistenza sanitaria' }
+    ];
+
 
   const safe = (val) => val ?? "non disponibile";
 
@@ -198,9 +208,10 @@ Rispondi in modo coerente tenendo conto dell’intera conversazione. Se vengono 
 
 const response = await openai.chat.completions.create({
   model: 'gpt-4-turbo',
-  messages: completeMessages,
+  messages: messages,
   temperature: 0.7
 });
+
 
 
 
