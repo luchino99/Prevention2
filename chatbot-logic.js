@@ -561,7 +561,9 @@ async function salvaCompilazioneNelDatabase(risposte, modalita) {
     console.error("❌ Errore di rete salvataggio messaggio:", err);
   }
 }
+
   async function recuperaConversazione(email) {
+  console.log("📥 Sto recuperando la conversazione per:", email); // <== aggiungi questo
   try {
     const { data, error } = await supabaseClient
       .from('conversazioni')
@@ -579,6 +581,7 @@ async function salvaCompilazioneNelDatabase(risposte, modalita) {
     return [];
   }
 }
+
 
 
 
