@@ -280,7 +280,17 @@ async function next() {
       body: JSON.stringify({ sintomi: val, email: risposte.email })
     })
       .then(res => res.json())
-      .then(data => mostraMessaggio(data.risposta || "⚠️ Nessuna risposta ricevuta."))
+      .then(async data => {
+  const risposta = data.risposta || "⚠️ Nessuna risposta ricevuta.";
+  mostraMessaggio(risposta);
+  try {
+    await salvaMessaggioChat(emailUtente, "assistant", risposta);
+    console.log("✅ Risposta AI salvata da modalità sintomi.");
+  } catch (e) {
+    console.error("❌ Errore salvataggio risposta AI (sintomi):", e);
+  }
+})
+
       .catch(err => {
         console.error("❌ Errore fetch sintomi:", err);
         mostraMessaggio("⚠️ Errore nella comunicazione col server.");
@@ -421,12 +431,20 @@ function inviaOpenAI() {
         return;
       }
 
-      const data = await res.json();
-      console.log("📦 Risposta ricevuta:", data);
-      mostraMessaggio(data.risposta || "⚠️ Nessuna risposta valida ricevuta.");
-      await salvaMessaggioChat(emailUtente, "assistant", data.risposta || "⚠️ Nessuna risposta valida ricevuta.");
 
-    })
+  const data = await res.json();
+  const risposta = data.risposta || "⚠️ Nessuna risposta valida ricevuta.";
+  console.log("📦 Risposta ricevuta:", risposta);
+
+  mostraMessaggio(risposta);
+  
+  try {
+    await salvaMessaggioChat(emailUtente, "assistant", risposta);
+    console.log("✅ Risposta dell'AI salvata.");
+  } catch (e) {
+    console.error("❌ Errore salvataggio risposta AI:", e);
+  }
+})
     .catch(err => {
       loader.remove();
       console.error("❌ Errore fetch:", err);
