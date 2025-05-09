@@ -1,27 +1,110 @@
+<!-- login.html -->
 <!DOCTYPE html>
 <html lang="it">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login | HealthAI</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js" defer></script>
-  <script src="login.js" defer></script>
-</head>
-<body class="bg-light" style="display: flex; align-items: center; justify-content: center; height: 100vh;">
-  <div style="max-width: 400px; width: 100%; background: white; padding: 40px; border-radius: 20px; box-shadow: 0 0 20px rgba(0,0,0,0.1); text-align: center;">
-    <img src="logo.png" alt="Logo HealthAI" style="max-width: 150px; margin-bottom: 20px;">
-    <h2 style="margin-bottom: 10px;">Accedi al tuo profilo</h2>
-    <p style="font-size: 14px; color: #64748b; margin-bottom: 30px;">Prevenzione. Nutrizione. Allenamento.</p>
-    
-    <input id="email" type="email" placeholder="Email" style="width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #cbd5e1; border-radius: 10px;" />
-    <input id="password" type="password" placeholder="Password" style="width: 100%; padding: 12px; margin-bottom: 16px; border: 1px solid #cbd5e1; border-radius: 10px;" />
-    
-    <button id="btn-login" class="scelta-btn" style="margin-bottom: 10px;">🔐 Accedi</button>
-    <button id="btn-signup" class="btn-theme">📝 Registrati</button>
-    
-    <p style="font-size: 12px; color: #94a3b8; margin-top: 30px;">Non condividiamo mai i tuoi dati. Solo per uso sanitario informativo.</p>
-  </div>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Accedi | HealthAI</title>
+    <link rel="stylesheet" href="style.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js" defer></script>
+    <script src="login.js" defer></script>
+    <style>
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: var(--bg-light);
+        color: var(--text-dark);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+      }
+
+      .login-container {
+        background-color: #ffffff;
+        padding: 40px;
+        border-radius: 24px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        max-width: 420px;
+        width: 100%;
+        text-align: center;
+      }
+
+      .login-container img {
+        max-width: 140px;
+        margin-bottom: 20px;
+      }
+
+      .login-container h2 {
+        font-weight: 600;
+        margin-bottom: 10px;
+      }
+
+      .login-container p {
+        font-size: 14px;
+        color: #64748b;
+        margin-bottom: 30px;
+      }
+
+      .login-container input {
+        width: 100%;
+        padding: 14px;
+        margin-bottom: 16px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        font-size: 15px;
+      }
+
+      .login-container button {
+        width: 100%;
+        padding: 14px;
+        font-size: 15px;
+        font-weight: 600;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: background 0.3s;
+      }
+
+      #btn-login {
+        background-color: var(--primary);
+        color: white;
+        margin-bottom: 10px;
+      }
+
+      #btn-login:hover {
+        background-color: var(--primary-dark);
+      }
+
+      #btn-signup {
+        background-color: transparent;
+        color: var(--primary);
+        border: 2px solid var(--primary);
+      }
+
+      #btn-signup:hover {
+        background-color: var(--primary);
+        color: white;
+      }
+
+      .disclaimer {
+        margin-top: 30px;
+        font-size: 12px;
+        color: #94a3b8;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="login-container">
+      <img src="logo.png" alt="Logo HealthAI" />
+      <h2>Benvenuto in HealthAI</h2>
+      <p>Accedi per continuare con il tuo profilo salute</p>
+      <input type="email" id="email" placeholder="Email" required />
+      <input type="password" id="password" placeholder="Password" required />
+      <button id="btn-login">🔐 Accedi</button>
+      <button id="btn-signup">📝 Registrati</button>
+      <p class="disclaimer">I tuoi dati sono trattati secondo le normative GDPR e utilizzati solo per finalità sanitarie informative.</p>
+    </div>
+  </body>
 </html>
