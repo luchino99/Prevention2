@@ -495,6 +495,15 @@ supabaseClient.auth.getSession().then(({ data }) => {
   }
 });
 
+  const logoutBtn = document.getElementById("btn-logout");
+if (logoutBtn) {
+  logoutBtn.addEventListener("click", async () => {
+    await supabaseClient.auth.signOut();
+    window.location.href = "login.html";
+  });
+}
+
+  
 async function salvaAnagraficaNelDatabase(dati) {
   try {
     if (!dati.email) {
