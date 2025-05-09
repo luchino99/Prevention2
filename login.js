@@ -38,7 +38,3 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
-  } else {
-    alert("✅ Registrazione riuscita! Controlla la tua email per confermare.");
-  }
-});
