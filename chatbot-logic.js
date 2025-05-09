@@ -481,7 +481,19 @@ function generaPDF(contenuto) {
   
 const supabase = window.supabase;  // caricato da CDN
 const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+supabaseClient.auth.getSession().then(({ data }) => {
+  if (!data.session) {
+    // ⛔ Utente non loggato → redirect al login
+    window.location.href = "login.html";
+  } else {
+    // ✅ Utente loggato → imposta l'email globale
+    emailUtente = data.session.user.email;
+    risposte.email = emailUtente;
 
+    console.log("✅ Utente autenticato:", emailUtente);
+    mostraScelteIniziali(); // oppure carica i dati subito se preferisci
+  }
+});
 
 async function salvaAnagraficaNelDatabase(dati) {
   try {
@@ -600,7 +612,7 @@ const toggleBtn = document.getElementById("theme-toggle");
 
 }
 
-mostraMessaggio("📧 Per iniziare, inserisci il tuo indirizzo email.");
+
 const form = document.getElementById("input-form");
 if (form) {
   form.addEventListener("submit", async function (e) {
@@ -610,7 +622,7 @@ if (form) {
     const val = input.value.trim();
     if (!val) return;
 
-    if (!emailInserita) {
+    /*if (!emailInserita) {
       const emailRegex = /^[^\s@]+@[^\s@]+$/;
       if (!emailRegex.test(val)) {
         mostraMessaggio("⚠️ Inserisci un indirizzo email valido (esempio@email.com).");
@@ -619,6 +631,7 @@ if (form) {
       }
 
       emailUtente = val;
+      risposte.email = emailUtente;
       risposte.email = emailUtente;
       mostraMessaggio(emailUtente, "user");
       input.value = "";
@@ -643,6 +656,7 @@ Vuoi aggiornarli? (sì / no)`);
       emailInserita = true;
       return;
     }
+    */
 
     if (attesaConfermaAggiornamento) {
       const risposta = val.toLowerCase();
