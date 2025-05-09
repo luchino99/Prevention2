@@ -10,18 +10,25 @@ document.addEventListener("DOMContentLoaded", () => {
   const loginBtn = document.getElementById("btn-login");
   const signupBtn = document.getElementById("btn-signup");
 
-  loginBtn.addEventListener("click", async () => {
-    const { data, error } = await supabaseClient.auth.signInWithPassword({
-      email: emailInput.value.trim(),
-      password: passwordInput.value.trim(),
-    });
-
-    if (error) {
-      alert("❌ Errore login: " + error.message);
-    } else {
-      window.location.href = "index.html"; // ✅ Redirezione al chatbot
-    }
+loginBtn.addEventListener("click", async () => {
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
+    email: emailInput.value.trim(),
+    password: passwordInput.value.trim(),
   });
+
+  if (error) {
+    alert("❌ Errore login: " + error.message);
+  } else {
+    // Aspetta che la sessione venga aggiornata, poi reindirizza
+    const sessionCheck = await supabaseClient.auth.getSession();
+    if (sessionCheck.data.session) {
+      window.location.href = "index.html"; // ✅ Redirect al chatbot
+    } else {
+      alert("⚠️ Login riuscito, ma la sessione non è pronta. Riprova.");
+    }
+  }
+});
+
 
   signupBtn.addEventListener("click", async () => {
     const { data, error } = await supabaseClient.auth.signUp({
