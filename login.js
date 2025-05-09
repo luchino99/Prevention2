@@ -1,7 +1,7 @@
 // login.js
 const supabaseClient = window.supabase.createClient(
   'https://lwuhdgrkaoyvejmzfbtx.supabase.co',
-  'public-anon-key' // sostituisci con la tua PUBLIC KEY 
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3dWhkZ3JrYW95dmVqbXpmYnR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2NzU1MDcsImV4cCI6MjA2MTI1MTUwN30.1c5iH4PYW-HeigfXkPSgnVK3t02Gv3krSeo7dDSqqsk' // sostituisci con la tua PUBLIC KEY 
 );
 
 document.addEventListener("DOMContentLoaded", () => {
