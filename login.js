@@ -1,33 +1,42 @@
-const supabase = window.supabase;
-const supabaseClient = supabase.createClient("https://lwuhdgrkaoyvejmzfbtx.supabase.co", "public-anon-key"); // sostituisci con la tua PUBLIC key
+// login.js
+const supabaseClient = window.supabase.createClient(
+  'https://lwuhdgrkaoyvejmzfbtx.supabase.co',
+  'public-anon-key' // sostituisci con la tua PUBLIC KEY
+);
 
-document.getElementById("btn-login").addEventListener("click", async () => {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
+document.addEventListener("DOMContentLoaded", () => {
+  const emailInput = document.getElementById("email");
+  const passwordInput = document.getElementById("password");
+  const loginBtn = document.getElementById("btn-login");
+  const signupBtn = document.getElementById("btn-signup");
 
-  const { data, error } = await supabaseClient.auth.signInWithPassword({
-    email,
-    password
+  loginBtn.addEventListener("click", async () => {
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
+      email: emailInput.value.trim(),
+      password: passwordInput.value.trim(),
+    });
+
+    if (error) {
+      alert("❌ Errore login: " + error.message);
+    } else {
+      window.location.href = "chat.html"; // Redirezione al chatbot
+    }
   });
 
-  if (error) {
-    alert("❌ Errore login: " + error.message);
-  } else {
-    window.location.href = "chat.html"; // 👈 redirezione
-  }
+  signupBtn.addEventListener("click", async () => {
+    const { data, error } = await supabaseClient.auth.signUp({
+      email: emailInput.value.trim(),
+      password: passwordInput.value.trim(),
+    });
+
+    if (error) {
+      alert("❌ Errore registrazione: " + error.message);
+    } else {
+      alert("✅ Registrazione completata! Controlla la tua email per confermare.");
+    }
+  });
 });
 
-document.getElementById("btn-signup").addEventListener("click", async () => {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-
-  const { data, error } = await supabaseClient.auth.signUp({
-    email,
-    password
-  });
-
-  if (error) {
-    alert("❌ Errore registrazione: " + error.message);
   } else {
     alert("✅ Registrazione riuscita! Controlla la tua email per confermare.");
   }
