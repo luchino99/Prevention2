@@ -11,22 +11,28 @@ document.addEventListener("DOMContentLoaded", () => {
   const signupBtn = document.getElementById("btn-signup");
 
 loginBtn.addEventListener("click", async () => {
-  const { data, error } = await supabaseClient.auth.signInWithPassword({
+  const { error } = await supabaseClient.auth.signInWithPassword({
     email: emailInput.value.trim(),
     password: passwordInput.value.trim(),
   });
 
   if (error) {
     alert("❌ Errore login: " + error.message);
-  } else {
-    // Aspetta che la sessione venga aggiornata, poi reindirizza
-    const sessionCheck = await supabaseClient.auth.getSession();
-    if (sessionCheck.data.session) {
-      window.location.href = "index.html"; // ✅ Redirect al chatbot
-    } else {
-      alert("⚠️ Login riuscito, ma la sessione non è pronta. Riprova.");
-    }
+    return;
   }
+
+  // Aspetta che Supabase aggiorni la sessione
+  const checkSession = async () => {
+    const { data } = await supabaseClient.auth.getSession();
+    if (data.session) {
+      window.location.href = "index.html"; // ✅ Redirezione corretta
+    } else {
+      // Riprova tra 100ms
+      setTimeout(checkSession, 100);
+    }
+  };
+
+  checkSession();
 });
 
 
