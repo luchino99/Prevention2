@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login | HealthAI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js" defer></script>
+  <script src="login.js" defer></script>
+</head>
+<body class="bg-light" style="display: flex; align-items: center; justify-content: center; height: 100vh;">
+  <div style="max-width: 400px; width: 100%; background: white; padding: 40px; border-radius: 20px; box-shadow: 0 0 20px rgba(0,0,0,0.1); text-align: center;">
+    <img src="logo.png" alt="Logo HealthAI" style="max-width: 150px; margin-bottom: 20px;">
+    <h2 style="margin-bottom: 10px;">Accedi al tuo profilo</h2>
+    <p style="font-size: 14px; color: #64748b; margin-bottom: 30px;">Prevenzione. Nutrizione. Allenamento.</p>
+    
+    <input id="email" type="email" placeholder="Email" style="width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #cbd5e1; border-radius: 10px;" />
+    <input id="password" type="password" placeholder="Password" style="width: 100%; padding: 12px; margin-bottom: 16px; border: 1px solid #cbd5e1; border-radius: 10px;" />
+    
+    <button id="btn-login" class="scelta-btn" style="margin-bottom: 10px;">🔐 Accedi</button>
+    <button id="btn-signup" class="btn-theme">📝 Registrati</button>
+    
+    <p style="font-size: 12px; color: #94a3b8; margin-top: 30px;">Non condividiamo mai i tuoi dati. Solo per uso sanitario informativo.</p>
+  </div>
+</body>
+</html>
