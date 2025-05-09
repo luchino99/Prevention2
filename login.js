@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (error) {
       alert("❌ Errore login: " + error.message);
     } else {
-      window.location.href = "index.html"; // Redirezione al chatbot
+      window.location.href = "index.html"; // ✅ Redirezione al chatbot
     }
   });
 
@@ -36,6 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
 
   } else {
     alert("✅ Registrazione riuscita! Controlla la tua email per confermare.");
