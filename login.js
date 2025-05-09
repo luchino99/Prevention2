@@ -1,7 +1,7 @@
 // login.js
 const supabaseClient = window.supabase.createClient(
   'https://lwuhdgrkaoyvejmzfbtx.supabase.co',
-  'public-anon-key' // sostituisci con la tua PUBLIC KEY
+  'public-anon-key' // sostituisci con la tua PUBLIC KEY 
 );
 
 document.addEventListener("DOMContentLoaded", () => {
