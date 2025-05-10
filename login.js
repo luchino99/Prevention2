@@ -45,13 +45,21 @@ loginBtn.addEventListener("click", async () => {
 
 
 signupBtn.addEventListener("click", async () => {
+  // Mostra i campi extra al primo clic
   if (!signupMode) {
+    const extraFields = document.getElementById("extra-fields");
+    if (!extraFields) {
+      alert("⚠️ Errore interno: non trovo il contenitore dei campi extra.");
+      return;
+    }
+
     extraFields.style.display = "block";
     signupBtn.innerText = "✅ Conferma registrazione";
     signupMode = true;
     return;
   }
 
+  // Secondo clic → invia la registrazione
   const email = emailInput.value.trim();
   const password = passwordInput.value.trim();
   const eta = etaInput.value.trim();
@@ -64,10 +72,7 @@ signupBtn.addEventListener("click", async () => {
     return;
   }
 
-  const { data, error } = await supabaseClient.auth.signUp({
-    email,
-    password
-  });
+  const { error } = await supabaseClient.auth.signUp({ email, password });
 
   if (error) {
     alert("❌ Errore registrazione: " + error.message);
@@ -79,16 +84,16 @@ signupBtn.addEventListener("click", async () => {
     .insert([{ email, eta, sesso, altezza, peso }]);
 
   if (dbError) {
-    console.error("⚠️ Errore salvataggio dati anagrafici:", dbError);
-    alert("Registrazione riuscita, ma errore nel salvataggio anagrafica.");
+    console.error("Errore anagrafica:", dbError);
+    alert("⚠️ Registrazione riuscita, ma errore nel salvataggio dati anagrafici.");
   } else {
-    alert("✅ Registrazione completata! Controlla la tua email per confermare.");
+    alert("✅ Registrazione completata! Controlla la tua email.");
   }
 
   signupMode = false;
   extraFields.style.display = "none";
   signupBtn.innerText = "📝 Registrati";
-});
+ });
 
 });
 
