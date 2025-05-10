@@ -365,14 +365,21 @@ if (
 
 if (
   modalita !== "aggiorna" &&
-  rispostaPrecompilata !== undefined &&
-  rispostaPrecompilata !== null &&
-  rispostaPrecompilata !== "" &&
-  String(rispostaPrecompilata).trim() !== ""
+  typeof rispostaPrecompilata === "string" &&
+  rispostaPrecompilata.trim() !== ""
 ) {
   step++;
   continue;
 }
+if (
+  modalita !== "aggiorna" &&
+  typeof rispostaPrecompilata === "number" &&
+  !isNaN(rispostaPrecompilata)
+) {
+  step++;
+  continue;
+}
+
 
 
 
