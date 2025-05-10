@@ -73,6 +73,24 @@
         margin-top: 30px;
       }
 
+      .back-button {
+  display: inline-block;
+  margin-top: 20px;
+  background-color: var(--primary);
+  color: white;
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 15px;
+  border-radius: 10px;
+  text-decoration: none;
+  transition: background 0.3s ease;
+}
+
+.back-button:hover {
+  background-color: var(--primary-dark);
+}
+
+
       @media (max-width: 500px) {
         .card {
           padding: 25px;
@@ -101,7 +119,8 @@
         Inizia ora il tuo percorso verso una vita più sana, consapevole e sostenibile.
       </p>
 
-      <p class="footer-note">⏎ Puoi chiudere questa pagina e tornare all'app per iniziare subito.</p>
+      <a href="login.html" class="back-button">🔙 Torna al login</a>
+
     </div>
   </body>
 </html>
