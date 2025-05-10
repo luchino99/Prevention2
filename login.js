@@ -18,77 +18,69 @@ const pesoInput = document.getElementById("peso");
 let signupMode = false;
 
 
-loginBtn.addEventListener("click", async () => {
-  const { error } = await supabaseClient.auth.signInWithPassword({
-    email: emailInput.value.trim(),
-    password: passwordInput.value.trim(),
-  });
+const loginForm = document.getElementById("login-form");
 
-  if (error) {
-    alert("❌ Errore login: " + error.message);
-    return;
-  }
+loginForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
 
-  // Aspetta che Supabase aggiorni la sessione
-  const checkSession = async () => {
-    const { data } = await supabaseClient.auth.getSession();
-    if (data.session) {
-      window.location.href = "index.html"; // ✅ Redirezione corretta
-    } else {
-      // Riprova tra 100ms
-      setTimeout(checkSession, 100);
-    }
-  };
-
-  checkSession();
-});
-
-
-signupBtn.addEventListener("click", async () => {
   if (!signupMode) {
-    // Mostra i campi extra
-    extraFields.style.display = "block";
-    signupBtn.innerText = "✅ Conferma registrazione";
-    signupMode = true;
-    return;
-  }
+    // 🔐 Login classico
+    const { error } = await supabaseClient.auth.signInWithPassword({
+      email: emailInput.value.trim(),
+      password: passwordInput.value.trim(),
+    });
 
-  // Recupera tutti i campi ora visibili
-  const email = emailInput.value.trim();
-  const password = passwordInput.value.trim();
-  const eta = etaInput.value.trim();
-  const sesso = sessoInput.value.trim();
-  const altezza = altezzaInput.value.trim();
-  const peso = pesoInput.value.trim();
+    if (error) {
+      alert("❌ Errore login: " + error.message);
+      return;
+    }
 
-  // Verifica che TUTTI i campi siano compilati
-  if (!email || !password || !eta || !sesso || !altezza || !peso) {
-    alert("⚠️ Inserisci tutti i dati richiesti per registrarti.");
-    return;
-  }
-
-  const { error } = await supabaseClient.auth.signUp({ email, password });
-
-  if (error) {
-    alert("❌ Errore registrazione: " + error.message);
-    return;
-  }
-
-  const { error: dbError } = await supabaseClient
-    .from("anagrafica_utenti")
-    .insert([{ email, eta, sesso, altezza, peso }]);
-
-  if (dbError) {
-    console.error("Errore salvataggio anagrafica:", dbError);
-    alert("Registrazione riuscita, ma errore nel salvataggio anagrafica.");
+    // Attendi la sessione e reindirizza
+    const checkSession = async () => {
+      const { data } = await supabaseClient.auth.getSession();
+      if (data.session) {
+        window.location.href = "index.html";
+      } else {
+        setTimeout(checkSession, 100);
+      }
+    };
+    checkSession();
   } else {
-    alert("✅ Registrazione completata! Controlla la tua email per confermare.");
-  }
+    // 📝 Registrazione
+    const email = emailInput.value.trim();
+    const password = passwordInput.value.trim();
+    const eta = etaInput.value.trim();
+    const sesso = sessoInput.value.trim();
+    const altezza = altezzaInput.value.trim();
+    const peso = pesoInput.value.trim();
 
-  // Reset
-  signupMode = false;
-  extraFields.style.display = "none";
-  signupBtn.innerText = "📝 Registrati";
+    if (!email || !password || !eta || !sesso || !altezza || !peso) {
+      alert("⚠️ Inserisci tutti i dati richiesti per registrarti.");
+      return;
+    }
+
+    const { error } = await supabaseClient.auth.signUp({ email, password });
+
+    if (error) {
+      alert("❌ Errore registrazione: " + error.message);
+      return;
+    }
+
+    const { error: dbError } = await supabaseClient
+      .from("anagrafica_utenti")
+      .insert([{ email, eta, sesso, altezza, peso }]);
+
+    if (dbError) {
+      console.error("Errore salvataggio anagrafica:", dbError);
+      alert("Registrazione riuscita, ma errore nel salvataggio anagrafica.");
+    } else {
+      alert("✅ Registrazione completata! Controlla la tua email per confermare.");
+    }
+
+    signupMode = false;
+    extraFields.style.display = "none";
+    signupBtn.innerText = "📝 Registrati";
+  }
 });
 
 
