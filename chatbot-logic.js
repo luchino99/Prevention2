@@ -365,25 +365,16 @@ if (
 
 if (
   modalita !== "aggiorna" &&
-  typeof rispostaPrecompilata === "string" &&
-  rispostaPrecompilata.trim() !== ""
-) {
-  step++;
-  continue;
-}
-if (
-  modalita !== "aggiorna" &&
-  typeof rispostaPrecompilata === "number" &&
-  !isNaN(rispostaPrecompilata)
+  (
+    (typeof rispostaPrecompilata === "string" && rispostaPrecompilata.trim() !== "") ||
+    (typeof rispostaPrecompilata === "number" && !isNaN(rispostaPrecompilata))
+  )
 ) {
   step++;
   continue;
 }
 
-
-
-
-    break;
+  break;
   }
 
   input.value = "";
