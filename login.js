@@ -45,21 +45,15 @@ loginBtn.addEventListener("click", async () => {
 
 
 signupBtn.addEventListener("click", async () => {
-  // Mostra i campi extra al primo clic
   if (!signupMode) {
-    const extraFields = document.getElementById("extra-fields");
-    if (!extraFields) {
-      alert("⚠️ Errore interno: non trovo il contenitore dei campi extra.");
-      return;
-    }
-
+    // Mostra i campi extra
     extraFields.style.display = "block";
     signupBtn.innerText = "✅ Conferma registrazione";
     signupMode = true;
     return;
   }
 
-  // Secondo clic → invia la registrazione
+  // Recupera tutti i campi ora visibili
   const email = emailInput.value.trim();
   const password = passwordInput.value.trim();
   const eta = etaInput.value.trim();
@@ -67,8 +61,9 @@ signupBtn.addEventListener("click", async () => {
   const altezza = altezzaInput.value.trim();
   const peso = pesoInput.value.trim();
 
+  // Verifica che TUTTI i campi siano compilati
   if (!email || !password || !eta || !sesso || !altezza || !peso) {
-    alert("⚠️ Compila tutti i campi per registrarti.");
+    alert("⚠️ Inserisci tutti i dati richiesti per registrarti.");
     return;
   }
 
@@ -84,16 +79,18 @@ signupBtn.addEventListener("click", async () => {
     .insert([{ email, eta, sesso, altezza, peso }]);
 
   if (dbError) {
-    console.error("Errore anagrafica:", dbError);
-    alert("⚠️ Registrazione riuscita, ma errore nel salvataggio dati anagrafici.");
+    console.error("Errore salvataggio anagrafica:", dbError);
+    alert("Registrazione riuscita, ma errore nel salvataggio anagrafica.");
   } else {
-    alert("✅ Registrazione completata! Controlla la tua email.");
+    alert("✅ Registrazione completata! Controlla la tua email per confermare.");
   }
 
+  // Reset
   signupMode = false;
   extraFields.style.display = "none";
   signupBtn.innerText = "📝 Registrati";
- });
+});
+
 
 });
 
