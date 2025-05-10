@@ -1,4 +1,3 @@
-// login.js
 const supabaseClient = window.supabase.createClient(
   'https://lwuhdgrkaoyvejmzfbtx.supabase.co',
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3dWhkZ3JrYW95dmVqbXpmYnR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2NzU1MDcsImV4cCI6MjA2MTI1MTUwN30.1c5iH4PYW-HeigfXkPSgnVK3t02Gv3krSeo7dDSqqsk'
@@ -14,17 +13,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const sessoInput = document.getElementById("sesso");
   const altezzaInput = document.getElementById("altezza");
   const pesoInput = document.getElementById("peso");
-
   const loginForm = document.getElementById("login-form");
 
   let signupMode = false;
 
+  // Attiva la modalità registrazione
   signupBtn.addEventListener("click", () => {
-    if (!signupMode) {
-      extraFields.style.display = "block";
-      signupBtn.innerText = "✅ Conferma registrazione";
-      signupMode = true;
-    }
+    signupMode = true;
+    extraFields.style.display = "block";
+    signupBtn.innerText = "✅ Conferma registrazione";
   });
 
   loginForm.addEventListener("submit", async (e) => {
@@ -32,58 +29,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const email = emailInput.value.trim();
     const password = passwordInput.value.trim();
+
+    if (!email || !password) {
+      alert("⚠️ Inserisci email e password.");
+      return;
+    }
+
+    // Se siamo in modalità registrazione, controlla se i campi extra sono compilati
     const eta = etaInput.value.trim();
     const sesso = sessoInput.value.trim();
     const altezza = altezzaInput.value.trim();
     const peso = pesoInput.value.trim();
 
-    // Se signupMode attivo ma campi incompleti, fai fallback al login
-    if (
-      signupMode &&
-      (!eta || !sesso || !altezza || !peso)
-    ) {
-      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-      if (error) {
-        alert("❌ Errore login: " + error.message);
-        return;
-      }
+    const campiExtraCompilati = eta && sesso && altezza && peso;
 
-      const checkSession = async () => {
-        const { data } = await supabaseClient.auth.getSession();
-        if (data.session) {
-          window.location.href = "index.html";
-        } else {
-          setTimeout(checkSession, 100);
-        }
-      };
-      checkSession();
-      return;
-    }
-
-    if (!signupMode) {
-      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-
-      if (error) {
-        alert("❌ Errore login: " + error.message);
-        return;
-      }
-
-      const checkSession = async () => {
-        const { data } = await supabaseClient.auth.getSession();
-        if (data.session) {
-          window.location.href = "index.html";
-        } else {
-          setTimeout(checkSession, 100);
-        }
-      };
-
-      checkSession();
-    } else {
-      if (!email || !password || !eta || !sesso || !altezza || !peso) {
-        alert("⚠️ Inserisci tutti i dati richiesti per registrarti.");
-        return;
-      }
-
+    if (signupMode && campiExtraCompilati) {
+      // ✅ Procedi con la registrazione
       const { error } = await supabaseClient.auth.signUp({ email, password });
 
       if (error) {
@@ -106,6 +67,25 @@ document.addEventListener("DOMContentLoaded", () => {
       extraFields.style.display = "none";
       signupBtn.innerText = "📝 Registrati";
       loginForm.reset();
+      return;
     }
+
+    // 🔐 Se non siamo in registrazione o i campi extra non sono compilati, fai login
+    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      alert("❌ Errore login: " + error.message);
+      return;
+    }
+
+    const checkSession = async () => {
+      const { data } = await supabaseClient.auth.getSession();
+      if (data.session) {
+        window.location.href = "index.html";
+      } else {
+        setTimeout(checkSession, 100);
+      }
+    };
+    checkSession();
   });
 });
