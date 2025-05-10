@@ -16,6 +16,14 @@ const altezzaInput = document.getElementById("altezza");
 const pesoInput = document.getElementById("peso");
 
 let signupMode = false;
+  signupBtn.addEventListener("click", () => {
+  if (!signupMode) {
+    extraFields.style.display = "block";
+    signupBtn.innerText = "✅ Conferma registrazione";
+    signupMode = true;
+  }
+});
+
 
 
 const loginForm = document.getElementById("login-form");
