@@ -368,6 +368,7 @@ if (
   rispostaPrecompilata !== undefined &&
   rispostaPrecompilata !== null &&
   rispostaPrecompilata !== ""
+  String(rispostaPrecompilata).trim() !== ""
 ) {
   step++;
   continue;
@@ -493,6 +494,10 @@ supabaseClient.auth.getSession().then(({ data }) => {
   recuperaAnagraficaDalDatabase(emailUtente).then((dati) => {
     if (dati) {
       risposte = { ...risposte, ...dati };
+      risposte.eta = String(risposte.eta || "");
+      risposte.sesso = String(risposte.sesso || "");
+      risposte.altezza = String(risposte.altezza || "");
+      risposte.peso = String(risposte.peso || "");
       console.log("✅ Anagrafica precompilata:", risposte);
     }
     mostraScelteIniziali();
