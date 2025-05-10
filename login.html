@@ -98,23 +98,29 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js" defer></script> <!-- ✅ QUESTA -->
   <script src="login.js" defer></script>
   </head>
-  <body>
-    <div class="login-container">
-      <img src="logo.png" alt="Logo HealthAI" />
-      <h2>Benvenuto in HealthAI</h2>
-      <p>Accedi per continuare con il tuo profilo salute</p>
+<body>
+  <div class="login-container">
+    <img src="logo.png" alt="Logo HealthAI" />
+    <h2>Benvenuto in HealthAI</h2>
+    <p>Accedi per continuare con il tuo profilo salute</p>
+
+    <form id="login-form">
       <input type="email" id="email" placeholder="Email" required />
       <input type="password" id="password" placeholder="Password" required />
-      <button id="btn-login">🔐 Accedi</button>
-      <div id="extra-fields" style="display: none; margin-top: 16px;">
-  <input type="number" id="eta" placeholder="Età" required />
-  <input type="text" id="sesso" placeholder="Sesso biologico (maschio/femmina)" required />
-  <input type="number" id="altezza" placeholder="Altezza in cm" required />
-  <input type="number" id="peso" placeholder="Peso in kg" required />
-</div>
+      <button type="submit" id="btn-login">🔐 Accedi</button>
 
-      <button id="btn-signup">📝 Registrati</button>
-      <p class="disclaimer">I tuoi dati sono trattati secondo le normative GDPR e utilizzati solo per finalità sanitarie informative.</p>
-    </div>
-  </body>
+      <div id="extra-fields" style="display: none; margin-top: 16px;">
+        <input type="number" id="eta" placeholder="Età" required />
+        <input type="text" id="sesso" placeholder="Sesso biologico (maschio/femmina)" required />
+        <input type="number" id="altezza" placeholder="Altezza in cm" required />
+        <input type="number" id="peso" placeholder="Peso in kg" required />
+      </div>
+
+      <button type="button" id="btn-signup">📝 Registrati</button>
+    </form>
+
+    <p class="disclaimer">I tuoi dati sono trattati secondo le normative GDPR e utilizzati solo per finalità sanitarie informative.</p>
+  </div>
+</body>
+
 </html>
