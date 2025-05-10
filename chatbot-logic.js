@@ -363,16 +363,17 @@ if (
       }
     }
 
-    if (
+if (
   modalita !== "aggiorna" &&
   rispostaPrecompilata !== undefined &&
   rispostaPrecompilata !== null &&
-  rispostaPrecompilata !== ""
+  rispostaPrecompilata !== "" &&
   String(rispostaPrecompilata).trim() !== ""
 ) {
   step++;
   continue;
 }
+
 
 
     break;
