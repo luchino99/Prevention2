@@ -4,29 +4,33 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Accedi | HealthAI</title>
-    <link rel="stylesheet" href="style.css" />
+
+    <link rel="icon" href="final_favicon.ico" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js" defer></script>
     <script src="login.js" defer></script>
-    <link rel="icon" href="final_favicon.ico" type="image/x-icon">
+
     <style>
-      body {
-      opacity: 0;
-      transition: opacity 0.2s ease-in-out;
+      :root {
+        --primary: #3b82f6;
+        --primary-dark: #2563eb;
+        --bg-light: #f8fafc;
+        --text-dark: #1e293b;
+        --border: #d1d5db;
       }
-    </style>
 
-
-    <style>
       body {
         font-family: 'Inter', sans-serif;
-        background-color: var(--bg-light);
-        color: var(--text-dark);
+        background-color: var(--bg-light, #f8fafc);
+        color: var(--text-dark, #1e293b);
         display: flex;
         align-items: center;
         justify-content: center;
         height: 100vh;
         margin: 0;
+        opacity: 0;
+        transition: opacity 0.3s ease-in-out;
       }
 
       .login-container {
@@ -131,12 +135,12 @@
       <button type="button" id="btn-signup">📝 Registrati</button>
       <p class="disclaimer">I tuoi dati sono trattati secondo le normative GDPR e utilizzati solo per finalità sanitarie informative.</p>
     </div>
-    <script>
-  window.addEventListener('load', () => {
-    document.body.style.opacity = '1';
-  });
-</script>
 
+    <script>
+      window.addEventListener('load', () => {
+        document.body.style.opacity = '1';
+      });
+    </script>
   </body>
 </html>
 
