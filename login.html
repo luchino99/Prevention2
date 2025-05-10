@@ -9,6 +9,12 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js" defer></script>
     <script src="login.js" defer></script>
     <link rel="icon" href="final_favicon.ico" type="image/x-icon">
+    <style>
+      body {
+      opacity: 0;
+      transition: opacity 0.2s ease-in-out;
+      }
+    </style>
 
 
     <style>
@@ -125,6 +131,12 @@
       <button type="button" id="btn-signup">📝 Registrati</button>
       <p class="disclaimer">I tuoi dati sono trattati secondo le normative GDPR e utilizzati solo per finalità sanitarie informative.</p>
     </div>
+    <script>
+  window.addEventListener('load', () => {
+    document.body.style.opacity = '1';
+  });
+</script>
+
   </body>
 </html>
 
