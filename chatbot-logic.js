@@ -483,25 +483,30 @@ const supabase = window.supabase;  // caricato da CDN
 const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 supabaseClient.auth.getSession().then(({ data }) => {
   if (!data.session) {
-    // ⛔ Utente non loggato → redirect al login
     window.location.href = "login.html";
-  } else {
-    // ✅ Utente loggato → imposta l'email globale
-    emailUtente = data.session.user.email;
-    risposte.email = emailUtente;
+    return;
+  }
 
-    console.log("✅ Utente autenticato:", emailUtente);
-    mostraScelteIniziali(); // oppure carica i dati subito se preferisci
+  emailUtente = data.session.user.email;
+  risposte.email = emailUtente;
+
+  recuperaAnagraficaDalDatabase(emailUtente).then((dati) => {
+    if (dati) {
+      risposte = { ...risposte, ...dati };
+      console.log("✅ Anagrafica precompilata:", risposte);
+    }
+    mostraScelteIniziali();
+  });
+
+  const logoutBtn = document.getElementById("btn-logout");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", async () => {
+      await supabaseClient.auth.signOut();
+      window.location.href = "login.html";
+    });
   }
 });
 
-  const logoutBtn = document.getElementById("btn-logout");
-if (logoutBtn) {
-  logoutBtn.addEventListener("click", async () => {
-    await supabaseClient.auth.signOut();
-    window.location.href = "login.html";
-  });
-}
 
   
 async function salvaAnagraficaNelDatabase(dati) {
