@@ -9,6 +9,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const passwordInput = document.getElementById("password");
   const loginBtn = document.getElementById("btn-login");
   const signupBtn = document.getElementById("btn-signup");
+  const extraFields = document.getElementById("extra-fields");
+const etaInput = document.getElementById("eta");
+const sessoInput = document.getElementById("sesso");
+const altezzaInput = document.getElementById("altezza");
+const pesoInput = document.getElementById("peso");
+
+let signupMode = false;
+
 
 loginBtn.addEventListener("click", async () => {
   const { error } = await supabaseClient.auth.signInWithPassword({
@@ -36,18 +44,52 @@ loginBtn.addEventListener("click", async () => {
 });
 
 
-  signupBtn.addEventListener("click", async () => {
-    const { data, error } = await supabaseClient.auth.signUp({
-      email: emailInput.value.trim(),
-      password: passwordInput.value.trim(),
-    });
+signupBtn.addEventListener("click", async () => {
+  if (!signupMode) {
+    extraFields.style.display = "block";
+    signupBtn.innerText = "✅ Conferma registrazione";
+    signupMode = true;
+    return;
+  }
 
-    if (error) {
-      alert("❌ Errore registrazione: " + error.message);
-    } else {
-      alert("✅ Registrazione completata! Controlla la tua email per confermare.");
-    }
+  const email = emailInput.value.trim();
+  const password = passwordInput.value.trim();
+  const eta = etaInput.value.trim();
+  const sesso = sessoInput.value.trim();
+  const altezza = altezzaInput.value.trim();
+  const peso = pesoInput.value.trim();
+
+  if (!email || !password || !eta || !sesso || !altezza || !peso) {
+    alert("⚠️ Compila tutti i campi per registrarti.");
+    return;
+  }
+
+  const { data, error } = await supabaseClient.auth.signUp({
+    email,
+    password
   });
+
+  if (error) {
+    alert("❌ Errore registrazione: " + error.message);
+    return;
+  }
+
+  const { error: dbError } = await supabaseClient
+    .from("anagrafica_utenti")
+    .insert([{ email, eta, sesso, altezza, peso }]);
+
+  if (dbError) {
+    console.error("⚠️ Errore salvataggio dati anagrafici:", dbError);
+    alert("Registrazione riuscita, ma errore nel salvataggio anagrafica.");
+  } else {
+    alert("✅ Registrazione completata! Controlla la tua email per confermare.");
+  }
+
+  signupMode = false;
+  extraFields.style.display = "none";
+  signupBtn.innerText = "📝 Registrati";
+});
+
 });
 
 
