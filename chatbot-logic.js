@@ -492,17 +492,22 @@ supabaseClient.auth.getSession().then(({ data }) => {
   emailUtente = data.session.user.email;
   risposte.email = emailUtente;
 
-  recuperaAnagraficaDalDatabase(emailUtente).then((dati) => {
-    if (dati) {
-      risposte = { ...risposte, ...dati };
-      risposte.eta = String(risposte.eta || "");
-      risposte.sesso = String(risposte.sesso || "");
-      risposte.altezza = String(risposte.altezza || "");
-      risposte.peso = String(risposte.peso || "");
-      console.log("✅ Anagrafica precompilata:", risposte);
-    }
-    mostraScelteIniziali();
-  });
+recuperaAnagraficaDalDatabase(emailUtente).then((dati) => {
+  if (dati) {
+    risposte = { ...risposte, ...dati };
+
+    // ✅ Normalizza i campi per evitare domande duplicate
+    risposte.eta = String(risposte.eta || "").trim();
+    risposte.sesso = String(risposte.sesso || "").trim();
+    risposte.altezza = String(risposte.altezza || "").trim();
+    risposte.peso = String(risposte.peso || "").trim();
+
+    console.log("✅ Anagrafica precompilata:", risposte);
+  }
+
+  mostraScelteIniziali(); // va comunque dopo
+});
+
 
   const logoutBtn = document.getElementById("btn-logout");
   if (logoutBtn) {
