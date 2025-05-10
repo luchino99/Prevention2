@@ -1,129 +1,116 @@
-<!-- conferma.html -->
 <!DOCTYPE html>
 <html lang="it">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Conferma Email | HealthAI</title>
-    <link rel="icon" type="image/x-icon" href="final_favicon.ico" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
-    <style>
-      :root {
-        --primary: #2563eb;
-        --primary-dark: #1e40af;
-        --background: #0f172a;
-        --foreground: #f8fafc;
-        --accent: #38bdf8;
-        --card-bg: #1e293b;
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Conferma Email | HealthAI</title>
+  <link rel="icon" href="final_favicon.ico" type="image/x-icon" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #00b894;
+      --primary-dark: #009475;
+      --bg-dark: #0f172a;
+      --text-light: #f1f5f9;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      background-color: #1e293b;
+      padding: 40px;
+      border-radius: 24px;
+      max-width: 700px;
+      width: 100%;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      text-align: center;
+    }
+
+    .container img {
+      width: 80px;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 16px;
+      color: var(--primary);
+    }
+
+    p {
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+
+    .btn {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 14px 28px;
+      font-size: 15px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      text-decoration: none;
+      display: inline-block;
+      font-weight: 600;
+    }
+
+    .btn:hover {
+      background-color: var(--primary-dark);
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 30px 20px;
       }
 
-      * {
-        box-sizing: border-box;
+      h1 {
+        font-size: 22px;
       }
 
-      body {
-        margin: 0;
-        font-family: 'Inter', sans-serif;
-        background-color: var(--background);
-        color: var(--foreground);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 100vh;
-        padding: 20px;
+      p {
+        font-size: 15px;
       }
-
-      .card {
-        background-color: var(--card-bg);
-        border-radius: 20px;
-        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
-        padding: 40px;
-        max-width: 600px;
-        width: 100%;
-        text-align: center;
-      }
-
-      .card h1 {
-        font-size: 28px;
-        margin-bottom: 10px;
-        color: var(--accent);
-      }
-
-      .card p {
-        font-size: 16px;
-        line-height: 1.6;
-        margin-bottom: 20px;
-        color: #cbd5e1;
-      }
-
-      .check-icon {
-        font-size: 50px;
-        margin-bottom: 20px;
-        color: #22c55e;
-      }
-
-      .highlight {
-        color: var(--accent);
-        font-weight: 600;
-      }
-
-      .footer-note {
-        font-size: 13px;
-        color: #64748b;
-        margin-top: 30px;
-      }
-
-      .back-button {
-  display: inline-block;
-  margin-top: 20px;
-  background-color: var(--primary);
-  color: white;
-  padding: 12px 24px;
-  font-weight: 600;
-  font-size: 15px;
-  border-radius: 10px;
-  text-decoration: none;
-  transition: background 0.3s ease;
-}
-
-.back-button:hover {
-  background-color: var(--primary-dark);
-}
-
-
-      @media (max-width: 500px) {
-        .card {
-          padding: 25px;
-        }
-
-        .card h1 {
-          font-size: 24px;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <div class="card">
-      <div class="check-icon">✅</div>
-      <h1>Email confermata con successo!</h1>
-      <p>Grazie per esserti registrato a <span class="highlight">HealthAI</span>, il tuo assistente digitale per la salute preventiva.</p>
-
-      <p>
-        La nostra missione è aiutarti a <strong>prevenire</strong> invece che curare: attraverso piani <span class="highlight">alimentari su misura</span>, 
-        programmi di <span class="highlight">allenamento personalizzati</span> e suggerimenti basati su linee guida scientifiche, 
-        vogliamo trasformare il modo in cui le persone si prendono cura del proprio benessere.
-      </p>
-
-      <p>
-        Ti accompagneremo ogni giorno con sfide pratiche, consigli su misura e monitoraggio costante dei tuoi obiettivi di salute. 
-        Inizia ora il tuo percorso verso una vita più sana, consapevole e sostenibile.
-      </p>
-
-      <a href="login.html" class="back-button">🔙 Torna al login</a>
-
-    </div>
-  </body>
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="https://cdn-icons-png.flaticon.com/512/190/190411.png" alt="Check Icon">
+    <h1>Email confermata con successo</h1>
+    <p>
+      Grazie per aver verificato il tuo indirizzo email. Ora puoi accedere al tuo profilo personale HealthAI.
+    </p>
+    <p>
+      <strong>HealthAI</strong> è la tua guida quotidiana per una salute consapevole, che mette la <strong>prevenzione</strong> al centro del benessere. Il nostro obiettivo è aiutarti a migliorare lo stile di vita con:
+    </p>
+    <ul style="text-align: left; margin: 0 auto 24px; max-width: 500px; color: var(--text-light);">
+      <li>✔️ Piani alimentari e allenamento personalizzati</li>
+      <li>✔️ Challenge giornaliere per promuovere costanza e salute</li>
+      <li>✔️ Monitoraggio dei fattori di rischio</li>
+      <li>✔️ Riduzione del sovraccarico medico tramite supporto preventivo</li>
+    </ul>
+    <a href="login.html" class="btn">🔐 Torna al Login</a>
+  </div>
+</body>
 </html>
 
-
- 
