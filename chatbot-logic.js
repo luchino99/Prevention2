@@ -597,11 +597,41 @@ async function salvaAnagraficaNelDatabase(dati) {
       return;
     }
 
-    const datiAnagrafica = { ...dati }; // salva tutto, non solo età/sesso
+    // ✅ Elenco dei soli campi presenti nella tabella reale
+    const campiValidi = [
+      "email", "eta", "sesso", "altezza", "peso",
+      "origine_etnica", "vita", "glicemia", "glicemia_valore",
+      "colesterolo_totale", "colesterolo_hdl_valore", "colesterolo_ldl_valore",
+      "colesterolo_ldl", "pressione_sistolica", "pressione_diastolica",
+      "pressione", "pressione_valore", "pressione_alta",
+      "attivita_fisica", "attivo30", "tipo_lavoro", "patologie",
+      "farmaci", "farmaci_dettaglio", "interventi", "interventi_dettaglio",
+      "fumatore", "diabete", "unita_alcoliche", "alcol_eccessivo",
+      "familiari_diabete", "frattura", "famiglia_frattura_anca",
+      "corticosteroidi", "artrite", "stanchezza", "over_stanchezza",
+      "camminata", "over_camminata", "sollevamento", "over_sollevamento",
+      "sedia", "over_sedia", "cadute", "over_cadute",
+      "intolleranze", "alimenti_esclusi", "preferenze",
+      "malattie_croniche", "familiarita_tumori", "sede_tumore",
+      "predimed_1", "predimed_2", "predimed_3", "predimed_4",
+      "predimed_5", "predimed_6", "predimed_7", "predimed_8",
+      "predimed_9", "predimed_10", "predimed_11", "predimed_12",
+      "predimed_13", "predimed_14", "depressione", "insonnia",
+      "tipo_insonnia", "stress"
+    ];
 
+    // ✅ Filtra i soli campi validi prima di salvarli
+    const payload = {};
+    for (const chiave of campiValidi) {
+      if (chiave in dati) {
+        payload[chiave] = dati[chiave];
+      }
+    }
+
+    // 🔄 Salva nel DB
     const { data, error } = await supabaseClient
-      .from('anagrafica_utenti')
-      .upsert([datiAnagrafica], { onConflict: 'email' });
+      .from("anagrafica_utenti")
+      .upsert([payload], { onConflict: "email" });
 
     if (error) {
       console.error("Errore API salvataggio:", error);
@@ -612,6 +642,7 @@ async function salvaAnagraficaNelDatabase(dati) {
     console.error("❌ Errore di rete salvataggio:", error);
   }
 }
+
 
 
 async function salvaCompilazioneNelDatabase(risposte, modalita) {
