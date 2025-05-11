@@ -349,48 +349,66 @@ async function next() {
     return;
   }
 
-  if (step >= 0 && val) {
-    mostraMessaggio(val, "user");
-    await salvaMessaggioChat(emailUtente, "user", val);
-    risposte[domande[step].key] = val;
+if (step >= 0 && val) {
+  mostraMessaggio(val, "user");
+  await salvaMessaggioChat(emailUtente, "user", val);
 
+  const currentKey = domande[step].key;
+
+  // 🔁 Salva la risposta su tutte le chiavi condivise
+  let chiaveSalvata = false;
+  for (const [profiloKey, domandeKeys] of Object.entries(aliasCondivisi)) {
+    if (domandeKeys.includes(currentKey)) {
+      risposte[profiloKey] = val;
+      chiaveSalvata = true;
+      break;
+    }
+  }
+
+  // Se la chiave non è condivisa, salvala normalmente
+  if (!chiaveSalvata) {
+    risposte[currentKey] = val;
+  }
+
+  // Salvataggio condizionale se abbiamo i dati principali
   if (
     risposte.email &&
     risposte.eta &&
     risposte.sesso &&
     risposte.altezza &&
     risposte.peso
-     ) {
+  ) {
     await salvaAnagraficaNelDatabase(risposte);
   }
 
-if (
-  modalita !== "aggiorna" &&
-  step >= 0 &&
-  domande[step].key === "eta" &&
-  !domandeOver65Aggiunte
-) {
-  const etaNum = parseInt(val);
-  if (!isNaN(etaNum) && etaNum > 65) {
-    domande.splice(step + 1, 0, ...domandeOver65);
-    domandeOver65Aggiunte = true;
+  // Verifica età per over65
+  if (
+    modalita !== "aggiorna" &&
+    currentKey === "eta" &&
+    !domandeOver65Aggiunte
+  ) {
+    const etaNum = parseInt(val);
+    if (!isNaN(etaNum) && etaNum > 65) {
+      domande.splice(step + 1, 0, ...domandeOver65);
+      domandeOver65Aggiunte = true;
+    }
   }
-}
 
-if (
-  modalita !== "aggiorna" &&
-  step >= 0 &&
-  domande[step].key === "sesso" &&
-  !domandeFemminiliAggiunte
-) {
-  const sesso = val.toLowerCase();
-  if (sesso === "femmina" || sesso === "donna") {
-    domande.splice(step + 1, 0, ...domandeFemminili);
-    domandeFemminiliAggiunte = true;
+  // Verifica sesso per domande femminili
+  if (
+    modalita !== "aggiorna" &&
+    currentKey === "sesso" &&
+    !domandeFemminiliAggiunte
+  ) {
+    const sesso = val.toLowerCase();
+    if (sesso === "femmina" || sesso === "donna") {
+      domande.splice(step + 1, 0, ...domandeFemminili);
+      domandeFemminiliAggiunte = true;
+    }
   }
-}
 
-    step++;
+  step++;
+  
   } else if (step === -1) {
     step = 0; // primo avanzamento dopo scelta modalità
   }
@@ -762,6 +780,16 @@ async function mostraProfiloUtente() {
 
           await salvaAnagraficaNelDatabase(nuoviDati);
           Object.assign(risposte, nuoviDati);
+          for (const [mainKey, keys] of Object.entries(aliasCondivisi)) {
+          if (risposte[mainKey] !== undefined) {
+          keys.forEach(k => {
+          if (k !== mainKey) {
+          risposte[k] = risposte[mainKey];
+      }
+    });
+  }
+}
+
           alert("✅ Profilo aggiornato!");
         });
       } else {
