@@ -646,14 +646,21 @@ const toggleBtn = document.getElementById("theme-toggle");
     const html = await res.text();
     container.innerHTML = html;
 
-    // Precompila i campi base
+    // Riattiva gli accordion
+    document.querySelectorAll(".accordion-header").forEach(header => {
+      header.addEventListener("click", () => {
+        header.parentElement.classList.toggle("open");
+      });
+    });
+
+    // Campi base
     document.getElementById("profilo-email").value = risposte.email || "";
     document.getElementById("profilo-eta").value = risposte.eta || "";
     document.getElementById("profilo-sesso").value = risposte.sesso || "";
     document.getElementById("profilo-altezza").value = risposte.altezza || "";
     document.getElementById("profilo-peso").value = risposte.peso || "";
 
-    // Lista completa di campi extra
+    // Campi estesi
     const extra = [
       "attivita_fisica", "tipo_lavoro", "patologie", "farmaci_dettaglio",
       "intolleranze", "alimenti_esclusi", "preferenze",
@@ -666,42 +673,44 @@ const toggleBtn = document.getElementById("theme-toggle");
       "stanchezza", "camminata", "sollevamento", "sedia", "cadute"
     ];
 
-    // Precompilazione dei campi extra
     for (const key of extra) {
       const el = document.getElementById(`profilo-${key}`);
       if (el) el.value = risposte[key] || "";
     }
 
-    // Salvataggio
-    const salvaBtn = document.getElementById("salva-profilo-btn");
-    if (salvaBtn) {
-      salvaBtn.addEventListener("click", async () => {
-        const nuoviDati = {
-          email: risposte.email,
-          eta: document.getElementById("profilo-eta").value.trim(),
-          sesso: document.getElementById("profilo-sesso").value.trim(),
-          altezza: document.getElementById("profilo-altezza").value.trim(),
-          peso: document.getElementById("profilo-peso").value.trim()
-        };
+    // Salvataggio protetto
+    setTimeout(() => {
+      const salvaBtn = document.getElementById("salva-profilo-btn");
+      if (salvaBtn) {
+        salvaBtn.addEventListener("click", async () => {
+          const nuoviDati = {
+            email: risposte.email,
+            eta: document.getElementById("profilo-eta").value.trim(),
+            sesso: document.getElementById("profilo-sesso").value.trim(),
+            altezza: document.getElementById("profilo-altezza").value.trim(),
+            peso: document.getElementById("profilo-peso").value.trim()
+          };
 
-        for (const key of extra) {
-          const el = document.getElementById(`profilo-${key}`);
-          nuoviDati[key] = el ? el.value.trim() : "";
-        }
+          for (const key of extra) {
+            const el = document.getElementById(`profilo-${key}`);
+            nuoviDati[key] = el ? el.value.trim() : "";
+          }
 
-        await salvaAnagraficaNelDatabase(nuoviDati);
-        Object.assign(risposte, nuoviDati);
-        alert("✅ Profilo aggiornato!");
-      });
-    } else {
-      console.error("❌ Bottone #salva-profilo-btn non trovato nel DOM.");
-    }
+          await salvaAnagraficaNelDatabase(nuoviDati);
+          Object.assign(risposte, nuoviDati);
+          alert("✅ Profilo aggiornato!");
+        });
+      } else {
+        console.error("❌ Bottone #salva-profilo-btn non trovato nel DOM.");
+      }
+    }, 100);
 
   } catch (err) {
     console.error("❌ Errore caricamento profilo:", err);
     container.innerHTML = "⚠️ Errore nel caricamento della scheda profilo.";
   }
 }
+
 
 
 
