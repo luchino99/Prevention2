@@ -685,6 +685,12 @@ const toggleBtn = document.getElementById("theme-toggle");
   }
 }
 
+const profiloBtn = document.getElementById("btn-profilo");
+if (profiloBtn) {
+  profiloBtn.addEventListener("click", () => {
+    mostraProfiloUtente();
+  });
+}
 
 
 const form = document.getElementById("input-form");
