@@ -102,23 +102,29 @@ input:focus, select:focus {
   display: block;
 }
 
-/* ✅ Pulsante Salva centrato nel container, non nella pagina */
-#salva-profilo-btn {
+
+.sticky-wrapper {
   position: sticky;
   bottom: 20px;
+  display: flex;
+  justify-content: center;
+  z-index: 10;
+  background: transparent;
+  padding-top: 20px;
+}
+
+#salva-profilo-btn {
   background-color: var(--primary);
   color: white;
   font-size: 16px;
   font-weight: 600;
-  padding: 16px;
+  padding: 16px 24px;
   border: none;
   border-radius: 12px;
   cursor: pointer;
   box-shadow: 0 8px 16px var(--primary-shadow);
-  width: calc(100% - 48px); /* 24px padding per lato */
+  width: 100%;
   max-width: 400px;
-  margin: 40px auto 0;
-  z-index: 10;
   transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
@@ -126,6 +132,7 @@ input:focus, select:focus {
   background-color: var(--primary-hover);
   transform: translateY(-2px);
 }
+
 
 #salva-profilo-btn:focus-visible {
   outline: none;
@@ -287,7 +294,10 @@ input:focus, select:focus {
       </label>
     </div>
   </div>
+   <div class="sticky-wrapper">
   <button id="salva-profilo-btn">💾 Salva Modifiche</button>
+</div>
+
 </div>
 
 
