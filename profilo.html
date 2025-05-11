@@ -6,16 +6,16 @@
   <title>Profilo Utente Completo</title>
   <style>
   :root {
-  --bg-color: #e5f0f9;
-  --panel-bg: #ffffff;
+  --bg-color: #f0f4f8;
+  --panel-bg: #f0f4f8;
   --text-color: #0f172a;
-  --label-color: #475569;
-  --input-bg: #f8fafc;
+  --label-color: #334155;
+  --input-bg: #ffffff;
   --input-border: #cbd5e1;
   --input-focus: #7dd3fc;
   --primary: #0ea5e9;
   --primary-hover: #0284c7;
-  --primary-shadow: rgba(14, 165, 233, 0.4);
+  --primary-shadow: rgba(14, 165, 233, 0.3);
 }
 
 body {
@@ -30,10 +30,11 @@ body {
   max-width: 800px;
   margin: auto;
   padding: 30px 24px 160px;
-  background: var(--bg-color);
+  background: var(--panel-bg);
   border-radius: 24px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   position: relative;
+  overflow-x: hidden;
 }
 
 h2, h3 {
@@ -68,26 +69,27 @@ input:focus, select:focus {
 }
 
 .accordion-section {
-  border: 1px solid #e2e8f0;
+  border: 1px solid #dbeafe;
   margin-top: 24px;
   border-radius: 16px;
-  background: #f9fafb;
+  background: #e0f2fe;
   overflow: hidden;
   transition: all 0.3s ease;
 }
 
 .accordion-header {
-  background: #e2e8f0;
+  background: #bae6fd;
   padding: 16px 20px;
   font-weight: 700;
   cursor: pointer;
   user-select: none;
   font-size: 15px;
   transition: background-color 0.2s ease;
+  color: #0f172a;
 }
 
 .accordion-header:hover {
-  background-color: #dbe3ea;
+  background-color: #7dd3fc;
 }
 
 .accordion-body {
@@ -100,6 +102,7 @@ input:focus, select:focus {
   display: block;
 }
 
+/* ✅ Pulsante Salva centrato nel container, non nella pagina */
 #salva-profilo-btn {
   position: sticky;
   bottom: 20px;
@@ -112,7 +115,7 @@ input:focus, select:focus {
   border-radius: 12px;
   cursor: pointer;
   box-shadow: 0 8px 16px var(--primary-shadow);
-  width: 100%;
+  width: calc(100% - 48px); /* 24px padding per lato */
   max-width: 400px;
   margin: 40px auto 0;
   z-index: 10;
@@ -128,6 +131,7 @@ input:focus, select:focus {
   outline: none;
   box-shadow: 0 0 0 4px var(--input-focus);
 }
+
 
 
 
