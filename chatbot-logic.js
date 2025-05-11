@@ -679,10 +679,27 @@ async function mostraProfiloUtente() {
       "colesterolo_ldl_valore", "glicemia_valore"
     ];
 
-    for (const key of extra) {
-      const el = document.getElementById(`profilo-${key}`);
-      if (el) el.value = risposte[key] || "";
-    }
+const integerFields = [
+  "pressione_sistolica", "pressione_diastolica",
+  "colesterolo_totale", "colesterolo_hdl_valore",
+  "colesterolo_ldl_valore", "glicemia_valore"
+];
+
+for (const key of extra) {
+  const el = document.getElementById(`profilo-${key}`);
+  if (!el) continue;
+
+  const val = el.value.trim();
+
+  if (val === "") {
+    nuoviDati[key] = null;
+  } else if (integerFields.includes(key)) {
+    nuoviDati[key] = parseInt(val);
+  } else {
+    nuoviDati[key] = val;
+  }
+}
+
 
     // Salvataggio protetto con gestione numeri e null
     setTimeout(() => {
