@@ -637,7 +637,7 @@ const toggleBtn = document.getElementById("theme-toggle");
     }
 
 }
-  async function mostraProfiloUtente() {
+async function mostraProfiloUtente() {
   const container = document.getElementById("messages");
   container.innerHTML = "🔄 Caricamento profilo...";
 
@@ -660,7 +660,7 @@ const toggleBtn = document.getElementById("theme-toggle");
     document.getElementById("profilo-altezza").value = risposte.altezza || "";
     document.getElementById("profilo-peso").value = risposte.peso || "";
 
-    // Campi estesi
+    // Campi extra
     const extra = [
       "attivita_fisica", "tipo_lavoro", "patologie", "farmaci_dettaglio",
       "intolleranze", "alimenti_esclusi", "preferenze",
@@ -673,10 +673,61 @@ const toggleBtn = document.getElementById("theme-toggle");
       "stanchezza", "camminata", "sollevamento", "sedia", "cadute"
     ];
 
+    const integerFields = [
+      "pressione_sistolica", "pressione_diastolica",
+      "colesterolo_totale", "colesterolo_hdl_valore",
+      "colesterolo_ldl_valore", "glicemia_valore"
+    ];
+
     for (const key of extra) {
       const el = document.getElementById(`profilo-${key}`);
       if (el) el.value = risposte[key] || "";
     }
+
+    // Salvataggio protetto con gestione numeri e null
+    setTimeout(() => {
+      const salvaBtn = document.getElementById("salva-profilo-btn");
+      if (salvaBtn) {
+        salvaBtn.addEventListener("click", async () => {
+          const nuoviDati = {
+            email: risposte.email,
+            eta: document.getElementById("profilo-eta").value.trim(),
+            sesso: document.getElementById("profilo-sesso").value.trim(),
+            altezza: document.getElementById("profilo-altezza").value.trim(),
+            peso: document.getElementById("profilo-peso").value.trim()
+          };
+
+          for (const key of extra) {
+            const el = document.getElementById(`profilo-${key}`);
+            if (!el) continue;
+
+            const val = el.value.trim();
+
+            if (val === "") {
+              nuoviDati[key] = null;
+            } else if (integerFields.includes(key)) {
+              nuoviDati[key] = parseInt(val);
+            } else {
+              nuoviDati[key] = val;
+            }
+          }
+
+          await salvaAnagraficaNelDatabase(nuoviDati);
+          Object.assign(risposte, nuoviDati);
+          alert("✅ Profilo aggiornato!");
+        });
+      } else {
+        console.error("❌ Bottone #salva-profilo-btn non trovato nel DOM.");
+      }
+    }, 100);
+
+  } catch (err) {
+    console.error("❌ Errore caricamento profilo:", err);
+    container.innerHTML = "⚠️ Errore nel caricamento della scheda profilo.";
+  }
+}
+
+
 
     // Salvataggio protetto
     setTimeout(() => {
