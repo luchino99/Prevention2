@@ -31,14 +31,16 @@ body {
 
 .container {
   max-width: 800px;
+  height: 100vh; /* imposta altezza fissa */
+  overflow-y: auto; /* abilita lo scroll */
   margin: auto;
   padding: 30px 24px 160px;
   background: var(--panel-bg);
   border-radius: 24px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  
-  overflow-x: hidden;
+  position: relative;
 }
+
 
 h2, h3 {
   margin-top: 30px;
@@ -108,14 +110,15 @@ input:focus, select:focus {
 
 .sticky-wrapper {
   position: sticky;
-  bottom: 20px;
+  bottom: 0;
+  background: var(--panel-bg);
+  padding: 16px 0;
   display: flex;
   justify-content: center;
-  background: var(--panel-bg);
-  padding-top: 20px;
   z-index: 20;
-  margin-top: 40px;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04); /* separatore visivo */
 }
+
 
 #salva-profilo-btn {
   background-color: var(--primary);
