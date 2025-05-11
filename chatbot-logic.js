@@ -86,7 +86,7 @@ const domandePianoAlimentare = [
   { key: "peso", testo: "Quanto pesi in kg?" },
   { key: "obiettivo", testo: "Qual è il tuo obiettivo? (dimagrimento / mantenimento / aumento massa muscolare)" },
   { key: "attivita_fisica", testo: "Che livello di attività fisica hai? (sedentario / leggero / moderato / intenso)" },
-  { key: "tipo_lavoro", testo: "Che tipo di lavoro svolgi? (sedentario, attivo, fisico)" },
+  { key: "tipo_lavoro", testo: "Che tipo di lavoro svolgi? (Sedentario, Leggermente attivo, Moderatamente attivo, Molto attivo, Estremamente attivo)" },
   { key: "preferenze", testo: "Hai uno stile alimentare preferito? (es: mediterranea, vegetariana, vegana, keto, nessuna)" },
   { key: "intolleranze", testo: "Hai intolleranze o allergie alimentari? (es: glutine, lattosio, ecc.)" },
   { key: "alimenti_esclusi", testo: "Ci sono alimenti che non vuoi includere nella dieta?" },
