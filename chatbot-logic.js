@@ -533,27 +533,22 @@ async function salvaAnagraficaNelDatabase(dati) {
       return;
     }
 
-    const datiAnagrafica = {
-      email: dati.email,
-      eta: dati.eta,
-      sesso: dati.sesso,
-      altezza: dati.altezza,
-      peso: dati.peso
-    };
+    const datiAnagrafica = { ...dati }; // salva tutto, non solo età/sesso
 
     const { data, error } = await supabaseClient
-        .from('anagrafica_utenti')
-        .upsert([datiAnagrafica], { onConflict: 'email' });
+      .from('anagrafica_utenti')
+      .upsert([datiAnagrafica], { onConflict: 'email' });
 
     if (error) {
       console.error("Errore API salvataggio:", error);
     } else {
-      console.log("✅ Dati anagrafici salvati o aggiornati correttamente:", data);
+      console.log("✅ Dati anagrafici completi salvati:", data);
     }
   } catch (error) {
     console.error("❌ Errore di rete salvataggio:", error);
   }
 }
+
 
 async function salvaCompilazioneNelDatabase(risposte, modalita) {
   try {
@@ -658,10 +653,18 @@ const toggleBtn = document.getElementById("theme-toggle");
     document.getElementById("profilo-altezza").value = risposte.altezza || "";
     document.getElementById("profilo-peso").value = risposte.peso || "";
 
-    const extra = [
-      "attivita_fisica", "tipo_lavoro", "patologie", "farmaci_dettaglio",
-      "intolleranze", "alimenti_esclusi", "preferenze"
-    ];
+const extra = [
+  "attivita_fisica", "tipo_lavoro", "patologie", "farmaci_dettaglio",
+  "intolleranze", "alimenti_esclusi", "preferenze",
+  "pressione_sistolica", "pressione_diastolica",
+  "colesterolo_totale", "colesterolo_hdl_valore", "colesterolo_ldl_valore",
+  "fumatore", "diabete",
+  "glicemia_valore", "attivo30", "pressione_alta", "familiari_diabete",
+  "frattura", "famiglia_frattura_anca", "corticosteroidi",
+  "alcol_eccessivo", "artrite",
+  "stanchezza", "camminata", "sollevamento", "sedia", "cadute",
+  "insonnia", "stress"
+];
     for (const key of extra) {
       const el = document.getElementById(`profilo-${key}`);
       if (el) el.value = risposte[key] || "";
