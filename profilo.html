@@ -121,6 +121,10 @@ input:focus, select:focus {
 
 
 #salva-profilo-btn {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
   background-color: var(--primary);
   color: white;
   font-size: 16px;
@@ -130,21 +134,22 @@ input:focus, select:focus {
   border-radius: 12px;
   cursor: pointer;
   box-shadow: 0 8px 16px var(--primary-shadow);
-  width: 100%;
-  max-width: 400px;
+  width: calc(100% - 48px);
+  max-width: 800px;
+  z-index: 1000;
   transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
 #salva-profilo-btn:hover {
   background-color: var(--primary-hover);
-  transform: translateY(-2px);
+  transform: translateX(-50%) translateY(-2px);
 }
-
 
 #salva-profilo-btn:focus-visible {
   outline: none;
   box-shadow: 0 0 0 4px var(--input-focus);
 }
+
 
 
 
@@ -301,10 +306,9 @@ input:focus, select:focus {
       </label>
     </div>
   </div>
-   <div class="sticky-wrapper">
-  <button id="salva-profilo-btn">💾 Salva Modifiche</button>
 </div>
-
+<div class="sticky-wrapper">
+<button id="salva-profilo-btn">💾 Salva Modifiche</button>
 </div>
 
 
