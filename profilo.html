@@ -55,20 +55,25 @@
     display: block;
   }
 
+.container {
+  position: relative; /* necessario per posizionare il bottone sticky */
+}
+
 #salva-profilo-btn {
-  display: block;
-  width: 100%;
-  max-width: 400px;
-  margin: 40px auto 0;
-  padding: 14px;
-  font-size: 16px;
+  position: sticky;
+  bottom: 20px;
   background-color: #0ea5e9;
   color: white;
+  font-size: 16px;
+  padding: 14px;
   border: none;
   border-radius: 10px;
   cursor: pointer;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-  z-index: 1;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+  margin: 40px auto 0;
+  z-index: 10;
 }
 
 
