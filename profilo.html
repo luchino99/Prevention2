@@ -1,0 +1,100 @@
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <title>Profilo Utente Completo</title>
+  <style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f8fafc;
+    margin: 0;
+    padding: 0;
+  }
+  .container {
+    max-width: 800px;
+    margin: auto;
+    padding: 30px 20px 160px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  }
+  h2, h3 {
+    margin-top: 30px;
+    color: #0f172a;
+  }
+  label {
+    display: block;
+    margin: 14px 0 8px;
+    font-weight: 600;
+  }
+  input, select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+  }
+  .accordion-section {
+    border: 1px solid #ccc;
+    margin-top: 20px;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .accordion-header {
+    background: #f1f5f9;
+    padding: 14px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .accordion-body {
+    display: none;
+    padding: 20px;
+    background: #fff;
+  }
+  .accordion-section.open .accordion-body {
+    display: block;
+  }
+
+  #salva-profilo-btn {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 40px);
+    max-width: 400px;
+    padding: 14px;
+    font-size: 16px;
+    background-color: #0ea5e9;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    z-index: 999;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>👤 Profilo Base</h2>
+  <label>Email: <input type="email" id="profilo-email" disabled /></label>
+  <label>Età: <input type="number" id="profilo-eta" /></label>
+  <label>Sesso: <input type="text" id="profilo-sesso" /></label>
+  <label>Altezza (cm): <input type="number" id="profilo-altezza" /></label>
+  <label>Peso (kg): <input type="number" id="profilo-peso" /></label>
+  <!-- ... altri campi omessi per brevità ... -->
+</div>
+
+<button id="salva-profilo-btn">💾 Salva Modifiche</button>
+
+<script>
+  document.querySelectorAll(".accordion-header").forEach(header => {
+    header.addEventListener("click", () => {
+      header.parentElement.classList.toggle("open");
+    });
+  });
+</script>
+
+</body>
+</html>
