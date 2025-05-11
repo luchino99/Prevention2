@@ -27,6 +27,24 @@ export default async function handler(req, res) {
 
   const data = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
 
+  const fattoriLavoro = {
+    "Sedentario": 1.2,
+    "Leggermente attivo": 1.375,
+    "Moderatamente attivo": 1.55,
+    "Molto attivo": 1.725,
+    "Estremamente attivo": 1.9
+  };
+
+  const tipo = data.tipo_lavoro?.trim();
+  const tdeeFactor = fattoriLavoro[tipo];
+
+  if (!tdeeFactor) {
+    return res.status(400).json({
+      errore: `Tipo di lavoro non valido o mancante: "${tipo}". I valori accettati sono: ${Object.keys(fattoriLavoro).join(", ")}.`
+    });
+  }
+
+
   const safe = (val) => val ?? "non disponibile";
   const escape = (str) => (str || "").toString().replace(/[`$]/g, "");
 
@@ -51,15 +69,7 @@ Che sia completo, bilanciato basandoti sul risulatato di questi score e sugli ob
 Ogni giorno deve contenere:
 - Colazione, spuntino mattina, pranzo, spuntino pomeriggio, cena
 - Grammature indicative degli alimenti
-Per il TDEE, **moltiplica il BMR** in base al ${data.tipo_lavoro} secondo i seguenti moltiplicatori standard:
-
-- Sedentario (lavoro d'ufficio, nessuna attività fisica): moltiplica il BMR × 1.2
-- Leggermente attivo (lavoro con leggero movimento o esercizio 1-3 giorni a settimana): moltiplica il BMR × 1.375
-- Moderatamente attivo (lavoro con attività regolare o esercizio 3-5 giorni a settimana): moltiplica il BMR × 1.55
-- Molto attivo (lavoro fisico intenso o esercizio 6-7 giorni a settimana): moltiplica il BMR × 1.725
-- Estremamente attivo (lavoro fisico intenso + allenamenti doppi): moltiplica il BMR × 1.9
-
-> Esempio: se il paziente dichiara "sedentario", allora TDEE = BMR × 1.2
+Per il TDEE, calcola il TDEE moltiplicando il BMR per il coefficiente ${tdeeFactor}
 In fondo, includi: 
 - Suggerimenti per l’idratazione, attività fisica e stile di vita
 Dati da utilizzare per programmare la dieta:
