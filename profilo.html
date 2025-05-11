@@ -9,11 +9,14 @@
   --bg-color: #f1f5f9;
   --panel-bg: #ffffff;
   --text-color: #0f172a;
-  --label-color: #334155;
+  --label-color: #475569;
   --input-bg: #f8fafc;
   --input-border: #cbd5e1;
   --primary: #0ea5e9;
   --primary-hover: #0284c7;
+  --accordion-bg: #f1f5f9;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 body {
@@ -27,37 +30,35 @@ body {
 .container {
   max-width: 800px;
   margin: auto;
-  padding: 30px 24px 160px;
+  padding: 32px 24px 160px;
   background: var(--panel-bg);
   border-radius: 24px;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.08);
-  position: relative;
-  overflow-x: hidden;
+  box-shadow: var(--shadow-md);
 }
 
-h2, h3 {
-  margin-top: 30px;
-  color: var(--text-color);
-  font-size: 24px;
+h2 {
+  margin-bottom: 24px;
+  font-size: 26px;
   font-weight: 700;
+  color: var(--text-color);
 }
 
 label {
   display: block;
-  margin: 18px 0 8px;
+  margin: 16px 0 6px;
   color: var(--label-color);
   font-weight: 600;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 input, select {
   width: 100%;
-  padding: 12px;
+  padding: 12px 14px;
   background: var(--input-bg);
   border: 1px solid var(--input-border);
-  border-radius: 12px;
+  border-radius: 10px;
   font-size: 15px;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 input:focus, select:focus {
@@ -67,20 +68,26 @@ input:focus, select:focus {
 }
 
 .accordion-section {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--input-border);
   margin-top: 24px;
-  border-radius: 16px;
-  background: #f9fafb;
+  border-radius: 14px;
   overflow: hidden;
+  background-color: var(--accordion-bg);
+  box-shadow: var(--shadow-sm);
 }
 
 .accordion-header {
   background: #e2e8f0;
   padding: 16px 20px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
   user-select: none;
   font-size: 15px;
+  transition: background-color 0.3s ease;
+}
+
+.accordion-header:hover {
+  background: #dbeafe;
 }
 
 .accordion-body {
@@ -104,17 +111,18 @@ input:focus, select:focus {
   border: none;
   border-radius: 12px;
   cursor: pointer;
-  box-shadow: 0 6px 14px rgba(14, 165, 233, 0.3);
+  box-shadow: var(--shadow-md);
   width: 100%;
   max-width: 400px;
-  margin: 40px auto 0;
+  margin: 48px auto 0;
   z-index: 10;
-  transition: background-color 0.3s;
+  transition: background-color 0.25s ease;
 }
 
 #salva-profilo-btn:hover {
   background-color: var(--primary-hover);
 }
+
 
 
   </style>
