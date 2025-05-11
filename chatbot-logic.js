@@ -506,7 +506,15 @@ recuperaAnagraficaDalDatabase(emailUtente).then((dati) => {
   mostraScelteIniziali(); // va comunque dopo
 });
 
-
+      const profiloBtn = document.getElementById("btn-profilo");
+      if (profiloBtn) {
+        console.log("🎯 Bottone Profilo trovato");
+        profiloBtn.addEventListener("click", () => {
+          console.log("🧪 Clic su Profilo");
+          mostraProfiloUtente();
+        });
+      }
+  
   const logoutBtn = document.getElementById("btn-logout");
   if (logoutBtn) {
     logoutBtn.addEventListener("click", async () => {
@@ -685,12 +693,6 @@ const toggleBtn = document.getElementById("theme-toggle");
   }
 }
 
-const profiloBtn = document.getElementById("btn-profilo");
-if (profiloBtn) {
-  profiloBtn.addEventListener("click", () => {
-    mostraProfiloUtente();
-  });
-}
 
 
 const form = document.getElementById("input-form");
