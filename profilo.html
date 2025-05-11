@@ -83,7 +83,147 @@
   <label>Sesso: <input type="text" id="profilo-sesso" /></label>
   <label>Altezza (cm): <input type="number" id="profilo-altezza" /></label>
   <label>Peso (kg): <input type="number" id="profilo-peso" /></label>
-  <!-- ... altri campi omessi per brevità ... -->
+  <label>Tipo di lavoro: <input type="text" id="profilo-tipo_lavoro" /></label>
+  <label>Patologie: <input type="text" id="profilo-patologie" /></label>
+  <label>Farmaci assunti: <input type="text" id="profilo-farmaci_dettaglio" /></label>
+  <label>Intolleranze: <input type="text" id="profilo-intolleranze" /></label>
+  <label>Alimenti esclusi: <input type="text" id="profilo-alimenti_esclusi" /></label>
+  <label>Preferenze salute: <input type="text" id="profilo-preferenze" /></label>
+
+  <div class="accordion-section">
+    <div class="accordion-header">🫀 SCORE2 – Rischio Cardiovascolare</div>
+    <div class="accordion-body">
+      <label>Pressione sistolica (mmHg): <input type="number" id="profilo-pressione_sistolica" /></label>
+      <label>Pressione diastolica (mmHg): <input type="number" id="profilo-pressione_diastolica" /></label>
+      <label>Colesterolo totale (mg/dL): <input type="number" id="profilo-colesterolo_totale" /></label>
+      <label>Colesterolo HDL (mg/dL): <input type="number" id="profilo-colesterolo_hdl_valore" /></label>
+      <label>Fumatore:
+        <select id="profilo-fumatore">
+          <option value="">Seleziona...</option>
+          <option value="si">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </label>
+      <label>Diabete di tipo 2 diagnosticato:
+        <select id="profilo-diabete">
+          <option value="">Seleziona...</option>
+          <option value="si">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </label>
+    </div>
+  </div>
+
+  <div class="accordion-section">
+    <div class="accordion-header">🍬 ADA – Rischio Diabete</div>
+    <div class="accordion-body">
+      <label>Glicemia a digiuno (mg/dL): <input type="number" id="profilo-glicemia_valore" /></label>
+      <label>Fai almeno 30 minuti di attività fisica al giorno?
+        <select id="profilo-attivo30">
+          <option value="">Seleziona...</option>
+          <option value="si">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </label>
+      <label>Hai la pressione alta?
+        <select id="profilo-pressione_alta">
+          <option value="">Seleziona...</option>
+          <option value="si">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </label>
+      <label>Hai familiari con diabete di tipo 2?
+        <select id="profilo-familiari_diabete">
+          <option value="">Seleziona...</option>
+          <option value="si">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </label>
+    </div>
+  </div>
+
+  <div class="accordion-section">
+    <div class="accordion-header">🦴 FRAX – Osteoporosi / Fratture</div>
+    <div class="accordion-body">
+      <label>Hai avuto fratture da fragilità?
+        <select id="profilo-frattura">
+          <option value="">Seleziona...</option>
+          <option value="si">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </label>
+      <label>Genitore con frattura dell’anca?
+        <select id="profilo-famiglia_frattura_anca">
+          <option value="">Seleziona...</option>
+          <option value="si">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </label>
+      <label>Assumi corticosteroidi da > 3 mesi?
+        <select id="profilo-corticosteroidi">
+          <option value="">Seleziona...</option>
+          <option value="si">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </label>
+      <label>Consumi più di 3 unità alcoliche/giorno?
+        <select id="profilo-alcol_eccessivo">
+          <option value="">Seleziona...</option>
+          <option value="si">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </label>
+      <label>Artrite reumatoide diagnosticata?
+        <select id="profilo-artrite">
+          <option value="">Seleziona...</option>
+          <option value="si">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </label>
+    </div>
+  </div>
+
+  <div class="accordion-section">
+    <div class="accordion-header">👵 FRAIL / SARC-F – Fragilità</div>
+    <div class="accordion-body">
+      <label>Ti senti stanco/a spesso?
+        <select id="profilo-stanchezza">
+          <option value="">Seleziona...</option>
+          <option value="no">No</option>
+          <option value="talvolta">Talvolta</option>
+          <option value="spesso">Spesso</option>
+        </select>
+      </label>
+      <label>Riesci a camminare 100 metri?
+        <select id="profilo-camminata">
+          <option value="">Seleziona...</option>
+          <option value="si">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </label>
+      <label>Riesci a sollevare 4.5 kg?
+        <select id="profilo-sollevamento">
+          <option value="">Seleziona...</option>
+          <option value="si">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </label>
+      <label>Difficoltà ad alzarti da una sedia?
+        <select id="profilo-sedia">
+          <option value="">Seleziona...</option>
+          <option value="si">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </label>
+      <label>Hai avuto 2 o più cadute in un anno?
+        <select id="profilo-cadute">
+          <option value="">Seleziona...</option>
+          <option value="si">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </label>
+    </div>
+  </div>
 </div>
 
 <button id="salva-profilo-btn">💾 Salva Modifiche</button>
