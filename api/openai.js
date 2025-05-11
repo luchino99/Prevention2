@@ -84,13 +84,7 @@ Dati da utilizzare per programmare la dieta:
 - Alimenti esclusi: ${data.alimenti_esclusi}
 - Patologie: ${data.patologie}
 Il piano sarà usato per essere trasformato in PDF.`;
-= {
-    "sedentario": 1.2,
-    "leggermente attivo": 1.375,
-    "moderatamente attivo": 1.55,
-    "molto attivo": 1.725,
-    "estremamente attivo": 1.9
-  };
+
  
 
   } else if (data.allenamento) {
