@@ -660,7 +660,7 @@ async function mostraProfiloUtente() {
     document.getElementById("profilo-altezza").value = risposte.altezza || "";
     document.getElementById("profilo-peso").value = risposte.peso || "";
 
-    // Campi extra
+    // Campi extra (accordion e facoltativi)
     const extra = [
       "attivita_fisica", "tipo_lavoro", "patologie", "farmaci_dettaglio",
       "intolleranze", "alimenti_esclusi", "preferenze",
@@ -676,32 +676,17 @@ async function mostraProfiloUtente() {
     const integerFields = [
       "pressione_sistolica", "pressione_diastolica",
       "colesterolo_totale", "colesterolo_hdl_valore",
-      "colesterolo_ldl_valore", "glicemia_valore"
+      "colesterolo_ldl_valore", "glicemia_valore",
+      "eta", "altezza", "peso"
     ];
 
-const integerFields = [
-  "pressione_sistolica", "pressione_diastolica",
-  "colesterolo_totale", "colesterolo_hdl_valore",
-  "colesterolo_ldl_valore", "glicemia_valore"
-];
+    // Popola i campi extra se presenti
+    for (const key of extra) {
+      const el = document.getElementById(`profilo-${key}`);
+      if (el) el.value = risposte[key] || "";
+    }
 
-for (const key of extra) {
-  const el = document.getElementById(`profilo-${key}`);
-  if (!el) continue;
-
-  const val = el.value.trim();
-
-  if (val === "") {
-    nuoviDati[key] = null;
-  } else if (integerFields.includes(key)) {
-    nuoviDati[key] = parseInt(val);
-  } else {
-    nuoviDati[key] = val;
-  }
-}
-
-
-    // Salvataggio protetto con gestione numeri e null
+    // Listener per salvataggio profilo
     setTimeout(() => {
       const salvaBtn = document.getElementById("salva-profilo-btn");
       if (salvaBtn) {
@@ -713,13 +698,6 @@ for (const key of extra) {
             altezza: document.getElementById("profilo-altezza").value.trim(),
             peso: document.getElementById("profilo-peso").value.trim()
           };
-
-          const integerFields = [
-            "pressione_sistolica", "pressione_diastolica",
-            "colesterolo_totale", "colesterolo_hdl_valore",
-            "colesterolo_ldl_valore", "glicemia_valore",
-            "eta", "altezza", "peso"
-          ];
 
           for (const key of extra) {
             const el = document.getElementById(`profilo-${key}`);
@@ -745,49 +723,11 @@ for (const key of extra) {
       }
     }, 100);
 
-
   } catch (err) {
     console.error("❌ Errore caricamento profilo:", err);
     container.innerHTML = "⚠️ Errore nel caricamento della scheda profilo.";
   }
 }
-
-
-
-    // Salvataggio protetto
-    setTimeout(() => {
-      const salvaBtn = document.getElementById("salva-profilo-btn");
-      if (salvaBtn) {
-        salvaBtn.addEventListener("click", async () => {
-          const nuoviDati = {
-            email: risposte.email,
-            eta: document.getElementById("profilo-eta").value.trim(),
-            sesso: document.getElementById("profilo-sesso").value.trim(),
-            altezza: document.getElementById("profilo-altezza").value.trim(),
-            peso: document.getElementById("profilo-peso").value.trim()
-          };
-
-          for (const key of extra) {
-            const el = document.getElementById(`profilo-${key}`);
-            nuoviDati[key] = el ? el.value.trim() : "";
-          }
-
-          await salvaAnagraficaNelDatabase(nuoviDati);
-          Object.assign(risposte, nuoviDati);
-          alert("✅ Profilo aggiornato!");
-        });
-      } else {
-        console.error("❌ Bottone #salva-profilo-btn non trovato nel DOM.");
-      }
-    }, 100);
-
-  } catch (err) {
-    console.error("❌ Errore caricamento profilo:", err);
-    container.innerHTML = "⚠️ Errore nel caricamento della scheda profilo.";
-  }
-}
-
-
 
 
 
