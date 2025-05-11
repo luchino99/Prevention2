@@ -351,6 +351,49 @@ body {
   color: #475569;
   font-style: italic;
 }
+.profilo-form {
+  background: white;
+  padding: 30px;
+  border-radius: 20px;
+  max-width: 600px;
+  margin: auto;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.profilo-form h2 {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.profilo-form label {
+  display: block;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.profilo-form input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 4px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+}
+
+.profilo-form button {
+  margin-top: 20px;
+  width: 100%;
+  padding: 12px;
+  background-color: var(--primary);
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.profilo-form button:hover {
+  background-color: var(--primary-dark);
+}
 
 
 @keyframes fadeIn {
