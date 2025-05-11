@@ -714,16 +714,23 @@ for (const key of extra) {
             peso: document.getElementById("profilo-peso").value.trim()
           };
 
+          const integerFields = [
+            "pressione_sistolica", "pressione_diastolica",
+            "colesterolo_totale", "colesterolo_hdl_valore",
+            "colesterolo_ldl_valore", "glicemia_valore",
+            "eta", "altezza", "peso"
+          ];
+
           for (const key of extra) {
             const el = document.getElementById(`profilo-${key}`);
             if (!el) continue;
-
             const val = el.value.trim();
 
             if (val === "") {
               nuoviDati[key] = null;
             } else if (integerFields.includes(key)) {
-              nuoviDati[key] = parseInt(val);
+              const parsed = parseInt(val);
+              nuoviDati[key] = isNaN(parsed) ? null : parsed;
             } else {
               nuoviDati[key] = val;
             }
@@ -737,6 +744,7 @@ for (const key of extra) {
         console.error("❌ Bottone #salva-profilo-btn non trovato nel DOM.");
       }
     }, 100);
+
 
   } catch (err) {
     console.error("❌ Errore caricamento profilo:", err);
