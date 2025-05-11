@@ -634,6 +634,57 @@ const toggleBtn = document.getElementById("theme-toggle");
     }
 
 }
+  async function mostraProfiloUtente() {
+  const container = document.getElementById("messages");
+  container.innerHTML = "🔄 Caricamento profilo...";
+
+  try {
+    const res = await fetch("profilo.html");
+    const html = await res.text();
+    container.innerHTML = html;
+
+    // Compila i campi con i dati presenti
+    document.getElementById("profilo-email").value = risposte.email || "";
+    document.getElementById("profilo-eta").value = risposte.eta || "";
+    document.getElementById("profilo-sesso").value = risposte.sesso || "";
+    document.getElementById("profilo-altezza").value = risposte.altezza || "";
+    document.getElementById("profilo-peso").value = risposte.peso || "";
+
+    const extra = [
+      "attivita_fisica", "tipo_lavoro", "patologie", "farmaci_dettaglio",
+      "intolleranze", "alimenti_esclusi", "preferenze"
+    ];
+    for (const key of extra) {
+      const el = document.getElementById(`profilo-${key}`);
+      if (el) el.value = risposte[key] || "";
+    }
+
+    // Gestisci salvataggio
+    document.getElementById("salva-profilo-btn").addEventListener("click", async () => {
+      const nuoviDati = {
+        email: risposte.email,
+        eta: document.getElementById("profilo-eta").value.trim(),
+        sesso: document.getElementById("profilo-sesso").value.trim(),
+        altezza: document.getElementById("profilo-altezza").value.trim(),
+        peso: document.getElementById("profilo-peso").value.trim()
+      };
+
+      for (const key of extra) {
+        const el = document.getElementById(`profilo-${key}`);
+        nuoviDati[key] = el ? el.value.trim() : "";
+      }
+
+      await salvaAnagraficaNelDatabase(nuoviDati);
+      Object.assign(risposte, nuoviDati);
+      alert("✅ Profilo aggiornato!");
+    });
+
+  } catch (err) {
+    console.error("❌ Errore caricamento profilo:", err);
+    container.innerHTML = "⚠️ Errore nel caricamento della scheda profilo.";
+  }
+}
+
 
 
 const form = document.getElementById("input-form");
