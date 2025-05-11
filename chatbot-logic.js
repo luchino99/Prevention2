@@ -121,6 +121,50 @@ const domandePianoAlimentare = [
 
 let domande = [];
 let risposte = {};
+
+const aliasCondivisi = {
+  eta: ["eta"],
+  sesso: ["sesso"],
+  altezza: ["altezza"],
+  peso: ["peso"],
+  attivita_fisica: ["attivita_fisica", "attivo30"],
+  tipo_lavoro: ["tipo_lavoro"],
+  preferenze: ["preferenze"],
+  patologie: ["patologie"],
+  farmaci_dettaglio: ["farmaci_dettaglio"],
+  intolleranze: ["intolleranze"],
+  alimenti_esclusi: ["alimenti_esclusi"],
+  colesterolo_totale: ["colesterolo_totale"],
+  colesterolo_hdl_valore: ["colesterolo_hdl_valore"],
+  colesterolo_ldl_valore: ["colesterolo_ldl", "colesterolo_ldl_valore"],
+  glicemia_valore: ["glicemia_valore"],
+  pressione_sistolica: ["pressione_sistolica"],
+  pressione_diastolica: ["pressione_diastolica"],
+  fumatore: ["fumatore"],
+  diabete: ["diabete"],
+  pressione_alta: ["pressione", "pressione_valore", "pressione_alta"],
+  familiari_diabete: ["familiari_diabete"],
+  frattura: ["frattura", "over_cadute", "cadute"],
+  famiglia_frattura_anca: ["famiglia_frattura_anca"],
+  corticosteroidi: ["corticosteroidi"],
+  alcol_eccessivo: ["alcol_eccessivo", "unita_alcoliche"],
+  artrite: ["artrite"],
+  stanchezza: ["stanchezza", "over_stanchezza"],
+  camminata: ["camminata", "over_camminata"],
+  sollevamento: ["sollevamento", "over_sollevamento"],
+  sedia: ["sedia", "over_sedia"],
+  cadute: ["cadute", "over_cadute"]
+};
+  function haRispostaCondivisa(domandaKey) {
+  for (const [profiloKey, domandeKeys] of Object.entries(aliasCondivisi)) {
+    if (domandeKeys.includes(domandaKey) && risposte[profiloKey]) {
+      return true;
+    }
+  }
+  return false;
+}
+
+
 let step = -1;
 let modalita = null;
 
@@ -367,12 +411,14 @@ if (
   modalita !== "aggiorna" &&
   (
     (typeof rispostaPrecompilata === "string" && rispostaPrecompilata.trim() !== "") ||
-    (typeof rispostaPrecompilata === "number" && !isNaN(rispostaPrecompilata))
+    (typeof rispostaPrecompilata === "number" && !isNaN(rispostaPrecompilata)) ||
+    haRispostaCondivisa(domanda.key)
   )
 ) {
   step++;
   continue;
 }
+
 
   break;
   }
