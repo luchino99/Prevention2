@@ -5,75 +5,115 @@
   <meta charset="UTF-8" />
   <title>Profilo Utente Completo</title>
   <style>
-  body {
-    font-family: Arial, sans-serif;
-    background: #f8fafc;
-    margin: 0;
-    padding: 0;
-  }
-  .container {
-    max-width: 800px;
-    margin: auto;
-    padding: 30px 20px 160px;
-    background: white;
-    border-radius: 20px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
-  }
-  h2, h3 {
-    margin-top: 30px;
-    color: #0f172a;
-  }
-  label {
-    display: block;
-    margin: 14px 0 8px;
-    font-weight: 600;
-  }
-  input, select {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 10px;
-  }
-  .accordion-section {
-    border: 1px solid #ccc;
-    margin-top: 20px;
-    border-radius: 10px;
-    overflow: hidden;
-  }
-  .accordion-header {
-    background: #f1f5f9;
-    padding: 14px;
-    font-weight: bold;
-    cursor: pointer;
-  }
-  .accordion-body {
-    display: none;
-    padding: 20px;
-    background: #fff;
-  }
-  .accordion-section.open .accordion-body {
-    display: block;
-  }
+  :root {
+  --bg-color: #f1f5f9;
+  --panel-bg: #ffffff;
+  --text-color: #0f172a;
+  --label-color: #334155;
+  --input-bg: #f8fafc;
+  --input-border: #cbd5e1;
+  --primary: #0ea5e9;
+  --primary-hover: #0284c7;
+}
+
+body {
+  font-family: "Segoe UI", Roboto, Arial, sans-serif;
+  background: var(--bg-color);
+  margin: 0;
+  padding: 0;
+  color: var(--text-color);
+}
 
 .container {
-  position: relative; /* necessario per posizionare il bottone sticky */
+  max-width: 800px;
+  margin: auto;
+  padding: 30px 24px 160px;
+  background: var(--panel-bg);
+  border-radius: 24px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.08);
+  position: relative;
+  overflow-x: hidden;
+}
+
+h2, h3 {
+  margin-top: 30px;
+  color: var(--text-color);
+  font-size: 24px;
+  font-weight: 700;
+}
+
+label {
+  display: block;
+  margin: 18px 0 8px;
+  color: var(--label-color);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+input, select {
+  width: 100%;
+  padding: 12px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 12px;
+  font-size: 15px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input:focus, select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
+  outline: none;
+}
+
+.accordion-section {
+  border: 1px solid #e2e8f0;
+  margin-top: 24px;
+  border-radius: 16px;
+  background: #f9fafb;
+  overflow: hidden;
+}
+
+.accordion-header {
+  background: #e2e8f0;
+  padding: 16px 20px;
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+  font-size: 15px;
+}
+
+.accordion-body {
+  display: none;
+  padding: 20px;
+  background: var(--panel-bg);
+}
+
+.accordion-section.open .accordion-body {
+  display: block;
 }
 
 #salva-profilo-btn {
   position: sticky;
   bottom: 20px;
-  background-color: #0ea5e9;
+  background-color: var(--primary);
   color: white;
   font-size: 16px;
-  padding: 14px;
+  font-weight: 600;
+  padding: 16px;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   cursor: pointer;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 6px 14px rgba(14, 165, 233, 0.3);
   width: 100%;
   max-width: 400px;
   margin: 40px auto 0;
   z-index: 10;
+  transition: background-color 0.3s;
+}
+
+#salva-profilo-btn:hover {
+  background-color: var(--primary-hover);
 }
 
 
