@@ -6,17 +6,16 @@
   <title>Profilo Utente Completo</title>
   <style>
   :root {
-  --bg-color: #f1f5f9;
+  --bg-color: #e5f0f9;
   --panel-bg: #ffffff;
   --text-color: #0f172a;
   --label-color: #475569;
   --input-bg: #f8fafc;
   --input-border: #cbd5e1;
+  --input-focus: #7dd3fc;
   --primary: #0ea5e9;
   --primary-hover: #0284c7;
-  --accordion-bg: #f1f5f9;
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --primary-shadow: rgba(14, 165, 233, 0.4);
 }
 
 body {
@@ -30,64 +29,65 @@ body {
 .container {
   max-width: 800px;
   margin: auto;
-  padding: 32px 24px 160px;
+  padding: 30px 24px 160px;
   background: var(--panel-bg);
   border-radius: 24px;
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  position: relative;
 }
 
-h2 {
-  margin-bottom: 24px;
-  font-size: 26px;
-  font-weight: 700;
+h2, h3 {
+  margin-top: 30px;
   color: var(--text-color);
+  font-size: 24px;
+  font-weight: 700;
 }
 
 label {
   display: block;
-  margin: 16px 0 6px;
+  margin: 18px 0 8px;
   color: var(--label-color);
   font-weight: 600;
-  font-size: 15px;
+  font-size: 14px;
 }
 
 input, select {
   width: 100%;
-  padding: 12px 14px;
+  padding: 12px;
   background: var(--input-bg);
   border: 1px solid var(--input-border);
-  border-radius: 10px;
+  border-radius: 12px;
   font-size: 15px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 input:focus, select:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
+  box-shadow: 0 0 0 3px var(--input-focus);
   outline: none;
 }
 
 .accordion-section {
-  border: 1px solid var(--input-border);
+  border: 1px solid #e2e8f0;
   margin-top: 24px;
-  border-radius: 14px;
+  border-radius: 16px;
+  background: #f9fafb;
   overflow: hidden;
-  background-color: var(--accordion-bg);
-  box-shadow: var(--shadow-sm);
+  transition: all 0.3s ease;
 }
 
 .accordion-header {
   background: #e2e8f0;
   padding: 16px 20px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   user-select: none;
   font-size: 15px;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.2s ease;
 }
 
 .accordion-header:hover {
-  background: #dbeafe;
+  background-color: #dbe3ea;
 }
 
 .accordion-body {
@@ -111,16 +111,22 @@ input:focus, select:focus {
   border: none;
   border-radius: 12px;
   cursor: pointer;
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 8px 16px var(--primary-shadow);
   width: 100%;
   max-width: 400px;
-  margin: 48px auto 0;
+  margin: 40px auto 0;
   z-index: 10;
-  transition: background-color 0.25s ease;
+  transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
 #salva-profilo-btn:hover {
   background-color: var(--primary-hover);
+  transform: translateY(-2px);
+}
+
+#salva-profilo-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--input-focus);
 }
 
 
