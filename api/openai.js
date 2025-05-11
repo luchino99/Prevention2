@@ -28,11 +28,11 @@ export default async function handler(req, res) {
   const data = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
 
   const fattoriLavoro = {
-    "Sedentario": 1.2,
-    "Leggermente attivo": 1.375,
-    "Moderatamente attivo": 1.55,
-    "Molto attivo": 1.725,
-    "Estremamente attivo": 1.9
+    "sedentario": 1.2,
+    "leggermente attivo": 1.375,
+    "moderatamente attivo": 1.55,
+    "molto attivo": 1.725,
+    "estremamente attivo": 1.9
   };
 
   const tipo = data.tipo_lavoro?.trim();
