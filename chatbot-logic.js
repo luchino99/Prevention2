@@ -311,50 +311,13 @@ async function next() {
   return;
 }
 
-  
   if (modalita === "sintomi") {
     if (!val) {
       mostraMessaggio("❗ Per favore descrivi i tuoi sintomi prima di premere invio.");
+      
       return;
     }
 
-    mostraMessaggio(val, "user");
-    await salvaMessaggioChat(emailUtente, "user", val);
-    storicoMessaggi.push({ role: "user", content: val });
-
-
-    input.value = "";
-    risposte.sintomi = val;
-
-    mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi dati...");
-
-    fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sintomi: val, email: risposte.email })
-    })
-      .then(res => res.json())
-      .then(async data => {
-  const risposta = data.risposta || "⚠️ Nessuna risposta ricevuta.";
-  mostraMessaggio(risposta);
-  
-  try {
-    await salvaMessaggioChat(emailUtente, "assistant", risposta);
-    console.log("✅ Risposta AI salvata da modalità sintomi.");
-  } catch (e) {
-    console.error("❌ Errore salvataggio risposta AI (sintomi):", e);
-  }
-        storicoMessaggi.push({ role: "assistant", content: risposta });
-
-})
-
-      .catch(err => {
-        console.error("❌ Errore fetch sintomi:", err);
-        mostraMessaggio("⚠️ Errore nella comunicazione col server.");
-      });
-
-    return;
-  }
 
   if (step === -1 && (!modalita || !domande || domande.length === 0)) {
     console.warn("⛔ Avanzamento bloccato: modalità non scelta o domande non inizializzate.");
@@ -364,6 +327,7 @@ async function next() {
 
 if (step >= 0 && val) {
   mostraMessaggio(val, "user");
+  storicoMessaggi.push({ role: "user", content: val });
   await salvaMessaggioChat(emailUtente, "user", val);
 
   const currentKey = domande[step].key;
@@ -488,51 +452,50 @@ function inviaOpenAI() {
   document.getElementById("messages").appendChild(loader);
   loader.scrollIntoView();
 
-    
   const payload = { ...risposte };
   if (modalita === "dieta") payload.dieta = true;
   if (modalita === "sintomi") payload.sintomi = risposte.sintomi;
   if (modalita === "allenamento") payload.allenamento = true;
 
-fetch(endpoint, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    ...payload,
-    storico: storicoMessaggi
+  fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      ...payload,
+      storico: storicoMessaggi
+    })
   })
-});
+  .then(async res => {
 
-    .then(async res => {
-      loader.remove();
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("Errore dal server:", errorText);
+      mostraMessaggio("⚠️ Errore dal server: " + errorText);
+      return;
+    }
 
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.error("Errore dal server:", errorText);
-        mostraMessaggio("⚠️ Errore dal server: " + errorText);
-        return;
-      }
+    const data = await res.json();
+    const risposta = data.risposta || "⚠️ Nessuna risposta valida ricevuta.";
+    console.log("📦 Risposta ricevuta:", risposta);
+
+    mostraMessaggio(risposta);
+    storicoMessaggi.push({ role: "assistant", content: risposta });
 
 
-  const data = await res.json();
-  const risposta = data.risposta || "⚠️ Nessuna risposta valida ricevuta.";
-  console.log("📦 Risposta ricevuta:", risposta);
-
-  mostraMessaggio(risposta);
-  
-  try {
-    await salvaMessaggioChat(emailUtente, "assistant", risposta);
-    console.log("✅ Risposta dell'AI salvata.");
-  } catch (e) {
-    console.error("❌ Errore salvataggio risposta AI:", e);
-  }
-})
-    .catch(err => {
-      loader.remove();
-      console.error("❌ Errore fetch:", err);
-      mostraMessaggio("⚠️ Errore nella comunicazione col server.");
-    });
+    try {
+      await salvaMessaggioChat(emailUtente, "assistant", risposta);
+      console.log("✅ Risposta dell'AI salvata.");
+    } catch (e) {
+      console.error("❌ Errore salvataggio risposta AI:", e);
+    }
+  })
+  .catch(err => {
+    loader.remove();
+    console.error("❌ Errore fetch:", err);
+    mostraMessaggio("⚠️ Errore nella comunicazione col server.");
+  });
 }
+
 
 function generaPDF(contenuto) {
   const pdfElement = document.getElementById("pdf-content");
