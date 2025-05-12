@@ -243,6 +243,10 @@ Termina con un messaggio di incoraggiamento sulla prevenzione.
 
 
     }
+    
+if (!compiledPrompt || compiledPrompt.trim() === "") {
+  return res.status(400).json({ risposta: "⚠️ Errore interno: il prompt non è stato generato correttamente." });
+}
 
     console.log("📤 Prompt generato:", compiledPrompt);
 
