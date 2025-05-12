@@ -3,29 +3,27 @@ import { OpenAI } from 'openai';
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export default async function handler(req, res) {
+  
   const allowedOrigins = [
     "https://luchino99.github.io",
     "https://prevention2.vercel.app"
   ];
   const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
 
-  const allowCors = (res, origin) => {
-    res.setHeader("Access-Control-Allow-Origin", origin || "*");
-    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-    res.setHeader("Access-Control-Max-Age", "86400");
-  };
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  allowCors(res, allowedOrigins.includes(origin) ? origin : "https://luchino99.github.io");
 
-  if (req.method === "OPTIONS") {
+ if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Solo richieste POST sono accettate' });
   }
-
 
   const data = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
 
@@ -56,26 +54,7 @@ export default async function handler(req, res) {
 
     if (data.sintomi && data.sintomi.trim() !== "") {
       compiledPrompt =  `
-Sei un assistente sanitario digitale esperto in triage clinico.
-
-Un utente ha descritto i seguenti sintomi:
-- Sintomi: ${escape(data.sintomi)}
-
-Profilo utente:
-- Età: ${safe(data.eta)} anni
-- Sesso biologico: ${safe(data.sesso)}
-- Altezza/Peso: ${safe(data.altezza)} cm / ${safe(data.peso)} kg
-- Patologie note: ${safe(data.patologie)}
-- Farmaci attualmente assunti: ${safe(data.farmaci_dettaglio)}
-- Abitudini: Fumatore: ${safe(data.fumatore)} | Alcol: ${safe(data.alcol)} | Attività fisica: ${safe(data.attivita_fisica)}
-
-📋 **Analisi richiesta:**
-1. Elenca le possibili cause (ipotetiche) in ordine di gravità.
-2. Specifica sintomi campanello d’allarme per cui rivolgersi subito a un medico o al pronto soccorso.
-3. Offri consigli temporanei basati su linee guida cliniche internazionali (OMS, NICE, AIFA).
-
-*Il tuo linguaggio deve essere chiaro, empatico e professionale. Ricorda: questa è una valutazione iniziale e non una diagnosi definitiva.*
-
+Sei un assistente sanitario digitale esperto. Una persona ha descritto i seguenti sintomi:
 
 🩺 **Sintomi riportati:**
 ${escape(data.sintomi)}
@@ -90,29 +69,20 @@ Che sia completo, bilanciato basandoti sul risulatato di questi score e sugli ob
 Ogni giorno deve contenere:
 - Colazione, spuntino mattina, pranzo, spuntino pomeriggio, cena
 - Grammature indicative degli alimenti
-Prendi in considerazione per stabilire il tipo di dieta, quello che  è ${safe(data.obiettivo)}, per far si che si adatti ad esso.
 Per il TDEE, calcola il TDEE moltiplicando il BMR per il coefficiente ${tdeeFactor}
 In fondo, includi: 
-- Suggerimenti per l’idratazione , attività fisica e stile di vita specifi per i dati da lui forniti.
+- Suggerimenti per l’idratazione, attività fisica e stile di vita
 Dati da utilizzare per programmare la dieta:
-🎯 Obiettivo: creare un piano completo, bilanciato e adatto a:
-- Obiettivo: ${safe(data.obiettivo)}
-- Patologie: ${safe(data.patologie)}
-- Preferenze alimentari: ${safe(data.preferenze)}
-- Intolleranze/allergie: ${safe(data.intolleranze)}
-- Alimenti da escludere: ${safe(data.alimenti_esclusi)}
-
-📋 Profilo utente:
-- Età: ${safe(data.eta)}
-- Sesso: ${safe(data.sesso)}
-- Altezza: ${safe(data.altezza)} cm
-- Peso: ${safe(data.peso)} kg
-- Attività fisica: ${safe(data.attivita_fisica)}
-- Tipo di lavoro: ${safe(data.tipo_lavoro)}
-- Farmaci: ${safe(data.farmaci_dettaglio)}
-- Numero pasti/die: ${safe(data.pasti)}
-- Orari dei pasti (se indicati): ${safe(data.orari_pasti)}
-
+- Età: ${data.eta}
+- Sesso: ${data.sesso}
+- Altezza: ${data.altezza} cm
+- Peso: ${data.peso} kg
+- Obiettivo: ${data.obiettivo}
+- Attività fisica: ${data.attivita_fisica}
+- Tipo di lavoro: ${data.tipo_lavoro}
+- Intolleranze/allergie: ${data.intolleranze}
+- Alimenti esclusi: ${data.alimenti_esclusi}
+- Patologie: ${data.patologie}
 Il piano sarà usato per essere trasformato in PDF.`;
 
  
@@ -153,100 +123,97 @@ Tono: motivante, preciso, chiaro per utenti non esperti.`;
 
       } else {
     compiledPrompt =   `
-Sei un assistente sanitario digitale esperto in prevenzione, epidemiologia clinica e medicina predittiva.
+Sei un assistente sanitario digitale. Analizza i dati forniti per calcolare score clinici ufficiali e fornire consigli personalizzati secondo linee guida OMS, ESC, AIFA, ADA e Ministero della Salute.
 
-Analizza i seguenti dati raccolti da un paziente per valutare il rischio di patologie, calcolare score clinici ufficiali e fornire raccomandazioni su screening, stili di vita e follow-up medico.
-
-👤 **Anagrafica:**
+ **DATI RACCOLTI:**
 - Età: ${safe(data.eta)}
 - Sesso biologico: ${safe(data.sesso)}
+- Origine etnica: ${safe(data.origine_etnica)}
 - Altezza: ${safe(data.altezza)} cm
 - Peso: ${safe(data.peso)} kg
-- Origine etnica: ${safe(data.origine_etnica)}
-- Circonferenza vita aumentata: ${safe(data.vita)}
-
-🩺 **Rilevazioni e biomarcatori:**
-- Pressione sistolica: ${safe(data.pressione_sistolica)} mmHg
-- Pressione diastolica: ${safe(data.pressione_diastolica)} mmHg
-- Colesterolo totale: ${safe(data.colesterolo_totale)} mg/dL
-- HDL: ${safe(data.colesterolo_hdl_valore)} mg/dL
-- LDL: ${safe(data.colesterolo_ldl_valore)} mg/dL
-- Glicemia a digiuno: ${safe(data.glicemia_valore)} mg/dL
-
-🧬 **Storia clinica e familiare:**
-- Patologie croniche: ${safe(data.patologie)}
-- Farmaci: ${safe(data.farmaci_dettaglio)}
-- Interventi subiti: ${safe(data.interventi_dettaglio)}
-- Tumori in famiglia: ${safe(data.familiarita_tumori)} (sede: ${safe(data.sede_tumore)})
-- Fumatore: ${safe(data.fumatore)} – Sigarette/die: ${safe(data.n_sigarette)}
-- Alcol: ${safe(data.alcol)} – Unità/die: ${safe(data.unita_alcoliche)}
-
-🏃‍♂️ **Attività e stile di vita:**
-- Tipo lavoro: ${safe(data.tipo_lavoro)}
-- Attività fisica: ${safe(data.attivita_fisica)}, Frequenza: ${safe(data.frequenza_attivita_fisica)}, Tipo: ${safe(data.tipo_attivita)}, Durata: ${safe(data.durata_attivita)}
-- Preferenze salute: ${safe(data.preferenze)}
-
-🥗 **Alimentazione (score PREDIMED):**
-- Domande 1–14: ${safe(data.predimed_1)} → ${safe(data.predimed_14)}
-
-🧠 **Benessere psicologico:**
+- Vita > soglia: ${safe(data.vita)}
+- Glicemia < 100: ${safe(data.glicemia)}
+- Glicemia valore per ADA Diabetes Risk Score: ${safe(data.glicemia_valore)}
+- Colesterolo totale: ${safe(data.colesterolo_totale)}
+- LDL >70: ${safe(data.colesterolo_ldl)}
+- HDL basso: ${safe(data.colesterolo_hdl)}
+- HDL colesterolo per SCORE2 (mg/dL): ${safe(data.colesterolo_hdl_valore)}
+- Pressione arteriosa (sistolica/diastolica): ${safe(data.pressione_valore)} 
+- Malattie croniche: ${safe(data.malattie_croniche)}
+- Farmaci: ${safe(data.farmaci)}
+- Dettaglio farmaci: ${safe(data.farmaci_dettaglio)}
+- Interventi: ${safe(data.interventi)}
+- Dettaglio interventi: ${safe(data.interventi_dettaglio)}
+- Familiarità tumori: ${safe(data.familiarita_tumori)}
+- Sede tumore: ${safe(data.sede_tumore)}
+- Fumatore: ${safe(data.fumatore)}
+- Sigarette/die: ${safe(data.n_sigarette)}
+- Alcol: ${safe(data.alcol)}
+- Unità alcoliche/die: ${safe(data.unita_alcoliche)}
+- Attività fisica: ${safe(data.attivita_fisica)}
+- Frequenza attività: ${safe(data.frequenza_attivita_fisica)}
+- Tipo attività: ${safe(data.tipo_attivita)}
+- Durata attività: ${safe(data.durata_attivita)}
+- Alimentazione (Predimed): ${[...Array(14)].map((_, i) => `predimed_${i + 1}: ${safe(data[`predimed_${i + 1}`])}`).join(" | ")}
 - Stanchezza: ${safe(data.stanchezza)}
 - Depressione: ${safe(data.depressione)}
-- Insonnia: ${safe(data.insonnia)} (tipo: ${safe(data.tipo_insonnia)})
-- Stress percepito: ${safe(data.stress)}
+- Insonnia: ${safe(data.insonnia)}
+- Tipo insonnia: ${safe(data.tipo_insonnia)}
+- Stress: ${safe(data.stress)}
+- Preferenze: ${safe(escape(data.preferenze))}
 
-👵 **Valutazione geriatrica (se età ≥ 65):**
-- Stanchezza: ${safe(data.over_stanchezza)}
-- Camminata 100m: ${safe(data.over_camminata)}
-- Sollevamento oggetti: ${safe(data.over_sollevamento)}
-- Alzarsi da sedia: ${safe(data.over_sedia)}
-- Cadute frequenti: ${safe(data.over_cadute)}
-- Altri item: ${safe(data.over_scale)}, ${safe(data.over_malattie)}, ${safe(data.over_peso)}, ${safe(data.over_debolezza)}
+${data.eta > 65 ? `
+🔹 **VALUTAZIONE OVER 65:**
+- over_stanchezza: ${safe(data.over_stanchezza)}
+- over_scale: ${safe(data.over_scale)}
+- over_camminata: ${safe(data.over_camminata)}
+- over_malattie: ${safe(data.over_malattie)}
+- over_peso: ${safe(data.over_peso)}
+- over_sollevamento: ${safe(data.over_sollevamento)}
+- over_sedia: ${safe(data.over_sedia)}
+- over_cadute: ${safe(data.over_cadute)}
+- over_debolezza: ${safe(data.over_debolezza)}` : ""}
 
-🎗 **Salute femminile (se femmina):**
-- Menarca: ${safe(data.eta_menarca)}, Menopausa: ${safe(data.eta_menopausa)}
-- Contraccettivi: ${safe(data.contraccettivi)}, Gravidanze: ${safe(data.gravidezza)}
-- Familiarità seno: ${safe(data.familiarita_seno)}, Screening seno: ${safe(data.screening_seno)}, Pap test: ${safe(data.papsmear)}
+${data.sesso && (data.sesso.toLowerCase() === 'femmina' || data.sesso.toLowerCase() === 'donna') ? `
+🔹 **SALUTE FEMMINILE:**
+- Età menarca: ${safe(data.eta_menarca)}
+- Età menopausa: ${safe(data.eta_menopausa)}
+- Contraccettivi: ${safe(data.contraccettivi)}
+- Gravidanze: ${safe(data.gravidezza)}
+- Familiarità seno: ${safe(data.familiarita_seno)}
+- Screening seno: ${safe(data.screening_seno)}
+- Pap test: ${safe(data.papsmear)}` : ""}
+
+📊 **CALCOLA I SEGUENTI SCORE CLINICI (se disponibili):**
+- BMI
+- PREDIMED
+- SCORE2
+- ADA Diabetes Risk Score
+- FRAIL (se >65 anni)
+- SARC-F (se >65 anni)
+- FRAX (se >50 anni)
+**Istruzioni importanti per il calcolo degli score:**
+Se l’età è **≥ 65 anni**, calcola sempre **FRAIL** e **SARC-F** se sono presenti i dati richiesti.
+Se l’età è **≥ 50 anni**, calcola sempre **FRAX** se i dati sono disponibili.
+Se uno score non è calcolabile, spiega **quale dato manca**.
+Specifica in modo dettagliato il significato di ogni risultato per ogni risultato dei vari score, e cosa potrebbe fare il paziente per migliorare la propria condizione di salute. 
+Inoltre prendi in considerazione la presenza di sindrome metabolica nel caso in cui tre di questi cinque criteri sono soddisfatti dai dati inseriti: Circonferenza vita aumentata Uomini: > 102 cm, Donne: > 88 cm; Trigliceridi elevati ≥ 150 mg/dL; Colesterolo HDL basso Uomini: < 40 mg/dL, Donne: < 50 mg/dL; Pressione arteriosa elevata ≥ 130/85 mmHg; Glicemia a digiuno elevata ≥ 100 mg/dL.
+Se è presente chiarisci il significato di sindrome metabolica e indica al paziente tutte le problematiche correlate ad essa come : aumentata probabilità di sviluppare diabete di tipo 2, malattie cardiovascolari e ictus.
+E dai dei suggerimenti specifici e consigli su iniziative da intraprendere per far si di risolvere questa consizione.
+
+ **GENERA CONSIGLI PERSONALIZZATI:**
+- Screening oncologici raccomandati prendendo in considerazione l'età del paziente, andando ad elencare gli screening che dovrebbe svolgere o dovrebbe aver svolto il paziente specifici per l'età di questo.
+- Visite specialistiche necessarie in base ai risultati ottenuti dalla comilazione del test.
+- Miglioramenti nello stile di vita, con consigli specifici in base ai vari risultati del test, in tutti i campi come: dieta, attività, stress, sonno. I consigli devono essere specifici per il paziente, devono prendere in considerazione tutti i dati inseriti.
 
 
-🔍 **Obiettivi del prompt:**
+Usa un linguaggio semplice, empatico, ma tecnico. Comunica con tono rassicurante, motivante, professionale. Se i dati sono incompleti, suggerisci di rivolgersi al medico curante. Termina con un messaggio positivo motivazionale.
 
-1. Calcola i seguenti **score clinici**, specificando formula, soglie e significato:
-   - BMI
-   - PREDIMED
-   - ADA Diabetes Risk Score
-   - SCORE2 (rischio cardiovascolare)
-   - FRAIL e SARC-F (se età ≥ 65)
-   - FRAX (se età ≥ 50)
-
-2. Verifica la **presenza di sindrome metabolica** se almeno 3 dei seguenti criteri sono soddisfatti:
-   - Circonferenza vita aumentata: Uomo > 102 cm, Donna > 88 cm
-   - Trigliceridi ≥ 150 mg/dL (non disponibili, segnalare)
-   - Colesterolo HDL basso (Uomo < 40, Donna < 50 mg/dL)
-   - Pressione ≥ 130/85 mmHg
-   - Glicemia a digiuno ≥ 100 mg/dL
-
-3. Elenca eventuali **screening oncologici raccomandati** in base ad età e sesso:
-   - Mammografia, Pap Test, PSA, Sangue occulto, Colonscopia, ecc.
-
-4. Suggerisci eventuali **visite specialistiche o follow-up** da considerare in base ai dati.
-
-5. Fornisci **raccomandazioni personalizzate** su:
-   - Dieta (es. migliorare punteggio PREDIMED)
-   - Esercizio fisico
-   - Sonno, stress, dipendenze (fumo/alcol)
-
-🧠 Usa linguaggio semplice ma accurato, con tono empatico e motivante. Se mancano dati per uno score, segnalalo.
-Termina con un messaggio di incoraggiamento sulla prevenzione.
-
-> "Grazie per aver completato il test di prevenzione. Ricorda: ogni piccolo cambiamento può fare una grande differenza per la tua salute. Parlane con il tuo medico di fiducia."
-
+ SEZIONE FINALE:
+> "Grazie per aver compilato questo strumento di prevenzione. Ricorda che la prevenzione è il primo passo verso una vita lunga e in salute. Per qualunque dubbio, parlane con il tuo medico."
+`;
 
     }
-    
-if (!compiledPrompt || compiledPrompt.trim() === "") {
-  return res.status(400).json({ risposta: "⚠️ Errore interno: il prompt non è stato generato correttamente." });
-}
 
     console.log("📤 Prompt generato:", compiledPrompt);
 
