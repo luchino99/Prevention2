@@ -38,11 +38,11 @@ export default async function handler(req, res) {
   const tipo = data.tipo_lavoro?.trim();
   const tdeeFactor = fattoriLavoro[tipo];
 
-  if (!tdeeFactor) {
-    return res.status(400).json({
-      errore: `Tipo di lavoro non valido o mancante: "${tipo}". I valori accettati sono: ${Object.keys(fattoriLavoro).join(", ")}.`
-    });
-  }
+if (data.dieta && !tdeeFactor) {
+  return res.status(400).json({
+    errore: `Tipo di lavoro non valido o mancante: "${tipo}". I valori accettati sono: ${Object.keys(fattoriLavoro).join(", ")}.`
+  });
+}
 
 
   const safe = (val) => val ?? "non disponibile";
