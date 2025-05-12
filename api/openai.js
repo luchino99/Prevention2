@@ -183,7 +183,7 @@ ${data.sesso && (data.sesso.toLowerCase() === 'femmina' || data.sesso.toLowerCas
 📊 **CALCOLA I SEGUENTI SCORE CLINICI (se disponibili):**
 - BMI
 - PREDIMED
-- SCORE2
+- SCORE2 (rischio cardiovascolare a 10 anni): calcola questo punteggio utilizzando **pressione sistolica**, **colesterolo totale**, **colesterolo HDL**, **età**, **sesso**, **abitudine al fumo** e **diabete**. Se non puoi calcolarlo numericamente, fornisci comunque una stima qualitativa chiara e coerente. Indica chiaramente quali fattori influenzano il risultato.
 - ADA Diabetes Risk Score
 - FRAIL (se >65 anni)
 - SARC-F (se >65 anni)
