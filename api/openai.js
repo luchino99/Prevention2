@@ -31,7 +31,7 @@ export default async function handler(req, res) {
 
 
   const data = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
-  const storico = Array.isArray(data.storico) ? data.storico : null;
+  
 
 
   const fattoriLavoro = {
@@ -230,16 +230,20 @@ Usa un linguaggio semplice, empatico, ma tecnico. Comunica con tono rassicurante
 
     console.log("📤 Prompt generato:", compiledPrompt);
 
-let messages;
+const storico = Array.isArray(data.storico) ? data.storico : [];
 
-if (storico && storico.length > 0) {
-  messages = storico;
-} else {
-  messages = [
-    { role: 'system', content: 'Sei un assistente sanitario esperto in prevenzione e analisi dati clinici, nutrizione e allenamento.' },
-    { role: 'user', content: compiledPrompt }
-  ];
-}
+let ultimoUser = storico.filter(m => m.role === 'user').pop();
+let ultimoAssistant = storico.filter(m => m.role === 'assistant').pop();
+
+let messages = [
+  { role: 'system', content: 'Sei un assistente sanitario esperto in prevenzione e analisi dati clinici, nutrizione e allenamento.' },
+];
+
+if (ultimoUser) messages.push(ultimoUser);
+else messages.push({ role: 'user', content: compiledPrompt });
+
+if (ultimoAssistant) messages.push(ultimoAssistant);
+
 
 const response = await openai.chat.completions.create({
   model: 'gpt-4-turbo',
