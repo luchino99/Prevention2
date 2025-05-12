@@ -188,8 +188,17 @@ ${data.sesso && (data.sesso.toLowerCase() === 'femmina' || data.sesso.toLowerCas
 📊 **CALCOLA I SEGUENTI SCORE CLINICI (se disponibili):**
 - BMI
 - PREDIMED
-- SCORE2 (rischio cardiovascolare a 10 anni): calcola questo punteggio utilizzando **pressione sistolica**, **colesterolo totale**, **colesterolo HDL**, **età**, **sesso**, **abitudine al fumo** e **diabete**. 
-- ADA Diabetes Risk Score
+- SCORE2 – Calcolo del rischio cardiovascolare a 10 anni**
+Usa i seguenti dati per calcolare o stimare il punteggio SCORE2 secondo le linee guida ESC 2021:
+- Età: ${safe(data.eta)}
+- Sesso: ${safe(data.sesso)}
+- Pressione arteriosa sistolica: ${safe(data.pressione_sistolica)} mmHg
+- Colesterolo totale: ${safe(data.colesterolo_totale)} mg/dL
+- Colesterolo HDL: ${safe(data.colesterolo_hdl_valore)} mg/dL
+- Fumatore: ${safe(data.fumatore)}
+- Diabete diagnosticato: ${safe(data.diabete)}
+Se tutti i dati sono disponibili, stima il punteggio SCORE2 e specifica se è rischio basso, moderato, alto o molto alto.
+
 - FRAIL (se >65 anni)
 - SARC-F (se >65 anni)
 - FRAX (se >50 anni)
