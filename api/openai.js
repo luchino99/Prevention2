@@ -51,18 +51,14 @@ if (data.dieta && !tdeeFactor) {
 
   try {
     let compiledPrompt = "";
-
     if (data.sintomi && data.sintomi.trim() !== "") {
       compiledPrompt =  `
 Sei un assistente sanitario digitale esperto. Una persona ha descritto i seguenti sintomi:
-
 🩺 **Sintomi riportati:**
 ${escape(data.sintomi)}
-
 Sulla base di questi sintomi, offri un'analisi iniziale, suggerisci possibili cause. Specifica quando è opportuno rivolgersi a un medico o andare al pronto soccorso. 
 Ricorda che la tua risposta **non sostituisce una valutazione medica professionale**.`;
-  
-  } else if (data.dieta) {
+    } else if (data.dieta) {
     compiledPrompt = `
 Sei un nutrizionista clinico esperto in nutrizione personalizzata. In base ai dati forniti di seguito, calcola il fabbisogno calorico giornaliero (BMR e TDEE) del paziente secondo le formule Mifflin-St Jeor e le linee guida LARN/SINU, non scrivere i vari calcoli nella risposta, ma mostra soltando il risultato. Successivamente, crea un piano alimentare settimanale variabile per ogni giorno della settimana dal lunedi fino alla domenica compresa.
 Che sia completo, bilanciato basandoti sul risulatato di questi score e sugli obbiettivi del paziente (dimagrimento, mantenimento, massa), eventuali patologie, preferenze, allergie. 
