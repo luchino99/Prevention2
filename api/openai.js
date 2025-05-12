@@ -31,8 +31,6 @@ export default async function handler(req, res) {
 
 
   const data = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
-  
-
 
   const fattoriLavoro = {
     "sedentario": 1.2,
@@ -42,17 +40,14 @@ export default async function handler(req, res) {
     "estremamente attivo": 1.9
   };
 
-const tipo = data.tipo_lavoro?.trim();
-let tdeeFactor = fattoriLavoro[tipo];
+  const tipo = data.tipo_lavoro?.trim();
+  const tdeeFactor = fattoriLavoro[tipo];
 
-if (data.dieta) {
-  if (!tdeeFactor) {
-    console.warn(`⚠️ Tipo di lavoro non valido: "${tipo}", uso default 1.375`);
-    data.tipo_lavoro = "leggermente attivo";
-    tdeeFactor = fattoriLavoro["leggermente attivo"]; // 🔁 Ricalcola qui
-  }
+if (data.dieta && !tdeeFactor) {
+  return res.status(400).json({
+    errore: `Tipo di lavoro non valido o mancante: "${tipo}". I valori accettati sono: ${Object.keys(fattoriLavoro).join(", ")}.`
+  });
 }
-
 
 
   const safe = (val) => val ?? "non disponibile";
@@ -233,28 +228,14 @@ Usa un linguaggio semplice, empatico, ma tecnico. Comunica con tono rassicurante
 
     console.log("📤 Prompt generato:", compiledPrompt);
 
-const storico = Array.isArray(data.storico) ? data.storico : [];
-
-let ultimoUser = Array.isArray(storico) ? storico.findLast(m => m.role === 'user') : null;
-let ultimoAssistant = Array.isArray(storico) ? storico.findLast(m => m.role === 'assistant') : null;
-
-
-let messages = [
-  { role: 'system', content: 'Sei un assistente sanitario esperto in prevenzione e analisi dati clinici, nutrizione e allenamento.' },
-];
-
-if (ultimoUser) messages.push(ultimoUser);
-else messages.push({ role: 'user', content: compiledPrompt });
-
-if (ultimoAssistant) messages.push(ultimoAssistant);
-
-
-const response = await openai.chat.completions.create({
-  model: 'gpt-4-turbo',
-  messages,
-  temperature: 0.7
-});
-
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4-turbo',
+      messages: [
+        { role: 'system', content: 'Sei un assistente sanitario esperto in prevenzione e analisi dati clinici, nutrizione e allenamento.' },
+        { role: 'user', content: compiledPrompt }
+      ],
+      temperature: 0.7
+    });
 
     const result = response?.choices?.[0]?.message?.content;
     if (!response?.choices || !response.choices.length) {
