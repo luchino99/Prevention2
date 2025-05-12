@@ -1,4 +1,11 @@
 document.addEventListener("DOMContentLoaded", () => {
+let storicoMessaggi = [
+  {
+    role: "system",
+    content: "Sei un assistente sanitario digitale, empatico, professionale ed esperto in prevenzione, sintomi, nutrizione e allenamento. Rispondi in modo chiaro, utile e rassicurante. Non sostituisci un medico."
+  }
+];
+
 const input = document.getElementById("input");
 const endpoint = "https://prevention2.vercel.app/api/openai";
 
@@ -313,6 +320,8 @@ async function next() {
 
     mostraMessaggio(val, "user");
     await salvaMessaggioChat(emailUtente, "user", val);
+    storicoMessaggi.push({ role: "user", content: val });
+
 
     input.value = "";
     risposte.sintomi = val;
@@ -328,12 +337,15 @@ async function next() {
       .then(async data => {
   const risposta = data.risposta || "⚠️ Nessuna risposta ricevuta.";
   mostraMessaggio(risposta);
+  
   try {
     await salvaMessaggioChat(emailUtente, "assistant", risposta);
     console.log("✅ Risposta AI salvata da modalità sintomi.");
   } catch (e) {
     console.error("❌ Errore salvataggio risposta AI (sintomi):", e);
   }
+        storicoMessaggi.push({ role: "assistant", content: risposta });
+
 })
 
       .catch(err => {
@@ -482,11 +494,15 @@ function inviaOpenAI() {
   if (modalita === "sintomi") payload.sintomi = risposte.sintomi;
   if (modalita === "allenamento") payload.allenamento = true;
 
-  fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
+fetch(endpoint, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    ...payload,
+    storico: storicoMessaggi
   })
+});
+
     .then(async res => {
       loader.remove();
 
