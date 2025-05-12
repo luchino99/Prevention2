@@ -503,6 +503,9 @@ function inviaOpenAI() {
   console.log("📦 Risposta ricevuta:", risposta);
 
   mostraMessaggio(risposta);
+      
+  await salvaRispostaFinaleUtente(emailUtente, modalita, risposta);
+
   
   try {
     await salvaMessaggioChat(emailUtente, "assistant", risposta);
@@ -518,6 +521,42 @@ function inviaOpenAI() {
     });
 }
 
+async function salvaRispostaFinaleUtente(email, tipo, risposta) {
+  if (!email || !tipo || !risposta) {
+    console.warn("❌ Parametri mancanti per il salvataggio risposta finale.");
+    return;
+  }
+
+  const campo = {
+    sintomi: "risposta_sintomi",
+    prevenzione: "risposta_test",
+    dieta: "risposta_dieta",
+    allenamento: "risposta_allenamento"
+  }[tipo];
+
+  if (!campo) {
+    console.warn("❌ Modalità non riconosciuta:", tipo);
+    return;
+  }
+
+  const payload = {
+    email,
+    [campo]: risposta,
+    updated_at: new Date().toISOString()
+  };
+
+  const { data, error } = await supabaseClient
+    .from("risposte_chatbot_utenti")
+    .upsert([payload], { onConflict: "email" });
+
+  if (error) {
+    console.error("❌ Errore salvataggio risposta finale:", error);
+  } else {
+    console.log("✅ Risposta finale salvata correttamente:", data);
+  }
+}
+
+  
 function generaPDF(contenuto) {
   const pdfElement = document.getElementById("pdf-content");
   pdfElement.innerHTML = `
