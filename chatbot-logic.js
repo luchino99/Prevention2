@@ -379,8 +379,18 @@ if (step >= 0 && val) {
 
   if (step >= domande.length || !domande[step]) {
   console.warn("🚫 Nessuna domanda valida per questo step:", step);
+
+  // Fine del questionario: analizza i dati
+  if (modalita && modalita !== "aggiorna") {
+    await salvaAnagraficaNelDatabase(risposte);
+    await salvaCompilazioneNelDatabase(risposte, modalita);
+    mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi dati...");
+    inviaOpenAI();
+  }
+
   return;
 }
+
 
 
   const currentKey = domande[step].key;
