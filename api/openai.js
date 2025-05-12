@@ -54,7 +54,26 @@ export default async function handler(req, res) {
 
     if (data.sintomi && data.sintomi.trim() !== "") {
       compiledPrompt =  `
-Sei un assistente sanitario digitale esperto. Una persona ha descritto i seguenti sintomi:
+Sei un assistente sanitario digitale esperto in triage clinico.
+
+Un utente ha descritto i seguenti sintomi:
+- Sintomi: {{sintomi}}
+
+Profilo utente:
+- Età: {{eta}} anni
+- Sesso biologico: {{sesso}}
+- Altezza/Peso: {{altezza}} cm / {{peso}} kg
+- Patologie note: {{patologie}}
+- Farmaci attualmente assunti: {{farmaci_dettaglio}}
+- Abitudini: Fumatore: {{fumatore}} | Alcol: {{alcol}} | Attività fisica: {{attivita_fisica}}
+
+📋 **Analisi richiesta:**
+1. Elenca le possibili cause (ipotetiche) in ordine di gravità.
+2. Specifica sintomi campanello d’allarme per cui rivolgersi subito a un medico o al pronto soccorso.
+3. Offri consigli temporanei basati su linee guida cliniche internazionali (OMS, NICE, AIFA).
+
+*Il tuo linguaggio deve essere chiaro, empatico e professionale. Ricorda: questa è una valutazione iniziale e non una diagnosi definitiva.*
+
 
 🩺 **Sintomi riportati:**
 ${escape(data.sintomi)}
@@ -69,20 +88,19 @@ Che sia completo, bilanciato basandoti sul risulatato di questi score e sugli ob
 Ogni giorno deve contenere:
 - Colazione, spuntino mattina, pranzo, spuntino pomeriggio, cena
 - Grammature indicative degli alimenti
+Prendi in considerazione per stabilire il tipo di dieta, quello che  è ${data.obiettivo}, per far si che si adatti ad esso.
 Per il TDEE, calcola il TDEE moltiplicando il BMR per il coefficiente ${tdeeFactor}
 In fondo, includi: 
-- Suggerimenti per l’idratazione, attività fisica e stile di vita
+- Suggerimenti per l’idratazione , attività fisica e stile di vita specifi per i dati da lui forniti.
 Dati da utilizzare per programmare la dieta:
-- Età: ${data.eta}
-- Sesso: ${data.sesso}
-- Altezza: ${data.altezza} cm
-- Peso: ${data.peso} kg
-- Obiettivo: ${data.obiettivo}
-- Attività fisica: ${data.attivita_fisica}
-- Tipo di lavoro: ${data.tipo_lavoro}
-- Intolleranze/allergie: ${data.intolleranze}
-- Alimenti esclusi: ${data.alimenti_esclusi}
-- Patologie: ${data.patologie}
+- Età: {{eta}}, Sesso: {{sesso}}, Altezza: {{altezza}} cm, Peso: {{peso}} kg
+- Obiettivo: {{obiettivo}} (es. dimagrimento, massa, mantenimento)
+- Attività fisica: {{attivita_fisica}}, Tipo lavoro: {{tipo_lavoro}}
+- Patologie: {{patologie}}, Farmaci: {{farmaci_dettaglio}}
+- Allergie/intolleranze: {{intolleranze}}, Alimenti esclusi: {{alimenti_esclusi}}
+- Preferenze alimentari: {{preferenze}}
+- Pasti/die: {{pasti}}, Orari pasti: {{orari_pasti}}
+
 Il piano sarà usato per essere trasformato in PDF.`;
 
  
