@@ -461,7 +461,7 @@ function inviaOpenAI() {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       ...payload,
-      storico: storicoMessaggi
+      storico: storicoMessaggi.slice(-2)
     })
   })
   .then(async res => {
