@@ -42,16 +42,17 @@ export default async function handler(req, res) {
     "estremamente attivo": 1.9
   };
 
-  const tipo = data.tipo_lavoro?.trim();
-  const tdeeFactor = fattoriLavoro[tipo];
+const tipo = data.tipo_lavoro?.trim();
+let tdeeFactor = fattoriLavoro[tipo];
 
 if (data.dieta) {
   if (!tdeeFactor) {
-    // fallback sicuro: imposta 1.375 (leggermente attivo)
     console.warn(`⚠️ Tipo di lavoro non valido: "${tipo}", uso default 1.375`);
     data.tipo_lavoro = "leggermente attivo";
+    tdeeFactor = fattoriLavoro["leggermente attivo"]; // 🔁 Ricalcola qui
   }
 }
+
 
 
   const safe = (val) => val ?? "non disponibile";
