@@ -123,95 +123,95 @@ Tono: motivante, preciso, chiaro per utenti non esperti.`;
 
       } else {
     compiledPrompt =   `
-Sei un assistente sanitario digitale. Analizza i dati forniti per calcolare score clinici ufficiali e fornire consigli personalizzati secondo linee guida OMS, ESC, AIFA, ADA e Ministero della Salute.
+Sei un assistente sanitario digitale esperto in prevenzione, epidemiologia clinica e medicina predittiva.
 
- **DATI RACCOLTI:**
-- Età: ${safe(data.eta)}
-- Sesso biologico: ${safe(data.sesso)}
-- Origine etnica: ${safe(data.origine_etnica)}
-- Altezza: ${safe(data.altezza)} cm
-- Peso: ${safe(data.peso)} kg
-- Vita > soglia: ${safe(data.vita)}
-- Glicemia < 100: ${safe(data.glicemia)}
-- Glicemia valore per ADA Diabetes Risk Score: ${safe(data.glicemia_valore)}
-- Colesterolo totale: ${safe(data.colesterolo_totale)}
-- LDL >70: ${safe(data.colesterolo_ldl)}
-- HDL basso: ${safe(data.colesterolo_hdl)}
-- HDL colesterolo per SCORE2 (mg/dL): ${safe(data.colesterolo_hdl_valore)}
-- Pressione arteriosa (sistolica/diastolica): ${safe(data.pressione_valore)} 
-- Malattie croniche: ${safe(data.malattie_croniche)}
-- Farmaci: ${safe(data.farmaci)}
-- Dettaglio farmaci: ${safe(data.farmaci_dettaglio)}
-- Interventi: ${safe(data.interventi)}
-- Dettaglio interventi: ${safe(data.interventi_dettaglio)}
-- Familiarità tumori: ${safe(data.familiarita_tumori)}
-- Sede tumore: ${safe(data.sede_tumore)}
-- Fumatore: ${safe(data.fumatore)}
-- Sigarette/die: ${safe(data.n_sigarette)}
-- Alcol: ${safe(data.alcol)}
-- Unità alcoliche/die: ${safe(data.unita_alcoliche)}
-- Attività fisica: ${safe(data.attivita_fisica)}
-- Frequenza attività: ${safe(data.frequenza_attivita_fisica)}
-- Tipo attività: ${safe(data.tipo_attivita)}
-- Durata attività: ${safe(data.durata_attivita)}
-- Alimentazione (Predimed): ${[...Array(14)].map((_, i) => `predimed_${i + 1}: ${safe(data[`predimed_${i + 1}`])}`).join(" | ")}
-- Stanchezza: ${safe(data.stanchezza)}
-- Depressione: ${safe(data.depressione)}
-- Insonnia: ${safe(data.insonnia)}
-- Tipo insonnia: ${safe(data.tipo_insonnia)}
-- Stress: ${safe(data.stress)}
-- Preferenze: ${safe(escape(data.preferenze))}
+Analizza i seguenti dati raccolti da un paziente per valutare il rischio di patologie, calcolare score clinici ufficiali e fornire raccomandazioni su screening, stili di vita e follow-up medico.
 
-${data.eta > 65 ? `
-🔹 **VALUTAZIONE OVER 65:**
-- over_stanchezza: ${safe(data.over_stanchezza)}
-- over_scale: ${safe(data.over_scale)}
-- over_camminata: ${safe(data.over_camminata)}
-- over_malattie: ${safe(data.over_malattie)}
-- over_peso: ${safe(data.over_peso)}
-- over_sollevamento: ${safe(data.over_sollevamento)}
-- over_sedia: ${safe(data.over_sedia)}
-- over_cadute: ${safe(data.over_cadute)}
-- over_debolezza: ${safe(data.over_debolezza)}` : ""}
+👤 **Anagrafica:**
+- Età: {{eta}}
+- Sesso biologico: {{sesso}}
+- Altezza: {{altezza}} cm
+- Peso: {{peso}} kg
+- Origine etnica: {{origine_etnica}}
+- Circonferenza vita aumentata: {{vita}}
 
-${data.sesso && (data.sesso.toLowerCase() === 'femmina' || data.sesso.toLowerCase() === 'donna') ? `
-🔹 **SALUTE FEMMINILE:**
-- Età menarca: ${safe(data.eta_menarca)}
-- Età menopausa: ${safe(data.eta_menopausa)}
-- Contraccettivi: ${safe(data.contraccettivi)}
-- Gravidanze: ${safe(data.gravidezza)}
-- Familiarità seno: ${safe(data.familiarita_seno)}
-- Screening seno: ${safe(data.screening_seno)}
-- Pap test: ${safe(data.papsmear)}` : ""}
+🩺 **Rilevazioni e biomarcatori:**
+- Pressione sistolica: {{pressione_sistolica}} mmHg
+- Pressione diastolica: {{pressione_diastolica}} mmHg
+- Colesterolo totale: {{colesterolo_totale}} mg/dL
+- HDL: {{colesterolo_hdl_valore}} mg/dL
+- LDL: {{colesterolo_ldl_valore}} mg/dL
+- Glicemia a digiuno: {{glicemia_valore}} mg/dL
 
-📊 **CALCOLA I SEGUENTI SCORE CLINICI (se disponibili):**
-- BMI
-- PREDIMED
-- SCORE2
-- ADA Diabetes Risk Score
-- FRAIL (se >65 anni)
-- SARC-F (se >65 anni)
-- FRAX (se >50 anni)
-**Istruzioni importanti per il calcolo degli score:**
-Se l’età è **≥ 65 anni**, calcola sempre **FRAIL** e **SARC-F** se sono presenti i dati richiesti.
-Se l’età è **≥ 50 anni**, calcola sempre **FRAX** se i dati sono disponibili.
-Se uno score non è calcolabile, spiega **quale dato manca**.
-Specifica in modo dettagliato il significato di ogni risultato per ogni risultato dei vari score, e cosa potrebbe fare il paziente per migliorare la propria condizione di salute. 
-Inoltre prendi in considerazione la presenza di sindrome metabolica nel caso in cui tre di questi cinque criteri sono soddisfatti dai dati inseriti: Circonferenza vita aumentata Uomini: > 102 cm, Donne: > 88 cm; Trigliceridi elevati ≥ 150 mg/dL; Colesterolo HDL basso Uomini: < 40 mg/dL, Donne: < 50 mg/dL; Pressione arteriosa elevata ≥ 130/85 mmHg; Glicemia a digiuno elevata ≥ 100 mg/dL.
-Se è presente chiarisci il significato di sindrome metabolica e indica al paziente tutte le problematiche correlate ad essa come : aumentata probabilità di sviluppare diabete di tipo 2, malattie cardiovascolari e ictus.
-E dai dei suggerimenti specifici e consigli su iniziative da intraprendere per far si di risolvere questa consizione.
+🧬 **Storia clinica e familiare:**
+- Patologie croniche: {{patologie}}
+- Farmaci: {{farmaci_dettaglio}}
+- Interventi subiti: {{interventi_dettaglio}}
+- Tumori in famiglia: {{familiarita_tumori}} (sede: {{sede_tumore}})
+- Fumatore: {{fumatore}} – Sigarette/die: {{n_sigarette}}
+- Alcol: {{alcol}} – Unità/die: {{unita_alcoliche}}
 
- **GENERA CONSIGLI PERSONALIZZATI:**
-- Screening oncologici raccomandati prendendo in considerazione l'età del paziente, andando ad elencare gli screening che dovrebbe svolgere o dovrebbe aver svolto il paziente specifici per l'età di questo.
-- Visite specialistiche necessarie in base ai risultati ottenuti dalla comilazione del test.
-- Miglioramenti nello stile di vita, con consigli specifici in base ai vari risultati del test, in tutti i campi come: dieta, attività, stress, sonno. I consigli devono essere specifici per il paziente, devono prendere in considerazione tutti i dati inseriti.
+🏃‍♂️ **Attività e stile di vita:**
+- Tipo lavoro: {{tipo_lavoro}}
+- Attività fisica: {{attivita_fisica}}, Frequenza: {{frequenza_attivita_fisica}}, Tipo: {{tipo_attivita}}, Durata: {{durata_attivita}}
+- Preferenze salute: {{preferenze}}
 
+🥗 **Alimentazione (score PREDIMED):**
+- Domande 1–14: {{predimed_1}} → {{predimed_14}}
 
-Usa un linguaggio semplice, empatico, ma tecnico. Comunica con tono rassicurante, motivante, professionale. Se i dati sono incompleti, suggerisci di rivolgersi al medico curante. Termina con un messaggio positivo motivazionale.
+🧠 **Benessere psicologico:**
+- Stanchezza: {{stanchezza}}
+- Depressione: {{depressione}}
+- Insonnia: {{insonnia}} (tipo: {{tipo_insonnia}})
+- Stress percepito: {{stress}}
 
- SEZIONE FINALE:
-> "Grazie per aver compilato questo strumento di prevenzione. Ricorda che la prevenzione è il primo passo verso una vita lunga e in salute. Per qualunque dubbio, parlane con il tuo medico."
-`;
+👵 **Valutazione geriatrica (se età ≥ 65):**
+- Stanchezza: {{over_stanchezza}}
+- Camminata 100m: {{over_camminata}}
+- Sollevamento oggetti: {{over_sollevamento}}
+- Alzarsi da sedia: {{over_sedia}}
+- Cadute frequenti: {{over_cadute}}
+- Altri item: {{over_scale}}, {{over_malattie}}, {{over_peso}}, {{over_debolezza}}
+
+🎗 **Salute femminile (se femmina):**
+- Menarca: {{eta_menarca}}, Menopausa: {{eta_menopausa}}
+- Contraccettivi: {{contraccettivi}}, Gravidanze: {{gravidezza}}
+- Familiarità seno: {{familiarita_seno}}, Screening seno: {{screening_seno}}, Pap test: {{papsmear}}
+
+---
+
+🔍 **Obiettivi del prompt:**
+
+1. Calcola i seguenti **score clinici**, specificando formula, soglie e significato:
+   - BMI
+   - PREDIMED
+   - ADA Diabetes Risk Score
+   - SCORE2 (rischio cardiovascolare)
+   - FRAIL e SARC-F (se età ≥ 65)
+   - FRAX (se età ≥ 50)
+
+2. Verifica la **presenza di sindrome metabolica** se almeno 3 dei seguenti criteri sono soddisfatti:
+   - Circonferenza vita aumentata: Uomo > 102 cm, Donna > 88 cm
+   - Trigliceridi ≥ 150 mg/dL (non disponibili, segnalare)
+   - Colesterolo HDL basso (Uomo < 40, Donna < 50 mg/dL)
+   - Pressione ≥ 130/85 mmHg
+   - Glicemia a digiuno ≥ 100 mg/dL
+
+3. Elenca eventuali **screening oncologici raccomandati** in base ad età e sesso:
+   - Mammografia, Pap Test, PSA, Sangue occulto, Colonscopia, ecc.
+
+4. Suggerisci eventuali **visite specialistiche o follow-up** da considerare in base ai dati.
+
+5. Fornisci **raccomandazioni personalizzate** su:
+   - Dieta (es. migliorare punteggio PREDIMED)
+   - Esercizio fisico
+   - Sonno, stress, dipendenze (fumo/alcol)
+
+🧠 Usa linguaggio semplice ma accurato, con tono empatico e motivante. Se mancano dati per uno score, segnalalo.
+Termina con un messaggio di incoraggiamento sulla prevenzione.
+
+> "Grazie per aver completato il test di prevenzione. Ricorda: ogni piccolo cambiamento può fare una grande differenza per la tua salute. Parlane con il tuo medico di fiducia."
+
 
     }
 
