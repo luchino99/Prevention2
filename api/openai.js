@@ -146,57 +146,56 @@ Sei un assistente sanitario digitale esperto in prevenzione, epidemiologia clini
 Analizza i seguenti dati raccolti da un paziente per valutare il rischio di patologie, calcolare score clinici ufficiali e fornire raccomandazioni su screening, stili di vita e follow-up medico.
 
 👤 **Anagrafica:**
-- Età: {{eta}}
-- Sesso biologico: {{sesso}}
-- Altezza: {{altezza}} cm
-- Peso: {{peso}} kg
-- Origine etnica: {{origine_etnica}}
-- Circonferenza vita aumentata: {{vita}}
+- Età: ${safe(data.eta)}
+- Sesso biologico: ${safe(data.sesso)}
+- Altezza: ${safe(data.altezza)} cm
+- Peso: ${safe(data.peso)} kg
+- Origine etnica: ${safe(data.origine_etnica)}
+- Circonferenza vita aumentata: ${safe(data.vita)}
 
 🩺 **Rilevazioni e biomarcatori:**
-- Pressione sistolica: {{pressione_sistolica}} mmHg
-- Pressione diastolica: {{pressione_diastolica}} mmHg
-- Colesterolo totale: {{colesterolo_totale}} mg/dL
-- HDL: {{colesterolo_hdl_valore}} mg/dL
-- LDL: {{colesterolo_ldl_valore}} mg/dL
-- Glicemia a digiuno: {{glicemia_valore}} mg/dL
+- Pressione sistolica: ${safe(data.pressione_sistolica)} mmHg
+- Pressione diastolica: ${safe(data.pressione_diastolica)} mmHg
+- Colesterolo totale: ${safe(data.colesterolo_totale)} mg/dL
+- HDL: ${safe(data.colesterolo_hdl_valore)} mg/dL
+- LDL: ${safe(data.colesterolo_ldl_valore)} mg/dL
+- Glicemia a digiuno: ${safe(data.glicemia_valore)} mg/dL
 
 🧬 **Storia clinica e familiare:**
-- Patologie croniche: {{patologie}}
-- Farmaci: {{farmaci_dettaglio}}
-- Interventi subiti: {{interventi_dettaglio}}
-- Tumori in famiglia: {{familiarita_tumori}} (sede: {{sede_tumore}})
-- Fumatore: {{fumatore}} – Sigarette/die: {{n_sigarette}}
-- Alcol: {{alcol}} – Unità/die: {{unita_alcoliche}}
+- Patologie croniche: ${safe(data.patologie)}
+- Farmaci: ${safe(data.farmaci_dettaglio)}
+- Interventi subiti: ${safe(data.interventi_dettaglio)}
+- Tumori in famiglia: ${safe(data.familiarita_tumori)} (sede: ${safe(data.sede_tumore)})
+- Fumatore: ${safe(data.fumatore)} – Sigarette/die: ${safe(data.n_sigarette)}
+- Alcol: ${safe(data.alcol)} – Unità/die: ${safe(data.unita_alcoliche)}
 
 🏃‍♂️ **Attività e stile di vita:**
-- Tipo lavoro: {{tipo_lavoro}}
-- Attività fisica: {{attivita_fisica}}, Frequenza: {{frequenza_attivita_fisica}}, Tipo: {{tipo_attivita}}, Durata: {{durata_attivita}}
-- Preferenze salute: {{preferenze}}
+- Tipo lavoro: ${safe(data.tipo_lavoro)}
+- Attività fisica: ${safe(data.attivita_fisica)}, Frequenza: ${safe(data.frequenza_attivita_fisica)}, Tipo: ${safe(data.tipo_attivita)}, Durata: ${safe(data.durata_attivita)}
+- Preferenze salute: ${safe(data.preferenze)}
 
 🥗 **Alimentazione (score PREDIMED):**
-- Domande 1–14: {{predimed_1}} → {{predimed_14}}
+- Domande 1–14: ${safe(data.predimed_1)} → ${safe(data.predimed_14)}
 
 🧠 **Benessere psicologico:**
-- Stanchezza: {{stanchezza}}
-- Depressione: {{depressione}}
-- Insonnia: {{insonnia}} (tipo: {{tipo_insonnia}})
-- Stress percepito: {{stress}}
+- Stanchezza: ${safe(data.stanchezza)}
+- Depressione: ${safe(data.depressione)}
+- Insonnia: ${safe(data.insonnia)} (tipo: ${safe(data.tipo_insonnia)})
+- Stress percepito: ${safe(data.stress)}
 
 👵 **Valutazione geriatrica (se età ≥ 65):**
-- Stanchezza: {{over_stanchezza}}
-- Camminata 100m: {{over_camminata}}
-- Sollevamento oggetti: {{over_sollevamento}}
-- Alzarsi da sedia: {{over_sedia}}
-- Cadute frequenti: {{over_cadute}}
-- Altri item: {{over_scale}}, {{over_malattie}}, {{over_peso}}, {{over_debolezza}}
+- Stanchezza: ${safe(data.over_stanchezza)}
+- Camminata 100m: ${safe(data.over_camminata)}
+- Sollevamento oggetti: ${safe(data.over_sollevamento)}
+- Alzarsi da sedia: ${safe(data.over_sedia)}
+- Cadute frequenti: ${safe(data.over_cadute)}
+- Altri item: ${safe(data.over_scale)}, ${safe(data.over_malattie)}, ${safe(data.over_peso)}, ${safe(data.over_debolezza)}
 
 🎗 **Salute femminile (se femmina):**
-- Menarca: {{eta_menarca}}, Menopausa: {{eta_menopausa}}
-- Contraccettivi: {{contraccettivi}}, Gravidanze: {{gravidezza}}
-- Familiarità seno: {{familiarita_seno}}, Screening seno: {{screening_seno}}, Pap test: {{papsmear}}
+- Menarca: ${safe(data.eta_menarca)}, Menopausa: ${safe(data.eta_menopausa)}
+- Contraccettivi: ${safe(data.contraccettivi)}, Gravidanze: ${safe(data.gravidezza)}
+- Familiarità seno: ${safe(data.familiarita_seno)}, Screening seno: ${safe(data.screening_seno)}, Pap test: ${safe(data.papsmear)}
 
----
 
 🔍 **Obiettivi del prompt:**
 
