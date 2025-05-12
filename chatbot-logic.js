@@ -329,6 +329,9 @@ if (step >= 0 && val) {
   mostraMessaggio(val, "user");
   storicoMessaggi.push({ role: "user", content: val });
   await salvaMessaggioChat(emailUtente, "user", val);
+  mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi sintomi...");
+inviaOpenAI();
+return;
 
   const currentKey = domande[step].key;
 
