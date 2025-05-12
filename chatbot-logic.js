@@ -311,27 +311,23 @@ async function next() {
   return;
 }
 
-  if (modalita === "sintomi") {
-    if (!val) {
-      mostraMessaggio("❗ Per favore descrivi i tuoi sintomi prima di premere invio.");
-      
-      return;
-    }
-
-
-  if (step === -1 && (!modalita || !domande || domande.length === 0)) {
-    console.warn("⛔ Avanzamento bloccato: modalità non scelta o domande non inizializzate.");
-    input.value = "";
+if (modalita === "sintomi") {
+  if (!val) {
+    mostraMessaggio("❗ Per favore descrivi i tuoi sintomi prima di premere invio.");
     return;
   }
 
-if (step >= 0 && val) {
   mostraMessaggio(val, "user");
   storicoMessaggi.push({ role: "user", content: val });
   await salvaMessaggioChat(emailUtente, "user", val);
+  risposte.sintomi = val;
+
   mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi sintomi...");
-inviaOpenAI();
-return;
+  inviaOpenAI();
+  input.value = "";
+  return;
+}
+
 
   const currentKey = domande[step].key;
 
