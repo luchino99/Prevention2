@@ -4,26 +4,29 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export default async function handler(req, res) {
   
-  const allowedOrigins = [
-    "https://luchino99.github.io",
-    "https://prevention2.vercel.app"
-  ];
+const allowedOrigins = [
+  "https://luchino99.github.io",
+  "https://prevention2.vercel.app"
+];
 
-  const origin = req.headers.origin;
+const origin = req.headers.origin;
 
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-  } else {
-    console.warn("⚠️ Origin non autorizzato:", origin);
-  }
+// ✅ Imposta sempre gli header CORS, anche per OPTIONS
+if (allowedOrigins.includes(origin)) {
+  res.setHeader("Access-Control-Allow-Origin", origin);
+} else {
+  res.setHeader("Access-Control-Allow-Origin", "https://prevention2.vercel.app"); // fallback o rimuovi se non voluto
+  console.warn("⚠️ Origin non autorizzato:", origin);
+}
 
-  res.setHeader("Vary", "Origin");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+res.setHeader("Vary", "Origin");
+res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
+if (req.method === "OPTIONS") {
+  return res.status(200).end();
+}
+
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Solo richieste POST sono accettate' });
