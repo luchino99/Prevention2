@@ -451,6 +451,11 @@ function inviaOpenAI() {
   if (modalita === "sintomi") payload.sintomi = risposte.sintomi;
   if (modalita === "allenamento") payload.allenamento = true;
 
+  if (modalita === "dieta" && !risposte.tipo_lavoro) {
+  risposte.tipo_lavoro = "leggermente attivo"; // fallback sicuro
+}
+
+  
   fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
