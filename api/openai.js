@@ -85,10 +85,8 @@ Dati da utilizzare per programmare la dieta:
 - Alimenti esclusi: ${data.alimenti_esclusi}
 - Patologie: ${data.patologie}
 Il piano sarà usato per essere trasformato in PDF.`;
-
- 
-
-  } else if (data.allenamento) {
+    
+    } else if (data.allenamento) {
       compiledPrompt = `
 Sei un personal trainer certificato NSCA, ACSM e NASM. In base ai dati raccolti crea un programma di allenamento settimanale altamente personalizzato.
 
@@ -202,7 +200,6 @@ Stima:
 - La **fascia di rischio** corrispondente secondo SCORE2 (basso, moderato, alto, molto alto)
 - I **fattori principali che contribuiscono** al rischio
 - Come **migliorare o abbassare** il rischio con interventi su stile di vita o terapia
-
 - FRAIL (se >65 anni)
 - SARC-F (se >65 anni)
 - FRAX (se >50 anni)
