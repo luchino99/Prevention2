@@ -1,11 +1,4 @@
 document.addEventListener("DOMContentLoaded", () => {
-let storicoMessaggi = [
-  {
-    role: "system",
-    content: "Sei un assistente sanitario digitale, empatico, professionale ed esperto in prevenzione, sintomi, nutrizione e allenamento. Rispondi in modo chiaro, utile e rassicurante. Non sostituisci un medico."
-  }
-];
-
 const input = document.getElementById("input");
 const endpoint = "https://prevention2.vercel.app/api/openai";
 
@@ -296,20 +289,22 @@ let domandeOver65Aggiunte = false;
 let domandeFemminiliAggiunte = false;
 
 async function next() {
+  
   const val = input.value.trim();
 
   if (modalita === "aggiorna" && step >= domande.length) {
-    await salvaAnagraficaNelDatabase(risposte);
-    mostraMessaggio("✅ Dati aggiornati con successo! Ora puoi scegliere un'opzione per continuare.");
+  await salvaAnagraficaNelDatabase(risposte);
+  mostraMessaggio("✅ Dati aggiornati con successo! Ora puoi scegliere un'opzione per continuare.");
 
-    const datiAggiornati = { ...risposte };
-    risposte = { ...datiAggiornati };
-    modalita = null;
-    step = -1;
-    mostraScelteIniziali();
-    return;
-  }
+  const datiAggiornati = { ...risposte };
+  risposte = { ...datiAggiornati };
+  modalita = null;
+  step = -1;
+  mostraScelteIniziali();
+  return;
+}
 
+  
   if (modalita === "sintomi") {
     if (!val) {
       mostraMessaggio("❗ Per favore descrivi i tuoi sintomi prima di premere invio.");
@@ -317,74 +312,106 @@ async function next() {
     }
 
     mostraMessaggio(val, "user");
-    storicoMessaggi.push({ role: "user", content: val });
     await salvaMessaggioChat(emailUtente, "user", val);
+
+    input.value = "";
     risposte.sintomi = val;
 
-    mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi sintomi...");
-    inviaOpenAI();
+    mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi dati...");
+
+    fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sintomi: val, email: risposte.email })
+    })
+      .then(res => res.json())
+      .then(async data => {
+  const risposta = data.risposta || "⚠️ Nessuna risposta ricevuta.";
+  mostraMessaggio(risposta);
+  try {
+    await salvaMessaggioChat(emailUtente, "assistant", risposta);
+    console.log("✅ Risposta AI salvata da modalità sintomi.");
+  } catch (e) {
+    console.error("❌ Errore salvataggio risposta AI (sintomi):", e);
+  }
+})
+
+      .catch(err => {
+        console.error("❌ Errore fetch sintomi:", err);
+        mostraMessaggio("⚠️ Errore nella comunicazione col server.");
+      });
+
+    return;
+  }
+
+  if (step === -1 && (!modalita || !domande || domande.length === 0)) {
+    console.warn("⛔ Avanzamento bloccato: modalità non scelta o domande non inizializzate.");
     input.value = "";
     return;
   }
 
-  if (step === -1) {
+if (step >= 0 && val) {
+  mostraMessaggio(val, "user");
+  await salvaMessaggioChat(emailUtente, "user", val);
+
+  const currentKey = domande[step].key;
+
+  // 🔁 Salva la risposta su tutte le chiavi condivise
+  let chiaveSalvata = false;
+  for (const [profiloKey, domandeKeys] of Object.entries(aliasCondivisi)) {
+    if (domandeKeys.includes(currentKey)) {
+      risposte[profiloKey] = val;
+      chiaveSalvata = true;
+      break;
+    }
+  }
+
+  // Se la chiave non è condivisa, salvala normalmente
+  if (!chiaveSalvata) {
+    risposte[currentKey] = val;
+  }
+
+  // Salvataggio condizionale se abbiamo i dati principali
+  if (
+    risposte.email &&
+    risposte.eta &&
+    risposte.sesso &&
+    risposte.altezza &&
+    risposte.peso
+  ) {
+    await salvaAnagraficaNelDatabase(risposte);
+  }
+
+  // Verifica età per over65
+  if (
+    modalita !== "aggiorna" &&
+    currentKey === "eta" &&
+    !domandeOver65Aggiunte
+  ) {
+    const etaNum = parseInt(val);
+    if (!isNaN(etaNum) && etaNum > 65) {
+      domande.splice(step + 1, 0, ...domandeOver65);
+      domandeOver65Aggiunte = true;
+    }
+  }
+
+  // Verifica sesso per domande femminili
+  if (
+    modalita !== "aggiorna" &&
+    currentKey === "sesso" &&
+    !domandeFemminiliAggiunte
+  ) {
+    const sesso = val.toLowerCase();
+    if (sesso === "femmina" || sesso === "donna") {
+      domande.splice(step + 1, 0, ...domandeFemminili);
+      domandeFemminiliAggiunte = true;
+    }
+  }
+
+  step++;
+  
+  } else if (step === -1) {
     step = 0; // primo avanzamento dopo scelta modalità
-  } else {
-    const currentKey = domande[step].key;
-
-    // 🔁 Salva la risposta su tutte le chiavi condivise
-    let chiaveSalvata = false;
-    for (const [profiloKey, domandeKeys] of Object.entries(aliasCondivisi)) {
-      if (domandeKeys.includes(currentKey)) {
-        risposte[profiloKey] = val;
-        chiaveSalvata = true;
-        break;
-      }
-    }
-
-    // Se la chiave non è condivisa, salvala normalmente
-    if (!chiaveSalvata) {
-      risposte[currentKey] = val;
-    }
-
-    // Salvataggio condizionale se abbiamo i dati principali
-    if (
-      risposte.email &&
-      risposte.eta &&
-      risposte.sesso &&
-      risposte.altezza &&
-      risposte.peso
-    ) {
-      await salvaAnagraficaNelDatabase(risposte);
-    }
-
-    // Verifica età per over65
-    if (
-      modalita !== "aggiorna" &&
-      currentKey === "eta" &&
-      !domandeOver65Aggiunte
-    ) {
-      const etaNum = parseInt(val);
-      if (!isNaN(etaNum) && etaNum > 65) {
-        domande.splice(step + 1, 0, ...domandeOver65);
-        domandeOver65Aggiunte = true;
-      }
-    }
-
-    // Verifica sesso per domande femminili
-    if (
-      modalita !== "aggiorna" &&
-      currentKey === "sesso" &&
-      !domandeFemminiliAggiunte
-    ) {
-      const sesso = val.toLowerCase();
-      if (sesso === "femmina" || sesso === "donna") {
-        domande.splice(step + 1, 0, ...domandeFemminili);
-        domandeFemminiliAggiunte = true;
-      }
-    }
-
-    step++;
   }
 
   while (step < domande.length) {
@@ -399,45 +426,48 @@ async function next() {
       }
     }
 
-    if (
-      modalita !== "aggiorna" &&
-      (
-        (typeof rispostaPrecompilata === "string" && rispostaPrecompilata.trim() !== "") ||
-        (typeof rispostaPrecompilata === "number" && !isNaN(rispostaPrecompilata)) ||
-        haRispostaCondivisa(domanda.key)
-      )
-    ) {
-      step++;
-      continue;
-    }
+if (
+  modalita !== "aggiorna" &&
+  (
+    (typeof rispostaPrecompilata === "string" && rispostaPrecompilata.trim() !== "") ||
+    (typeof rispostaPrecompilata === "number" && !isNaN(rispostaPrecompilata)) ||
+    haRispostaCondivisa(domanda.key)
+  )
+) {
+  step++;
+  continue;
+}
 
-    break;
+
+  break;
   }
 
   input.value = "";
 
-  if (step < domande.length) {
-    setTimeout(() => mostraMessaggio(domande[step].testo), 500);
-  } else {
-    await salvaAnagraficaNelDatabase(risposte);
 
-    if (modalita === "aggiorna") {
-      mostraMessaggio("✅ Dati aggiornati! Scegli ora cosa vuoi fare.");
-      modalita = null;
-      step = -1;
-      mostraScelteIniziali();
-      return; // 🛑 BLOCCA la chiamata a OpenAI
-    }
+if (step < domande.length) {
+  setTimeout(() => mostraMessaggio(domande[step].testo), 500);
+} else {
+  await salvaAnagraficaNelDatabase(risposte);
 
-    if (modalita) {
-      await salvaCompilazioneNelDatabase(risposte, modalita);
-    } else {
-      console.error("⚠️ Modalità non definita, non salvo la compilazione.");
-    }
-
-    mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi dati...");
-    inviaOpenAI();
+  if (modalita === "aggiorna") {
+    mostraMessaggio("✅ Dati aggiornati! Scegli ora cosa vuoi fare.");
+    modalita = null;
+    step = -1;
+    mostraScelteIniziali();
+    return; // 🛑 BLOCCA la chiamata a OpenAI
   }
+
+  if (modalita) {
+    await salvaCompilazioneNelDatabase(risposte, modalita);
+  } else {
+    console.error("⚠️ Modalità non definita, non salvo la compilazione.");
+  }
+
+  mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi dati...");
+  inviaOpenAI();
+  }
+
 }
 
 function inviaOpenAI() {
@@ -446,55 +476,47 @@ function inviaOpenAI() {
   document.getElementById("messages").appendChild(loader);
   loader.scrollIntoView();
 
+    
   const payload = { ...risposte };
   if (modalita === "dieta") payload.dieta = true;
   if (modalita === "sintomi") payload.sintomi = risposte.sintomi;
   if (modalita === "allenamento") payload.allenamento = true;
 
-  if (modalita === "dieta" && !risposte.tipo_lavoro) {
-  risposte.tipo_lavoro = "leggermente attivo"; // fallback sicuro
-}
-
-  
   fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      ...payload,
-      storico: storicoMessaggi.slice(-2)
-    })
+    body: JSON.stringify(payload)
   })
-  .then(async res => {
+    .then(async res => {
+      loader.remove();
 
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error("Errore dal server:", errorText);
-      mostraMessaggio("⚠️ Errore dal server: " + errorText);
-      return;
-    }
-
-    const data = await res.json();
-    const risposta = data.risposta || "⚠️ Nessuna risposta valida ricevuta.";
-    console.log("📦 Risposta ricevuta:", risposta);
-
-    mostraMessaggio(risposta);
-    storicoMessaggi.push({ role: "assistant", content: risposta });
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Errore dal server:", errorText);
+        mostraMessaggio("⚠️ Errore dal server: " + errorText);
+        return;
+      }
 
 
-    try {
-      await salvaMessaggioChat(emailUtente, "assistant", risposta);
-      console.log("✅ Risposta dell'AI salvata.");
-    } catch (e) {
-      console.error("❌ Errore salvataggio risposta AI:", e);
-    }
-  })
-  .catch(err => {
-    loader.remove();
-    console.error("❌ Errore fetch:", err);
-    mostraMessaggio("⚠️ Errore nella comunicazione col server.");
-  });
+  const data = await res.json();
+  const risposta = data.risposta || "⚠️ Nessuna risposta valida ricevuta.";
+  console.log("📦 Risposta ricevuta:", risposta);
+
+  mostraMessaggio(risposta);
+  
+  try {
+    await salvaMessaggioChat(emailUtente, "assistant", risposta);
+    console.log("✅ Risposta dell'AI salvata.");
+  } catch (e) {
+    console.error("❌ Errore salvataggio risposta AI:", e);
+  }
+})
+    .catch(err => {
+      loader.remove();
+      console.error("❌ Errore fetch:", err);
+      mostraMessaggio("⚠️ Errore nella comunicazione col server.");
+    });
 }
-
 
 function generaPDF(contenuto) {
   const pdfElement = document.getElementById("pdf-content");
