@@ -8,10 +8,15 @@ export default async function handler(req, res) {
     "https://luchino99.github.io",
     "https://prevention2.vercel.app"
   ];
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-  }
+
+ 
+const origin = req.headers.origin;
+if (allowedOrigins.includes(origin)) {
+  res.setHeader("Access-Control-Allow-Origin", origin);
+} else {
+  console.warn("⚠️ Origin non autorizzato:", origin);
+  res.setHeader("Access-Control-Allow-Origin", "https://luchino99.github.io"); // fallback forzato
+}
 
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
