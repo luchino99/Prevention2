@@ -9,23 +9,23 @@ export default async function handler(req, res) {
   ];
   const origin = req.headers.origin;
 
-const allowCors = (res, origin) => {
-  res.setHeader("Access-Control-Allow-Origin", origin || "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  res.setHeader("Access-Control-Max-Age", "86400");
-};
+  const allowCors = (res, origin) => {
+    res.setHeader("Access-Control-Allow-Origin", origin || "*");
+    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    res.setHeader("Access-Control-Max-Age", "86400");
+  };
 
-allowCors(res, allowedOrigins.includes(origin) ? origin : "https://luchino99.github.io");
+  allowCors(res, allowedOrigins.includes(origin) ? origin : "https://luchino99.github.io");
 
-if (req.method === "OPTIONS") {
-  return res.status(200).end();
-}
-
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Solo richieste POST sono accettate' });
   }
+
 
   const data = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
 
