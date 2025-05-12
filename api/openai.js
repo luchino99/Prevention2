@@ -197,7 +197,11 @@ Usa i seguenti dati per calcolare o stimare il punteggio SCORE2 secondo le linee
 - Colesterolo HDL: ${safe(data.colesterolo_hdl_valore)} mg/dL
 - Fumatore: ${safe(data.fumatore)}
 - Diabete diagnosticato: ${safe(data.diabete)}
-Se tutti i dati sono disponibili, stima il punteggio SCORE2 e specifica se è rischio basso, moderato, alto o molto alto.
+Stima: 
+- Il rischio cardiovascolare a 10 anni in **percentuale approssimativa** (es. “2.3%”)
+- La **fascia di rischio** corrispondente secondo SCORE2 (basso, moderato, alto, molto alto)
+- I **fattori principali che contribuiscono** al rischio
+- Come **migliorare o abbassare** il rischio con interventi su stile di vita o terapia
 
 - FRAIL (se >65 anni)
 - SARC-F (se >65 anni)
