@@ -123,6 +123,10 @@ const domandePianoAlimentare = [
 let domande = [];
 let risposte = {};
 
+let ultimaDomandaUtente = "";
+let ultimaRispostaBot = "";
+  
+  
 const aliasCondivisi = {
   eta: ["eta"],
   sesso: ["sesso"],
@@ -313,6 +317,9 @@ async function next() {
 
     mostraMessaggio(val, "user");
     await salvaMessaggioChat(emailUtente, "user", val);
+    
+    ultimaDomandaUtente = val;
+
 
     input.value = "";
     risposte.sintomi = val;
@@ -478,6 +485,14 @@ function inviaOpenAI() {
 
     
   const payload = { ...risposte };
+  if (ultimaDomandaUtente && ultimaRispostaBot && input.value.trim()) {
+  payload.contesto_chat = {
+    ultima_domanda: ultimaDomandaUtente,
+    ultima_risposta: ultimaRispostaBot,
+    nuova_domanda: input.value.trim()
+  };
+}
+
   if (modalita === "dieta") payload.dieta = true;
   if (modalita === "sintomi") payload.sintomi = risposte.sintomi;
   if (modalita === "allenamento") payload.allenamento = true;
@@ -503,6 +518,9 @@ function inviaOpenAI() {
   console.log("📦 Risposta ricevuta:", risposta);
 
   mostraMessaggio(risposta);
+
+  ultimaRispostaBot = risposta;
+
   
   try {
     await salvaMessaggioChat(emailUtente, "assistant", risposta);
