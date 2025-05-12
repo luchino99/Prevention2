@@ -503,9 +503,19 @@ function inviaOpenAI() {
   console.log("📦 Risposta ricevuta:", risposta);
 
   mostraMessaggio(risposta);
-      
-  await salvaRispostaFinaleUtente(emailUtente, modalita, risposta);
 
+  try {
+    await salvaRispostaFinaleUtente(emailUtente, modalita, risposta);
+    console.log("✅ Risposta dell'AI salvata in risposte_utente.");
+  } catch (e) {
+    console.error("❌ Errore salvataggio risposta AI in risposte_utente:", e);
+  }
+})
+    .catch(err => {
+      loader.remove();
+      console.error("❌ Errore fetch:", err);
+      mostraMessaggio("⚠️ Errore nella comunicazione col server.");
+    });
   
   try {
     await salvaMessaggioChat(emailUtente, "assistant", risposta);
