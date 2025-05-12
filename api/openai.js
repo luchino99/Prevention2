@@ -3,33 +3,26 @@ import { OpenAI } from 'openai';
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export default async function handler(req, res) {
-  
-const allowedOrigins = [
-  "https://luchino99.github.io",
-  "https://prevention2.vercel.app"
-];
+  const allowedOrigins = [
+    "https://luchino99.github.io",
+    "https://prevention2.vercel.app"
+  ];
+  const origin = req.headers.origin;
 
-const origin = req.headers.origin;
-
-if (allowedOrigins.includes(origin)) {
-  res.setHeader("Access-Control-Allow-Origin", origin);
-} else {
-  res.setHeader("Access-Control-Allow-Origin", "https://luchino99.github.io"); // fallback
-}
-
-res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-res.setHeader("Access-Control-Max-Age", "86400");
-
-if (req.method === "OPTIONS") {
-  return res.status(200).end();
-}
-
-
-
- if (req.method === "OPTIONS") {
-    return res.status(200).end();
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  } else {
+    res.setHeader("Access-Control-Allow-Origin", "https://luchino99.github.io");
   }
+
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Max-Age", "86400");
+
+  if (req.method === "OPTIONS") {
+    return res.status(200).end(); // ⬅️ IMPORTANTE: termina qui
+  }
+
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Solo richieste POST sono accettate' });
