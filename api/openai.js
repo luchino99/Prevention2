@@ -60,19 +60,6 @@ if (data.dieta && !tdeeFactor) {
   try {
     let compiledPrompt = "";
 
-    if (data.contesto_chat) {
-  const { ultima_domanda, ultima_risposta, nuova_domanda } = data.contesto_chat;
-  compiledPrompt = `
-Sei un assistente sanitario digitale. Un utente ha già posto una domanda, a cui hai risposto. Ora ha inviato una nuova domanda di approfondimento.
-
-🧠 **Domanda precedente dell'utente:** ${ultima_domanda}
-🤖 **Risposta che hai dato:** ${ultima_risposta}
-❓ **Nuova domanda:** ${nuova_domanda}
-
-👉 Fornisci una risposta coerente e utile, che tenga conto del contesto precedente, e sviluppi una risposta completa alla nuova richiesta. Il tono deve essere empatico, chiaro, e professionale.
-`;
-}
-
     
     if (data.sintomi && data.sintomi.trim() !== "") {
       compiledPrompt =  `
@@ -243,6 +230,19 @@ Usa un linguaggio semplice, empatico, ma tecnico. Comunica con tono rassicurante
 `;
 
     }
+
+if (data.contesto_chat) {
+  const { ultima_domanda, ultima_risposta, nuova_domanda } = data.contesto_chat;
+  compiledPrompt = `
+Sei un assistente sanitario digitale. Un utente ha già posto una domanda, a cui hai risposto. Ora ha inviato una nuova domanda di approfondimento.
+
+🧠 **Domanda precedente dell'utente:** ${ultima_domanda}
+🤖 **Risposta che hai dato:** ${ultima_risposta}
+❓ **Nuova domanda:** ${nuova_domanda}
+
+👉 Fornisci una risposta coerente e utile, che tenga conto del contesto precedente, e sviluppi una risposta completa alla nuova richiesta. Il tono deve essere empatico, chiaro, e professionale.
+`;
+}
 
     console.log("📤 Prompt generato:", compiledPrompt);
 
