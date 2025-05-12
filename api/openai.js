@@ -57,15 +57,15 @@ export default async function handler(req, res) {
 Sei un assistente sanitario digitale esperto in triage clinico.
 
 Un utente ha descritto i seguenti sintomi:
-- Sintomi: {{sintomi}}
+- Sintomi: ${escape(data.sintomi)}
 
 Profilo utente:
-- Età: {{eta}} anni
-- Sesso biologico: {{sesso}}
-- Altezza/Peso: {{altezza}} cm / {{peso}} kg
-- Patologie note: {{patologie}}
-- Farmaci attualmente assunti: {{farmaci_dettaglio}}
-- Abitudini: Fumatore: {{fumatore}} | Alcol: {{alcol}} | Attività fisica: {{attivita_fisica}}
+- Età: ${safe(data.eta)} anni
+- Sesso biologico: ${safe(data.sesso)}
+- Altezza/Peso: ${safe(data.altezza)} cm / ${safe(data.peso)} kg
+- Patologie note: ${safe(data.patologie)}
+- Farmaci attualmente assunti: ${safe(data.farmaci_dettaglio)}
+- Abitudini: Fumatore: ${safe(data.fumatore)} | Alcol: ${safe(data.alcol)} | Attività fisica: ${safe(data.attivita_fisica)}
 
 📋 **Analisi richiesta:**
 1. Elenca le possibili cause (ipotetiche) in ordine di gravità.
@@ -88,18 +88,28 @@ Che sia completo, bilanciato basandoti sul risulatato di questi score e sugli ob
 Ogni giorno deve contenere:
 - Colazione, spuntino mattina, pranzo, spuntino pomeriggio, cena
 - Grammature indicative degli alimenti
-Prendi in considerazione per stabilire il tipo di dieta, quello che  è ${data.obiettivo}, per far si che si adatti ad esso.
+Prendi in considerazione per stabilire il tipo di dieta, quello che  è ${safe(data.obiettivo)}, per far si che si adatti ad esso.
 Per il TDEE, calcola il TDEE moltiplicando il BMR per il coefficiente ${tdeeFactor}
 In fondo, includi: 
 - Suggerimenti per l’idratazione , attività fisica e stile di vita specifi per i dati da lui forniti.
 Dati da utilizzare per programmare la dieta:
-- Età: {{eta}}, Sesso: {{sesso}}, Altezza: {{altezza}} cm, Peso: {{peso}} kg
-- Obiettivo: {{obiettivo}} (es. dimagrimento, massa, mantenimento)
-- Attività fisica: {{attivita_fisica}}, Tipo lavoro: {{tipo_lavoro}}
-- Patologie: {{patologie}}, Farmaci: {{farmaci_dettaglio}}
-- Allergie/intolleranze: {{intolleranze}}, Alimenti esclusi: {{alimenti_esclusi}}
-- Preferenze alimentari: {{preferenze}}
-- Pasti/die: {{pasti}}, Orari pasti: {{orari_pasti}}
+🎯 Obiettivo: creare un piano completo, bilanciato e adatto a:
+- Obiettivo: ${safe(data.obiettivo)}
+- Patologie: ${safe(data.patologie)}
+- Preferenze alimentari: ${safe(data.preferenze)}
+- Intolleranze/allergie: ${safe(data.intolleranze)}
+- Alimenti da escludere: ${safe(data.alimenti_esclusi)}
+
+📋 Profilo utente:
+- Età: ${safe(data.eta)}
+- Sesso: ${safe(data.sesso)}
+- Altezza: ${safe(data.altezza)} cm
+- Peso: ${safe(data.peso)} kg
+- Attività fisica: ${safe(data.attivita_fisica)}
+- Tipo di lavoro: ${safe(data.tipo_lavoro)}
+- Farmaci: ${safe(data.farmaci_dettaglio)}
+- Numero pasti/die: ${safe(data.pasti)}
+- Orari dei pasti (se indicati): ${safe(data.orari_pasti)}
 
 Il piano sarà usato per essere trasformato in PDF.`;
 
