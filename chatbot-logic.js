@@ -385,7 +385,7 @@ if (modalita === "sintomi") {
 
   step++;
   
-  } else if (step === -1) {
+  } else if (step === -1) 
     step = 0; // primo avanzamento dopo scelta modalità
   }
 
