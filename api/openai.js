@@ -45,10 +45,12 @@ export default async function handler(req, res) {
   const tipo = data.tipo_lavoro?.trim();
   const tdeeFactor = fattoriLavoro[tipo];
 
-if (data.dieta && !tdeeFactor) {
-  return res.status(400).json({
-    errore: `Tipo di lavoro non valido o mancante: "${tipo}". I valori accettati sono: ${Object.keys(fattoriLavoro).join(", ")}.`
-  });
+if (data.dieta) {
+  if (!tdeeFactor) {
+    // fallback sicuro: imposta 1.375 (leggermente attivo)
+    console.warn(`⚠️ Tipo di lavoro non valido: "${tipo}", uso default 1.375`);
+    data.tipo_lavoro = "leggermente attivo";
+  }
 }
 
 
@@ -232,8 +234,9 @@ Usa un linguaggio semplice, empatico, ma tecnico. Comunica con tono rassicurante
 
 const storico = Array.isArray(data.storico) ? data.storico : [];
 
-let ultimoUser = storico.filter(m => m.role === 'user').pop();
-let ultimoAssistant = storico.filter(m => m.role === 'assistant').pop();
+let ultimoUser = Array.isArray(storico) ? storico.findLast(m => m.role === 'user') : null;
+let ultimoAssistant = Array.isArray(storico) ? storico.findLast(m => m.role === 'assistant') : null;
+
 
 let messages = [
   { role: 'system', content: 'Sei un assistente sanitario esperto in prevenzione e analisi dati clinici, nutrizione e allenamento.' },
