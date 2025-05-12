@@ -385,7 +385,7 @@ if (step >= 0 && val) {
     await salvaAnagraficaNelDatabase(risposte);
     await salvaCompilazioneNelDatabase(risposte, modalita);
     mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi dati...");
-    inviaOpenAI();
+    inviaOpenAI(val);
   }
 
   return;
@@ -509,7 +509,7 @@ if (step < domande.length) {
 
 }
 
-function inviaOpenAI() {
+function inviaOpenAI(nuovaDomandaUtente = null) {
   const loader = document.createElement("div");
   loader.className = "loader";
   document.getElementById("messages").appendChild(loader);
@@ -517,11 +517,11 @@ function inviaOpenAI() {
 
     
   const payload = { ...risposte };
-  if (ultimaDomandaUtente && ultimaRispostaBot && input.value.trim()) {
+  if (ultimaDomandaUtente && ultimaRispostaBot && nuovaDomandaUtente) {
   payload.contesto_chat = {
     ultima_domanda: ultimaDomandaUtente,
     ultima_risposta: ultimaRispostaBot,
-    nuova_domanda: input.value.trim()
+    nuova_domanda: nuovaDomandaUtente
   };
 }
 
