@@ -476,7 +476,17 @@ function inviaOpenAI() {
   document.getElementById("messages").appendChild(loader);
   loader.scrollIntoView();
 
-  const payload = { ...risposte };
+    const payload = {
+    email: risposte.email,
+    eta: risposte.eta,
+    sesso: risposte.sesso,
+    altezza: risposte.altezza,
+    peso: risposte.peso,
+    tipo_lavoro: risposte.tipo_lavoro,
+    colesterolo_totale: risposte.colesterolo_totale,
+    glicemia_valore: risposte.glicemia_valore,
+    prevenzione: true // flag dummy
+  };
   if (modalita === "dieta") payload.dieta = true;
   if (modalita === "sintomi") payload.sintomi = risposte.sintomi;
   if (modalita === "allenamento") payload.allenamento = true;
