@@ -4,17 +4,27 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export default async function handler(req, res) {
   
-  const allowedOrigins = [
-    "https://luchino99.github.io",
-    "https://prevention2.vercel.app"
-  ];
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-  }
+const allowedOrigins = [
+  "https://luchino99.github.io",
+  "https://prevention2.vercel.app"
+];
 
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+const origin = req.headers.origin;
+
+if (allowedOrigins.includes(origin)) {
+  res.setHeader("Access-Control-Allow-Origin", origin);
+} else {
+  res.setHeader("Access-Control-Allow-Origin", "https://luchino99.github.io"); // fallback
+}
+
+res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+res.setHeader("Access-Control-Max-Age", "86400");
+
+if (req.method === "OPTIONS") {
+  return res.status(200).end();
+}
+
 
 
  if (req.method === "OPTIONS") {
