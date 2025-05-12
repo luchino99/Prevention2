@@ -503,10 +503,6 @@ function inviaOpenAI() {
   console.log("📦 Risposta ricevuta:", risposta);
 
   mostraMessaggio(risposta);
-
-  
-  await salvaRispostaFinaleUtente(emailUtente, modalita, risposta);
-    
   
   try {
     await salvaMessaggioChat(emailUtente, "assistant", risposta);
@@ -522,27 +518,6 @@ function inviaOpenAI() {
     });
 }
 
-async function salvaRispostaFinaleUtente(email, tipo, risposta) {
-  try {
-    const res = await fetch("/api/salvaRisposta", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, tipo, risposta })
-    });
-
-    const json = await res.json();
-    if (!res.ok) {
-      console.error("❌ Errore API salvataggio risposta finale:", json.error);
-    } else {
-      console.log("✅ Risposta finale salvata in risposte_chatbot_utenti:", json.data);
-    }
-  } catch (error) {
-    console.error("❌ Errore di rete durante salvataggio risposta finale:", error);
-  }
-}
-
-
-  
 function generaPDF(contenuto) {
   const pdfElement = document.getElementById("pdf-content");
   pdfElement.innerHTML = `
