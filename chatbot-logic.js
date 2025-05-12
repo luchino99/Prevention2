@@ -326,15 +326,31 @@ async function next() {
 
     mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi dati...");
 
-    fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sintomi: val, email: risposte.email })
-    })
+    const payload = {
+  sintomi: val,
+  email: risposte.email
+};
+
+if (ultimaDomandaUtente && ultimaRispostaBot) {
+  payload.contesto_chat = {
+    ultima_domanda: ultimaDomandaUtente,
+    ultima_risposta: ultimaRispostaBot,
+    nuova_domanda: val
+  };
+}
+
+fetch(endpoint, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(payload)
+})
+
       .then(res => res.json())
       .then(async data => {
   const risposta = data.risposta || "⚠️ Nessuna risposta ricevuta.";
   mostraMessaggio(risposta);
+  ultimaRispostaBot = risposta;
+
   try {
     await salvaMessaggioChat(emailUtente, "assistant", risposta);
     console.log("✅ Risposta AI salvata da modalità sintomi.");
@@ -360,6 +376,12 @@ async function next() {
 if (step >= 0 && val) {
   mostraMessaggio(val, "user");
   await salvaMessaggioChat(emailUtente, "user", val);
+
+  if (step >= domande.length || !domande[step]) {
+  console.warn("🚫 Nessuna domanda valida per questo step:", step);
+  return;
+}
+
 
   const currentKey = domande[step].key;
 
