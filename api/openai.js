@@ -31,6 +31,8 @@ export default async function handler(req, res) {
 
 
   const data = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+  const storico = Array.isArray(data.storico) ? data.storico : null;
+
 
   const fattoriLavoro = {
     "sedentario": 1.2,
