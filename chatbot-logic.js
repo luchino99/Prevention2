@@ -752,15 +752,16 @@ async function salvaMessaggioChat(email, ruolo, messaggio) {
       .from('chat_storico')
       .insert([{ email, ruolo, messaggio }]);
 
-    if (error || !data) {
-      console.error("❌ Errore salvataggio messaggio chat:", error || "Risposta nulla");
+    if (error) {
+      console.error("❌ Errore salvataggio messaggio chat:", error);
     } else {
-      console.log(`💾 Messaggio ${ruolo} salvato:`, data);
+      console.log("💾 Messaggio salvato correttamente.");
     }
   } catch (err) {
     console.error("❌ Errore di rete salvataggio messaggio:", err);
   }
 }
+
 
 
 
