@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const passwordInput = document.getElementById("password");
   const loginBtn = document.getElementById("btn-login");
   const signupBtn = document.getElementById("btn-signup");
-  const extraFields = document.getElementById("extra-fields");
+  
   const etaInput = document.getElementById("eta");
   const sessoInput = document.getElementById("sesso");
   const altezzaInput = document.getElementById("altezza");
@@ -20,8 +20,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Attiva la modalità registrazione
   signupBtn.addEventListener("click", () => {
     signupMode = true;
-    extraFields.style.display = "block";
-    signupBtn.innerText = "✅ Conferma registrazione";
+    document.getElementById("login-form").style.display = "none";
+    document.getElementById("signup-form").style.display = "block";
+
   });
 
   loginForm.addEventListener("submit", async (e) => {
