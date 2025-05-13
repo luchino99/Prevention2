@@ -1,9 +1,3 @@
-import { OpenAI } from 'openai';
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-export default async function handler(req, res) {
-  
 const allowedOrigins = [
   "https://luchino99.github.io",
   "https://prevention2.vercel.app"
@@ -11,17 +5,17 @@ const allowedOrigins = [
 
 const origin = req.headers.origin;
 
-// ✅ Imposta sempre gli header CORS, anche per OPTIONS
 if (allowedOrigins.includes(origin)) {
   res.setHeader("Access-Control-Allow-Origin", origin);
 } else {
-  res.setHeader("Access-Control-Allow-Origin", "https://prevention2.vercel.app"); // fallback o rimuovi se non voluto
   console.warn("⚠️ Origin non autorizzato:", origin);
+  return res.status(403).json({ error: "Origin non autorizzato" });
 }
 
-res.setHeader("Vary", "Origin");
+res.setHeader("Access-Control-Allow-Credentials", "true");
 res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
 res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+res.setHeader("Vary", "Origin");
 
 if (req.method === "OPTIONS") {
   return res.status(200).end();
