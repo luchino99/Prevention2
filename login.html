@@ -1,146 +1,541 @@
 <!DOCTYPE html>
 <html lang="it">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Accedi | HealthAI</title>
-
-    <link rel="icon" href="final_favicon.ico" type="image/x-icon">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HealthAI - Accedi o Registrati</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.155.0/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js" defer></script>
     <script src="login.js" defer></script>
-
     <style>
-      :root {
-        --primary: #3b82f6;
-        --primary-dark: #2563eb;
-        --bg-light: #f8fafc;
-        --text-dark: #1e293b;
-        --border: #d1d5db;
-      }
+        :root {
+            --primary: #4285f4;
+            --primary-light: #7baaf7;
+            --secondary: #34a853;
+            --accent: #fbbc05;
+            --text: #202124;
+            --text-light: #5f6368;
+            --bg: #ffffff;
+            --bg-light: #f8f9fa;
+            --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --anim-time: 0.3s;
+        }
 
-      body {
-        font-family: 'Inter', sans-serif;
-        background-color: var(--bg-light, #f8fafc);
-        color: var(--text-dark, #1e293b);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 100vh;
-        margin: 0;
-        opacity: 0;
-        transition: opacity 0.3s ease-in-out;
-      }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Google Sans', 'Segoe UI', Roboto, Arial, sans-serif;
+        }
 
-      .login-container {
-        background-color: #ffffff;
-        padding: 40px;
-        border-radius: 24px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        max-width: 420px;
-        width: 100%;
-        text-align: center;
-      }
+        body {
+            background-color: var(--bg-light);
+            color: var(--text);
+            line-height: 1.6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
 
-      .login-container img {
-        max-width: 140px;
-        margin-bottom: 20px;
-      }
+        .login-container {
+            display: flex;
+            width: 900px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: var(--box-shadow);
+            overflow: hidden;
+            position: relative;
+            max-height: 700px;
+            z-index: 10;
+        }
 
-      .login-container h2 {
-        font-weight: 600;
-        margin-bottom: 10px;
-      }
+        .login-image {
+            flex: 1;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
 
-      .login-container p {
-        font-size: 14px;
-        color: #64748b;
-        margin-bottom: 30px;
-      }
+        .login-image h2 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
 
-      .login-container input {
-        width: 100%;
-        padding: 14px;
-        margin-bottom: 16px;
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        font-size: 15px;
-      }
+        .login-image p {
+            max-width: 300px;
+            opacity: 0.9;
+        }
 
-      .login-container button {
-        width: 100%;
-        padding: 14px;
-        font-size: 15px;
-        font-weight: 600;
-        border: none;
-        border-radius: 12px;
-        cursor: pointer;
-        transition: background 0.3s;
-      }
+        .login-form {
+            flex: 1;
+            padding: 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
 
-      #btn-login {
-        background-color: var(--primary);
-        color: white;
-        margin-bottom: 10px;
-      }
+        .form-header {
+            margin-bottom: 30px;
+        }
 
-      #btn-login:hover {
-        background-color: var(--primary-dark);
-      }
+        .form-header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
 
-      #btn-signup {
-        background-color: transparent;
-        color: var(--primary);
-        border: 2px solid var(--primary);
-        margin-top: 10px;
-      }
+        .form-header p {
+            color: var(--text-light);
+        }
 
-      #btn-signup:hover {
-        background-color: var(--primary);
-        color: white;
-      }
+        .form-group {
+            margin-bottom: 20px;
+        }
 
-      .disclaimer {
-        margin-top: 30px;
-        font-size: 12px;
-        color: #94a3b8;
-      }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-light);
+            font-weight: 500;
+        }
 
-      #extra-fields input {
-        margin-bottom: 12px;
-      }
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all var(--anim-time) ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.2);
+        }
+
+        .btn {
+            display: inline-block;
+            width: 100%;
+            padding: 14px 30px;
+            background: var(--primary);
+            color: white;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 1rem;
+            transition: all var(--anim-time) ease;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(66, 133, 244, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 25px rgba(66, 133, 244, 0.4);
+        }
+
+        .form-footer {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .form-footer p {
+            color: var(--text-light);
+        }
+
+        .form-footer a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color var(--anim-time) ease;
+        }
+
+        .form-footer a:hover {
+            color: var(--secondary);
+            text-decoration: underline;
+        }
+
+        .toggle-form {
+            background: none;
+            border: none;
+            color: var(--primary);
+            cursor: pointer;
+            font-weight: 500;
+            margin-left: 5px;
+            transition: color var(--anim-time) ease;
+        }
+
+        .toggle-form:hover {
+            color: var(--secondary);
+            text-decoration: underline;
+        }
+
+        .social-login {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .social-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .social-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--bg-light);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: var(--box-shadow);
+            color: var(--text-light);
+            transition: all var(--anim-time) ease;
+        }
+
+        .social-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 15px rgba(0, 0, 0, 0.1);
+            color: var(--primary);
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.2;
+        }
+
+        @media (max-width: 992px) {
+            .login-container {
+                flex-direction: column;
+                max-height: none;
+                width: 90%;
+                max-width: 500px;
+            }
+
+            .login-image, .login-form {
+                flex: none;
+                width: 100%;
+                padding: 30px;
+            }
+
+            .login-image {
+                display: none;
+            }
+        }
+
+        body {
+          opacity: 0;
+          transition: opacity 0.5s ease;
+        }
+
+        body.fade-in {
+          opacity: 1;
+        }
+
     </style>
-  </head>
+</head>
+<body>
+    <div id="canvas-container"></div>
 
-  <body>
-    <div class="login-container">
-      <img src="logo.png" alt="Logo HealthAI" />
-      <h2>Benvenuto in HealthAI</h2>
-      <p>Accedi per continuare con il tuo profilo salute</p>
-
-      <form id="login-form">
-        <input type="email" id="email" placeholder="Email" required />
-        <input type="password" id="password" placeholder="Password" required />
-        <button type="submit" id="btn-login">🔐 Accedi</button>
-
-        <div id="extra-fields" style="display: none; margin-top: 16px;">
-          <input type="number" id="eta" placeholder="Età" />
-          <input type="text" id="sesso" placeholder="Sesso biologico (maschio/femmina)" />
-          <input type="number" id="altezza" placeholder="Altezza in cm" />
-          <input type="number" id="peso" placeholder="Peso in kg" />
+    <div class="login-container" id="login-container">
+        <div class="login-image">
+            <h2>Benvenuto in HealthAI</h2>
+            <p>Il tuo assistente personale per la prevenzione e il benessere.</p>
         </div>
-      </form>
 
-      <button type="button" id="btn-signup">📝 Registrati</button>
-      <p class="disclaimer">I tuoi dati sono trattati secondo le normative GDPR e utilizzati solo per finalità sanitarie informative.</p>
+        <div class="login-form">
+            <div class="form-header">
+                <h1>Accedi</h1>
+                <p>Inserisci le tue credenziali per continuare</p>
+            </div>
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required placeholder="La tua email">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required placeholder="La tua password">
+                </div>
+
+                <button type="submit" class="btn">Accedi</button>
+
+                <div class="social-login">
+                    <p>Oppure accedi con</p>
+                    <div class="social-buttons">
+                        <a href="#" class="social-btn"><i class="fab fa-google"></i></a>
+                        <a href="#" class="social-btn"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="social-btn"><i class="fab fa-apple"></i></a>
+                    </div>
+                </div>
+
+                <div class="form-footer">
+                    <p>Non hai un account?
+                        <button type="button" class="toggle-form" id="show-signup">Registrati</button>
+                    </p>
+                </div>
+            </form>
+
+            <form id="signup-form" style="display: none;">
+                <div class="form-group">
+                    <label for="name">Nome Completo</label>
+                    <input type="text" id="name" name="name" required placeholder="Il tuo nome e cognome">
+                </div>
+
+                <div class="form-group">
+                    <label for="signup-email">Email</label>
+                    <input type="email" id="signup-email" name="email" required placeholder="La tua email">
+                </div>
+
+                <div class="form-group">
+                    <label for="signup-password">Password</label>
+                    <input type="password" id="signup-password" name="password" required placeholder="Crea una password sicura">
+                </div>
+
+                <div class="form-group">
+                    <label for="confirm-password">Conferma Password</label>
+                    <input type="password" id="confirm-password" name="confirm-password" required placeholder="Ripeti la password">
+                </div>
+              <div class="form-group">
+  <label for="eta">Età</label>
+  <input type="number" id="eta" name="eta" required placeholder="La tua età">
+</div>
+
+<div class="form-group">
+  <label for="sesso">Sesso biologico</label>
+  <input type="text" id="sesso" name="sesso" required placeholder="Maschio / Femmina">
+</div>
+
+<div class="form-group">
+  <label for="altezza">Altezza (cm)</label>
+  <input type="number" id="altezza" name="altezza" required placeholder="La tua altezza">
+</div>
+
+<div class="form-group">
+  <label for="peso">Peso (kg)</label>
+  <input type="number" id="peso" name="peso" required placeholder="Il tuo peso">
+</div>
+
+
+                <button type="submit" class="btn">Registrati</button>
+
+                <div class="social-login">
+                    <p>Oppure registrati con</p>
+                    <div class="social-buttons">
+                        <a href="#" class="social-btn"><i class="fab fa-google"></i></a>
+                        <a href="#" class="social-btn"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="social-btn"><i class="fab fa-apple"></i></a>
+                    </div>
+                </div>
+
+                <div class="form-footer">
+                    <p>Hai già un account?
+                        <button type="button" class="toggle-form" id="show-login">Accedi</button>
+                    </p>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script>
-      window.addEventListener('load', () => {
-        document.body.style.opacity = '1';
-      });
-    </script>
-  </body>
-</html>
+        // Gestione del toggle tra login e signup
+        const showSignupBtn = document.getElementById('show-signup');
+        const showLoginBtn = document.getElementById('show-login');
+        const loginForm = document.getElementById('login-form');
+        const signupForm = document.getElementById('signup-form');
+        const formHeader = document.querySelector('.form-header');
 
+        showSignupBtn.addEventListener('click', () => {
+            loginForm.style.display = 'none';
+            signupForm.style.display = 'block';
+            formHeader.querySelector('h1').textContent = 'Registrati';
+            formHeader.querySelector('p').textContent = 'Crea il tuo account HealthAI';
+        });
+
+        showLoginBtn.addEventListener('click', () => {
+            signupForm.style.display = 'none';
+            loginForm.style.display = 'block';
+            formHeader.querySelector('h1').textContent = 'Accedi';
+            formHeader.querySelector('p').textContent = 'Inserisci le tue credenziali per continuare';
+        });
+
+        // Funzione per inizializzare l'animazione del background con Three.js
+        function initBackgroundAnimation() {
+            const container = document.getElementById('canvas-container');
+
+            // Crea la scena Three.js
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            container.appendChild(renderer.domElement);
+
+            // Crea particelle per il background
+            const particleGeometry = new THREE.BufferGeometry();
+            const particlesCount = 800;
+
+            const positions = new Float32Array(particlesCount * 2);
+            const colors = new Float32Array(particlesCount * 2);
+
+            const color1 = new THREE.Color(0x4285f4); // Colore primario
+            const color2 = new THREE.Color(0x34a853); // Colore secondario
+
+            // Materiale per le particelle con shader personalizzato
+            const particleMaterial = new THREE.ShaderMaterial({
+                uniforms: {
+                    time: { value: 0 },
+                    color1: { value: color1 },
+                    color2: { value: color2 },
+                },
+                vertexShader: `
+                    uniform float time;
+                    attribute vec3 color;
+                    varying vec3 vColor;
+                    varying float vOpacity;
+
+                    void main() {
+                        vColor = color;
+
+                        // Effetto di pulsazione e movimento
+                        vec3 displaced = position + vec3(
+                            sin(position.x + time * 0.5) * 0.1,
+                            cos(position.y + time * 0.3) * 0.1,
+                            sin(position.z + time * 0.4) * 0.1
+                        );
+
+                        // Calcolo dell'opacity basato sulla distanza
+                        vec4 mvPosition = modelViewMatrix * vec4(displaced, 1.0);
+                        gl_PointSize = 3.0 * (300.0 / -mvPosition.z);
+
+                        // Effetto di dissolvenza basato sulla profondità
+                        vOpacity = smoothstep(5.0, 10.0, length(mvPosition.xyz));
+
+                        gl_Position = projectionMatrix * mvPosition;
+                    }
+                `,
+                fragmentShader: `
+                    uniform vec3 color1;
+                    uniform vec3 color2;
+                    varying vec3 vColor;
+                    varying float vOpacity;
+
+                    void main() {
+                        // Miscela dei colori con sfumatura
+                        vec3 mixedColor = mix(color1, color2, vColor);
+
+                        // Forma circolare delle particelle
+                        float circle = length(gl_PointCoord - 0.5) * 2.0;
+                        float opacity = 1.0 - smoothstep(0.0, 0.9, circle);
+
+                        gl_FragColor = vec4(mixedColor, opacity * (1.0 - vOpacity) * 0.9);
+                    }
+                `,
+                transparent: true,
+                depthWrite: false,
+                blending: THREE.AdditiveBlending
+            });
+
+            // Genera posizioni e colori delle particelle
+            for(let i = 0; i < particlesCount; i++) {
+                // Posizione
+                positions[i * 3] = (Math.random() - 0.5) * 20;
+                positions[i * 3 + 1] = (Math.random() - 0.5) * 20;
+                positions[i * 3 + 2] = (Math.random() - 0.5) * 20;
+
+                // Colore
+                const mixedColor = color1.clone().lerp(color2, Math.random());
+                colors[i * 3] = mixedColor.r;
+                colors[i * 3 + 1] = mixedColor.g;
+                colors[i * 3 + 2] = mixedColor.b;
+            }
+
+            // Imposta gli attributi della geometria
+            particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            particleGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            // Crea il sistema di particelle
+            const particleSystem = new THREE.Points(particleGeometry, particleMaterial);
+            scene.add(particleSystem);
+
+            // Posiziona la camera
+            camera.position.z = 5;
+
+            // Variabili per l'animazione
+            let mouseX = 0, mouseY = 0;
+            const clock = new THREE.Clock();
+
+            // Gestione del movimento del mouse
+            function onMouseMove(event) {
+                // Normalizza le coordinate del mouse
+                mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+                mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+            }
+
+            // Ridimensionamento della finestra
+            function onWindowResize() {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+
+            // Funzione di animazione
+            function animate() {
+                requestAnimationFrame(animate);
+
+                // Aggiorna il tempo per gli shader
+                const elapsedTime = clock.getElapsedTime();
+                particleMaterial.uniforms.time.value = elapsedTime;
+
+                // Movimento basato sulla posizione del mouse
+                camera.position.x += (mouseX * 2 - camera.position.x) * 0.05;
+                camera.position.y += (-mouseY * 2 - camera.position.y) * 0.05;
+
+                // Movimento ondulatorio delle particelle
+                particleSystem.rotation.x += 0.0003;
+                particleSystem.rotation.y += 0.0005;
+
+                // Aggiorna la scena
+                camera.lookAt(scene.position);
+                renderer.render(scene, camera);
+            }
+
+            // Aggiungi event listener
+            window.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('resize', onWindowResize);
+
+            // Avvia l'animazione
+            animate();
+        }
+
+        // Inizializza l'animazione di background quando la pagina è caricata
+        window.addEventListener('load', initBackgroundAnimation);
+
+        // Fade-in al caricamento della pagina
+        window.addEventListener('DOMContentLoaded', () => {
+          requestAnimationFrame(() => {
+            document.body.classList.add('fade-in');
+          });
+        });    
+
+
+      </script>
+</body>
