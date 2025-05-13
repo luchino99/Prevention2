@@ -172,6 +172,7 @@ const aliasCondivisi = {
 
 let step = -1;
 let modalita = null;
+let modalitaConclusa = false;
 
 function mostraMessaggio(testo, classe = "bot") {
   const div = document.createElement("div");
@@ -350,6 +351,8 @@ fetch(endpoint, {
   const risposta = data.risposta || "⚠️ Nessuna risposta ricevuta.";
   mostraMessaggio(risposta);
   ultimaRispostaBot = risposta;
+  ultimaDomandaUtente = nuovaDomandaUtente || "analisi finale";
+
 
   try {
     await salvaMessaggioChat(emailUtente, "assistant", risposta);
