@@ -525,20 +525,27 @@ function inviaOpenAI(nuovaDomandaUtente = null) {
   const payload = {
     email: risposte.email
   };
-  
+
   if (modalita === "prevenzione") payload.prevenzione = true;
   if (modalita === "dieta") payload.dieta = true;
   if (modalita === "sintomi") payload.sintomi = risposte.sintomi;
   if (modalita === "allenamento") payload.allenamento = true;
 
-  if (modalitaConclusa && nuovaDomandaUtente && ultimaDomandaUtente && ultimaRispostaBot) {
+  Object.assign(payload, risposte);
+
+  // ✅ SOLO per sintomi attiva la chat continua con contesto
+  if (
+    modalita === "sintomi" &&
+    modalitaConclusa &&
+    nuovaDomandaUtente &&
+    ultimaDomandaUtente &&
+    ultimaRispostaBot
+  ) {
     payload.contesto_chat = {
       ultima_domanda: ultimaDomandaUtente,
       ultima_risposta: ultimaRispostaBot,
       nuova_domanda: nuovaDomandaUtente
     };
-  } else if (!modalitaConclusa) {
-    Object.assign(payload, risposte);
   }
 
   fetch(endpoint, {
@@ -577,6 +584,8 @@ function inviaOpenAI(nuovaDomandaUtente = null) {
       }
     });
 }
+
+  
 
 
 function generaPDF(contenuto) {
