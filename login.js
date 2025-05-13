@@ -61,6 +61,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Registrazione utente
   signupForm.addEventListener("submit", async (e) => {
     e.preventDefault();
+    document.activeElement.blur();
 
     const email = document.getElementById("signup-email").value.trim();
     const password = document.getElementById("signup-password").value.trim();
