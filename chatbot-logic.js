@@ -351,7 +351,7 @@ fetch(endpoint, {
   const risposta = data.risposta || "⚠️ Nessuna risposta ricevuta.";
   mostraMessaggio(risposta);
   ultimaRispostaBot = risposta;
-  ultimaDomandaUtente = nuovaDomandaUtente || "analisi finale";
+  ultimaDomandaUtente = val;
 
 
   try {
