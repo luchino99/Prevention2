@@ -362,10 +362,13 @@ fetch(endpoint, {
   }
 })
 
-      .catch(err => {
-        console.error("❌ Errore fetch sintomi:", err);
-        mostraMessaggio("⚠️ Errore nella comunicazione col server.");
-      });
+     .catch(err => {
+  console.error("❌ Errore fetch sintomi:", err);
+  // Solo se non è già stata ricevuta una risposta
+  if (!ultimaRispostaBot || ultimaRispostaBot.trim() === "") {
+    mostraMessaggio("⚠️ Errore nella comunicazione col server.");
+  }
+});
 
     return;
   }
@@ -566,10 +569,13 @@ function inviaOpenAI(nuovaDomandaUtente = null) {
   }
 })
     .catch(err => {
-      loader.remove();
-      console.error("❌ Errore fetch:", err);
-      mostraMessaggio("⚠️ Errore nella comunicazione col server.");
-    });
+  loader.remove();
+  console.error("❌ Errore fetch:", err);
+  if (!modalitaConclusa) {
+    mostraMessaggio("⚠️ Errore nella comunicazione col server.");
+  }
+});
+
 }
 
 function generaPDF(contenuto) {
@@ -736,12 +742,12 @@ async function salvaMessaggioChat(email, ruolo, messaggio) {
       .from('chat_storico')
       .insert([{ email, ruolo, messaggio }]);
 
-    if (error) {
-      console.error("Errore salvataggio messaggio chat:", error);
-    } else {
-      console.log(`💾 Messaggio ${ruolo} salvato:`, data);
-    }
-  } catch (err) {
+      
+  if (error || !data) {
+  console.error("❌ Errore salvataggio messaggio chat:", error || "Risposta nulla");
+} else {
+  console.log(`💾 Messaggio ${ruolo} salvato:`, data);
+} catch (err) {
     console.error("❌ Errore di rete salvataggio messaggio:", err);
   }
 }
