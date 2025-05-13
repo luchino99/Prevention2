@@ -507,6 +507,7 @@ if (step < domande.length) {
   }
 
   mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi dati...");
+  modalitaConclusa = true;
   inviaOpenAI();
   }
 
@@ -962,6 +963,16 @@ Vuoi aggiornarli? (sì / no)`);
       input.value = "";
       return;
     }
+    
+
+    if (modalitaConclusa) {
+  mostraMessaggio(val, "user");
+  await salvaMessaggioChat(emailUtente, "user", val);
+  inviaOpenAI(val); // passa la nuova domanda
+  modalitaConclusa = false;
+  input.value = "";
+  return;
+}
 
     if (!modalita) {
       mostraMessaggio("❗ Seleziona prima una modalità cliccando uno dei bottoni.");
