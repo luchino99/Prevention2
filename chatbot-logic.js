@@ -522,19 +522,24 @@ function inviaOpenAI(nuovaDomandaUtente = null) {
   document.getElementById("messages").appendChild(loader);
   loader.scrollIntoView();
 
-    
-  const payload = { ...risposte };
-  if (ultimaDomandaUtente && ultimaRispostaBot && nuovaDomandaUtente) {
-  payload.contesto_chat = {
-    ultima_domanda: ultimaDomandaUtente,
-    ultima_risposta: ultimaRispostaBot,
-    nuova_domanda: nuovaDomandaUtente
+  const payload = {
+    email: risposte.email
   };
-}
-
+  
+  if (modalita === "prevenzione") payload.prevenzione = true;
   if (modalita === "dieta") payload.dieta = true;
   if (modalita === "sintomi") payload.sintomi = risposte.sintomi;
   if (modalita === "allenamento") payload.allenamento = true;
+
+  if (modalitaConclusa && nuovaDomandaUtente && ultimaDomandaUtente && ultimaRispostaBot) {
+    payload.contesto_chat = {
+      ultima_domanda: ultimaDomandaUtente,
+      ultima_risposta: ultimaRispostaBot,
+      nuova_domanda: nuovaDomandaUtente
+    };
+  } else if (!modalitaConclusa) {
+    Object.assign(payload, risposte);
+  }
 
   fetch(endpoint, {
     method: "POST",
@@ -551,32 +556,28 @@ function inviaOpenAI(nuovaDomandaUtente = null) {
         return;
       }
 
+      const data = await res.json();
+      const risposta = data.risposta || "⚠️ Nessuna risposta valida ricevuta.";
+      mostraMessaggio(risposta);
 
-  const data = await res.json();
-  const risposta = data.risposta || "⚠️ Nessuna risposta valida ricevuta.";
-  console.log("📦 Risposta ricevuta:", risposta);
+      ultimaRispostaBot = risposta;
 
-  mostraMessaggio(risposta);
-
-  ultimaRispostaBot = risposta;
-
-  
-  try {
-    await salvaMessaggioChat(emailUtente, "assistant", risposta);
-    console.log("✅ Risposta dell'AI salvata.");
-  } catch (e) {
-    console.error("❌ Errore salvataggio risposta AI:", e);
-  }
-})
+      try {
+        await salvaMessaggioChat(emailUtente, "assistant", risposta);
+        console.log("✅ Risposta AI salvata.");
+      } catch (e) {
+        console.error("❌ Errore salvataggio risposta AI:", e);
+      }
+    })
     .catch(err => {
-  loader.remove();
-  console.error("❌ Errore fetch:", err);
-  if (!modalitaConclusa) {
-    mostraMessaggio("⚠️ Errore nella comunicazione col server.");
-  }
-});
-
+      loader.remove();
+      console.error("❌ Errore fetch:", err);
+      if (!modalitaConclusa) {
+        mostraMessaggio("⚠️ Errore nella comunicazione col server.");
+      }
+    });
 }
+
 
 function generaPDF(contenuto) {
   const pdfElement = document.getElementById("pdf-content");
