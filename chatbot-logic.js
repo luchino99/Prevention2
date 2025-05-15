@@ -639,7 +639,7 @@ recuperaAnagraficaDalDatabase(emailUtente).then((dati) => {
     console.log("✅ Anagrafica precompilata:", risposte);
   }
 
-  mostraScelteIniziali(); // va comunque dopo
+ // mostraScelteIniziali(); //
 });
 
       const profiloBtn = document.getElementById("btn-profilo");
