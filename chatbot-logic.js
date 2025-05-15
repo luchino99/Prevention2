@@ -227,7 +227,7 @@ domandeFemminiliAggiunte = false;
     domande.push(...domandeOver65);
     domandeOver65Aggiunte = true;
   }
-window.selezionaModalita = selezionaModalita;
+
 
   const sesso = risposte.sesso?.toLowerCase();
   if ((sesso === "femmina" || sesso === "donna") && !domandeFemminiliAggiunte) {
@@ -258,6 +258,7 @@ window.selezionaModalita = selezionaModalita;
   }
 
 }
+window.selezionaModalita = selezionaModalita;
 
 let domandeOver65Aggiunte = false;
 let domandeFemminiliAggiunte = false;
