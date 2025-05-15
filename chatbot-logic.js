@@ -1003,3 +1003,4 @@ Vuoi aggiornarli? (sì / no)`);
 }
 
 });
+window.selezionaModalita = selezionaModalita;
