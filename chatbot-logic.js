@@ -202,10 +202,7 @@ function mostraScelteIniziali() {
 function selezionaModalita(tipo) {
   domandeOver65Aggiunte = false;
 domandeFemminiliAggiunte = false;
-  if (!emailUtente || !risposte.email) {
-    mostraMessaggio("⚠️ Per favore, inserisci prima un indirizzo email valido.");
-    return;
-  }
+
 
   modalita = tipo;
   step = -1; 
