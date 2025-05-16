@@ -325,6 +325,14 @@
             padding: 40px 20px;
         }
 
+        #chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  max-height: calc(100vh - 160px); /* spazio adattivo per header + input */
+}
+
+
         .welcome-banner.hidden {
             display: none;
         }
