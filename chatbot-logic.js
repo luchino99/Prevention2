@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-const input = document.getElementById("input");
+const input = document.getElementById("message-input");
 const endpoint = "https://prevention2.vercel.app/api/openai";
 
 const introduzione = "Benvenuto! Questo è un test di prevenzione sanitaria completo, progettato per aiutarti a valutare il tuo stato di salute e identificare possibili fattori di rischio. Compilare il test richiederà circa 20 minuti, ma potrebbe davvero fare la differenza nella tua vita. Le tue risposte saranno utilizzate per fornirti consigli personalizzati secondo le linee guida sanitarie ufficiali. Iniziamo quando sei pronto!";
@@ -189,7 +189,7 @@ function mostraMessaggio(testo, classe = "bot") {
 
   div.appendChild(avatar);
   div.appendChild(span);
-  document.getElementById("messages").appendChild(div);
+  document.getElementById("chat-messages").appendChild(div);
   div.scrollIntoView();
 }
 
@@ -489,7 +489,7 @@ if (step < domande.length) {
 function inviaOpenAI(nuovaDomandaUtente = null) {
   const loader = document.createElement("div");
   loader.className = "loader";
-  document.getElementById("messages").appendChild(loader);
+  document.getElementById("chat-messages").appendChild(loader);
   loader.scrollIntoView();
 
   const payload = {
@@ -777,7 +777,7 @@ const toggleBtn = document.getElementById("theme-toggle");
 
 }
 async function mostraProfiloUtente() {
-  const container = document.getElementById("messages");
+  const container = document.getElementById("chat-messages");
   container.innerHTML = "🔄 Caricamento profilo...";
 
   try {
