@@ -207,8 +207,8 @@ domandeFemminiliAggiunte = false;
 
   
   document.querySelectorAll(".button-container").forEach(el => el.remove());
+  document.getElementById("welcome-banner")?.classList.add("hidden");
 
-  
   switch (tipo) {
   case "sintomi":
       domande = [];
@@ -256,6 +256,7 @@ domandeFemminiliAggiunte = false;
 
 }
 window.selezionaModalita = selezionaModalita;
+
 
 let domandeOver65Aggiunte = false;
 let domandeFemminiliAggiunte = false;
