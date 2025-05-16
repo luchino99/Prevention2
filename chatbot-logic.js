@@ -175,28 +175,25 @@ let modalita = null;
 let modalitaConclusa = false;
 
 function mostraMessaggio(testo, classe = "bot") {
-  const div = document.createElement("div");
-  div.className = `bubble ${classe}`;
-  const avatar = document.createElement("div");
-  avatar.className = `avatar`;
-
-  const span = document.createElement("span");
+  const message = document.createElement("div");
+  message.className = `message-bubble ${classe === "bot" ? "bot-message" : "user-message"}`;
+  
   if (classe === "bot") {
-    span.innerHTML = marked.parse(testo);
+    message.innerHTML = marked.parse(testo);
   } else {
-    span.innerText = testo;
+    message.textContent = testo;
   }
 
-  div.appendChild(avatar);
-  div.appendChild(span);
-  document.getElementById("chat-messages").appendChild(div);
-  div.scrollIntoView();
+  const container = document.getElementById("chat-messages");
+  if (!container) {
+    console.error("❌ Errore: #chat-messages non trovato nel DOM.");
+    return;
+  }
+
+  container.appendChild(message);
+  message.scrollIntoView({ behavior: "smooth" });
 }
 
-
-function mostraScelteIniziali() {
-  console.log("⚠️ mostraScelteIniziali è disattivata: usiamo i pulsanti statici nell'HTML.");
-}
 
 
 function selezionaModalita(tipo) {
