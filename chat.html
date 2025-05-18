@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HealthAI Chat</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script src="chatbot-logic.js" type="module"></script>
 
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
@@ -49,6 +51,8 @@
             box-sizing: border-box;
         }
 
+
+        
         body {
             font-family: var(--font-family);
             background-color: var(--background-color);
@@ -496,7 +500,7 @@
                         <button class="option-button" data-mode="prevenzione">
                             <i>🍎</i> Fare prevenzione
                         </button>
-                        <button class="option-button" data-mode="alimentazione">
+                        <button class="option-button" data-mode="dieta">
                             <i>🍽️</i> Piano alimentare su misura
                         </button>
                         <button class="option-button" data-mode="allenamento">
@@ -521,187 +525,6 @@
     </div>
 
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Elementi DOM
-            const welcomeBanner = document.getElementById('welcome-banner');
-            const chatInterface = document.getElementById('chat-interface');
-            const optionButtons = document.querySelectorAll('.option-button');
-            const chatMessages = document.getElementById('chat-messages');
-            const messageInput = document.getElementById('message-input');
-            const sendButton = document.getElementById('send-button');
-            const themeToggle = document.getElementById('theme-toggle');
-
-            // Variabile per la modalità corrente
-            let currentMode = null;
-
-            // Gestione dei pulsanti di opzione
-            optionButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    const mode = this.getAttribute('data-mode');
-                    startChat(mode);
-                });
-            });
-
-            // Funzione per avviare la chat
-            function startChat(mode) {
-                currentMode = mode;
-                welcomeBanner.classList.add('hidden');
-                chatInterface.classList.add('active');
-
-                // Aggiungi il primo messaggio in base alla modalità
-                let welcomeMessage = '';
-                switch(mode) {
-                    case 'sintomi':
-                        welcomeMessage = "Ciao! Sono qui per aiutarti con i tuoi sintomi. Descrivimi cosa stai provando e cercherò di fornirti alcune informazioni utili.";
-                        break;
-                    case 'prevenzione':
-                        welcomeMessage = "Salute preventiva! Ottima scelta. Dimmi di più sulla tua situazione attuale e su quali aspetti della prevenzione ti interessano maggiormente.";
-                        break;
-                    case 'alimentazione':
-                        welcomeMessage = "Un'alimentazione equilibrata è fondamentale per la salute! Dimmi qualcosa sulle tue abitudini alimentari attuali, eventuali restrizioni e obiettivi che vorresti raggiungere.";
-                        break;
-                    case 'allenamento':
-                        welcomeMessage = "Pronto per un piano di allenamento personalizzato? Raccontami della tua routine attuale, obiettivi fitness e se hai particolari limitazioni fisiche.";
-                        break;
-                }
-
-                // Aggiungi messaggio di benvenuto alla chat
-                addBotMessage(welcomeMessage);
-
-                // Focus sul campo input
-                messageInput.focus();
-            }
-
-            // Invia messaggio quando si preme Enter nell'input
-            messageInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter' && messageInput.value.trim() !== '') {
-                    sendMessage();
-                }
-            });
-
-            // Gestione del pulsante di invio
-            sendButton.addEventListener('click', function() {
-                if (messageInput.value.trim() !== '') {
-                    sendMessage();
-                }
-            });
-
-            // Funzione per inviare un messaggio
-            function sendMessage() {
-                const messageText = messageInput.value.trim();
-
-                // Aggiungi il messaggio dell'utente alla chat
-                addUserMessage(messageText);
-
-                // Pulisci l'input
-                messageInput.value = '';
-
-                // Mostra l'indicatore di digitazione
-                showTypingIndicator();
-
-                // Simula la risposta del bot dopo un breve ritardo
-                setTimeout(() => {
-                    // Rimuovi l'indicatore di digitazione
-                    removeTypingIndicator();
-
-                    // Aggiungi la risposta del bot
-                    let botResponse = '';
-                    switch(currentMode) {
-                        case 'sintomi':
-                            botResponse = "Grazie per aver condiviso i tuoi sintomi. Ti ricordo che questa è solo una consulenza informativa e non sostituisce il parere di un medico. Ti consiglio di consultare un professionista sanitario per una valutazione completa.";
-                            break;
-                        case 'prevenzione':
-                            botResponse = "Ottimo che tu stia prendendo l'iniziativa per la tua salute preventiva! Ricorda che un'alimentazione equilibrata, attività fisica regolare, sonno adeguato e controlli medici periodici sono fondamentali per mantenere uno stile di vita sano.";
-                            break;
-                        case 'alimentazione':
-                            botResponse = "Basandomi sulle informazioni che mi hai fornito, potrei suggerirti un piano alimentare equilibrato. Ricorda l'importanza di variare gli alimenti, consumare frutta e verdura di stagione e mantenerti idratato durante il giorno.";
-                            break;
-                        case 'allenamento':
-                            botResponse = "Un programma di allenamento dovrebbe essere adattato alle tue esigenze specifiche. È importante alternare esercizi di cardio, forza e flessibilità, con adeguati tempi di recupero per ottenere risultati ottimali.";
-                            break;
-                    }
-                    addBotMessage(botResponse);
-                }, 1500);
-            }
-
-            // Aggiungi un messaggio dell'utente alla chat
-            function addUserMessage(text) {
-                const messageElement = document.createElement('div');
-                messageElement.className = 'message-bubble user-message';
-                messageElement.textContent = text;
-                chatMessages.appendChild(messageElement);
-                scrollToBottom();
-            }
-
-            // Aggiungi un messaggio del bot alla chat
-            function addBotMessage(text) {
-                const messageElement = document.createElement('div');
-                messageElement.className = 'message-bubble bot-message';
-                messageElement.textContent = text;
-                chatMessages.appendChild(messageElement);
-                scrollToBottom();
-            }
-
-            // Mostra l'indicatore di digitazione del bot
-            function showTypingIndicator() {
-                const typingElement = document.createElement('div');
-                typingElement.className = 'typing-indicator';
-                typingElement.id = 'typing-indicator';
-
-                for (let i = 0; i < 3; i++) {
-                    const dot = document.createElement('div');
-                    dot.className = 'typing-dot';
-                    typingElement.appendChild(dot);
-                }
-
-                chatMessages.appendChild(typingElement);
-                scrollToBottom();
-            }
-
-            // Rimuovi l'indicatore di digitazione
-            function removeTypingIndicator() {
-                const typingElement = document.getElementById('typing-indicator');
-                if (typingElement) {
-                    typingElement.remove();
-                }
-            }
-
-            // Scorri la chat verso il basso
-            function scrollToBottom() {
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }
-
-            function applyTheme(theme) {
-                const html = document.documentElement;
-                html.setAttribute('data-theme', theme);
-
-                if (themeToggle) {
-                    themeToggle.textContent = (theme === 'dark') ? '☀️' : '🌙';
-                }
-            }
-
-            // Listener per il toggle manuale
-            if (themeToggle) {
-                themeToggle.addEventListener('click', function () {
-                    const currentTheme = document.documentElement.getAttribute('data-theme');
-                    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-
-                    applyTheme(newTheme);
-
-                    // Comunica al parent il nuovo tema
-                    window.parent.postMessage({ type: 'theme', theme: newTheme }, '*');
-                });
-            }
-
-            // Listener per ricevere tema dal parent
-            window.addEventListener('message', function (event) {
-                if (event.data && event.data.type === 'theme') {
-                    applyTheme(event.data.theme);
-                }
-            });
-        });
-
-    </script>
+   
 </body>
 </html>
