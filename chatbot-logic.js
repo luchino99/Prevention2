@@ -208,6 +208,8 @@ domandeFemminiliAggiunte = false;
   
   document.querySelectorAll(".button-container").forEach(el => el.remove());
   document.getElementById("welcome-banner")?.classList.add("hidden");
+  document.getElementById("chat-interface")?.classList.add("active");
+
 
   switch (tipo) {
   case "sintomi":
