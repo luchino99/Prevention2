@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profilo Utente - HealthAI</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #4a6fa5;
+            --primary-light: #5a7fb5;
+            --primary-dark: #3a5f95;
+            --accent-color: #54c0a0;
+            --text-color: #333333;
+            --text-light: #777777;
+            --background-color: #f9f9fb;
+            --card-color: #ffffff;
+            --border-color: #e0e0e6;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --bot-message-bg: #eef4ff;
+            --user-message-bg: #54c0a0;
+            --user-message-text: white;
+            --font-family: 'Segoe UI', 'Roboto', sans-serif;
+            --radius: 20px;
+            --animation-speed: 0.3s;
+            --primary-blue: #4285F4;
+            --primary-light-blue: #E8F0FE;
+            --light-gray: #F8F9FA;
+            --text-dark: #202124;
+            --text-medium: #5F6368;
+
+            /* Nuove variabili per supportare meglio il tema */
+            --card-bg: #ffffff;
+            --secondary-bg: #f8f9fa;
+            --highlight-bg: #e8f0fe;
+            --success-bg: #E6F4EA;
+            --success-color: #34A853;
+            --warning-bg: #FEF7E0;
+            --warning-color: #FBBC05;
+            --danger-bg: #FCE8E6;
+            --danger-color: #EA4335;
+            --header-bg: #ffffff;
+            --footer-bg: #202124;
+            --footer-text: #ffffff;
+            --score-low-bg: #FBBC05;
+            --score-medium-bg: #34A853;
+            --score-high-bg: #EA4335;
+            --badge-text: #ffffff;
+            --progress-bg: #e0e0e6;
+            --border-highlight: #4285F4;
+            --border-success: #34A853;
+            --border-warning: #FBBC05;
+            --border-danger: #EA4335;
+            --button-primary-bg: #4285F4;
+            --button-primary-text: #ffffff;
+            --button-hover-bg: #357ae8;
+            --icon-color: #4285F4;
+            --link-color: #4285F4;
+            --link-hover: #357ae8;
+            --tab-active-bg: #4285F4;
+            --tab-active-text: #ffffff;
+            --tab-inactive-bg: transparent;
+            --tab-inactive-text: #5F6368;
+            --gradient-primary: linear-gradient(135deg, #4285F4, #34A853);
+            --gradient-secondary: linear-gradient(135deg, #4285F4, #5B8DEF);
+            --chart-text-color: #333333;
+            --footer-bg: var(--card-color);
+            --animation-speed: 0.3s;
+
+            /* Aggiunte per i pannelli accordion */
+            --accordion-header-bg: var(--highlight-bg);
+            --accordion-header-hover: var(--primary-light-blue);
+            --accordion-border: var(--border-color);
+            --accordion-body-bg: var(--card-bg);
+            --input-border: var(--border-color);
+            --input-focus: var(--primary-blue);
+            --input-bg: var(--card-bg);
+        }
+
+        [data-theme="dark"] {
+            --primary-color: #5a7fb5;
+            --primary-light: #6a8fc5;
+            --primary-dark: #4a6fa5;
+            --accent-color: #64d0b0;
+            --text-color: #e0e0e0;
+            --text-light: #a0a0a0;
+            --background-color: #1a1a20;
+            --card-color: #27272f;
+            --border-color: #3a3a45;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            --bot-message-bg: #2a3548;
+            --user-message-bg: #446655;
+            --user-message-text: #e0e0e0;
+            --text-dark: #e0e0e0;
+            --text-medium: #a0a0a0;
+
+            /* Nuove variabili per tema scuro */
+            --card-bg: #27272f;
+            --secondary-bg: #1f1f27;
+            --highlight-bg: #2a3548;
+            --success-bg: #1e3a2e;
+            --success-color: #4eca6f;
+            --warning-bg: #3d3520;
+            --warning-color: #ffce44;
+            --danger-bg: #3d2a27;
+            --danger-color: #ff7169;
+            --header-bg: #27272f;
+            --footer-bg: #1a1a20;
+            --footer-text: #a0a0a0;
+            --score-low-bg: #ffce44;
+            --score-medium-bg: #4eca6f;
+            --score-high-bg: #ff7169;
+            --badge-text: #1a1a20;
+            --progress-bg: #3a3a45;
+            --border-highlight: #5a7fb5;
+            --border-success: #4eca6f;
+            --border-warning: #ffce44;
+            --border-danger: #ff7169;
+            --button-primary-bg: #5a7fb5;
+            --button-primary-text: #e0e0e0;
+            --button-hover-bg: #6a8fc5;
+            --icon-color: #5a7fb5;
+            --link-color: #6a8fc5;
+            --link-hover: #7a9fd5;
+            --tab-active-bg: #5a7fb5;
+            --tab-active-text: #e0e0e0;
+            --tab-inactive-bg: transparent;
+            --tab-inactive-text: #a0a0a0;
+            --gradient-primary: linear-gradient(135deg, #5a7fb5, #4eca6f);
+            --gradient-secondary: linear-gradient(135deg, #5a7fb5, #6a8fc5);
+            --chart-text-color: #ffffff;
+            --footer-bg: var(--card-color);
+
+            /* Aggiunte per i pannelli accordion in tema scuro */
+            --accordion-header-bg: #2d3748;
+            --accordion-header-hover: #3a4a63;
+            --accordion-border: #3a3a45;
+            --accordion-body-bg: var(--card-bg);
+            --input-border: #3a3a45;
+            --input-focus: #5a7fb5;
+            --input-bg: #1f1f27;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            transition: background-color var(--animation-speed);
+        }
+
+        /* Aggiungi questa regola al tuo CSS */
+        *, *::before, *::after {
+            transition: background-color var(--animation-speed), box-shadow var(--animation-speed);
+        }
+
+        .card, .badge, .score-indicator, .tab-button, .recommendation-card,
+        ., .bg-gray-50, .bg-blue-50, .bg-gray-200, .bg-blue-100,
+        .border-l-4, svg circle, svg text, .progress-ring__circle {
+            transition: all var(--animation-speed);
+        }
+
+        .card {
+            border-radius: 12px;
+            background-color: var(--card-bg);
+            box-shadow: 0 2px 10px var(--border-color);
+            transition: transform var(--animation-speed), box-shadow var(--animation-speed), border-color var(--animation-speed);
+        }
+
+        .primary-gradient {
+            background: var(--gradient-primary);
+        }
+
+        .secondary-gradient {
+            background: var(--gradient-secondary);
+        }
+
+        .score-indicator {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 20px;
+        }
+
+        .score-low {
+            background-color: var(--score-low-bg);
+            color: var(--badge-text);
+        }
+
+        .score-medium {
+            background-color: var(--score-medium-bg);
+            color: var(--badge-text);
+        }
+
+        .score-high {
+            background-color: var(--score-high-bg);
+            color: var(--badge-text);
+        }
+
+        .tab-button {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--tab-inactive-text);
+            background-color: var(--tab-inactive-bg);
+            transition: background-color var(--animation-speed);
+        }
+
+        .tab-button.active {
+            background-color: var(--tab-active-bg);
+            color: var(--tab-active-text);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Personalizzazioni per grafici e indicatori */
+        .progress-ring {
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+
+        .progress-ring__circle {
+            stroke-dasharray: 314.16;
+            transition: stroke-dashoffset var(--animation-speed);
+        }
+
+        .badge {
+            border-radius: 16px;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background-color: var(--success-bg);
+            color: var(--success-color);
+        }
+
+        .badge-warning {
+            background-color: var(--warning-bg);
+            color: var(--warning-color);
+        }
+
+        .badge-danger {
+            background-color: var(--danger-bg);
+            color: var(--danger-color);
+        }
+
+        .recommendation-card {
+            border-left: 3px solid var(--border-highlight);
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 20px;
+            cursor: pointer;
+            outline: none;
+            transition: transform var(--animation-speed);
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        /* Stili specifici per elementi vari */
+        . {
+            background-color: var(--card-bg) !important;
+        }
+
+        .bg-gray-50, .bg-blue-50 {
+            background-color: var(--secondary-bg) !important;
+        }
+
+        .text-gray-600, .text-gray-500 {
+            color: var(--text-light) !important;
+        }
+
+        .text-blue-500, .text-blue-600 {
+            color: var(--link-color) !important;
+        }
+
+        .text-yellow-600 {
+            color: var(--warning-color) !important;
+        }
+
+        .text-red-600, .text-red-500 {
+            color: var(--danger-color) !important;
+        }
+
+        .text-green-600, .text-green-500 {
+            color: var(--success-color) !important;
+        }
+
+        .bg-gray-200 {
+            background-color: var(--progress-bg) !important;
+        }
+
+        .bg-red-500 {
+            background-color: var(--danger-color) !important;
+        }
+
+        .bg-green-500 {
+            background-color: var(--success-color) !important;
+        }
+
+        .bg-yellow-500 {
+            background-color: var(--warning-color) !important;
+        }
+
+        .bg-blue-500 {
+            background-color: var(--button-primary-bg) !important;
+        }
+
+        .bg-blue-100 {
+            background-color: var(--highlight-bg) !important;
+        }
+
+        .hover\:bg-blue-600:hover {
+            background-color: var(--button-hover-bg) !important;
+        }
+
+        .hover\:bg-blue-50:hover {
+            background-color: var(--secondary-bg) !important;
+        }
+
+        .hover\:text-blue-700:hover, .hover\:text-white:hover {
+            color: var(--link-hover) !important;
+        }
+
+        .border-l-4.border-green-500 {
+            border-left-color: var(--border-success) !important;
+        }
+
+        .border-l-4.border-yellow-500 {
+            border-left-color: var(--border-warning) !important;
+        }
+
+        .border-l-4.border-red-500 {
+            border-left-color: var(--border-danger) !important;
+        }
+
+        .border-l-4.border-blue-500 {
+            border-left-color: var(--border-highlight) !important;
+        }
+
+        /* Footer specifico */
+        .bg-gray-800 {
+            background-color: var(--footer-bg) !important;
+        }
+
+        .text-gray-300 {
+            color: var(--footer-text) !important;
+        }
+
+        /* Stile per gli input e le form */
+        input, select, textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--input-border);
+            border-radius: 8px;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            font-size: 14px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px var(--input-focus);
+            outline: none;
+        }
+
+        input:disabled {
+            background-color: var(--secondary-bg);
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        /* Stile per le sezioni accordion */
+        .accordion-section {
+            border: 1px solid var(--accordion-border);
+            margin-bottom: 16px;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: box-shadow 0.3s ease;
+            background-color: var(--card-bg);
+        }
+
+        .accordion-section:hover {
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .accordion-header {
+            padding: 14px 18px;
+            font-weight: 600;
+            cursor: pointer;
+            background-color: var(--accordion-header-bg);
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: background-color 0.2s;
+        }
+
+        .accordion-header:hover {
+            background-color: var(--accordion-header-hover);
+        }
+
+        .accordion-body {
+            padding: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease, padding 0.4s ease;
+        }
+
+        .accordion-content {
+            padding: 18px;
+        }
+
+        .accordion-section.active .accordion-body {
+            max-height: 800px;
+            padding: 18px;
+        }
+
+        .accordion-icon {
+            transition: transform 0.3s ease;
+        }
+
+        .accordion-section.active .accordion-icon {
+            transform: rotate(180deg);
+        }
+
+        /* Bottone salva */
+        .save-btn {
+            background-color: var(--button-primary-bg);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s, transform 0.1s;
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        .save-btn:hover {
+            background-color: var(--button-hover-bg);
+            transform: translateY(-2px);
+        }
+
+        .save-btn i {
+            margin-right: 8px;
+        }
+
+        /* Form grid layout */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: var(--text-light);
+            font-size: 14px;
+        }
+
+        /* Spaced button container */
+        .button-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        /* Avatar section */
+        .avatar-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background-color: var(--primary-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 16px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .avatar-initials {
+            text-transform: uppercase;
+        }
+
+        .avatar-upload {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 4px;
+            text-align: center;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        /* Form box */
+        .form-box {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 2px 10px var(--border-color);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .form-box h3 {
+            margin-top: 0;
+            margin-bottom: 16px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="shadow-sm mb-4 sticky top-0 z-10 chat-header" style="background-color: var(--card-color); color: var(--text-color); border-bottom: 1px solid var(--border-color);">
+      <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+          <div class="flex items-center">
+              <svg class="h-6 w-6 text-blue-500 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+              </svg>
+              <h1 class="text-xl font-bold">Profilo utente</h1>
+          </div>
+          <div class="flex items-center space-x-4">
+              <button style="visibility: hidden" id="export-btn" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-full flex items-center text-sm">
+                  <i class="fas fa-file-pdf mr-2"></i>
+                  Esporta report
+              </button>
+              <button style="visibility: hidden" id="refresh-btn" class="text-blue-500 hover:text-blue-700">
+                  <i class="fas fa-sync-alt"></i>
+              </button>
+          </div>
+          <div class="flex items-center space-x-4">
+            <button id="theme-toggle" class="text-blue-500 text-xl hover:text-blue-700">🌙</button>
+          </div>
+      </div>
+  </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 pb-24">
+        <div class="flex flex-col max-w-4xl mx-auto">
+            <!-- Avatar e informazioni principali -->
+            <div class="form-box mb-6">
+                <div class="avatar-section">
+                    <div class="avatar">
+                        <span class="avatar-initials">U</span>
+                        <div class="avatar-upload">
+                            <i class="fas fa-camera"></i>
+                        </div>
+                    </div>
+                    <h2 class="text-xl font-semibold">Mario Rossi</h2>
+                    <p class="text-sm text-gray-500">ID: #123456</p>
+                </div>
+
+                <h3 class="text-lg font-semibold mb-4">Informazioni personali</h3>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" id="profilo-email" disabled value="mario.rossi@example.com" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Età</label>
+                        <input type="number" id="profilo-eta" value="45" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Sesso</label>
+                        <select id="profilo-sesso">
+                            <option value="M">Maschile</option>
+                            <option value="F">Femminile</option>
+                            <option value="altro">Altro</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tipo di lavoro</label>
+                        <input type="text" id="profilo-tipo_lavoro" value="Impiegato" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Altezza (cm)</label>
+                        <input type="number" id="profilo-altezza" value="175" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Peso (kg)</label>
+                        <input type="number" id="profilo-peso" value="78" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Storia clinica -->
+            <div class="form-box mb-6">
+                <h3 class="text-lg font-semibold mb-4">Storia clinica</h3>
+
+                <div class="form-group mb-4">
+                    <label class="form-label">Patologie esistenti</label>
+                    <textarea id="profilo-patologie" rows="2" placeholder="Inserisci le patologie esistenti"></textarea>
+                </div>
+
+                <div class="form-group mb-4">
+                    <label class="form-label">Farmaci assunti</label>
+                    <textarea id="profilo-farmaci_dettaglio" rows="2" placeholder="Inserisci i farmaci che stai assumendo"></textarea>
+                </div>
+
+                <div class="form-group mb-4">
+                    <label class="form-label">Intolleranze</label>
+                    <textarea id="profilo-intolleranze" rows="2" placeholder="Inserisci le tue intolleranze"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Alimenti esclusi</label>
+                    <textarea id="profilo-alimenti_esclusi" rows="2" placeholder="Inserisci gli alimenti che non consumi"></textarea>
+                </div>
+            </div>
+
+            <!-- Preferenze -->
+            <div class="form-box mb-6">
+                <h3 class="text-lg font-semibold mb-4">Preferenze e obiettivi</h3>
+
+                <div class="form-group">
+                    <label class="form-label">Preferenze salute</label>
+                    <textarea id="profilo-preferenze" rows="3" placeholder="Inserisci i tuoi obiettivi di salute e preferenze"></textarea>
+                </div>
+            </div>
+
+            <!-- Sezioni di Valutazione -->
+            <div class="accordion-section mb-4">
+                <div class="accordion-header">
+                    <div class="flex items-center">
+                        <span class="mr-2">❤️</span>
+                        <span>SCORE2 – Rischio Cardiovascolare</span>
+                    </div>
+                    <i class="fas fa-chevron-down accordion-icon"></i>
+                </div>
+                <div class="accordion-body">
+                    <div class="accordion-content">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Pressione sistolica (mmHg)</label>
+                                <input type="number" id="profilo-pressione_sistolica" />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Pressione diastolica (mmHg)</label>
+                                <input type="number" id="profilo-pressione_diastolica" />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Colesterolo totale (mg/dL)</label>
+                                <input type="number" id="profilo-colesterolo_totale" />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Colesterolo HDL (mg/dL)</label>
+                                <input type="number" id="profilo-colesterolo_hdl_valore" />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Colesterolo LDL (mg/dL)</label>
+                                <input type="number" id="profilo-colesterolo_ldl_valore" />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Fumatore</label>
+                                <select id="profilo-fumatore">
+                                    <option value="">Seleziona...</option>
+                                    <option value="si">Sì</option>
+                                    <option value="no">No</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Diabete di tipo 2 diagnosticato</label>
+                                <select id="profilo-diabete">
+                                    <option value="">Seleziona...</option>
+                                    <option value="si">Sì</option>
+                                    <option value="no">No</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-section mb-4">
+                <div class="accordion-header">
+                    <div class="flex items-center">
+                        <span class="mr-2">🍬</span>
+                        <span>ADA – Rischio Diabete</span>
+                    </div>
+                    <i class="fas fa-chevron-down accordion-icon"></i>
+                </div>
+                <div class="accordion-body">
+                    <div class="accordion-content">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Glicemia a digiuno (mg/dL)</label>
+                                <input type="number" id="profilo-glicemia_valore" />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Fai almeno 30 minuti di attività fisica al giorno?</label>
+                                <select id="profilo-attivo30">
+                                    <option value="">Seleziona...</option>
+                                    <option value="si">Sì</option>
+                                    <option value="no">No</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Hai la pressione alta?</label>
+                                <select id="profilo-pressione_alta">
+                                    <option value="">Seleziona...</option>
+                                    <option value="si">Sì</option>
+                                    <option value="no">No</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Hai familiari con diabete di tipo 2?</label>
+                                <select id="profilo-familiari_diabete">
+                                    <option value="">Seleziona...</option>
+                                    <option value="si">Sì</option>
+                                    <option value="no">No</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-section mb-4">
+                <div class="accordion-header">
+                    <div class="flex items-center">
+                        <span class="mr-2">🦴</span>
+                        <span>FRAX – Osteoporosi / Fratture</span>
+                    </div>
+                    <i class="fas fa-chevron-down accordion-icon"></i>
+                </div>
+                <div class="accordion-body">
+                    <div class="accordion-content">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Hai avuto fratture da fragilità?</label>
+                                <select id="profilo-frattura">
+                                    <option value="">Seleziona...</option>
+                                    <option value="si">Sì</option>
+                                    <option value="no">No</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Genitore con frattura dell'anca?</label>
+                                <select id="profilo-famiglia_frattura_anca">
+                                    <option value="">Seleziona...</option>
+                                    <option value="si">Sì</option>
+                                    <option value="no">No</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Assumi corticosteroidi da > 3 mesi?</label>
+                                <select id="profilo-corticosteroidi">
+                                    <option value="">Seleziona...</option>
+                                    <option value="si">Sì</option>
+                                    <option value="no">No</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Consumi più di 3 unità alcoliche/giorno?</label>
+                                <select id="profilo-alcol_eccessivo">
+                                    <option value="">Seleziona...</option>
+                                    <option value="si">Sì</option>
+                                    <option value="no">No</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Artrite reumatoide diagnosticata?</label>
+                                <select id="profilo-artrite">
+                                    <option value="">Seleziona...</option>
+                                    <option value="si">Sì</option>
+                                    <option value="no">No</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-section mb-4">
+                <div class="accordion-header">
+                    <div class="flex items-center">
+                        <span class="mr-2">👵</span>
+                        <span>FRAIL / SARC-F – Fragilità</span>
+                    </div>
+                    <i class="fas fa-chevron-down accordion-icon"></i>
+                </div>
+                <div class="accordion-body">
+                    <div class="accordion-content">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Ti senti stanco/a spesso?</label>
+                                <select id="profilo-stanchezza">
+                                    <option value="">Seleziona...</option>
+                                    <option value="no">No</option>
+                                    <option value="talvolta">Talvolta</option>
+                                    <option value="spesso">Spesso</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Riesci a camminare 100 metri?</label>
+                                <select id="profilo-camminata">
+                                    <option value="">Seleziona...</option>
+                                    <option value="si">Sì</option>
+                                    <option value="no">No</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Riesci a sollevare 4.5 kg?</label>
+                                <select id="profilo-sollevamento">
+                                    <option value="">Seleziona...</option>
+                                    <option value="si">Sì</option>
+                                    <option value="no">No</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Difficoltà ad alzarti da una sedia?</label>
+                                <select id="profilo-sedia">
+                                    <option value="">Seleziona...</option>
+                                    <option value="si">Sì</option>
+                                    <option value="no">No</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Hai avuto 2 o più cadute in un anno?</label>
+                                <select id="profilo-cadute">
+                                    <option value="">Seleziona...</option>
+                                    <option value="si">Sì</option>
+                                    <option value="no">No</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Save Button -->
+            <div class="button-container">
+                <button id="salva-profilo-btn" class="save-btn">
+                    <i class="fas fa-save"></i> Salva Modifiche
+                </button>
+            </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="py-4 mt-8" style="border-top: 1px solid var(--border-color); background-color: var(--card-color); color: var(--text-color); transition: border-color var(--animation-speed);">
+        <div class="container mx-auto px-4 text-center text-sm">
+            <p>&copy; 2025 HealthAI - Sistema di monitoraggio della salute</p>
+            <div class="mt-2">
+                <a href="#" class="mx-2" style="color: var(--text-light); hover:color: var(--text-color);">Privacy</a>
+                <a href="#" class="mx-2" style="color: var(--text-light); hover:color: var(--text-color);">Termini di servizio</a>
+                <a href="#" class="mx-2" style="color: var(--text-light); hover:color: var(--text-color);">Contatti</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Gestione temi (da mantenere in tutte le pagine)
+        document.addEventListener('DOMContentLoaded', function () {
+            const themeToggle = document.getElementById('theme-toggle');
+
+            function applyTheme(theme) {
+                const html = document.documentElement;
+                html.setAttribute('data-theme', theme);
+
+                if (themeToggle) {
+                    themeToggle.textContent = (theme === 'dark') ? '☀️' : '🌙';
+                }
+            }
+
+            // Listener per il toggle manuale
+            if (themeToggle) {
+                themeToggle.addEventListener('click', function () {
+                    const currentTheme = document.documentElement.getAttribute('data-theme');
+                    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+                    applyTheme(newTheme);
+
+                    // Comunica al parent il nuovo tema
+                    window.parent.postMessage({ type: 'theme', theme: newTheme }, '*');
+                });
+            }
+
+            // Listener per ricevere tema dal parent
+            window.addEventListener('message', function (event) {
+                if (event.data && event.data.type === 'theme') {
+                    applyTheme(event.data.theme);
+                }
+            });
+        });
+
+        // Accordion functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const accordionHeaders = document.querySelectorAll('.accordion-header');
+
+            accordionHeaders.forEach(header => {
+                header.addEventListener('click', function() {
+                    // Toggle active class on parent section
+                    const section = this.parentElement;
+                    section.classList.toggle('active');
+
+                    // Optional: Close other sections when opening one
+                    // Uncomment the following code if you want only one section open at a time
+                    /*
+                    if (section.classList.contains('active')) {
+                        accordionHeaders.forEach(otherHeader => {
+                            const otherSection = otherHeader.parentElement;
+                            if (otherSection !== section && otherSection.classList.contains('active')) {
+                                otherSection.classList.remove('active');
+                            }
+                        });
+                    }
+                    */
+                });
+            });
+
+            // Optional: Open the first accordion by default
+            // Uncomment if you want the first section to be open when the page loads
+            /*
+            const firstSection = document.querySelector('.accordion-section');
+            if (firstSection) {
+                firstSection.classList.add('active');
+            }
+            */
+        });
+    </script>
+</body>
+</html>
