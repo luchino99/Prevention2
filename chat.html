@@ -519,40 +519,44 @@
     </div>
 
     
- <script>
+<script>
   document.addEventListener("DOMContentLoaded", () => {
+    // Collegamento pulsanti alle modalità dinamiche
     document.querySelectorAll(".option-button").forEach(button => {
+      button.setAttribute("type", "button");
       button.addEventListener("click", () => {
         const mode = button.getAttribute("data-mode");
         if (typeof selezionaModalita === "function") {
+          // Nasconde il banner iniziale e mostra l'interfaccia chat
+          document.getElementById("welcome-banner")?.classList.add("hidden");
+          document.getElementById("chat-interface")?.classList.add("active");
           selezionaModalita(mode);
         } else {
           console.error("❌ Funzione selezionaModalita non disponibile.");
         }
       });
     });
-  });
-</script>
-<script>
-  document.addEventListener("DOMContentLoaded", () => {
+
+    // Gestione tema chiaro/scuro
     const themeToggle = document.getElementById("theme-toggle");
     if (themeToggle) {
       themeToggle.addEventListener("click", () => {
         const currentTheme = document.documentElement.getAttribute("data-theme");
         const newTheme = currentTheme === "dark" ? "light" : "dark";
         document.documentElement.setAttribute("data-theme", newTheme);
-        themeToggle.textContent = (newTheme === "dark") ? "☀️" : "🌙";
-        window.parent.postMessage({ type: 'theme', theme: newTheme }, '*');
+        themeToggle.textContent = newTheme === "dark" ? "☀️" : "🌙";
+        window.parent.postMessage({ type: "theme", theme: newTheme }, "*");
       });
     }
 
-    window.addEventListener('message', function (event) {
-      if (event.data && event.data.type === 'theme') {
-        document.documentElement.setAttribute('data-theme', event.data.theme);
+    window.addEventListener("message", event => {
+      if (event.data?.type === "theme") {
+        document.documentElement.setAttribute("data-theme", event.data.theme);
       }
     });
   });
 </script>
+
 
    
 </body>
