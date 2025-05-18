@@ -174,10 +174,13 @@ let step = -1;
 let modalita = null;
 let modalitaConclusa = false;
 
+
 function mostraMessaggio(testo, classe = "bot") {
+  if (classe === "bot") removeTypingIndicator(); // Rimuove se presente
+
   const message = document.createElement("div");
   message.className = `message-bubble ${classe === "bot" ? "bot-message" : "user-message"}`;
-  
+
   if (classe === "bot") {
     message.innerHTML = marked.parse(testo);
   } else {
@@ -193,6 +196,7 @@ function mostraMessaggio(testo, classe = "bot") {
   container.appendChild(message);
   message.scrollIntoView({ behavior: "smooth" });
 }
+
 
 
 
@@ -214,7 +218,7 @@ domandeFemminiliAggiunte = false;
   switch (tipo) {
   case "sintomi":
       domande = [];
-      mostraMessaggio("🩺 Perfetto! Per aiutarti al meglio, descrivimi i tuoi sintomi.");
+      mostraMessaggio("🩺 Ciao! Sono qui per aiutarti con i tuoi sintomi. Descrivimi cosa stai provando e cercherò di fornirti alcune informazioni utili.");
       break;
 
   case "prevenzione":
@@ -241,13 +245,13 @@ domandeFemminiliAggiunte = false;
 
     case "dieta":
       domande = [...domandePianoAlimentare];
-      mostraMessaggio("🍽️ Ottimo! Rispondi a queste domande per il piano alimentare su misura:");
+      mostraMessaggio("🍽️ Un'alimentazione equilibrata è fondamentale per la salute! Rispondi a queste domande e dimmi qualcosa sulle tue abitudini alimentari attuali, eventuali restrizioni e obiettivi che vorresti raggiungere!");
       setTimeout(() => next(), 500);
       break;
 
     case "allenamento":
       domande = [...domandeAllenamento];
-      mostraMessaggio("🏋️‍♂️ Fantastico! Rispondi a queste domande per creare il tuo piano di allenamento:");
+      mostraMessaggio("🏋️‍♂️ Pronto per un piano di allenamento personalizzato? Rispondi a queste domande e raccontami della tua routine attuale, obiettivi fitness e se hai particolari limitazioni fisiche!");
       setTimeout(() => next(), 500);
       break;
 
@@ -295,7 +299,7 @@ async function next() {
     input.value = "";
     risposte.sintomi = val;
 
-    mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi dati...");
+    showTypingIndicator();
 
     const payload = {
   sintomi: val,
@@ -360,7 +364,7 @@ if (step >= 0 && val) {
   if (modalita && modalita !== "aggiorna") {
     await salvaAnagraficaNelDatabase(risposte);
     await salvaCompilazioneNelDatabase(risposte, modalita);
-    mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi dati...");
+    showTypingIndicator();
     inviaOpenAI(val);
   }
 
@@ -479,7 +483,7 @@ if (step < domande.length) {
     console.error("⚠️ Modalità non definita, non salvo la compilazione.");
   }
 
-  mostraMessaggio("🧐 Grazie! Sto analizzando i tuoi dati...");
+  showTypingIndicator();
   modalitaConclusa = true;
   inviaOpenAI();
   }
@@ -487,6 +491,7 @@ if (step < domande.length) {
 }
 
 function inviaOpenAI(nuovaDomandaUtente = null) {
+  showTypingIndicator();
   const loader = document.createElement("div");
   loader.className = "loader";
   document.getElementById("chat-messages").appendChild(loader);
@@ -525,6 +530,7 @@ function inviaOpenAI(nuovaDomandaUtente = null) {
   })
     .then(async res => {
       loader.remove();
+      removeTypingIndicator();
 
       if (!res.ok) {
         const errorText = await res.text();
@@ -548,6 +554,7 @@ function inviaOpenAI(nuovaDomandaUtente = null) {
     })
     .catch(err => {
       loader.remove();
+      removeTypingIndicator();
       console.error("❌ Errore fetch:", err);
       if (!modalitaConclusa) {
         mostraMessaggio("⚠️ Errore nella comunicazione col server.");
@@ -732,6 +739,29 @@ async function salvaMessaggioChat(email, ruolo, messaggio) {
   }
 }
 
+
+function showTypingIndicator() {
+  const container = document.getElementById("chat-messages");
+  if (!container) return;
+
+  const typingElement = document.createElement("div");
+  typingElement.className = "typing-indicator";
+  typingElement.id = "typing-indicator";
+
+  for (let i = 0; i < 3; i++) {
+    const dot = document.createElement("div");
+    dot.className = "typing-dot";
+    typingElement.appendChild(dot);
+  }
+
+  container.appendChild(typingElement);
+  typingElement.scrollIntoView({ behavior: "smooth" });
+}
+
+function removeTypingIndicator() {
+  const typingElement = document.getElementById("typing-indicator");
+  if (typingElement) typingElement.remove();
+}
 
 
 
