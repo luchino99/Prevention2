@@ -815,48 +815,42 @@ async function mostraProfiloUtente() {
     const html = await res.text();
     container.innerHTML = html;
 
-    // Riattiva gli accordion
     document.querySelectorAll(".accordion-header").forEach(header => {
       header.addEventListener("click", () => {
         header.parentElement.classList.toggle("open");
       });
     });
 
-    // Campi base
-    document.getElementById("profilo-email").value = risposte.email || "";
-    document.getElementById("profilo-eta").value = risposte.eta || "";
-    document.getElementById("profilo-sesso").value = risposte.sesso || "";
-    document.getElementById("profilo-altezza").value = risposte.altezza || "";
-    document.getElementById("profilo-peso").value = risposte.peso || "";
-
-    // Campi extra (accordion e facoltativi)
-    const extra = [
-      "attivita_fisica", "tipo_lavoro", "patologie", "farmaci_dettaglio",
-      "intolleranze", "alimenti_esclusi", "preferenze",
-      "pressione_sistolica", "pressione_diastolica",
-      "colesterolo_totale", "colesterolo_hdl_valore", "colesterolo_ldl_valore",
-      "fumatore", "diabete",
-      "glicemia_valore", "attivo30", "pressione_alta", "familiari_diabete",
-      "frattura", "famiglia_frattura_anca", "corticosteroidi",
-      "alcol_eccessivo", "artrite",
-      "stanchezza", "camminata", "sollevamento", "sedia", "cadute"
-    ];
-
-    const integerFields = [
-      "pressione_sistolica", "pressione_diastolica",
-      "colesterolo_totale", "colesterolo_hdl_valore",
-      "colesterolo_ldl_valore", "glicemia_valore",
-      "eta", "altezza", "peso"
-    ];
-
-    // Popola i campi extra se presenti
-    for (const key of extra) {
-      const el = document.getElementById(`profilo-${key}`);
-      if (el) el.value = risposte[key] || "";
-    }
-
-    // Listener per salvataggio profilo
     setTimeout(() => {
+      document.getElementById("profilo-email").value = risposte.email || "";
+      document.getElementById("profilo-eta").value = risposte.eta || "";
+      document.getElementById("profilo-sesso").value = risposte.sesso || "";
+      document.getElementById("profilo-altezza").value = risposte.altezza || "";
+      document.getElementById("profilo-peso").value = risposte.peso || "";
+
+      const extra = [
+        "attivita_fisica", "tipo_lavoro", "patologie", "farmaci_dettaglio",
+        "intolleranze", "alimenti_esclusi", "preferenze",
+        "pressione_sistolica", "pressione_diastolica",
+        "colesterolo_totale", "colesterolo_hdl_valore", "colesterolo_ldl_valore",
+        "fumatore", "diabete", "glicemia_valore", "attivo30", "pressione_alta",
+        "familiari_diabete", "frattura", "famiglia_frattura_anca", "corticosteroidi",
+        "alcol_eccessivo", "artrite", "stanchezza", "camminata",
+        "sollevamento", "sedia", "cadute"
+      ];
+
+      const integerFields = [
+        "pressione_sistolica", "pressione_diastolica",
+        "colesterolo_totale", "colesterolo_hdl_valore",
+        "colesterolo_ldl_valore", "glicemia_valore",
+        "eta", "altezza", "peso"
+      ];
+
+      for (const key of extra) {
+        const el = document.getElementById(`profilo-${key}`);
+        if (el) el.value = risposte[key] || "";
+      }
+
       const salvaBtn = document.getElementById("salva-profilo-btn");
       if (salvaBtn) {
         salvaBtn.addEventListener("click", async () => {
@@ -885,28 +879,31 @@ async function mostraProfiloUtente() {
 
           await salvaAnagraficaNelDatabase(nuoviDati);
           Object.assign(risposte, nuoviDati);
+
           for (const [mainKey, keys] of Object.entries(aliasCondivisi)) {
-          if (risposte[mainKey] !== undefined) {
-          keys.forEach(k => {
-          if (k !== mainKey) {
-          risposte[k] = risposte[mainKey];
-      }
-    });
-  }
-}
+            if (risposte[mainKey] !== undefined) {
+              keys.forEach(k => {
+                if (k !== mainKey) {
+                  risposte[k] = risposte[mainKey];
+                }
+              });
+            }
+          }
 
           alert("✅ Profilo aggiornato!");
         });
       } else {
         console.error("❌ Bottone #salva-profilo-btn non trovato nel DOM.");
       }
-    }, 100);
+
+    }, 100); // fine setTimeout
 
   } catch (err) {
     console.error("❌ Errore caricamento profilo:", err);
     container.innerHTML = "⚠️ Errore nel caricamento della scheda profilo.";
   }
 }
+
 
 
 
