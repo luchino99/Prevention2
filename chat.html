@@ -494,18 +494,11 @@
                         <p><i>◆</i> O desideri un piano alimentare o programma di allenamento personalizzato?</p>
                     </div>
                     <div class="option-buttons">
-                        <button class="option-button" data-mode="sintomi">
-                            <i>🤒</i> Descrivere i miei sintomi
-                        </button>
-                        <button class="option-button" data-mode="prevenzione">
-                            <i>🍎</i> Fare prevenzione
-                        </button>
-                        <button class="option-button" data-mode="dieta">
-                            <i>🍽️</i> Piano alimentare su misura
-                        </button>
-                        <button class="option-button" data-mode="allenamento">
-                            <i>🏋️</i> Piano di allenamento su misura
-                        </button>
+                       <button type="button" class="option-button" data-mode="sintomi">🤒 Descrivere i miei sintomi</button>
+                        <button type="button" class="option-button" data-mode="prevenzione">🍎 Fare prevenzione</button>
+                        <button type="button" class="option-button" data-mode="dieta">🍽️ Piano alimentare su misura</button>
+                        <button type="button" class="option-button" data-mode="allenamento">🏋️ Piano di allenamento su misura</button>
+
                     </div>
                 </div>
             </div>
@@ -515,15 +508,144 @@
             <div class="chat-area" id="chat-messages">
                 <!-- I messaggi della chat saranno inseriti qui dinamicamente -->
             </div>
-            <div class="input-area">
-                <input type="text" class="message-input" id="message-input" placeholder="Digita qui la tua risposta..." />
-                <button class="send-button" id="send-button">
-                    <i>➤</i>
-                </button>
-            </div>
+           <form id="input-form" class="input-area">
+  <input type="text" class="message-input" id="message-input" placeholder="Digita qui la tua risposta..." />
+  <button type="submit" class="send-button" id="send-button">
+    <i>➤</i>
+  </button>
+</form>
         </div>
     </div>
 
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll(".option-button").forEach(button => {
+    button.addEventListener("click", () => {
+      const mode = button.getAttribute("data-mode");
+      if (typeof selezionaModalita === "function") {
+        selezionaModalita(mode);
+      } else {
+        console.error("❌ Funzione selezionaModalita non disponibile.");
+      }
+    });
+  });
+});
+
+            document.addEventListener('DOMContentLoaded', function() {
+            // Elementi DOM
+            const welcomeBanner = document.getElementById('welcome-banner');
+            const chatInterface = document.getElementById('chat-interface');
+            const optionButtons = document.querySelectorAll('.option-button');
+            const chatMessages = document.getElementById('chat-messages');
+            const messageInput = document.getElementById('message-input');
+            const sendButton = document.getElementById('send-button');
+            const themeToggle = document.getElementById('theme-toggle');
+
+            // Variabile per la modalità corrente
+            let currentMode = null;
+
+            // Gestione dei pulsanti di opzione
+            optionButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const mode = this.getAttribute('data-mode');
+                    startChat(mode);
+                });
+            });
+
+
+            // Invia messaggio quando si preme Enter nell'input
+            messageInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && messageInput.value.trim() !== '') {
+                    sendMessage();
+                }
+            });
+
+            // Gestione del pulsante di invio
+            sendButton.addEventListener('click', function() {
+                if (messageInput.value.trim() !== '') {
+                    sendMessage();
+                }
+            });
+
+            // Funzione per inviare un messaggio
+            
+            // Aggiungi un messaggio dell'utente alla chat
+            function addUserMessage(text) {
+                const messageElement = document.createElement('div');
+                messageElement.className = 'message-bubble user-message';
+                messageElement.textContent = text;
+                chatMessages.appendChild(messageElement);
+                scrollToBottom();
+            }
+
+            // Aggiungi un messaggio del bot alla chat
+            function addBotMessage(text) {
+                const messageElement = document.createElement('div');
+                messageElement.className = 'message-bubble bot-message';
+                messageElement.textContent = text;
+                chatMessages.appendChild(messageElement);
+                scrollToBottom();
+            }
+
+            // Mostra l'indicatore di digitazione del bot
+            function showTypingIndicator() {
+                const typingElement = document.createElement('div');
+                typingElement.className = 'typing-indicator';
+                typingElement.id = 'typing-indicator';
+
+                for (let i = 0; i < 3; i++) {
+                    const dot = document.createElement('div');
+                    dot.className = 'typing-dot';
+                    typingElement.appendChild(dot);
+                }
+
+                chatMessages.appendChild(typingElement);
+                scrollToBottom();
+            }
+
+            // Rimuovi l'indicatore di digitazione
+            function removeTypingIndicator() {
+                const typingElement = document.getElementById('typing-indicator');
+                if (typingElement) {
+                    typingElement.remove();
+                }
+            }
+
+            // Scorri la chat verso il basso
+            function scrollToBottom() {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            function applyTheme(theme) {
+                const html = document.documentElement;
+                html.setAttribute('data-theme', theme);
+
+                if (themeToggle) {
+                    themeToggle.textContent = (theme === 'dark') ? '☀️' : '🌙';
+                }
+            }
+
+            // Listener per il toggle manuale
+            if (themeToggle) {
+                themeToggle.addEventListener('click', function () {
+                    const currentTheme = document.documentElement.getAttribute('data-theme');
+                    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+                    applyTheme(newTheme);
+
+                    // Comunica al parent il nuovo tema
+                    window.parent.postMessage({ type: 'theme', theme: newTheme }, '*');
+                });
+            }
+
+            // Listener per ricevere tema dal parent
+            window.addEventListener('message', function (event) {
+                if (event.data && event.data.type === 'theme') {
+                    applyTheme(event.data.theme);
+                }
+            });
+        });
+    </script>
 
    
 </body>
