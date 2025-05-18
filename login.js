@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const checkSession = async () => {
       const { data } = await supabaseClient.auth.getSession();
       if (data.session) {
-        window.location.href = "index.html";
+        window.location.href = "chatbot.html";
       } else {
         setTimeout(checkSession, 100);
       }
