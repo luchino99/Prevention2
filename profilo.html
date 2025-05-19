@@ -976,11 +976,12 @@
         });
     </script>
 <script>
-  window.addEventListener("load", () => {
+  window.addEventListener("DOMContentLoaded", async () => {
+    await new Promise(resolve => setTimeout(resolve, 300)); // attesa breve
     if (typeof window.mostraProfiloUtente === "function") {
       window.mostraProfiloUtente();
     } else {
-      console.warn("❗ mostraProfiloUtente non è ancora disponibile");
+      console.warn("❗ mostraProfiloUtente non è definita nemmeno dopo il delay.");
     }
   });
 </script>
