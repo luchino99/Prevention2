@@ -975,9 +975,13 @@
             */
         });
     </script>
-    <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    mostraProfiloUtente();
+<script>
+  window.addEventListener("load", () => {
+    if (typeof window.mostraProfiloUtente === "function") {
+      window.mostraProfiloUtente();
+    } else {
+      console.warn("❗ mostraProfiloUtente non è ancora disponibile");
+    }
   });
 </script>
    
