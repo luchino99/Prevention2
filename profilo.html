@@ -745,7 +745,19 @@
         </div>`;
 
       container.innerHTML = html;
-            // 🔄 Inizializza gli accordion DOPO aver inserito l'HTML
+
+document.getElementById("profilo-pressione_alta").value = userData.pressione_alta || '';
+document.getElementById("profilo-frattura").value = userData.frattura || '';
+document.getElementById("profilo-famiglia_frattura_anca").value = userData.famiglia_frattura_anca || '';
+document.getElementById("profilo-corticosteroidi").value = userData.corticosteroidi || '';
+document.getElementById("profilo-alcol_eccessivo").value = userData.alcol_eccessivo || '';
+document.getElementById("profilo-stanchezza").value = userData.stanchezza || '';
+document.getElementById("profilo-camminata").value = userData.camminata || '';
+document.getElementById("profilo-sollevamento").value = userData.sollevamento || '';
+document.getElementById("profilo-sedia").value = userData.sedia || '';
+document.getElementById("profilo-cadute").value = userData.cadute || '';
+
+            
             initializeAccordions();
 
         }
