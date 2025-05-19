@@ -616,7 +616,7 @@ recuperaAnagraficaDalDatabase(emailUtente).then((dati) => {
     console.log("✅ Anagrafica precompilata:", risposte);
   }
 
-  mostraProfiloUtente();
+  
 });
 
       const profiloBtn = document.getElementById("btn-profilo");
