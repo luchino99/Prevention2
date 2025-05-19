@@ -948,11 +948,7 @@ Vuoi aggiornarli? (sì / no)`);
       return;
     }
     
-    if (window.location.pathname.includes("profilo.html")) {
-  document.addEventListener("DOMContentLoaded", () => {
-    mostraProfiloUtente();
-  });
-}
+
    
     next();
   });
@@ -960,3 +956,9 @@ Vuoi aggiornarli? (sì / no)`);
 
 });
 
+
+
+if (window.location.pathname.includes("profilo.html")) {
+  console.log("🧭 profilo.html rilevato → chiamo mostraProfiloUtente()");
+  mostraProfiloUtente();
+}
