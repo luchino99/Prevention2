@@ -947,6 +947,12 @@ Vuoi aggiornarli? (sì / no)`);
       input.value = "";
       return;
     }
+    
+    if (window.location.pathname.includes("profilo.html")) {
+  document.addEventListener("DOMContentLoaded", () => {
+    mostraProfiloUtente();
+  });
+}
    
     next();
   });
