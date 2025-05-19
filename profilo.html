@@ -661,283 +661,90 @@
 
             // Basic user info section
             let html = `
-            <div class="flex flex-col max-w-4xl mx-auto">
-                <!-- Avatar e informazioni principali -->
-                <div class="form-box mb-6">
-                    <div class="avatar-section">
-                        <div class="avatar">
-                            <span class="avatar-initials">U</span>
-                            <div class="avatar-upload">
-                                <i class="fas fa-camera"></i>
-                            </div>
-                        </div>
-                        <h2 class="text-xl font-semibold">${userData.email || 'Non specificato'}</h2>
-                        <p class="text-sm text-gray-500">ID: ${userData.id || 'Non specificato'}</p>
-                    </div>
-
-                    <h3 class="text-lg font-semibold mb-4">Informazioni personali</h3>
-
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label class="form-label">Email</label>
-                            <input type="email" id="profilo-email" disabled value=${userData.email || 'Non specificato'}>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Età</label>
-                            <input type="number" id="profilo-eta" value=${userData.eta || 'Non specificato'} />
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Sesso</label>
-                            <input type="text" id="profilo-sesso" value=${userData.sesso || 'Non specificato'} />
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Tipo di lavoro</label>
-                            <input type="text" id="profilo-tipo_lavoro" value=${userData.tipo_lavoro || 'Non specificato'} />
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Altezza (cm)</label>
-                            <input type="number" id="profilo-altezza" value=${userData.altezza ? userData.altezza + ' cm' : 'Non specificato'} />
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Peso (kg)</label>
-                            <input type="number" id="profilo-peso" value=${userData.peso ? userData.peso + ' kg' : 'Non specificato'} />
-                        </div>
-                    </div>
+        <div class="flex flex-col max-w-4xl mx-auto">
+          <div class="form-box mb-6">
+            <div class="avatar-section">
+              <div class="avatar">
+                <span class="avatar-initials">U</span>
+                <div class="avatar-upload">
+                  <i class="fas fa-camera"></i>
                 </div>
+              </div>
+              <h2 class="text-xl font-semibold">${userData.email || 'Non specificato'}</h2>
+              <p class="text-sm text-gray-500">ID: ${userData.id || 'Non specificato'}</p>
+            </div>
 
-                <!-- Storia clinica -->
-                <div class="form-box mb-6">
-                    <h3 class="text-lg font-semibold mb-4">Storia clinica</h3>
+            <h3 class="text-lg font-semibold mb-4">Informazioni personali</h3>
+            <div class="form-grid">
+              <input disabled value="${userData.email || ''}" placeholder="Email">
+              <input value="${userData.eta || ''}" placeholder="Età">
+              <input value="${userData.sesso || ''}" placeholder="Sesso">
+              <input value="${userData.tipo_lavoro || ''}" placeholder="Tipo di lavoro">
+              <input value="${userData.altezza || ''}" placeholder="Altezza (cm)">
+              <input value="${userData.peso || ''}" placeholder="Peso (kg)">
+            </div>
+          </div>
 
-                    <div class="form-group mb-4">
-                        <label class="form-label">Patologie esistenti</label>
-                        <textarea id="profilo-patologie" rows="2" placeholder="Inserisci le patologie esistenti">${userData.patologie || 'Non specificato'}</textarea>
-                    </div>
+          <div class="form-box mb-6">
+            <h3 class="text-lg font-semibold mb-4">Storia clinica</h3>
+            <textarea rows="2" placeholder="Patologie">${userData.patologie || ''}</textarea>
+            <textarea rows="2" placeholder="Farmaci assunti">${userData.farmaci_dettaglio || ''}</textarea>
+            <textarea rows="2" placeholder="Intolleranze">${userData.intolleranze || ''}</textarea>
+            <textarea rows="2" placeholder="Alimenti esclusi">${userData.alimenti_esclusi || ''}</textarea>
+          </div>
 
-                    <div class="form-group mb-4">
-                        <label class="form-label">Farmaci assunti</label>
-                        <textarea id="profilo-farmaci_dettaglio" rows="2" placeholder="Inserisci i farmaci che stai assumendo">${userData.farmaci_dettaglio || 'Non specificato'}</textarea>
-                    </div>
+          <div class="form-box mb-6">
+            <h3 class="text-lg font-semibold mb-4">Preferenze e obiettivi</h3>
+            <textarea rows="3" placeholder="Preferenze salute">${userData.preferenze || ''}</textarea>
+          </div>
 
-                    <div class="form-group mb-4">
-                        <label class="form-label">Intolleranze</label>
-                        <textarea id="profilo-intolleranze" rows="2" placeholder="Inserisci le tue intolleranze">${userData.intolleranze || 'Non specificato'}</textarea>
-                    </div>
+          <div class="form-box mb-6">
+            <h3 class="text-lg font-semibold mb-4">SCORE2 – Rischio Cardiovascolare</h3>
+            <div class="form-grid">
+              <input value="${userData.pressione_sistolica || ''}" placeholder="Pressione sistolica (mmHg)">
+              <input value="${userData.pressione_diastolica || ''}" placeholder="Pressione diastolica (mmHg)">
+              <input value="${userData.colesterolo_totale || ''}" placeholder="Colesterolo totale (mg/dL)">
+              <input value="${userData.colesterolo_hdl_valore || ''}" placeholder="Colesterolo HDL (mg/dL)">
+              <input value="${userData.colesterolo_ldl_valore || ''}" placeholder="Colesterolo LDL (mg/dL)">
+              <input value="${userData.fumatore || ''}" placeholder="Fumatore (Sì/No)">
+              <input value="${userData.diabete || ''}" placeholder="Diabete diagnosticato (Sì/No)">
+              <input value="${userData.pressione_alta || ''}" placeholder="Pressione alta (Sì/No)">
+            </div>
+          </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Alimenti esclusi</label>
-                        <textarea id="profilo-alimenti_esclusi" rows="2" placeholder="Inserisci gli alimenti che non consumi">${userData.alimenti_esclusi || 'Non specificato'}</textarea>
-                    </div>
-                </div>
+          <div class="form-box mb-6">
+            <h3 class="text-lg font-semibold mb-4">ADA – Rischio Diabete</h3>
+            <div class="form-grid">
+              <input value="${userData.glicemia_valore || ''}" placeholder="Glicemia a digiuno (mg/dL)">
+              <input value="${userData.attivo30 || ''}" placeholder="Attività fisica 30min (Sì/No)">
+              <input value="${userData.familiari_diabete || ''}" placeholder="Familiari con diabete (Sì/No)">
+            </div>
+          </div>
 
-                <!-- Preferenze -->
-                <div class="form-box mb-6">
-                    <h3 class="text-lg font-semibold mb-4">Preferenze e obiettivi</h3>
+          <div class="form-box mb-6">
+            <h3 class="text-lg font-semibold mb-4">FRAX – Osteoporosi / Fratture</h3>
+            <div class="form-grid">
+              <input value="${userData.frattura || ''}" placeholder="Fratture da fragilità (Sì/No)">
+              <input value="${userData.famiglia_frattura_anca || ''}" placeholder="Genitore con frattura anca (Sì/No)">
+              <input value="${userData.corticosteroidi || ''}" placeholder="Uso corticosteroidi >3 mesi (Sì/No)">
+              <input value="${userData.alcol_eccessivo || ''}" placeholder=">3 unità alcoliche/giorno (Sì/No)">
+              <input value="${userData.artrite || ''}" placeholder="Artrite reumatoide diagnosticata (Sì/No)">
+            </div>
+          </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Preferenze salute</label>
-                        <textarea id="profilo-preferenze" rows="3" placeholder="Inserisci i tuoi obiettivi di salute e preferenze">${userData.preferenze || 'Non specificato'}</textarea>
-                    </div>
-                </div>
+          <div class="form-box mb-6">
+            <h3 class="text-lg font-semibold mb-4">FRAIL / SARC-F – Fragilità</h3>
+            <div class="form-grid">
+              <input value="${userData.stanchezza || ''}" placeholder="Stanchezza (No/Talvolta/Spesso)">
+              <input value="${userData.camminata || ''}" placeholder="Cammini 100 metri? (Sì/No)">
+              <input value="${userData.sollevamento || ''}" placeholder="Sollevi 4.5 kg? (Sì/No)">
+              <input value="${userData.sedia || ''}" placeholder="Difficoltà ad alzarti da una sedia? (Sì/No)">
+              <input value="${userData.cadute || ''}" placeholder="2 o più cadute in un anno? (Sì/No)">
+            </div>
+          </div>
+        </div>`;
 
-                <!-- Sezioni di Valutazione -->
-                <div class="accordion-section mb-4">
-                    <div class="accordion-header">
-                        <div class="flex items-center">
-                            <span class="mr-2">❤️</span>
-                            <span>SCORE2 – Rischio Cardiovascolare</span>
-                        </div>
-                        <i class="fas fa-chevron-down accordion-icon"></i>
-                    </div>
-                    <div class="accordion-body">
-                        <div class="accordion-content">
-                            <div class="form-grid">
-                                <div class="form-group">
-                                    <label class="form-label">Pressione sistolica (mmHg)</label>
-                                    <input type="number" id="profilo-pressione_sistolica" value=${userData.pressione_sistolica ? userData.pressione_sistolica + ' mmHg' : 'Non specificato'}/>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Pressione diastolica (mmHg)</label>
-                                    <input type="number" id="profilo-pressione_diastolica" value=${userData.pressione_diastolica ? userData.pressione_diastolica + ' mmHg' : 'Non specificato'} />
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Colesterolo totale (mg/dL)</label>
-                                    <input type="number" id="profilo-colesterolo_totale" value=${userData.colesterolo_totale ? userData.colesterolo_totale + ' mg/dL' : 'Non specificato'}/>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Colesterolo HDL (mg/dL)</label>
-                                    <input type="number" id="profilo-colesterolo_hdl_valore" value=${userData.colesterolo_hdl_valore ? userData.colesterolo_hdl_valore + ' mg/dL' : 'Non specificato'}/>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Colesterolo LDL (mg/dL)</label>
-                                    <input type="number" id="profilo-colesterolo_ldl_valore" value=${userData.colesterolo_ldl_valore ? userData.colesterolo_ldl_valore + ' mg/dL' : 'Non specificato'}/>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Fumatore</label>
-                                    <input type="text" id="profilo-fumatore" value=${userData.fumatore || 'Non specificato'}/>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Diabete di tipo 2 diagnosticato</label>
-                                    <input type="text" id="profilo-diabete" value=${userData.diabete || 'Non specificato'}/>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="accordion-section mb-4">
-                    <div class="accordion-header">
-                        <div class="flex items-center">
-                            <span class="mr-2">🍬</span>
-                            <span>ADA – Rischio Diabete</span>
-                        </div>
-                        <i class="fas fa-chevron-down accordion-icon"></i>
-                    </div>
-                    <div class="accordion-body">
-                        <div class="accordion-content">
-                            <div class="form-grid">
-                                <div class="form-group">
-                                    <label class="form-label">Glicemia a digiuno (mg/dL)</label>
-                                    <input type="number" id="profilo-glicemia_valore" value=${userData.glicemia_valore ? userData.glicemia_valore + ' mg/dL' : 'Non specificato'}/>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Fai almeno 30 minuti di attività fisica al giorno?</label>
-                                    <input type="text" id="profilo-attivo30" value=${userData.attivita_fisica || 'Non specificato'}>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Hai la pressione alta?</label>
-                                    <select id="profilo-pressione_alta">
-                                        <option value="">Seleziona...</option>
-                                        <option value="si">Sì</option>
-                                        <option value="no">No</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Hai familiari con diabete di tipo 2?</label>
-                                    <input type="text" id="profilo-familiari_diabete" value=${userData.familiari_diabete || 'Non specificato'}>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="accordion-section mb-4">
-                    <div class="accordion-header">
-                        <div class="flex items-center">
-                            <span class="mr-2">🦴</span>
-                            <span>FRAX – Osteoporosi / Fratture</span>
-                        </div>
-                        <i class="fas fa-chevron-down accordion-icon"></i>
-                    </div>
-                    <div class="accordion-body">
-                        <div class="accordion-content">
-                            <div class="form-grid">
-                                <div class="form-group">
-                                    <label class="form-label">Hai avuto fratture da fragilità?</label>
-                                    <select id="profilo-frattura">
-                                        <option value="">Seleziona...</option>
-                                        <option value="si">Sì</option>
-                                        <option value="no">No</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Genitore con frattura dell'anca?</label>
-                                    <select id="profilo-famiglia_frattura_anca">
-                                        <option value="">Seleziona...</option>
-                                        <option value="si">Sì</option>
-                                        <option value="no">No</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Assumi corticosteroidi da > 3 mesi?</label>
-                                    <select id="profilo-corticosteroidi">
-                                        <option value="">Seleziona...</option>
-                                        <option value="si">Sì</option>
-                                        <option value="no">No</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Consumi più di 3 unità alcoliche/giorno?</label>
-                                    <select id="profilo-alcol_eccessivo">
-                                        <option value="">Seleziona...</option>
-                                        <option value="si">Sì</option>
-                                        <option value="no">No</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Artrite reumatoide diagnosticata?</label>
-                                    <input type="text" id="profilo-artrite" value=${userData.artrite || 'Non specificato'}>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="accordion-section mb-4">
-                    <div class="accordion-header">
-                        <div class="flex items-center">
-                            <span class="mr-2">👵</span>
-                            <span>FRAIL / SARC-F – Fragilità</span>
-                        </div>
-                        <i class="fas fa-chevron-down accordion-icon"></i>
-                    </div>
-                    <div class="accordion-body">
-                        <div class="accordion-content">
-                            <div class="form-grid">
-                                <div class="form-group">
-                                    <label class="form-label">Ti senti stanco/a spesso?</label>
-                                    <select id="profilo-stanchezza">
-                                        <option value="">Seleziona...</option>
-                                        <option value="no">No</option>
-                                        <option value="talvolta">Talvolta</option>
-                                        <option value="spesso">Spesso</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Riesci a camminare 100 metri?</label>
-                                    <select id="profilo-camminata">
-                                        <option value="">Seleziona...</option>
-                                        <option value="si">Sì</option>
-                                        <option value="no">No</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Riesci a sollevare 4.5 kg?</label>
-                                    <select id="profilo-sollevamento">
-                                        <option value="">Seleziona...</option>
-                                        <option value="si">Sì</option>
-                                        <option value="no">No</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Difficoltà ad alzarti da una sedia?</label>
-                                    <select id="profilo-sedia">
-                                        <option value="">Seleziona...</option>
-                                        <option value="si">Sì</option>
-                                        <option value="no">No</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Hai avuto 2 o più cadute in un anno?</label>
-                                    <select id="profilo-cadute">
-                                        <option value="">Seleziona...</option>
-                                        <option value="si">Sì</option>
-                                        <option value="no">No</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!--
-                <tr><td><strong>Origine etnica:</strong></td><td>${userData.origine_etnica || 'Non specificato'}</td></tr>
-                <tr><td><strong>Interventi:</strong></td><td>${userData.interventi_dettaglio || 'Non specificato'}</td></tr>
-                <tr><td><strong>Consumo di alcol:</strong></td><td>${userData.unita_alcoliche ? userData.unita_alcoliche + ' unità/giorno' : 'Non specificato'}</td></tr>
-                -->
-            `;
-
-            container.innerHTML = html;
-
+      container.innerHTML = html;
             // 🔄 Inizializza gli accordion DOPO aver inserito l'HTML
             initializeAccordions();
 
