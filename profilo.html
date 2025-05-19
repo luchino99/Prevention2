@@ -9,6 +9,16 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="chatbot-logic.js" defer></script>
+<script>
+  window.addEventListener("DOMContentLoaded", async () => {
+    await new Promise(resolve => setTimeout(resolve, 300)); // attesa breve
+    if (typeof window.mostraProfiloUtente === "function") {
+      window.mostraProfiloUtente();
+    } else {
+      console.warn("❗ mostraProfiloUtente non è definita nemmeno dopo il delay.");
+    }
+  });
+</script>
     <style>
         :root {
             --primary-color: #4a6fa5;
@@ -975,16 +985,7 @@
             */
         });
     </script>
-<script>
-  window.addEventListener("DOMContentLoaded", async () => {
-    await new Promise(resolve => setTimeout(resolve, 300)); // attesa breve
-    if (typeof window.mostraProfiloUtente === "function") {
-      window.mostraProfiloUtente();
-    } else {
-      console.warn("❗ mostraProfiloUtente non è definita nemmeno dopo il delay.");
-    }
-  });
-</script>
+
    
 </body>
 </html>
