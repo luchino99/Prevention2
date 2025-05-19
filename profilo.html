@@ -746,16 +746,22 @@
 
       container.innerHTML = html;
 
-document.getElementById("profilo-pressione_alta").value = userData.pressione_alta || '';
-document.getElementById("profilo-frattura").value = userData.frattura || '';
-document.getElementById("profilo-famiglia_frattura_anca").value = userData.famiglia_frattura_anca || '';
-document.getElementById("profilo-corticosteroidi").value = userData.corticosteroidi || '';
-document.getElementById("profilo-alcol_eccessivo").value = userData.alcol_eccessivo || '';
-document.getElementById("profilo-stanchezza").value = userData.stanchezza || '';
-document.getElementById("profilo-camminata").value = userData.camminata || '';
-document.getElementById("profilo-sollevamento").value = userData.sollevamento || '';
-document.getElementById("profilo-sedia").value = userData.sedia || '';
-document.getElementById("profilo-cadute").value = userData.cadute || '';
+const setSelectValue = (id, value) => {
+  const el = document.getElementById(id);
+  if (el) el.value = value || '';
+};
+
+// Esegui dopo aver inserito `html` nel DOM
+setSelectValue("profilo-pressione_alta", userData.pressione_alta);
+setSelectValue("profilo-frattura", userData.frattura);
+setSelectValue("profilo-famiglia_frattura_anca", userData.famiglia_frattura_anca);
+setSelectValue("profilo-corticosteroidi", userData.corticosteroidi);
+setSelectValue("profilo-alcol_eccessivo", userData.alcol_eccessivo);
+setSelectValue("profilo-stanchezza", userData.stanchezza);
+setSelectValue("profilo-camminata", userData.camminata);
+setSelectValue("profilo-sollevamento", userData.sollevamento);
+setSelectValue("profilo-sedia", userData.sedia);
+setSelectValue("profilo-cadute", userData.cadute);
 
             
             initializeAccordions();
