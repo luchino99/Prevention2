@@ -865,6 +865,8 @@ async function mostraProfiloUtente() {
     console.error("❌ Errore durante il popolamento del profilo:", err);
   }
 }
+  window.mostraProfiloUtente = mostraProfiloUtente;
+
 
 const form = document.getElementById("input-form");
 if (form) {
