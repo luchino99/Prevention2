@@ -616,7 +616,7 @@ recuperaAnagraficaDalDatabase(emailUtente).then((dati) => {
     console.log("✅ Anagrafica precompilata:", risposte);
   }
 
- // mostraScelteIniziali(); //
+  mostraProfiloUtente();
 });
 
       const profiloBtn = document.getElementById("btn-profilo");
@@ -808,6 +808,12 @@ const toggleBtn = document.getElementById("theme-toggle");
 }
 
 async function mostraProfiloUtente() {
+  const emailInput = document.getElementById("profilo-email");
+  if (!emailInput) {
+    console.warn("⚠️ Campi profilo non trovati nel DOM. Evito il popolamento.");
+    return;
+  }
+  
   try {
     document.getElementById("profilo-email").value = risposte.email || "";
     document.getElementById("profilo-eta").value = risposte.eta || "";
@@ -958,7 +964,3 @@ Vuoi aggiornarli? (sì / no)`);
 
 
 
-if (window.location.pathname.includes("profilo.html")) {
-  console.log("🧭 profilo.html rilevato → chiamo mostraProfiloUtente()");
-  mostraProfiloUtente();
-}
