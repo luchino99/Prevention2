@@ -595,6 +595,11 @@
     <main class="container mx-auto px-4 pb-24">
         <div id="user-data">Caricamento profilo...</div>
     </main>
+    <div class="button-container">
+  <button id="btn-salva-profilo" class="save-btn">
+    <i class="fas fa-save"></i> Salva modifiche
+  </button>
+</div>
 
     <!-- Footer -->
     <footer class="py-4 mt-8" style="border-top: 1px solid var(--border-color); background-color: var(--card-color); color: var(--text-color); transition: border-color var(--animation-speed);">
@@ -965,5 +970,55 @@
         }
 
     </script>
+    <script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+const supabase = createClient(
+  'https://lwuhdgrkaoyvejmzfbtx.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3dWhkZ3JrYW95dmVqbXpmYnR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2NzU1MDcsImV4cCI6MjA2MTI1MTUwN30.1c5iH4PYW-HeigfXkPSgnVK3t02Gv3krSeo7dDSqqsk'
+);
+
+document.getElementById("btn-salva-profilo").addEventListener("click", async () => {
+  const session = await supabase.auth.getSession();
+  if (!session.data?.session?.user?.email) {
+    alert("❌ Utente non autenticato.");
+    return;
+  }
+
+  const email = session.data.session.user.email;
+
+  // 🔎 Raccoglie i valori dal DOM
+  const updatedData = {
+    email,
+    eta: document.getElementById("profilo-eta")?.value,
+    sesso: document.getElementById("profilo-sesso")?.value,
+    tipo_lavoro: document.getElementById("profilo-tipo_lavoro")?.value,
+    altezza: parseFloat(document.getElementById("profilo-altezza")?.value),
+    peso: parseFloat(document.getElementById("profilo-peso")?.value),
+    patologie: document.getElementById("profilo-patologie")?.value,
+    farmaci_dettaglio: document.getElementById("profilo-farmaci_dettaglio")?.value,
+    intolleranze: document.getElementById("profilo-intolleranze")?.value,
+    alimenti_esclusi: document.getElementById("profilo-alimenti_esclusi")?.value,
+    preferenze: document.getElementById("profilo-preferenze")?.value,
+    colesterolo_totale: parseFloat(document.getElementById("profilo-colesterolo_totale")?.value),
+    colesterolo_hdl_valore: parseFloat(document.getElementById("profilo-colesterolo_hdl_valore")?.value),
+    colesterolo_ldl_valore: parseFloat(document.getElementById("profilo-colesterolo_ldl_valore")?.value),
+    pressione_sistolica: parseFloat(document.getElementById("profilo-pressione_sistolica")?.value),
+    pressione_diastolica: parseFloat(document.getElementById("profilo-pressione_diastolica")?.value)
+  };
+
+  // ✅ Salvataggio con Supabase (upsert: aggiorna se esiste, inserisce se no)
+  const { error } = await supabase
+    .from("anagrafica_utenti")
+    .upsert([updatedData], { onConflict: ['email'] });
+
+  if (error) {
+    alert("❌ Errore durante il salvataggio: " + error.message);
+  } else {
+    alert("✅ Dati salvati con successo!");
+  }
+});
+</script>
+
 </body>
 </html>
