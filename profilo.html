@@ -596,6 +596,13 @@
         <div id="user-data">Caricamento profilo...</div>
     </main>
 
+    <div class="button-container">
+  <button id="btn-salva-profilo" class="save-btn">
+    <i class="fas fa-save"></i> Salva modifiche
+  </button>
+</div>
+
+
     <!-- Footer -->
     <footer class="py-4 mt-8" style="border-top: 1px solid var(--border-color); background-color: var(--card-color); color: var(--text-color); transition: border-color var(--animation-speed);">
         <div class="container mx-auto px-4 text-center text-sm">
@@ -911,9 +918,12 @@
                 `;
 
             container.innerHTML = html;
+            
 
             // 🔄 Inizializza gli accordion DOPO aver inserito l'HTML
             initializeAccordions();
+
+
 
         }
     </script>
@@ -965,5 +975,72 @@
         }
 
     </script>
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+const supabase = createClient(
+  'https://lwuhdgrkaoyvejmzfbtx.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' // proteggere in produzione
+);
+
+document.addEventListener("DOMContentLoaded", () => {
+  const btnSalva = document.getElementById("btn-salva-profilo");
+  if (!btnSalva) return;
+
+  btnSalva.addEventListener("click", async () => {
+    const email = document.getElementById("profilo-email")?.value.trim();
+    if (!email) return alert("⚠️ Email mancante");
+
+    // Lista di tutti i campi rilevanti usati dal chatbot
+    const campi = [
+      "eta", "sesso", "altezza", "peso", "tipo_lavoro", "patologie", "farmaci_dettaglio",
+      "intolleranze", "alimenti_esclusi", "preferenze", "pressione_sistolica",
+      "pressione_diastolica", "colesterolo_totale", "colesterolo_hdl_valore",
+      "colesterolo_ldl_valore", "fumatore", "diabete", "glicemia_valore", "attivo30",
+      "pressione_alta", "familiari_diabete", "frattura", "famiglia_frattura_anca",
+      "corticosteroidi", "alcol_eccessivo", "artrite", "stanchezza", "camminata",
+      "sollevamento", "sedia", "cadute"
+    ];
+
+    const dati = { email };
+
+    for (const campo of campi) {
+      const input = document.getElementById("profilo-" + campo);
+      if (input) {
+        let val = input.value?.trim();
+        if (val?.toLowerCase().includes("mg/dl") || val?.toLowerCase().includes("mmhg") || val?.includes("cm")) {
+          val = val.replace(/[^\d.]/g, ""); // rimuove unità come 'mg/dL'
+        }
+        dati[campo] = val || null;
+      }
+    }
+
+    // Parsing automatico di numeri noti
+    const numerici = ["eta", "altezza", "peso", "pressione_sistolica", "pressione_diastolica", "glicemia_valore", "colesterolo_totale", "colesterolo_hdl_valore", "colesterolo_ldl_valore"];
+    numerici.forEach(key => {
+      if (dati[key]) dati[key] = parseFloat(dati[key]);
+    });
+
+    try {
+      const { error } = await supabase
+        .from("anagrafica_utenti")
+        .upsert([dati], { onConflict: 'email' }); // aggiorna o crea
+
+      if (error) {
+        alert("❌ Errore durante il salvataggio: " + error.message);
+        return;
+      }
+
+      alert("✅ Dati salvati correttamente! Il chatbot ora li userà per saltare le domande.");
+
+    } catch (e) {
+      console.error("❌ Errore imprevisto:", e);
+      alert("⚠️ Errore tecnico durante il salvataggio.");
+    }
+  });
+});
+</script>
+
+
 </body>
 </html>
