@@ -981,74 +981,78 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 const supabaseUrl = 'https://lwuhdgrkaoyvejmzfbtx.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // proteggi in produzione
 
-// 🔐 Recupera la sessione attiva
-const tempClient = createClient(supabaseUrl, supabaseKey);
-const { data: sessionData, error: sessionError } = await tempClient.auth.getSession();
+async function init() {
+  // 🔐 Recupera la sessione attiva
+  const tempClient = createClient(supabaseUrl, supabaseKey);
+  const { data: sessionData, error: sessionError } = await tempClient.auth.getSession();
 
-if (sessionError || !sessionData.session) {
-  alert("⚠️ Sessione non attiva. Effettua il login.");
-  window.location.href = "login.html";
-  throw new Error("Utente non autenticato");
-}
-
-// ✅ Usa il token dell’utente per creare un client autenticato
-const supabase = createClient(supabaseUrl, supabaseKey, {
-  global: {
-    headers: {
-      Authorization: `Bearer ${sessionData.session.access_token}`
-    }
+  if (sessionError || !sessionData.session) {
+    alert("⚠️ Sessione non attiva. Effettua il login.");
+    window.location.href = "login.html";
+    return;
   }
-});
 
-document.getElementById("btn-salva-profilo")?.addEventListener("click", async () => {
-  const email = document.getElementById("profilo-email")?.value.trim();
-  if (!email) return alert("⚠️ Email mancante");
-
-  const campi = [
-    "eta", "sesso", "altezza", "peso", "tipo_lavoro", "patologie", "farmaci_dettaglio",
-    "intolleranze", "alimenti_esclusi", "preferenze", "pressione_sistolica",
-    "pressione_diastolica", "colesterolo_totale", "colesterolo_hdl_valore",
-    "colesterolo_ldl_valore", "fumatore", "diabete", "glicemia_valore", "attivo30",
-    "pressione_alta", "familiari_diabete", "frattura", "famiglia_frattura_anca",
-    "corticosteroidi", "alcol_eccessivo", "artrite", "stanchezza", "camminata",
-    "sollevamento", "sedia", "cadute"
-  ];
-
-  const dati = { email };
-
-  for (const campo of campi) {
-    const input = document.getElementById("profilo-" + campo);
-    if (input) {
-      let val = input.value?.trim();
-      if (val?.toLowerCase().includes("mg/dl") || val?.toLowerCase().includes("mmhg") || val?.includes("cm")) {
-        val = val.replace(/[^\d.]/g, "");
+  // ✅ Usa il token dell’utente
+  const supabase = createClient(supabaseUrl, supabaseKey, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${sessionData.session.access_token}`
       }
-      dati[campo] = val || null;
     }
-  }
-
-  // Numeri
-  const numerici = ["eta", "altezza", "peso", "pressione_sistolica", "pressione_diastolica", "glicemia_valore", "colesterolo_totale", "colesterolo_hdl_valore", "colesterolo_ldl_valore"];
-  numerici.forEach(key => {
-    if (dati[key]) dati[key] = parseFloat(dati[key]);
   });
 
-  try {
-    const { error } = await supabase
-      .from("anagrafica_utenti")
-      .upsert([dati], { onConflict: 'email' });
+  // 🧠 Listener per il salvataggio
+  document.getElementById("btn-salva-profilo")?.addEventListener("click", async () => {
+    const email = document.getElementById("profilo-email")?.value.trim();
+    if (!email) return alert("⚠️ Email mancante");
 
-    if (error) {
-      alert("❌ Errore durante il salvataggio: " + error.message);
-    } else {
-      alert("✅ Dati salvati correttamente!");
+    const campi = [
+      "eta", "sesso", "altezza", "peso", "tipo_lavoro", "patologie", "farmaci_dettaglio",
+      "intolleranze", "alimenti_esclusi", "preferenze", "pressione_sistolica",
+      "pressione_diastolica", "colesterolo_totale", "colesterolo_hdl_valore",
+      "colesterolo_ldl_valore", "fumatore", "diabete", "glicemia_valore", "attivo30",
+      "pressione_alta", "familiari_diabete", "frattura", "famiglia_frattura_anca",
+      "corticosteroidi", "alcol_eccessivo", "artrite", "stanchezza", "camminata",
+      "sollevamento", "sedia", "cadute"
+    ];
+
+    const dati = { email };
+    for (const campo of campi) {
+      const input = document.getElementById("profilo-" + campo);
+      if (input) {
+        let val = input.value?.trim();
+        if (val?.toLowerCase().includes("mg/dl") || val?.toLowerCase().includes("mmhg") || val?.includes("cm")) {
+          val = val.replace(/[^\d.]/g, "");
+        }
+        dati[campo] = val || null;
+      }
     }
-  } catch (err) {
-    console.error("❌ Errore imprevisto:", err);
-    alert("⚠️ Errore tecnico durante il salvataggio.");
-  }
-});
+
+    const numerici = ["eta", "altezza", "peso", "pressione_sistolica", "pressione_diastolica", "glicemia_valore", "colesterolo_totale", "colesterolo_hdl_valore", "colesterolo_ldl_valore"];
+    numerici.forEach(key => {
+      if (dati[key]) dati[key] = parseFloat(dati[key]);
+    });
+
+    try {
+      const { error } = await supabase
+        .from("anagrafica_utenti")
+        .upsert([dati], { onConflict: 'email' });
+
+      if (error) {
+        alert("❌ Errore durante il salvataggio: " + error.message);
+      } else {
+        alert("✅ Dati salvati correttamente!");
+      }
+    } catch (err) {
+      console.error("❌ Errore imprevisto:", err);
+      alert("⚠️ Errore tecnico durante il salvataggio.");
+    }
+  });
+}
+
+init(); // 🚀 Avvia tutto
 </script>
+
 
 
 </body>
