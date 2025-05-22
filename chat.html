@@ -28,6 +28,8 @@
             --font-family: 'Segoe UI', 'Roboto', sans-serif;
             --radius: 20px;
             --animation-speed: 0.3s;
+            --option-card-bg: #f8f9fd;
+            --option-card-hover-shadow: rgba(74, 111, 165, 0.12);
         }
 
         [data-theme="dark"] {
@@ -44,6 +46,8 @@
             --bot-message-bg: #2a3548;
             --user-message-bg: #446655;
             --user-message-text: #e0e0e0;
+            --option-card-bg: #2a2a35;
+            --option-card-hover-shadow: rgba(90, 127, 181, 0.15);
         }
 
         * {
@@ -53,7 +57,7 @@
         }
 
 
-        
+
         body {
             font-family: var(--font-family);
             background-color: var(--background-color);
@@ -139,6 +143,7 @@
 
         .welcome-title {
             display: flex;
+            flex-direction: column;
             align-items: center;
             margin-bottom: 16px;
         }
@@ -439,18 +444,206 @@
           transition: background-color var(--animation-speed);
         }
 
+        .welcome-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .welcome-content {
+            border-radius: var(--radius);
+            padding: 30px;
+            margin-top: 20px;
+            background-color: var(--card-color);
+            box-shadow: 0 2px 10px var(--border-color);
+        }
+
+        .welcome-title {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .welcome-title h2 {
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .welcome-title h2 i {
+            margin-right: 10px;
+            font-size: 24px;
+        }
+
+        .welcome-title p {
+            color: var(--text-light);
+            font-size: 15px;
+        }
+
+        .option-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .option-card {
+            background-color: var(--option-card-bg);
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+            padding: 24px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .option-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 10px 20px rgba(74, 111, 165, 0.12);
+            border-color: var(--primary-light);
+        }
+
+        [data-theme="dark"] .option-card.active {
+    background-color: rgba(100, 208, 176, 0.08);
+}
+
+/* Tema scuro per le icone */
+[data-theme="dark"] .option-card:nth-child(1) .option-icon {
+    color: #ff6b6b;
+    background-color: rgba(255, 107, 107, 0.15);
+}
+
+[data-theme="dark"] .option-card:nth-child(2) .option-icon {
+    color: #51cf66;
+    background-color: rgba(81, 207, 102, 0.15);
+}
+
+[data-theme="dark"] .option-card:nth-child(3) .option-icon {
+    color: #ffd43b;
+    background-color: rgba(255, 212, 59, 0.15);
+}
+
+[data-theme="dark"] .option-card:nth-child(4) .option-icon {
+    color: #74c0fc;
+    background-color: rgba(116, 192, 252, 0.15);
+}
+
+        .option-card.active {
+            border-color: var(--accent-color);
+            background-color: rgba(84, 192, 160, 0.05);
+        }
+
+        .option-icon {
+            font-size: 28px;
+            margin-bottom: 16px;
+            color: var(--primary-color);
+            width: 60px;
+            height: 60px;
+            background-color: rgba(74, 111, 165, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .option-card:nth-child(1) .option-icon {
+            color: #e74c3c;
+            background-color: rgba(231, 76, 60, 0.1);
+        }
+
+        .option-card:nth-child(2) .option-icon {
+            color: #2ecc71;
+            background-color: rgba(46, 204, 113, 0.1);
+        }
+
+        .option-card:nth-child(3) .option-icon {
+            color: #f39c12;
+            background-color: rgba(243, 156, 18, 0.1);
+        }
+
+        .option-card:nth-child(4) .option-icon {
+            color: #3498db;
+            background-color: rgba(52, 152, 219, 0.1);
+        }
+
+        .option-title {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        .option-desc {
+            font-size: 13px;
+            color: var(--text-light);
+            line-height: 1.4;
+        }
+
+        .welcome-footer {
+            padding: 20px 30px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: center;
+        }
+
+        .start-button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 10px 24px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .start-button:hover {
+            background-color: #48b193;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(84, 192, 160, 0.3);
+        }
+
+        .start-button i {
+            margin-left: 8px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 700px) {
+            .option-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .welcome-container {
+                max-width: 100%;
+            }
+        }
+
+
 
     </style>
 </head>
 <body>
     <div class="chat-container">
-        <!--
-        <header class="chat-header">
-            <div class="header-title">Chat con HealthAI</div>
-            <div class="header-actions">
-                <button id="theme-toggle" class="theme-toggle">🌙</button>
-            </div>
-        </header> -->
 
         <!-- Header -->
         <header class="shadow-sm mb-4 sticky top-0 z-10 chat-header" style="background-color: var(--card-color); color: var(--text-color); border-bottom: 1px solid var(--border-color);">
@@ -476,30 +669,45 @@
             </div>
         </header>
 
-        <div class="welcome-banner" id="welcome-banner">
-            <div class="chat-area">
-                <div style="margin-top: 80px" class="message-bubble welcome-message bot-message-welcome">
+        <div class="welcome-container">
+                <div class="welcome-content">
                     <div class="welcome-title">
-                        <div class="avatar">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M9 9C9.55228 9 10 8.55228 10 8C10 7.44772 9.55228 7 9 7C8.44772 7 8 7.44772 8 8C8 8.55228 8.44772 9 9 9Z" fill="white" />
-                                <path d="M15 9C15.5523 9 16 8.55228 16 8C16 7.44772 15.5523 7 15 7C14.4477 7 14 7.44772 14 8C14 8.55228 14.4477 9 15 9Z" fill="white" />
-                                <path d="M8.5 13.5C9.167 15.167 11.3 17.4 15.5 13.5" stroke="white" stroke-width="1.5" stroke-linecap="round" />
-                            </svg>
-                        </div>
-                        <h3>👋 Ciao! Come posso aiutarti oggi?</h3>
+                      <h2>Ciao! Come posso aiutarti oggi?</h2>
+                      <p>Seleziona una delle opzioni per iniziare la conversazione</p>
                     </div>
-                    <div class="welcome-options">
-                        <p><i>◆</i> Hai bisogno di aiuto per ricevere consigli su una situazione medica attuale o sui tuoi sintomi?</p>
-                        <p><i>◆</i> Oppure vuoi ricevere consigli per la prevenzione della salute?</p>
-                        <p><i>◆</i> O desideri un piano alimentare o programma di allenamento personalizzato?</p>
-                    </div>
-                    <div class="option-buttons">
-                       <button type="button" class="option-button" data-mode="sintomi">🤒 Descrivere i miei sintomi</button>
-                        <button type="button" class="option-button" data-mode="prevenzione">🍎 Fare prevenzione</button>
-                        <button type="button" class="option-button" data-mode="dieta">🍽️ Piano alimentare su misura</button>
-                        <button type="button" class="option-button" data-mode="allenamento">🏋️ Piano di allenamento su misura</button>
 
+                    <div class="option-grid">
+                        <div class="option-card" data-mode="sintomi">
+                            <div class="option-icon">
+                                <i class="fas fa-thermometer-half"></i>
+                            </div>
+                            <div class="option-title">Descrivere i miei sintomi</div>
+                            <div class="option-desc">Ottieni consigli su sintomi o situazioni mediche attuali</div>
+                        </div>
+
+                        <div class="option-card" data-mode="prevenzione">
+                            <div class="option-icon">
+                                <i class="fas fa-shield-virus"></i>
+                            </div>
+                            <div class="option-title">Fare prevenzione</div>
+                            <div class="option-desc">Consigli per la prevenzione e uno stile di vita sano</div>
+                        </div>
+
+                        <div class="option-card" data-mode="dieta">
+                            <div class="option-icon">
+                                <i class="fas fa-utensils"></i>
+                            </div>
+                            <div class="option-title">Piano alimentare</div>
+                            <div class="option-desc">Ottieni un piano alimentare personalizzato</div>
+                        </div>
+
+                        <div class="option-card" data-mode="allenamento">
+                            <div class="option-icon">
+                                <i class="fas fa-dumbbell"></i>
+                            </div>
+                            <div class="option-title">Piano di allenamento</div>
+                            <div class="option-desc">Ottieni un programma di allenamento su misura</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -510,15 +718,22 @@
                 <!-- I messaggi della chat saranno inseriti qui dinamicamente -->
             </div>
            <form id="input-form" class="input-area">
-  <input type="text" class="message-input" id="message-input" placeholder="Digita qui la tua risposta..." />
-  <button type="submit" class="send-button" id="send-button">
-    <i>➤</i>
-  </button>
-</form>
+             <input type="text" class="message-input" id="message-input" placeholder="Digita qui la tua risposta..." />
+             <button type="submit" class="send-button" id="send-button">
+               <i>➤</i>
+             </button>
+           </form>
         </div>
     </div>
+    <div style="visibility: hidden" class="option-buttons">
+       <button type="button" class="option-button" data-mode="sintomi">🤒 Descrivere i miei sintomi</button>
+        <button type="button" class="option-button" data-mode="prevenzione">🍎 Fare prevenzione</button>
+        <button type="button" class="option-button" data-mode="dieta">🍽️ Piano alimentare su misura</button>
+        <button type="button" class="option-button" data-mode="allenamento">🏋️ Piano di allenamento su misura</button>
 
-    
+    </div>
+
+
 <script>
   document.addEventListener("DOMContentLoaded", () => {
     // Collegamento pulsanti alle modalità dinamiche
@@ -537,27 +752,61 @@
       });
     });
 
-    // Gestione tema chiaro/scuro
-    const themeToggle = document.getElementById("theme-toggle");
-    if (themeToggle) {
-      themeToggle.addEventListener("click", () => {
-        const currentTheme = document.documentElement.getAttribute("data-theme");
-        const newTheme = currentTheme === "dark" ? "light" : "dark";
-        document.documentElement.setAttribute("data-theme", newTheme);
-        themeToggle.textContent = newTheme === "dark" ? "☀️" : "🌙";
-        window.parent.postMessage({ type: "theme", theme: newTheme }, "*");
-      });
-    }
+     const optionCards = document.querySelectorAll('.option-card');
 
-    window.addEventListener("message", event => {
-      if (event.data?.type === "theme") {
-        document.documentElement.setAttribute("data-theme", event.data.theme);
-      }
-    });
-  });
+     optionCards.forEach(card => {
+         card.addEventListener('click', function() {
+             const mode = this.dataset.mode;
+             console.log(`Avvio chat in modalità: ${mode}`);
+
+             // Simulazione del click sui pulsanti originali
+             // Questi ID devono corrispondere ai pulsanti nel file HTML originale
+             const originalButtons = document.querySelectorAll('.option-button');
+             originalButtons.forEach(button => {
+                 if(button.dataset.mode === mode) {
+                     button.click();
+                 }
+             });
+         });
+     });
+ });
+
+ // Gestione temi (da mantenere in tutte le pagine)
+ document.addEventListener('DOMContentLoaded', function () {
+     const themeToggle = document.getElementById('theme-toggle');
+
+     function applyTheme(theme) {
+         const html = document.documentElement;
+         html.setAttribute('data-theme', theme);
+
+         if (themeToggle) {
+             themeToggle.textContent = (theme === 'dark') ? '☀️' : '🌙';
+         }
+     }
+
+     // Listener per il toggle manuale
+     if (themeToggle) {
+         themeToggle.addEventListener('click', function () {
+             const currentTheme = document.documentElement.getAttribute('data-theme');
+             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+             applyTheme(newTheme);
+
+             // Comunica al parent il nuovo tema
+             window.parent.postMessage({ type: 'theme', theme: newTheme }, '*');
+         });
+     }
+
+     // Listener per ricevere tema dal parent
+     window.addEventListener('message', function (event) {
+         if (event.data && event.data.type === 'theme') {
+             applyTheme(event.data.theme);
+         }
+     });
+ });
 </script>
 
 
-   
+
 </body>
 </html>
