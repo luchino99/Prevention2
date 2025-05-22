@@ -446,14 +446,14 @@
             transform: rotate(180deg);
         }
 
-        /* NUOVO STILE PER IL PULSANTE FISSO GALLEGGIANTE */
-        .save-btn-floating {
+ .save-btn-floating-container-centered {
             position: fixed;
             bottom: 20px;
-            right: 20px;
+            left: 50%;
+            transform: translateX(-50%);
             background: linear-gradient(135deg, var(--button-primary-bg), var(--accent-color));
             color: white;
-            padding: 16px 24px;
+            padding: 16px 32px;
             border: none;
             border-radius: 50px;
             font-weight: 600;
@@ -465,25 +465,31 @@
             box-shadow: 0 8px 25px rgba(66, 133, 244, 0.3);
             transition: all 0.3s ease;
             z-index: 1000;
-            min-width: 160px;
+            min-width: 180px;
+            /* Limita la larghezza massima alla larghezza del contenitore del profilo */
+            max-width: min(90vw, 750px);
         }
 
-        .save-btn-floating:hover {
-            transform: translateY(-3px);
+        .save-btn-floating:hover,
+        .save-btn-floating-container-centered:hover {
+            transform: translateX(-50%) translateY(-3px);
             box-shadow: 0 12px 35px rgba(66, 133, 244, 0.4);
             background: linear-gradient(135deg, var(--button-hover-bg), #64d0b0);
         }
 
-        .save-btn-floating:active {
-            transform: translateY(-1px);
+        .save-btn-floating:active,
+        .save-btn-floating-container-centered:active {
+            transform: translateX(-50%) translateY(-1px);
         }
 
-        .save-btn-floating i {
+        .save-btn-floating i,
+        .save-btn-floating-container-centered i {
             margin-right: 8px;
             font-size: 18px;
         }
 
-        .save-btn-floating .pulse {
+        .save-btn-floating .pulse,
+        .save-btn-floating-container-centered .pulse {
             position: absolute;
             top: 50%;
             left: 50%;
@@ -512,12 +518,17 @@
 
         /* Responsive per mobile */
         @media (max-width: 768px) {
-            .save-btn-floating {
+            .save-btn-floating,
+            .save-btn-floating-container-centered {
                 bottom: 15px;
-                right: 15px;
-                padding: 14px 20px;
+                padding: 14px 24px;
                 font-size: 14px;
-                min-width: 140px;
+                min-width: 160px;
+            }
+            
+            .profile-container {
+                padding: 0 0.5rem;
+                padding-bottom: 100px;
             }
         }
 
