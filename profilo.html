@@ -451,30 +451,130 @@
         }
 
         /* Bottone salva */
-        .save-btn {
-            background-color: var(--button-primary-bg);
-            color: white;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background-color 0.2s, transform 0.1s;
-            margin-top: 20px;
-            width: 100%;
-        }
+/* 1. SOSTITUIRE il CSS esistente del .save-btn con questo: */
 
-        .save-btn:hover {
-            background-color: var(--button-hover-bg);
-            transform: translateY(-2px);
-        }
+.save-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--gradient-primary);
+    color: white;
+    padding: 16px 24px;
+    border: none;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 24px rgba(66, 133, 244, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateY(0);
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    min-width: 180px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(100px) scale(0.8);
+}
 
-        .save-btn i {
-            margin-right: 8px;
-        }
+.save-btn.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+}
+
+.save-btn:hover {
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 12px 32px rgba(66, 133, 244, 0.4);
+    background: var(--gradient-secondary);
+}
+
+.save-btn:active {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 6px 20px rgba(66, 133, 244, 0.3);
+}
+
+.save-btn i {
+    margin-right: 10px;
+    font-size: 18px;
+}
+
+.save-btn .btn-text {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+}
+
+/* Animazione pulsante per mobile */
+@media (max-width: 768px) {
+    .save-btn {
+        bottom: 20px;
+        right: 20px;
+        left: 20px;
+        width: calc(100% - 40px);
+        padding: 18px 24px;
+        border-radius: 16px;
+        min-width: unset;
+    }
+    
+    .save-btn:hover {
+        transform: translateY(-2px) scale(1.02);
+    }
+}
+
+/* Effetto glassmorphism per tema scuro */
+[data-theme="dark"] .save-btn {
+    background: linear-gradient(135deg, rgba(90, 127, 181, 0.9), rgba(78, 202, 111, 0.9));
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 24px rgba(90, 127, 181, 0.3);
+}
+
+[data-theme="dark"] .save-btn:hover {
+    background: linear-gradient(135deg, rgba(106, 143, 197, 0.9), rgba(98, 212, 131, 0.9));
+    box-shadow: 0 12px 32px rgba(90, 127, 181, 0.4);
+}
+
+/* Indicatore di salvataggio */
+.save-btn.saving {
+    pointer-events: none;
+    background: var(--text-light);
+}
+
+.save-btn.saving .btn-text::after {
+    content: "...";
+    animation: dots 1.5s infinite;
+}
+
+@keyframes dots {
+    0%, 20% { content: ""; }
+    40% { content: "."; }
+    60% { content: ".."; }
+    80%, 100% { content: "..."; }
+}
+
+/* Ripple effect moderno */
+.save-btn {
+    position: relative;
+    overflow: hidden;
+}
+
+.save-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+    transform: scale(0);
+    transition: transform 0.3s ease;
+    border-radius: inherit;
+}
+
+.save-btn:active::before {
+    transform: scale(1);
+}
 
         /* Form grid layout */
         .form-grid {
@@ -596,9 +696,125 @@
         <div id="user-data">Caricamento profilo...</div>
     </main>
     <div class="button-container">
-  <button id="btn-salva-profilo" class="save-btn">
-    <i class="fas fa-save"></i> Salva modifiche
-  </button>
+<script>
+// Sistema di scroll intelligente per pulsante floating
+document.addEventListener('DOMContentLoaded', function() {
+    const saveBtn = document.getElementById('btn-salva-profilo');
+    const main = document.querySelector('main');
+    let isVisible = false;
+    let ticking = false;
+    let lastScrollY = 0;
+    let scrollThreshold = 300; // Mostra dopo 300px di scroll
+
+    // Funzione ottimizzata per il controllo della visibilità
+    function updateButtonVisibility() {
+        const scrollY = window.scrollY;
+        const documentHeight = document.documentElement.scrollHeight;
+        const windowHeight = window.innerHeight;
+        const scrollProgress = scrollY / (documentHeight - windowHeight);
+        
+        // Mostra il pulsante quando:
+        // 1. L'utente ha scrollato oltre la soglia
+        // 2. Non è alla fine della pagina (per evitare sovrapposizioni con il footer)
+        const shouldShow = scrollY > scrollThreshold && scrollProgress < 0.9;
+        
+        if (shouldShow !== isVisible) {
+            isVisible = shouldShow;
+            saveBtn.classList.toggle('visible', shouldShow);
+            
+            // Aggiungi un leggero ritardo per l'animazione
+            if (shouldShow) {
+                setTimeout(() => {
+                    saveBtn.style.animation = 'bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
+                }, 100);
+            }
+        }
+        
+        lastScrollY = scrollY;
+        ticking = false;
+    }
+
+    // Throttled scroll handler per performance ottimali
+    function onScroll() {
+        if (!ticking) {
+            requestAnimationFrame(updateButtonVisibility);
+            ticking = true;
+        }
+    }
+
+    // Event listeners
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', updateButtonVisibility, { passive: true });
+
+    // Controllo iniziale
+    updateButtonVisibility();
+
+    // Gestione stati del pulsante durante il salvataggio
+    const originalSaveHandler = saveBtn.onclick;
+    
+    saveBtn.addEventListener('click', async function(e) {
+        // Aggiungi stato di caricamento
+        this.classList.add('saving');
+        this.style.pointerEvents = 'none';
+        
+        const originalText = this.querySelector('.btn-text').textContent;
+        this.querySelector('.btn-text').textContent = 'Salvataggio';
+        
+        try {
+            // Esegui il salvataggio originale
+            if (originalSaveHandler) {
+                await originalSaveHandler.call(this, e);
+            }
+            
+            // Feedback di successo
+            this.querySelector('.btn-text').textContent = 'Salvato!';
+            this.style.background = 'var(--success-color)';
+            
+            setTimeout(() => {
+                this.querySelector('.btn-text').textContent = originalText;
+                this.style.background = '';
+                this.classList.remove('saving');
+                this.style.pointerEvents = '';
+            }, 2000);
+            
+        } catch (error) {
+            // Feedback di errore
+            this.querySelector('.btn-text').textContent = 'Errore!';
+            this.style.background = 'var(--danger-color)';
+            
+            setTimeout(() => {
+                this.querySelector('.btn-text').textContent = originalText;
+                this.style.background = '';
+                this.classList.remove('saving');
+                this.style.pointerEvents = '';
+            }, 3000);
+        }
+    });
+});
+
+// Animazione keyframes per bounceIn (da aggiungere al CSS se non presente)
+const bounceInStyle = document.createElement('style');
+bounceInStyle.textContent = `
+    @keyframes bounceIn {
+        0% {
+            opacity: 0;
+            transform: translateY(100px) scale(0.3);
+        }
+        50% {
+            opacity: 1;
+            transform: translateY(-10px) scale(1.05);
+        }
+        70% {
+            transform: translateY(5px) scale(0.95);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+`;
+document.head.appendChild(bounceInStyle);
+</script>
 </div>
 
     <!-- Footer -->
