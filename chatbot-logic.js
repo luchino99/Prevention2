@@ -132,7 +132,7 @@ const aliasCondivisi = {
   sesso: ["sesso"],
   altezza: ["altezza"],
   peso: ["peso"],
-  attivita_fisica: ["attivita_fisica", "attivo30"],
+  attivita_fisica: ["attivita_fisica"],
   tipo_lavoro: ["tipo_lavoro"],
   preferenze: ["preferenze"],
   patologie: ["patologie"],
