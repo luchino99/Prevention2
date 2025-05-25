@@ -1939,6 +1939,7 @@ function updateRecommendations() {
             </div>
         `).join('');
 }
+    
 
 function updateNextSteps() {
     const container = document.querySelector('.card:last-child .space-y-3');
@@ -1992,6 +1993,46 @@ function updateNextSteps() {
         </div>
     `).join('');
 }
+
+    function updateScore2DiabetesBanner() {
+    const data = dashboardData.score2Diabetes;
+    if (!data || !data.value) return;
+
+    const circle = document.querySelector('#score2d-banner .progress-ring__circle');
+    const text = document.getElementById('score2d-banner-text');
+    const hba1cEl = document.getElementById('score2d-banner-hba1c');
+    const glicemiaEl = document.getElementById('score2d-banner-glucose');
+    const sbpEl = document.getElementById('score2d-banner-sbp');
+
+    const offset = 314.16 - (parseFloat(data.value) / 100 * 314.16);
+    circle.style.strokeDashoffset = offset;
+    text.textContent = `${data.value}%`;
+    hba1cEl.textContent = `${data.hba1c || '--'} %`;
+    glicemiaEl.textContent = `${data.glicemia || '--'} mg/dL`;
+    sbpEl.textContent = `${data.sistolica || '--'} mmHg`;
+}
+
+function updateFIB4Banner() {
+    const data = dashboardData.fib4;
+    if (!data || !data.value) return;
+
+    document.getElementById('fib4-banner-score').textContent = data.value;
+    document.getElementById('fib4-banner-score').className = `score-indicator text-2xl score-${data.category === 'success' ? 'medium' : data.category === 'warning' ? 'low' : 'high'}`;
+    document.getElementById('fib4-banner-ast').textContent = `${data.ast || '--'} U/L`;
+    document.getElementById('fib4-banner-alt').textContent = `${data.alt || '--'} U/L`;
+    document.getElementById('fib4-banner-plt').textContent = `${data.plt || '--'} x10⁹/L`;
+}
+
+function updateFNIBanner() {
+    const data = dashboardData.fni;
+    if (!data || !data.value) return;
+
+    document.getElementById('fni-banner-score').textContent = data.value;
+    document.getElementById('fni-banner-score').className = `score-indicator text-2xl score-${data.category === 'success' ? 'medium' : data.category === 'warning' ? 'low' : 'high'}`;
+    document.getElementById('fni-banner-albumina').textContent = `${data.albumina || '--'} g/dL`;
+    document.getElementById('fni-banner-linfociti').textContent = `${data.linfociti || '--'} /mm³`;
+}
+
 
 // Inizializza i grafici
 function initializeCharts() {
