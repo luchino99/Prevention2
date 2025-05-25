@@ -940,7 +940,11 @@
                 `;
 
             container.innerHTML = html;
-
+          
+const vitaSelect = document.getElementById("profilo-vita");
+if (vitaSelect && userData.vita) {
+    vitaSelect.value = userData.vita.toLowerCase();
+}
             // 🔄 Inizializza gli accordion DOPO aver inserito l'HTML
             initializeAccordions();
 
