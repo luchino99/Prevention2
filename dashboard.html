@@ -1009,10 +1009,10 @@ function calculatePREDIMED() {
     
     // Somma tutti i punteggi PREDIMED (14 domande)
     for (let i = 1; i <= 14; i++) {
-        const value = userData[`predimed_${i}`];
-        if (value?.toLowerCase() === 'sì' || value === '1' || value === true) {
-            score++;
-        }
+        const value = String(userData[`predimed_${i}`]).toLowerCase();
+if (['sì', 'si', '1', 'true'].includes(value)) {
+    score++;
+}
     }
     
     dashboardData.predimed.value = score;
