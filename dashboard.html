@@ -990,6 +990,13 @@ function calculateAllScores() {
     // 10. Valuta attività fisica
     evaluatePhysicalActivity();
     
+    calculateScore2Diabetes();
+    
+    calculateFIB4();
+
+    calculateFNI();
+
+    
     
 }
 
@@ -1447,6 +1454,81 @@ function evaluatePhysicalActivity() {
     }
 }
 
+        function calculateScore2Diabetes() {
+    const hba1c = parseFloat(userData.hba1c);
+    const glicemia = parseFloat(userData.glicemia_valore);
+    const sistolica = parseFloat(userData.pressione_sistolica);
+
+    if (!isNaN(hba1c) || !isNaN(glicemia) || !isNaN(sistolica)) {
+        const score = ((hba1c || 0) * 3 + (glicemia || 0) / 10 + (sistolica || 0) / 20).toFixed(1);
+        dashboardData.score2Diabetes = {
+            value: score,
+            hba1c,
+            glicemia,
+            sistolica,
+            category: score > 15 ? 'danger' : score > 10 ? 'warning' : 'success'
+        };
+    }
+}
+
+function calculateFIB4() {
+    const age = parseInt(userData.eta);
+    const ast = parseFloat(userData.ast);
+    const alt = parseFloat(userData.alt);
+    const plt = parseFloat(userData.piastrine);
+
+    if (!isNaN(age) && !isNaN(ast) && !isNaN(alt) && !isNaN(plt) && alt !== 0) {
+        const fib4 = ((age * ast) / (plt * Math.sqrt(alt))).toFixed(2);
+        let risk = 'Basso rischio';
+        let category = 'success';
+
+        if (fib4 >= 3.25) {
+            risk = 'Alto rischio';
+            category = 'danger';
+        } else if (fib4 >= 1.45) {
+            risk = 'Rischio intermedio';
+            category = 'warning';
+        }
+
+        dashboardData.fib4 = {
+            value: fib4,
+            ast,
+            alt,
+            plt,
+            risk,
+            category
+        };
+    }
+}
+
+function calculateFNI() {
+    const albumina = parseFloat(userData.albumina);
+    const linfociti = parseFloat(userData.linfociti);
+
+    if (!isNaN(albumina) && !isNaN(linfociti)) {
+        const fni = (10 * albumina + 0.005 * linfociti).toFixed(1);
+        let status = 'Normale';
+        let category = 'success';
+
+        if (fni < 35) {
+            status = 'Malnutrizione severa';
+            category = 'danger';
+        } else if (fni < 45) {
+            status = 'Malnutrizione lieve';
+            category = 'warning';
+        }
+
+        dashboardData.fni = {
+            value: fni,
+            albumina,
+            linfociti,
+            status,
+            category
+        };
+    }
+}
+
+
 // Aggiorna tutti gli elementi della dashboard
 function updateDashboard() {
     // Aggiorna sezione riepilogo salute
@@ -1464,6 +1546,9 @@ function updateDashboard() {
     
     // Aggiorna raccomandazioni
     updateRecommendations();
+    updateScore2DiabetesBanner();
+updateFIB4Banner();
+updateFNIBanner();
     
   
     
