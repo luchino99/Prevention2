@@ -227,13 +227,27 @@ Usa i seguenti dati per calcolare o stimare il punteggio SCORE2 secondo le linee
 - Fumatore: ${safe(data.fumatore)}
 - Diabete diagnosticato: ${safe(data.diabete)}
 Stima: 
-- Il rischio cardiovascolare a 10 anni in **percentuale approssimativa** (es. “2.3%”)
+- Il rischio cardiovascolare a 10 anni in **percentuale approssimativa** (es. "2.3%")
 - La **fascia di rischio** corrispondente secondo SCORE2 (basso, moderato, alto, molto alto)
 - I **fattori principali che contribuiscono** al rischio
 - Come **migliorare o abbassare** il rischio con interventi su stile di vita o terapia
 - FRAIL (se >65 anni)
 - SARC-F (se >65 anni)
 - FRAX (se >50 anni)
+- **FIB4 (Fibrosis-4 Index)**: Se disponibili AST, ALT e piastrine
+  Formula: (età × AST) / (piastrine × √ALT)
+  - AST: ${safe(data.ast)} U/L
+  - ALT: ${safe(data.alt)} U/L
+  - Piastrine: ${safe(data.piastrine)} x10^9/L
+  Interpretazione: <1.45 basso rischio, 1.45-3.25 intermedio, >3.25 alto rischio
+- **FNI (Functional Nutritional Index)**: Se disponibili albumina e linfociti
+  Formula: (10 × albumina g/dL) + (0.005 × linfociti/mm³)
+  - Albumina: ${safe(data.albumina)} g/dL
+  - Linfociti: ${safe(data.linfociti)} /mm³
+  Interpretazione: ≥45 normale, 35-45 malnutrizione lieve, <35 severa
+- **SCORE2-Diabete**: Per pazienti diabetici, calcola il rischio CV specifico
+  - HbA1c: ${safe(data.hba1c)} %
+  - Usa gli stessi parametri di SCORE2 ma con algoritmo specifico per diabetici
 **Istruzioni importanti per il calcolo degli score:**
 Se l’età è **≥ 65 anni**, calcola sempre **FRAIL** e **SARC-F** se sono presenti i dati richiesti.
 Se l’età è **≥ 50 anni**, calcola sempre **FRAX** se i dati sono disponibili.
