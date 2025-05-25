@@ -1051,10 +1051,18 @@ function checkMetabolicSyndrome() {
     }
     
     // Criterio 3: HDL basso
-    if (userData.colesterolo_hdl?.toLowerCase() === 'sì') {
-        criteria++;
-        factors.push('HDL basso');
-    }
+// Criterio 3: Colesterolo HDL basso in base al sesso
+const hdlValore = parseFloat(userData.colesterolo_hdl_valore);
+const sesso = userData.sesso?.toLowerCase();
+
+if (
+    (sesso === 'maschio' && hdlValore < 40) ||
+    (sesso === 'femmina' && hdlValore < 50)
+) {
+    criteria++;
+    factors.push('HDL basso');
+}
+
     
     // Criterio 4: Pressione alta
     const sistolica = parseFloat(userData.pressione_sistolica);
