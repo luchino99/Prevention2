@@ -1494,9 +1494,11 @@ if (glicemiaEl) {
 
 const famDiabeteEl = document.getElementById('familiarita-diabete');
 if (famDiabeteEl) {
-    const risposta = userData.familiari_diabete?.toLowerCase() === 'sì' ? 'Sì' : 'No';
+    const rispostaGrezza = userData.familiari_diabete?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // rimuove accenti
+    const risposta = ['si', 'sì', 'yes', 'y', 'true', 'ok'].includes(rispostaGrezza) ? 'Sì' : 'No';
     famDiabeteEl.textContent = risposta;
 }
+
 
 const ipertensioneEl = document.getElementById('ipertensione');
 if (ipertensioneEl) {
