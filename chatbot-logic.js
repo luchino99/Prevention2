@@ -653,7 +653,7 @@ async function salvaAnagraficaNelDatabase(dati) {
       "colesterolo_totale", "colesterolo_hdl_valore", "colesterolo_ldl_valore",
       "colesterolo_ldl", "pressione_sistolica", "pressione_diastolica",
       "pressione", "pressione_valore", "pressione_alta",
-      "attivita_fisica", "attivo30", "tipo_lavoro", "patologie",
+      "attivita_fisica", "tipo_lavoro", "patologie",
       "farmaci", "farmaci_dettaglio", "interventi", "interventi_dettaglio",
       "fumatore", "diabete", "unita_alcoliche", "alcol_eccessivo",
       "familiari_diabete", "frattura", "famiglia_frattura_anca",
@@ -834,7 +834,7 @@ async function mostraProfiloUtente() {
         "intolleranze", "alimenti_esclusi", "preferenze",
         "pressione_sistolica", "pressione_diastolica",
         "colesterolo_totale", "colesterolo_hdl_valore", "colesterolo_ldl_valore",
-        "fumatore", "diabete", "glicemia_valore", "attivo30", "pressione_alta",
+        "fumatore", "diabete", "glicemia_valore", "pressione_alta",
         "familiari_diabete", "frattura", "famiglia_frattura_anca", "corticosteroidi",
         "alcol_eccessivo", "artrite", "stanchezza", "camminata",
         "sollevamento", "sedia", "cadute"
