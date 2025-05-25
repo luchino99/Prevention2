@@ -2414,5 +2414,39 @@ document.getElementById('logout-btn')?.addEventListener('click', async () => {
             });
         });
     </script>
+
+    <script>
+function updateNewScoreBanners() {
+  // SCORE2-Diabete
+  const score2d = dashboardData.score2Diabetes;
+  if (score2d?.value > 0) {
+    document.getElementById('score2d-banner-text').textContent = score2d.value + '%';
+    document.getElementById('score2d-banner-hba1c').textContent = userData.hba1c || '--';
+    document.getElementById('score2d-banner-glucose').textContent = userData.glicemia_valore || '--';
+    document.getElementById('score2d-banner-sbp').textContent = userData.pressione_sistolica || '--';
+  }
+
+  // FIB4
+  const fib4 = dashboardData.fib4;
+  if (fib4?.value > 0) {
+    const fib4ScoreEl = document.getElementById('fib4-banner-score');
+    fib4ScoreEl.textContent = fib4.value;
+    fib4ScoreEl.className = `score-indicator score-${fib4.category === 'success' ? 'medium' : fib4.category === 'warning' ? 'low' : 'high'} text-2xl`;
+    document.getElementById('fib4-banner-ast').textContent = userData.ast || '--';
+    document.getElementById('fib4-banner-alt').textContent = userData.alt || '--';
+    document.getElementById('fib4-banner-plt').textContent = userData.piastrine || '--';
+  }
+
+  // FNI
+  const fni = dashboardData.fni;
+  if (fni?.value > 0) {
+    const fniScoreEl = document.getElementById('fni-banner-score');
+    fniScoreEl.textContent = fni.value;
+    fniScoreEl.className = `score-indicator score-${fni.category === 'success' ? 'medium' : fni.category === 'warning' ? 'low' : 'high'} text-2xl`;
+    document.getElementById('fni-banner-albumina').textContent = userData.albumina || '--';
+    document.getElementById('fni-banner-linfociti').textContent = userData.linfociti || '--';
+  }
+}
+</script>
 </body>
 </html>
