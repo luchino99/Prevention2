@@ -1126,10 +1126,7 @@ if (userData.attivita_fisica?.toLowerCase() === 'no') {
 } else {
     
     const durata = parseInt(userData.durata_attivita || '0');
-    
-    const weeklyMinutes 
-
-    if (weeklyMinutes < 150) {
+    if (durata < 150) {
         score += 1;
         factors.push('Attività fisica insufficiente');
     }
