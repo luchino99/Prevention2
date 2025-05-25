@@ -1430,7 +1430,58 @@ function updateHealthSummary() {
         predimedCard.querySelector('.badge').className = `badge badge-${dashboardData.predimed.status}`;
         predimedCard.querySelector('.font-medium').textContent = dashboardData.predimed.adherence;
     }
+    
+    // FIB4
+    const fib4Score = document.getElementById('fib4-score');
+    const fib4Badge = document.getElementById('fib4-badge');
+    const fib4Status = document.getElementById('fib4-status');
+    
+    if (dashboardData.fib4.value > 0) {
+        fib4Score.textContent = dashboardData.fib4.value;
+        fib4Score.className = `score-indicator score-${dashboardData.fib4.category === 'success' ? 'medium' : dashboardData.fib4.category === 'warning' ? 'low' : 'high'}`;
+        fib4Badge.textContent = dashboardData.fib4.risk.split(' ')[0];
+        fib4Badge.className = `badge badge-${dashboardData.fib4.category}`;
+        fib4Status.textContent = dashboardData.fib4.risk;
+    }
+    
+    // FNI
+    const fniScore = document.getElementById('fni-score');
+    const fniBadge = document.getElementById('fni-badge');
+    const fniStatus = document.getElementById('fni-status');
+    
+    if (dashboardData.fni.value > 0) {
+        fniScore.textContent = dashboardData.fni.value;
+        fniScore.className = `score-indicator score-${dashboardData.fni.category === 'success' ? 'medium' : dashboardData.fni.category === 'warning' ? 'low' : 'high'}`;
+        fniBadge.textContent = dashboardData.fni.status.split(' ')[0];
+        fniBadge.className = `badge badge-${dashboardData.fni.category}`;
+        fniStatus.textContent = dashboardData.fni.status;
+    }
+    
+    // SCORE2-Diabete
+    const score2dScore = document.getElementById('score2d-score');
+    const score2dBadge = document.getElementById('score2d-badge');
+    const score2dStatus = document.getElementById('score2d-status');
+    
+    if (dashboardData.score2Diabetes.value > 0) {
+        score2dScore.textContent = dashboardData.score2Diabetes.value + '%';
+        score2dScore.className = `score-indicator score-${dashboardData.score2Diabetes.category === 'success' ? 'medium' : dashboardData.score2Diabetes.category === 'warning// Variabili globali per i dati utente
+let userData = {};
+let dashboardData = {
+    bmi: { value: 0, category: '', status: '' },
+    score2: { value: 0, risk: '', category: '' },
+    predimed: { value: 0, adherence: '' },
+    metabolicSyndrome: { present: false, criteria: 0, factors: [] },
+    diabetesRisk: { score: 0, factors: [] },
+    score2Diabetes: { value: 0, risk: '', category: '' },
+    fib4: { value: 0, risk: '', category: '' },
+    fni: { value: 0, status: '', category: '' },
+    recommendations: [],
+    screenings: [],
+    lifestyle: {},
+    nutrition: {},
+    activity: {}
 }
+}                                                          
 
 function updateMetabolicProfile() {
     const metabolicSection = document.querySelector('.card .space-y-3');
