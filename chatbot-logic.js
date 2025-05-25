@@ -36,6 +36,7 @@ const domandeBase = [
   { key: "tipo_attivita", testo: "Che tipo di attività fisica svolgi? (aerobica, rafforzamento muscolare, rafforzamento osseo e stretching)" , condizione: "attivita_fisica" },
   { key: "durata_attivita", testo: "Quanto dura ogni allenamento? (in minuti)" , condizione: "attivita_fisica" },
   { key: "predimed_1", testo: "Usi l’olio extravergine di oliva come condimento principale (es. per cucinare, condire insalate)?" },
+  { key: "trigliceridi", testo: "Qual è il valore dei tuoi trigliceridi (mg/dL)?" },
   { key: "predimed_2", testo: "Ne usi più di 4 cucchiai al giorno?" },
   { key: "predimed_3", testo: "Mangi almeno 2 porzioni di verdura al giorno? (1 porzione = 200g circa)" },
   { key: "predimed_4", testo: "Mangi almeno 3 porzioni di frutta al giorno? (1 porzione = 1 frutto medio o 100g circa)" },
@@ -650,7 +651,7 @@ async function salvaAnagraficaNelDatabase(dati) {
     const campiValidi = [
       "email", "eta", "sesso", "altezza", "peso",
       "origine_etnica", "vita", "glicemia", "glicemia_valore",
-      "colesterolo_totale", "colesterolo_hdl_valore", "colesterolo_ldl_valore",
+      "colesterolo_totale", "colesterolo_hdl_valore", "trigliceridi", "colesterolo_ldl_valore",
       "colesterolo_ldl", "pressione_sistolica", "pressione_diastolica",
       "pressione", "pressione_valore", "pressione_alta",
       "attivita_fisica", "tipo_lavoro", "patologie",
