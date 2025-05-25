@@ -1316,10 +1316,7 @@ function evaluatePhysicalActivity() {
     const frequency = userData.frequenza_attivita_fisica || '0 volte/settimana';
     const duration = parseInt(userData.durata_attivita) || 0;
     const type = userData.tipo_attivita || '';
-    
-    // Estrai frequenza numerica
-    const weeklyFrequency = parseInt(frequency.match(/\d+/)?.[0]) || 0;
-    const weeklyMinutes = weeklyFrequency * duration;
+
     
     dashboardData.activity = {
         current: {
@@ -1508,10 +1505,10 @@ if (ipertensioneEl) {
 
 const attivitaFisicaEl = document.getElementById('attivita-fisica');
 if (attivitaFisicaEl) {
-    const attivo = userData.attivita_fisica?.toLowerCase() === 'sì' ||
-                   userData.attivo30?.toLowerCase() === 'sì';
-    attivitaFisicaEl.textContent = attivo ? 'Adeguata' : 'Insufficiente';
+    const minutiSettimanali = parseInt(userData.durata_attivita) || 0;
+    attivitaFisicaEl.textContent = minutiSettimanali >= 150 ? 'Adeguata' : 'Insufficiente';
 }
+
 }
 
 
