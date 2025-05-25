@@ -1108,11 +1108,20 @@ function calculateDiabetesRisk() {
     }
     
     
-const rispostaFam = userData.familiari_diabete?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-if (['si', 'sì', 'yes', 'true', 'ok', 'y'].includes(rispostaFam)) {
+const rispostaFam = userData.familiari_diabete?.toLowerCase()
+  .normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+
+if (rispostaFam && (
+    rispostaFam.startsWith("si") ||
+    rispostaFam.startsWith("yes") ||
+    rispostaFam === "true" ||
+    rispostaFam === "ok" ||
+    rispostaFam === "y"
+)) {
     score += 1;
-    factors.push('Familiarità diabete');
+    factors.push("Familiarità diabete");
 }
+
 
 // Ipertensione
 const rispostaIpertensione = userData.pressione_alta?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
