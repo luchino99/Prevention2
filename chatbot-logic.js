@@ -666,7 +666,7 @@ async function salvaAnagraficaNelDatabase(dati) {
       "predimed_5", "predimed_6", "predimed_7", "predimed_8",
       "predimed_9", "predimed_10", "predimed_11", "predimed_12",
       "predimed_13", "predimed_14", "depressione", "insonnia",
-      "tipo_insonnia", "stress"
+      "tipo_insonnia", "stress", "frequenza_attivita_fisica", "durata_attivita", "tipo_attivita"
     ];
 
     // ✅ Filtra i soli campi validi prima di salvarli
