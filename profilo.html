@@ -820,7 +820,7 @@
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Quanti minuti di attività fisica pratichi a settimana?</label>
-                                    <input type="text" id="profilo-attivo30" value=${userData.durata_attivita || ''}>
+                                    <input type="number" id="profilo-durata_attivita" value=${userData.durata_attivita || ''}>
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Hai la pressione alta?</label>
@@ -1018,6 +1018,10 @@ document.getElementById("btn-salva-profilo").addEventListener("click", async () 
     colesterolo_ldl_valore: parseFloat(document.getElementById("profilo-colesterolo_ldl_valore")?.value),
     pressione_sistolica: parseFloat(document.getElementById("profilo-pressione_sistolica")?.value),
     pressione_diastolica: parseFloat(document.getElementById("profilo-pressione_diastolica")?.value)
+    glicemia_valore: parseFloat(document.getElementById("profilo-glicemia_valore")?.value),
+    pressione_alta: document.getElementById("profilo-pressione_alta")?.value,
+    familiari_diabete: document.getElementById("profilo-familiari_diabete")?.value,
+    durata_attivita: parseInt(document.getElementById("profilo-durata_attivita")?.value), 
   };
 
   // ✅ Salvataggio con Supabase (upsert: aggiorna se esiste, inserisce se no)
