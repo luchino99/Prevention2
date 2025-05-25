@@ -503,9 +503,10 @@
                         </div>
                         <div class="space-y-2">
                             <div class="flex justify-between text-sm">
-                                <span>Glicemia</span>
-                                <span class="font-medium text-yellow-600">105 mg/dL</span>
-                            </div>
+    <span>Glicemia</span>
+    <span id="glicemia-valore" class="font-medium text-yellow-600">-- mg/dL</span>
+</div>
+
                             <div class="flex justify-between text-sm">
                                 <span>Familiarità diabete</span>
                                 <span class="font-medium text-red-600">Sì</span>
@@ -592,8 +593,12 @@
                             <canvas id="predimed-chart" width="300" height="300"></canvas>
                         </div>
                         <div class="text-center">
-                            <p class="text-sm text-gray-600">Punteggio attuale: <span class="font-medium">8/14</span></p>
-                            <p class="text-sm text-gray-600">Aderenza alla dieta mediterranea: <span class="font-medium">Media</span></p>
+                            <p id="predimed-score" class="text-sm text-gray-600">
+    Punteggio attuale: <span class="font-medium">8/14</span>
+</p>
+<p id="predimed-adherence" class="text-sm text-gray-600">
+    Aderenza alla dieta mediterranea: <span class="font-medium">Media</span>
+</p>
                         </div>
                     </div>
                     <div class="p-4 bg-gray-50 rounded-lg">
@@ -1037,7 +1042,7 @@ function checkMetabolicSyndrome() {
     }
     
     // Criterio 2: Glicemia
-    const glicemia = parseFloat(userData.glicemia_valore);
+    const glicemia = parseFloat(userData.glicemia_valore || 0);
     if (glicemia >= 100 || userData.diabete?.toLowerCase() === 'sì') {
         criteria++;
         factors.push('Glicemia alta');
@@ -1474,6 +1479,11 @@ function updateRiskTab() {
     const diabetesText = document.querySelectorAll('#tab-rischi text')[1];
     if (diabetesText) diabetesText.textContent = `${dashboardData.diabetesRisk.score}/${dashboardData.diabetesRisk.maxScore}`;
 }
+        const glicemiaEl = document.getElementById('glicemia-valore');
+if (glicemiaEl) {
+    const glicemia = parseFloat(userData.glicemia_valore || 0);
+    glicemiaEl.textContent = `${glicemia} mg/dL`;
+}
 
 function updateScreeningTab() {
     const container = document.querySelector('#tab-screening .space-y-3');
@@ -1520,11 +1530,17 @@ function updateLifestyleTab() {
     }
     
     // Aggiorna punteggio PREDIMED
-    const predimedScore = document.querySelector('#tab-stile-vita .text-center p');
-    if (predimedScore) {
-        predimedScore.innerHTML = `Punteggio attuale: <span class="font-medium">${dashboardData.predimed.value}/14</span><br>
-                                  Aderenza alla dieta mediterranea: <span class="font-medium">${dashboardData.predimed.adherence}</span>`;
-    }
+const predimedScoreEl = document.getElementById('predimed-score');
+const predimedAdherenceEl = document.getElementById('predimed-adherence');
+
+if (predimedScoreEl) {
+    predimedScoreEl.innerHTML = `Punteggio attuale: <span class="font-medium">${dashboardData.predimed.value}/14</span>`;
+}
+
+if (predimedAdherenceEl) {
+    predimedAdherenceEl.innerHTML = `Aderenza alla dieta mediterranea: <span class="font-medium">${dashboardData.predimed.adherence}</span>`;
+}
+
     
     // Aggiorna benessere psicologico
     const stressBar = document.querySelector('#tab-stile-vita .bg-yellow-500');
