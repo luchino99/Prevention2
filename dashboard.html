@@ -1478,8 +1478,8 @@ function updateRiskTab() {
     // Aggiorna testo rischio diabete
     const diabetesText = document.querySelectorAll('#tab-rischi text')[1];
     if (diabetesText) diabetesText.textContent = `${dashboardData.diabetesRisk.score}/${dashboardData.diabetesRisk.maxScore}`;
-}
-       const glicemiaEl = document.getElementById('glicemia-valore');
+
+const glicemiaEl = document.getElementById('glicemia-valore');
 if (glicemiaEl) {
     const glicemia = parseFloat(userData.glicemia_valore || 0);
     glicemiaEl.textContent = `${glicemia} mg/dL`;
@@ -1504,6 +1504,7 @@ if (attivitaFisicaEl) {
                    userData.attivo30?.toLowerCase() === 'sì';
     attivitaFisicaEl.textContent = attivo ? 'Adeguata' : 'Insufficiente';
 }
+
 
 
 function updateScreeningTab() {
