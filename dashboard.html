@@ -1071,10 +1071,13 @@ if (
         criteria++;
         factors.push('Pressione elevata');
     }
-    
-    // Criterio 5: Trigliceridi (non abbiamo questo dato, quindi lo simuliamo)
-    // In un'app reale, dovresti chiedere questo dato
-    
+   // Criterio 5: Trigliceridi > 150 mg/dL
+const trigli = parseFloat(userData.trigliceridi);
+if (trigli >= 150) {
+    criteria++;
+    factors.push('Trigliceridi elevati');
+}
+
     dashboardData.metabolicSyndrome = {
         present: criteria >= 3,
         criteria: criteria,
