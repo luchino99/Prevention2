@@ -1314,8 +1314,9 @@ function calculateNutritionalNeeds() {
 function evaluatePhysicalActivity() {
     const isActive = userData.attivita_fisica?.toLowerCase() === 'sì';
     const frequency = userData.frequenza_attivita_fisica || '0 volte/settimana';
-    const duration = parseInt(userData.durata_attivita) || 0;
     const type = userData.tipo_attivita || '';
+    const durata = parseInt(userData.durata_attivita) || 0;
+    const weeklyMinutes = durata;
 
     
     dashboardData.activity = {
