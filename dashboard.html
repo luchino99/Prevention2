@@ -921,7 +921,7 @@ function calculateAllScores() {
     // 10. Valuta attività fisica
     evaluatePhysicalActivity();
     
-    updateNextSteps();
+    
 }
 
 // 1. Calcolo BMI
@@ -1945,6 +1945,7 @@ setInterval(async () => {
         calculateAllScores();
         
         updateDashboard();
+        updateNextSteps();
     }
 }, 300000); // 5 minuti
 
