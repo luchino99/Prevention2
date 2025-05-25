@@ -502,24 +502,24 @@
                             </svg>
                         </div>
                         <div class="space-y-2">
-                            <div class="flex justify-between text-sm">
-    <span>Glicemia</span>
-    <span id="glicemia-valore" class="font-medium text-yellow-600">-- mg/dL</span>
+    <div class="flex justify-between text-sm">
+        <span>Glicemia</span>
+        <span id="glicemia-valore" class="font-medium text-yellow-600">-- mg/dL</span>
+    </div>
+    <div class="flex justify-between text-sm">
+        <span>Familiarità diabete</span>
+        <span id="familiarita-diabete" class="font-medium text-red-600">--</span>
+    </div>
+    <div class="flex justify-between text-sm">
+        <span>Ipertensione</span>
+        <span id="ipertensione" class="font-medium text-red-600">--</span>
+    </div>
+    <div class="flex justify-between text-sm">
+        <span>Attività fisica</span>
+        <span id="attivita-fisica" class="font-medium text-red-600">--</span>
+    </div>
 </div>
 
-                            <div class="flex justify-between text-sm">
-                                <span>Familiarità diabete</span>
-                                <span class="font-medium text-red-600">Sì</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span>Ipertensione</span>
-                                <span class="font-medium text-red-600">Sì</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span>Attività fisica</span>
-                                <span class="font-medium text-red-600">Insufficiente</span>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -1479,11 +1479,32 @@ function updateRiskTab() {
     const diabetesText = document.querySelectorAll('#tab-rischi text')[1];
     if (diabetesText) diabetesText.textContent = `${dashboardData.diabetesRisk.score}/${dashboardData.diabetesRisk.maxScore}`;
 }
-        const glicemiaEl = document.getElementById('glicemia-valore');
+       const glicemiaEl = document.getElementById('glicemia-valore');
 if (glicemiaEl) {
     const glicemia = parseFloat(userData.glicemia_valore || 0);
     glicemiaEl.textContent = `${glicemia} mg/dL`;
 }
+
+const famDiabeteEl = document.getElementById('familiarita-diabete');
+if (famDiabeteEl) {
+    const risposta = userData.familiari_diabete?.toLowerCase() === 'sì' ? 'Sì' : 'No';
+    famDiabeteEl.textContent = risposta;
+}
+
+const ipertensioneEl = document.getElementById('ipertensione');
+if (ipertensioneEl) {
+    const pressioneAlta = userData.pressione_alta?.toLowerCase() === 'sì' ||
+                          parseFloat(userData.pressione_sistolica) >= 140;
+    ipertensioneEl.textContent = pressioneAlta ? 'Sì' : 'No';
+}
+
+const attivitaFisicaEl = document.getElementById('attivita-fisica');
+if (attivitaFisicaEl) {
+    const attivo = userData.attivita_fisica?.toLowerCase() === 'sì' ||
+                   userData.attivo30?.toLowerCase() === 'sì';
+    attivitaFisicaEl.textContent = attivo ? 'Adeguata' : 'Insufficiente';
+}
+
 
 function updateScreeningTab() {
     const container = document.querySelector('#tab-screening .space-y-3');
