@@ -1112,5 +1112,1114 @@
             });
         });
     </script>
+    <script>
+// Configuration constants
+const supabaseUrl = 'https://lwuhdgrkaoyvejmzfbtx.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3dWhkZ3JrYW95dmVqbXpmYnR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2NzU1MDcsImV4cCI6MjA2MTI1MTUwN30.1c5iH4PYW-HeigfXkPSgnVK3t02Gv3krSeo7dDSqqsk';
+const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+// Variabili globali per i dati utente
+let userData = {};
+let dashboardData = {
+    bmi: { value: 0, category: '', status: '' },
+    score2: { value: 0, risk: '', category: '' },
+    predimed: { value: 0, adherence: '' },
+    metabolicSyndrome: { present: false, criteria: 0, factors: [] },
+    diabetesRisk: { score: 0, factors: [] },
+    recommendations: [],
+    screenings: [],
+    lifestyle: {},
+    nutrition: {},
+    activity: {}
+};
+
+// Store chart instances globally
+let predimedChart = null;
+let macroChart = null;
+
+// Carica i dati dell'utente all'avvio
+document.addEventListener('DOMContentLoaded', async function() {
+    try {
+        // Verifica autenticazione
+        const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
+        
+        if (sessionError || !sessionData.session) {
+            window.location.href = 'login.html';
+            return;
+        }
+
+        const emailUtente = sessionData.session.user.email;
+        
+        // Carica dati dal database
+        await loadUserData(emailUtente);
+        
+        // Calcola tutti gli score
+        calculateAllScores();
+        
+        // Aggiorna la dashboard
+        updateDashboard();
+        
+        // Inizializza i grafici
+        initializeCharts();
+        
+        // Setup delle tabs
+        setupTabs();
+        
+        // Setup export PDF
+        setupExportButton();
+        
+    } catch (error) {
+        console.error('Errore inizializzazione dashboard:', error);
+    }
+});
+
+// Funzione per caricare i dati utente
+async function loadUserData(email) {
+    try {
+        const { data, error } = await supabaseClient
+            .from('anagrafica_utenti')
+            .select('*')
+            .eq('email', email)
+            .single();
+            
+        if (error) throw error;
+        
+        userData = data || {};
+        console.log('Dati utente caricati:', userData);
+        
+    } catch (error) {
+        console.error('Errore caricamento dati:', error);
+    }
+}
+
+// Calcola tutti gli score clinici
+function calculateAllScores() {
+    // 1. Calcola BMI
+    calculateBMI();
+    
+    // 2. Calcola SCORE2 (rischio cardiovascolare)
+    calculateSCORE2();
+    
+    // 3. Calcola PREDIMED (dieta mediterranea)
+    calculatePREDIMED();
+    
+    // 4. Verifica sindrome metabolica
+    checkMetabolicSyndrome();
+    
+    // 5. Calcola rischio diabete (ADA)
+    calculateDiabetesRisk();
+    
+    // 6. Genera raccomandazioni
+    generateRecommendations();
+    
+    // 7. Determina screening necessari
+    determineScreenings();
+    
+    // 8. Analizza stile di vita
+    analyzeLifestyle();
+    
+    // 9. Calcola fabbisogno nutrizionale
+    calculateNutritionalNeeds();
+    
+    // 10. Valuta attività fisica
+    evaluatePhysicalActivity();
+}
+
+// 1. Calcolo BMI
+function calculateBMI() {
+    const peso = parseFloat(userData.peso);
+    const altezza = parseFloat(userData.altezza) / 100; // converti in metri
+    
+    if (peso && altezza) {
+        const bmi = peso / (altezza * altezza);
+        dashboardData.bmi.value = bmi.toFixed(1);
+        
+        // Determina categoria
+        if (bmi < 18.5) {
+            dashboardData.bmi.category = 'Sottopeso';
+            dashboardData.bmi.status = 'warning';
+        } else if (bmi < 25) {
+            dashboardData.bmi.category = 'Normopeso';
+            dashboardData.bmi.status = 'success';
+        } else if (bmi < 30) {
+            dashboardData.bmi.category = 'Sovrappeso';
+            dashboardData.bmi.status = 'warning';
+        } else {
+            dashboardData.bmi.category = 'Obesità';
+            dashboardData.bmi.status = 'danger';
+        }
+    }
+}
+
+// 2. Calcolo SCORE2
+function calculateSCORE2() {
+    const eta = parseInt(userData.eta);
+    const sesso = userData.sesso?.toLowerCase();
+    const sistolica = parseFloat(userData.pressione_sistolica);
+    const colTotale = parseFloat(userData.colesterolo_totale);
+    const hdl = parseFloat(userData.colesterolo_hdl_valore);
+    const fumatore = userData.fumatore?.toLowerCase() === 'sì';
+    
+    if (eta && sistolica && colTotale && hdl) {
+        // Formula semplificata SCORE2 (in realtà è più complessa)
+        let score = 0;
+        
+        // Fattore età
+        if (eta >= 40 && eta < 50) score += 0;
+        else if (eta >= 50 && eta < 60) score += 3;
+        else if (eta >= 60 && eta < 70) score += 6;
+        else if (eta >= 70) score += 9;
+        
+        // Fattore pressione
+        if (sistolica >= 140) score += 2;
+        if (sistolica >= 160) score += 3;
+        if (sistolica >= 180) score += 4;
+        
+        // Fattore colesterolo
+        const nonHDL = colTotale - hdl;
+        if (nonHDL >= 190) score += 1;
+        if (nonHDL >= 220) score += 2;
+        if (nonHDL >= 280) score += 3;
+        
+        // Fattore fumo
+        if (fumatore) score += 4;
+        
+        // Converti in percentuale di rischio
+        const riskPercent = Math.min(score * 0.5, 20); // Max 20%
+        
+        dashboardData.score2.value = riskPercent.toFixed(1);
+        
+        // Determina categoria di rischio
+        if (riskPercent < 1) {
+            dashboardData.score2.risk = 'Basso';
+            dashboardData.score2.category = 'success';
+        } else if (riskPercent < 5) {
+            dashboardData.score2.risk = 'Moderato';
+            dashboardData.score2.category = 'warning';
+        } else if (riskPercent < 10) {
+            dashboardData.score2.risk = 'Alto';
+            dashboardData.score2.category = 'danger';
+        } else {
+            dashboardData.score2.risk = 'Molto alto';
+            dashboardData.score2.category = 'danger';
+        }
+    }
+}
+
+// 3. Calcolo PREDIMED
+function calculatePREDIMED() {
+    let score = 0;
+    
+    // Somma tutti i punteggi PREDIMED (14 domande)
+    for (let i = 1; i <= 14; i++) {
+        const value = userData[`predimed_${i}`];
+        if (value?.toLowerCase() === 'sì' || value === '1' || value === true) {
+            score++;
+        }
+    }
+    
+    dashboardData.predimed.value = score;
+    
+    // Determina livello di aderenza
+    if (score >= 10) {
+        dashboardData.predimed.adherence = 'Alta aderenza';
+        dashboardData.predimed.status = 'success';
+    } else if (score >= 6) {
+        dashboardData.predimed.adherence = 'Media aderenza';
+        dashboardData.predimed.status = 'warning';
+    } else {
+        dashboardData.predimed.adherence = 'Bassa aderenza';
+        dashboardData.predimed.status = 'danger';
+    }
+}
+
+// 4. Verifica sindrome metabolica
+function checkMetabolicSyndrome() {
+    let criteria = 0;
+    let factors = [];
+    
+    // Criterio 1: Circonferenza vita
+    if (userData.vita?.toLowerCase() === 'sì') {
+        criteria++;
+        factors.push('Girovita elevato');
+    }
+    
+    // Criterio 2: Glicemia
+    const glicemia = parseFloat(userData.glicemia_valore);
+    if (glicemia >= 100 || userData.diabete?.toLowerCase() === 'sì') {
+        criteria++;
+        factors.push('Glicemia alta');
+    }
+    
+    // Criterio 3: HDL basso
+    if (userData.colesterolo_hdl?.toLowerCase() === 'sì') {
+        criteria++;
+        factors.push('HDL basso');
+    }
+    
+    // Criterio 4: Pressione alta
+    const sistolica = parseFloat(userData.pressione_sistolica);
+    const diastolica = parseFloat(userData.pressione_diastolica);
+    if (sistolica >= 130 || diastolica >= 85) {
+        criteria++;
+        factors.push('Pressione elevata');
+    }
+    
+    // Criterio 5: Trigliceridi (non abbiamo questo dato, quindi lo simuliamo)
+    // In un'app reale, dovresti chiedere questo dato
+    
+    dashboardData.metabolicSyndrome = {
+        present: criteria >= 3,
+        criteria: criteria,
+        factors: factors
+    };
+}
+
+// 5. Calcolo rischio diabete (ADA Risk Score)
+function calculateDiabetesRisk() {
+    let score = 0;
+    let factors = [];
+    
+    const eta = parseInt(userData.eta);
+    const sesso = userData.sesso?.toLowerCase();
+    const bmi = parseFloat(dashboardData.bmi.value);
+    
+    // Età
+    if (eta >= 40 && eta < 50) {
+        score += 1;
+        factors.push('Età 40-49');
+    } else if (eta >= 50 && eta < 60) {
+        score += 2;
+        factors.push('Età 50-59');
+    } else if (eta >= 60) {
+        score += 3;
+        factors.push('Età ≥60');
+    }
+    
+    // BMI
+    if (bmi >= 25 && bmi < 30) {
+        score += 1;
+        factors.push('Sovrappeso');
+    } else if (bmi >= 30 && bmi < 40) {
+        score += 2;
+        factors.push('Obesità');
+    } else if (bmi >= 40) {
+        score += 3;
+        factors.push('Obesità grave');
+    }
+    
+    // Familiarità
+    if (userData.familiari_diabete?.toLowerCase() === 'sì') {
+        score += 1;
+        factors.push('Familiarità diabete');
+    }
+    
+    // Ipertensione
+    if (userData.pressione_alta?.toLowerCase() === 'sì' || 
+        parseFloat(userData.pressione_sistolica) >= 140) {
+        score += 1;
+        factors.push('Ipertensione');
+    }
+    
+    // Attività fisica
+    if (userData.attivita_fisica?.toLowerCase() === 'no' ||
+        userData.attivo30?.toLowerCase() === 'no') {
+        score += 1;
+        factors.push('Sedentarietà');
+    }
+    
+    dashboardData.diabetesRisk = {
+        score: score,
+        maxScore: 8,
+        factors: factors,
+        risk: score >= 5 ? 'Alto' : score >= 3 ? 'Moderato' : 'Basso'
+    };
+}
+
+// 6. Genera raccomandazioni personalizzate
+function generateRecommendations() {
+    dashboardData.recommendations = [];
+    
+    // Raccomandazioni basate su BMI
+    if (dashboardData.bmi.status === 'warning' || dashboardData.bmi.status === 'danger') {
+        dashboardData.recommendations.push({
+            title: 'Controllo del peso',
+            description: 'Raggiungere un BMI tra 18.5 e 25 attraverso dieta equilibrata',
+            priority: 'high'
+        });
+    }
+    
+    // Raccomandazioni basate su rischio cardiovascolare
+    if (parseFloat(dashboardData.score2.value) >= 5) {
+        dashboardData.recommendations.push({
+            title: 'Ridurre rischio cardiovascolare',
+            description: 'Controllo pressione, colesterolo e cessazione fumo',
+            priority: 'high'
+        });
+    }
+    
+    // Raccomandazioni basate su PREDIMED
+    if (dashboardData.predimed.value < 10) {
+        dashboardData.recommendations.push({
+            title: 'Migliorare alimentazione',
+            description: 'Aumentare aderenza alla dieta mediterranea',
+            priority: 'medium'
+        });
+    }
+    
+    // Raccomandazioni attività fisica
+    if (userData.attivita_fisica?.toLowerCase() === 'no') {
+        dashboardData.recommendations.push({
+            title: 'Aumentare attività fisica',
+            description: 'Raggiungere almeno 150 minuti di attività moderata a settimana',
+            priority: 'high'
+        });
+    }
+    
+    // Raccomandazioni sonno/stress
+    if (userData.insonnia?.toLowerCase() === 'sì' || parseInt(userData.stress) > 7) {
+        dashboardData.recommendations.push({
+            title: 'Migliorare qualità del sonno',
+            description: 'Creare routine serale e gestire lo stress',
+            priority: 'medium'
+        });
+    }
+}
+
+// 7. Determina screening necessari
+function determineScreenings() {
+    dashboardData.screenings = [];
+    const eta = parseInt(userData.eta);
+    const sesso = userData.sesso?.toLowerCase();
+    
+    // Screening universali
+    dashboardData.screenings.push({
+        name: 'Controllo pressione arteriosa',
+        frequency: 'Annuale',
+        status: 'pending',
+        dueIn: '2 mesi'
+    });
+    
+    dashboardData.screenings.push({
+        name: 'Esami del sangue completi',
+        frequency: 'Annuale',
+        status: 'overdue',
+        dueIn: 'Scaduto'
+    });
+    
+    // Screening età-specifici
+    if (eta >= 50) {
+        dashboardData.screenings.push({
+            name: 'Screening colon-retto',
+            frequency: 'Ogni 2 anni',
+            status: 'completed',
+            dueIn: '2024'
+        });
+    }
+    
+    if (eta >= 45 || dashboardData.diabetesRisk.risk !== 'Basso') {
+        dashboardData.screenings.push({
+            name: 'Screening diabete',
+            frequency: 'Ogni 3 anni',
+            status: 'pending',
+            dueIn: '6 mesi'
+        });
+    }
+    
+    // Screening sesso-specifici
+    if ((sesso === 'femmina' || sesso === 'donna') && eta >= 40) {
+        dashboardData.screenings.push({
+            name: 'Mammografia',
+            frequency: 'Ogni 2 anni',
+            status: 'pending',
+            dueIn: '3 mesi'
+        });
+    }
+}
+
+// 8. Analizza stile di vita
+function analyzeLifestyle() {
+    const stress = parseInt(userData.stress) || 5;
+    const hasInsomnia = userData.insonnia?.toLowerCase() === 'sì';
+    const hasDepression = userData.depressione?.toLowerCase() === 'sì';
+    
+    dashboardData.lifestyle = {
+        stress: {
+            level: stress,
+            category: stress <= 3 ? 'Basso' : stress <= 7 ? 'Medio' : 'Alto',
+            percentage: (stress / 10) * 100
+        },
+        sleep: {
+            quality: hasInsomnia ? 'Insufficiente' : 'Buona',
+            percentage: hasInsomnia ? 30 : 80,
+            issues: userData.tipo_insonnia || ''
+        },
+        mood: {
+            status: hasDepression ? 'Da monitorare' : 'Buono',
+            percentage: hasDepression ? 40 : 75
+        }
+    };
+}
+
+// 9. Calcola fabbisogno nutrizionale
+function calculateNutritionalNeeds() {
+    const peso = parseFloat(userData.peso);
+    const altezza = parseFloat(userData.altezza);
+    const eta = parseInt(userData.eta);
+    const sesso = userData.sesso?.toLowerCase();
+    const attivita = userData.tipo_lavoro || 'sedentario';
+    
+    // Calcolo BMR (Mifflin-St Jeor)
+    let bmr;
+    if (sesso === 'maschio' || sesso === 'uomo') {
+        bmr = (10 * peso) + (6.25 * altezza) - (5 * eta) + 5;
+    } else {
+        bmr = (10 * peso) + (6.25 * altezza) - (5 * eta) - 161;
+    }
+    
+    // Fattori attività
+    const activityFactors = {
+        'sedentario': 1.2,
+        'leggermente attivo': 1.375,
+        'moderatamente attivo': 1.55,
+        'molto attivo': 1.725,
+        'estremamente attivo': 1.9
+    };
+    
+    const tdee = bmr * (activityFactors[attivita] || 1.2);
+    
+    // Obiettivo calorico (assumiamo dimagrimento moderato se BMI > 25)
+    const targetCalories = dashboardData.bmi.value > 25 ? tdee - 300 : tdee;
+    
+    dashboardData.nutrition = {
+        bmr: Math.round(bmr),
+        tdee: Math.round(tdee),
+        target: Math.round(targetCalories),
+        objective: dashboardData.bmi.value > 25 ? 'Dimagrimento moderato' : 'Mantenimento',
+        activityLevel: attivita,
+        macros: {
+            protein: { percentage: 25, grams: Math.round(targetCalories * 0.25 / 4) },
+            carbs: { percentage: 45, grams: Math.round(targetCalories * 0.45 / 4) },
+            fats: { percentage: 30, grams: Math.round(targetCalories * 0.30 / 9) }
+        }
+    };
+}
+
+// 10. Valuta attività fisica
+function evaluatePhysicalActivity() {
+    const isActive = userData.attivita_fisica?.toLowerCase() === 'sì';
+    const frequency = userData.frequenza_attivita_fisica || '0 volte/settimana';
+    const duration = parseInt(userData.durata_attivita) || 0;
+    const type = userData.tipo_attivita || '';
+    
+    // Estrai frequenza numerica
+    const weeklyFrequency = parseInt(frequency.match(/\d+/)?.[0]) || 0;
+    const weeklyMinutes = weeklyFrequency * duration;
+    
+    dashboardData.activity = {
+        current: {
+            frequency: frequency,
+            type: type,
+            duration: duration + ' minuti',
+            intensity: 'Moderata',
+            weeklyMinutes: weeklyMinutes
+        },
+        target: {
+            aerobic: 150,
+            strength: 2
+        },
+        compliance: {
+            percentage: Math.min((weeklyMinutes / 150) * 100, 100),
+            status: weeklyMinutes >= 150 ? 'Adeguata' : 'Insufficiente'
+        },
+        suggestions: []
+    };
+    
+    // Genera suggerimenti
+    if (weeklyMinutes < 150) {
+        dashboardData.activity.suggestions.push({
+            type: 'Obiettivo principale',
+            text: 'Aumentare l\'attività aerobica a 150 min/settimana'
+        });
+    }
+    
+    if (!type.includes('forza') && !type.includes('rafforzamento')) {
+        dashboardData.activity.suggestions.push({
+            type: 'Tipo di allenamento',
+            text: 'Aggiungere esercizi di forza 2 volte/settimana'
+        });
+    }
+}
+
+// Aggiorna tutti gli elementi della dashboard
+function updateDashboard() {
+    // Aggiorna sezione riepilogo salute
+    updateHealthSummary();
+    
+    // Aggiorna profilo metabolico
+    updateMetabolicProfile();
+    
+    // Aggiorna contenuti delle tab
+    updateRiskTab();
+    updateScreeningTab();
+    updateLifestyleTab();
+    updateNutritionTab();
+    updateActivityTab();
+    
+    // Aggiorna raccomandazioni
+    updateRecommendations();
+    
+    // Aggiorna prossimi passi
+    updateNextSteps();
+}
+
+// Funzioni di aggiornamento UI
+function updateHealthSummary() {
+    // BMI
+    document.querySelector('.score-indicator.score-medium').textContent = dashboardData.bmi.value;
+    document.querySelector('.score-indicator.score-medium').className = `score-indicator score-${dashboardData.bmi.status === 'success' ? 'medium' : dashboardData.bmi.status === 'warning' ? 'low' : 'high'}`;
+    
+    const bmiCard = document.querySelector('.bg-blue-50:first-child');
+    if (bmiCard) {
+        bmiCard.querySelector('.badge').textContent = dashboardData.bmi.category;
+        bmiCard.querySelector('.badge').className = `badge badge-${dashboardData.bmi.status}`;
+        bmiCard.querySelector('.font-medium').textContent = dashboardData.bmi.category;
+    }
+    
+    // SCORE2
+    const score2Card = document.querySelectorAll('.bg-blue-50')[1];
+    if (score2Card) {
+        score2Card.querySelector('.score-indicator').textContent = dashboardData.score2.value + '%';
+        score2Card.querySelector('.badge').textContent = dashboardData.score2.risk;
+        score2Card.querySelector('.badge').className = `badge badge-${dashboardData.score2.category === 'success' ? 'success' : dashboardData.score2.category === 'warning' ? 'warning' : 'danger'}`;
+        score2Card.querySelector('.font-medium').textContent = dashboardData.score2.risk;
+    }
+    
+    // PREDIMED
+    const predimedCard = document.querySelectorAll('.bg-blue-50')[2];
+    if (predimedCard) {
+        predimedCard.querySelector('.score-indicator').textContent = dashboardData.predimed.value;
+        predimedCard.querySelector('.badge').textContent = dashboardData.predimed.status === 'success' ? 'Buona' : dashboardData.predimed.status === 'warning' ? 'Migliorabile' : 'Scarsa';
+        predimedCard.querySelector('.badge').className = `badge badge-${dashboardData.predimed.status}`;
+        predimedCard.querySelector('.font-medium').textContent = dashboardData.predimed.adherence;
+    }
+}
+
+function updateMetabolicProfile() {
+    const metabolicSection = document.querySelector('.card .space-y-3');
+    if (!metabolicSection) return;
+    
+    // Aggiorna stato sindrome metabolica
+    const badge = metabolicSection.querySelector('.badge');
+    badge.textContent = dashboardData.metabolicSyndrome.present ? 'Presente' : 'Assente';
+    badge.className = `badge badge-${dashboardData.metabolicSyndrome.present ? 'danger' : 'success'}`;
+    
+    // Aggiorna progress bar
+    const progressBar = metabolicSection.querySelector('.bg-red-500');
+    const percentage = (dashboardData.metabolicSyndrome.criteria / 5) * 100;
+    progressBar.style.width = percentage + '%';
+    progressBar.className = `h-2.5 rounded-full ${dashboardData.metabolicSyndrome.present ? 'bg-red-500' : 'bg-yellow-500'}`;
+    
+    // Aggiorna testo criteri
+    metabolicSection.querySelector('.text-xs').textContent = 
+        `${dashboardData.metabolicSyndrome.criteria} criteri soddisfatti su 5`;
+    
+    // Aggiorna badges dei fattori
+    const factorsContainer = metabolicSection.querySelector('.flex.flex-wrap.gap-2');
+    factorsContainer.innerHTML = dashboardData.metabolicSyndrome.factors
+        .map(factor => `<div class="badge badge-danger">${factor}</div>`)
+        .join('');
+}
+
+function updateRiskTab() {
+    // Aggiorna grafico rischio cardiovascolare
+    const cvRisk = document.querySelector('#tab-rischi .progress-ring__circle');
+    if (cvRisk) {
+        const percentage = parseFloat(dashboardData.score2.value);
+        const circumference = 314.16; // 2 * π * 50
+        const offset = circumference - (percentage / 100 * circumference);
+        cvRisk.style.strokeDashoffset = offset;
+    }
+    
+    // Aggiorna testo rischio CV
+    const cvText = document.querySelector('#tab-rischi text');
+    if (cvText) cvText.textContent = dashboardData.score2.value + '%';
+    
+    // Aggiorna dettagli
+    const cvDetails = document.querySelector('#tab-rischi .space-y-2');
+    if (cvDetails) {
+        cvDetails.innerHTML = `
+            <div class="flex justify-between text-sm">
+                <span>Età</span>
+                <span class="font-medium">${userData.eta || 'N/D'} anni</span>
+            </div>
+            <div class="flex justify-between text-sm">
+                <span>Pressione</span>
+                <span class="font-medium">${userData.pressione_sistolica || 'N/D'}/${userData.pressione_diastolica || 'N/D'} mmHg</span>
+            </div>
+            <div class="flex justify-between text-sm">
+                <span>Colesterolo HDL</span>
+                <span class="font-medium">${userData.colesterolo_hdl_valore || 'N/D'} mg/dL</span>
+            </div>
+            <div class="flex justify-between text-sm">
+                <span>Fumo</span>
+                <span class="font-medium">${userData.fumatore || 'No'}</span>
+            </div>
+        `;
+    }
+    
+    // Aggiorna rischio diabete
+    const diabetesCircle = document.querySelectorAll('#tab-rischi .progress-ring__circle')[1];
+    if (diabetesCircle) {
+        const score = dashboardData.diabetesRisk.score;
+        const maxScore = dashboardData.diabetesRisk.maxScore;
+        const percentage = (score / maxScore) * 100;
+        const offset = 314.16 - (percentage / 100 * 314.16);
+        diabetesCircle.style.strokeDashoffset = offset;
+    }
+    
+    // Aggiorna testo rischio diabete
+    const diabetesText = document.querySelectorAll('#tab-rischi text')[1];
+    if (diabetesText) diabetesText.textContent = `${dashboardData.diabetesRisk.score}/${dashboardData.diabetesRisk.maxScore}`;
+}
+
+function updateScreeningTab() {
+    const container = document.querySelector('#tab-screening .space-y-3');
+    if (!container) return;
+    
+    container.innerHTML = dashboardData.screenings.map(screening => {
+        const borderColor = screening.status === 'completed' ? 'border-green-500' : 
+                          screening.status === 'pending' ? 'border-yellow-500' : 'border-red-500';
+        const badgeClass = screening.status === 'completed' ? 'badge-success' : 
+                         screening.status === 'pending' ? 'badge-warning' : 'badge-danger';
+        const badgeText = screening.status === 'completed' ? 'Completo' : 
+                        screening.status === 'pending' ? 'In scadenza' : 'Scaduto';
+        
+        return `
+            <div class="flex items-center p-2 rounded border-l-4 ${borderColor}">
+                <div class="flex-1">
+                    <h4 class="font-medium">${screening.name}</h4>
+                    <p class="text-sm text-gray-600">Raccomandato ${screening.frequency}</p>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span class="badge ${badgeClass}">${badgeText}</span>
+                    <span class="text-xs text-gray-500">${screening.dueIn}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function updateLifestyleTab() {
+    // Aggiorna grafico PREDIMED
+    if (predimedChart) {
+        const predimedData = [
+            userData.predimed_1 === 'sì' ? 1 : 0,
+            userData.predimed_2 === 'sì' ? 1 : 0,
+            userData.predimed_3 === 'sì' ? 1 : 0,
+            userData.predimed_4 === 'sì' ? 1 : 0,
+            userData.predimed_5 === 'sì' ? 1 : 0,
+            userData.predimed_6 === 'sì' ? 1 : 0,
+            userData.predimed_7 === 'sì' ? 1 : 0
+        ];
+        
+        predimedChart.data.datasets[0].data = predimedData;
+        predimedChart.update();
+    }
+    
+    // Aggiorna punteggio PREDIMED
+    const predimedScore = document.querySelector('#tab-stile-vita .text-center p');
+    if (predimedScore) {
+        predimedScore.innerHTML = `Punteggio attuale: <span class="font-medium">${dashboardData.predimed.value}/14</span><br>
+                                  Aderenza alla dieta mediterranea: <span class="font-medium">${dashboardData.predimed.adherence}</span>`;
+    }
+    
+    // Aggiorna benessere psicologico
+    const stressBar = document.querySelector('#tab-stile-vita .bg-yellow-500');
+    if (stressBar) {
+        stressBar.style.width = dashboardData.lifestyle.stress.percentage + '%';
+        stressBar.className = `h-2 rounded-full ${dashboardData.lifestyle.stress.percentage > 70 ? 'bg-red-500' : dashboardData.lifestyle.stress.percentage > 40 ? 'bg-yellow-500' : 'bg-green-500'}`;
+    }
+    
+    const sleepBar = document.querySelector('#tab-stile-vita .bg-red-500');
+    if (sleepBar) {
+        sleepBar.style.width = dashboardData.lifestyle.sleep.percentage + '%';
+        sleepBar.className = `h-2 rounded-full ${dashboardData.lifestyle.sleep.percentage < 40 ? 'bg-red-500' : dashboardData.lifestyle.sleep.percentage < 70 ? 'bg-yellow-500' : 'bg-green-500'}`;
+    }
+    
+    const moodBar = document.querySelector('#tab-stile-vita .bg-green-500');
+    if (moodBar) {
+        moodBar.style.width = dashboardData.lifestyle.mood.percentage + '%';
+    }
+}
+
+function updateNutritionTab() {
+    // Aggiorna fabbisogno calorico
+    const nutritionDetails = document.querySelector('#tab-nutritional .space-y-3');
+    if (nutritionDetails) {
+        nutritionDetails.innerHTML = `
+            <div class="flex justify-between">
+                <span class="text-sm text-gray-600">BMR</span>
+                <span class="font-medium">${dashboardData.nutrition.bmr} kcal</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-sm text-gray-600">TDEE</span>
+                <span class="font-medium">${dashboardData.nutrition.tdee} kcal</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-sm text-gray-600">Obiettivo</span>
+                <span class="font-medium">${dashboardData.nutrition.objective}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-sm text-gray-600">Calorie suggerite</span>
+                <span class="font-medium text-blue-600">${dashboardData.nutrition.target} kcal</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-sm text-gray-600">Attività fisica</span>
+                <span class="font-medium">${dashboardData.nutrition.activityLevel}</span>
+            </div>
+        `;
+    }
+    
+    // Aggiorna grafico macronutrienti
+    if (macroChart) {
+        macroChart.data.datasets[0].data = [
+            dashboardData.nutrition.macros.protein.percentage,
+            dashboardData.nutrition.macros.carbs.percentage,
+            dashboardData.nutrition.macros.fats.percentage
+        ];
+        macroChart.update();
+    }
+    
+    // Aggiorna dettagli macronutrienti
+    const macroDetails = document.querySelector('#tab-nutritional .grid.grid-cols-3');
+    if (macroDetails) {
+        macroDetails.innerHTML = `
+            <div class="p-2 rounded-lg">
+                <div class="text-sm font-medium">Proteine</div>
+                <div class="text-lg font-bold text-green-600">${dashboardData.nutrition.macros.protein.percentage}%</div>
+                <div class="text-xs text-gray-500">${dashboardData.nutrition.macros.protein.grams}g</div>
+            </div>
+            <div class="p-2 rounded-lg">
+                <div class="text-sm font-medium">Carboidrati</div>
+                <div class="text-lg font-bold text-blue-600">${dashboardData.nutrition.macros.carbs.percentage}%</div>
+                <div class="text-xs text-gray-500">${dashboardData.nutrition.macros.carbs.grams}g</div>
+            </div>
+            <div class="p-2 rounded-lg">
+                <div class="text-sm font-medium">Grassi</div>
+                <div class="text-lg font-bold text-yellow-600">${dashboardData.nutrition.macros.fats.percentage}%</div>
+                <div class="text-xs text-gray-500">${dashboardData.nutrition.macros.fats.grams}g</div>
+            </div>
+        `;
+    }
+}
+
+function updateActivityTab() {
+    // Aggiorna attività attuale
+    const activityDetails = document.querySelector('#tab-attivita .space-y-3');
+    if (activityDetails) {
+        activityDetails.innerHTML = `
+            <div class="flex justify-between">
+                <span class="text-sm text-gray-600">Frequenza</span>
+                <span class="font-medium">${dashboardData.activity.current.frequency}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-sm text-gray-600">Tipo</span>
+                <span class="font-medium">${dashboardData.activity.current.type || 'Non specificato'}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-sm text-gray-600">Durata</span>
+                <span class="font-medium">${dashboardData.activity.current.duration}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-sm text-gray-600">Intensità</span>
+                <span class="font-medium text-yellow-600">${dashboardData.activity.current.intensity}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-sm text-gray-600">Minuti/settimana</span>
+                <span class="font-medium ${dashboardData.activity.compliance.status === 'Adeguata' ? 'text-green-600' : 'text-red-600'}">${dashboardData.activity.current.weeklyMinutes} (${dashboardData.activity.compliance.status})</span>
+            </div>
+        `;
+    }
+    
+    // Aggiorna suggerimenti
+    const suggestionsContainer = document.querySelectorAll('#tab-attivita .space-y-3')[1];
+    if (suggestionsContainer) {
+        suggestionsContainer.innerHTML = dashboardData.activity.suggestions.map(suggestion => `
+            <div class="p-3 rounded-lg border-l-4 border-blue-500">
+                <h4 class="font-medium">${suggestion.type}</h4>
+                <p class="text-sm text-gray-600">${suggestion.text}</p>
+            </div>
+        `).join('') || `
+            <div class="p-3 rounded-lg border-l-4 border-green-500">
+                <h4 class="font-medium">Ottimo lavoro!</h4>
+                <p class="text-sm text-gray-600">Stai già raggiungendo gli obiettivi di attività fisica raccomandati</p>
+            </div>
+        `;
+    }
+}
+
+function updateRecommendations() {
+    const container = document.querySelector('.recommendation-card').parentElement;
+    if (!container) return;
+    
+    container.innerHTML = dashboardData.recommendations
+        .slice(0, 3) // Mostra solo le prime 3 raccomandazioni
+        .map(rec => `
+            <div class="recommendation-card p-3 bg-gray-50">
+                <h3 class="font-medium">${rec.title}</h3>
+                <p class="text-sm text-gray-600">${rec.description}</p>
+            </div>
+        `).join('');
+}
+
+function updateNextSteps() {
+    const container = document.querySelector('.card:last-child .space-y-3');
+    if (!container) return;
+    
+    const nextSteps = [];
+    
+    // Aggiungi visite basate sui rischi
+    if (dashboardData.score2.risk === 'Alto' || dashboardData.score2.risk === 'Molto alto') {
+        nextSteps.push({
+            title: 'Visita cardiologica',
+            description: 'Per rivalutazione parametri cardiovascolari',
+            timeframe: 'Entro 30 giorni'
+        });
+    }
+    
+    if (dashboardData.diabetesRisk.risk === 'Alto') {
+        nextSteps.push({
+            title: 'Visita diabetologica',
+            description: 'Per valutazione rischio diabete',
+            timeframe: 'Entro 30 giorni'
+        });
+    }
+    
+    // Aggiungi esami se necessari
+    const overdueScreenings = dashboardData.screenings.filter(s => s.status === 'overdue');
+    if (overdueScreenings.length > 0) {
+        nextSteps.push({
+            title: overdueScreenings[0].name,
+            description: `Screening ${overdueScreenings[0].status}`,
+            timeframe: 'Immediato'
+        });
+    }
+    
+    // Se non ci sono passi urgenti, aggiungi consigli generali
+    if (nextSteps.length === 0) {
+        nextSteps.push({
+            title: 'Mantenere stile di vita sano',
+            description: 'Continua con le buone abitudini',
+            timeframe: 'Ongoing'
+        });
+    }
+    
+    container.innerHTML = nextSteps.map((step, index) => `
+        <div class="flex items-center p-2 bg-gray-50 rounded">
+            <div class="bg-blue-100 text-blue-800 h-8 w-8 rounded-full flex items-center justify-center mr-3">${index + 1}</div>
+            <div>
+                <h4 class="font-medium">${step.title}</h4>
+                <p class="text-xs text-gray-500">${step.timeframe}</p>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Inizializza i grafici
+function initializeCharts() {
+    // PREDIMED Chart
+    const predimedCtx = document.getElementById('predimed-chart').getContext('2d');
+    predimedChart = new Chart(predimedCtx, {
+        type: 'radar',
+        data: {
+            labels: ['Olio oliva', 'Verdura', 'Frutta', 'Cereali', 'Legumi', 'Pesce', 'Vino'],
+            datasets: [{
+                label: 'Punteggio attuale',
+                data: [0, 0, 0, 0, 0, 0, 0], // Sarà aggiornato dopo
+                backgroundColor: 'rgba(66, 133, 244, 0.2)',
+                borderColor: '#4285F4',
+                borderWidth: 2,
+                pointBackgroundColor: '#4285F4'
+            }, {
+                label: 'Obiettivo',
+                data: [1, 1, 1, 1, 1, 1, 1],
+                backgroundColor: 'rgba(52, 168, 83, 0.1)',
+                borderColor: '#34A853',
+                borderWidth: 1,
+                borderDash: [5, 5],
+                pointBackgroundColor: '#34A853'
+            }]
+        },
+        options: {
+            scale: {
+                ticks: {
+                    beginAtZero: true,
+                    max: 1,
+                    stepSize: 1
+                }
+            }
+        }
+    });
+
+    // Macronutrienti Chart
+    const macroCtx = document.getElementById('macro-chart').getContext('2d');
+    macroChart = new Chart(macroCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Proteine', 'Carboidrati', 'Grassi'],
+            datasets: [{
+                data: [25, 45, 30], // Sarà aggiornato dopo
+                backgroundColor: ['#34A853', '#4285F4', '#FBBC05'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            cutout: '70%',
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+}
+
+// Setup delle tabs
+function setupTabs() {
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.addEventListener('click', () => {
+            const tabId = button.getAttribute('data-tab');
+
+            // Deactivate all tabs
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // Activate current tab
+            button.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+
+            // Update charts if needed
+            if (tabId === 'tab-stile-vita' && predimedChart) {
+                predimedChart.update();
+            }
+            if (tabId === 'tab-nutritional' && macroChart) {
+                macroChart.update();
+            }
+        });
+    });
+}
+
+// Setup export button
+function setupExportButton() {
+    const exportButton = document.querySelector('button:has(i.fas.fa-file-pdf)');
+    if (exportButton) {
+        exportButton.addEventListener('click', exportDashboardPDF);
+    }
+}
+
+// Funzione per esportare PDF
+async function exportDashboardPDF() {
+    const exportButton = document.querySelector('button:has(i.fas.fa-file-pdf)');
+    const originalButtonText = exportButton.innerHTML;
+    
+    exportButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Esportazione...';
+    exportButton.disabled = true;
+
+    // Mostra temporaneamente tutte le tabs per l'export
+    const currentActiveTab = document.querySelector('.tab-content.active');
+    const allTabs = document.querySelectorAll('.tab-content');
+    allTabs.forEach(tab => tab.classList.add('active'));
+
+    // Aggiorna i grafici
+    if (predimedChart) predimedChart.update();
+    if (macroChart) macroChart.update();
+
+    setTimeout(() => {
+        const dashboardContent = document.querySelector('main');
+        
+        const options = {
+            margin: 10,
+            filename: `Dashboard_HealthAI_${userData.email}_${new Date().toLocaleDateString('it-IT')}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: {
+                scale: 1,
+                useCORS: true,
+                logging: false,
+                allowTaint: true,
+                foreignObjectRendering: false
+            },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        html2pdf().from(dashboardContent).set(options).save()
+            .then(() => {
+                // Ripristina solo la tab attiva originale
+                allTabs.forEach(tab => tab.classList.remove('active'));
+                if (currentActiveTab) currentActiveTab.classList.add('active');
+                
+                exportButton.innerHTML = originalButtonText;
+                exportButton.disabled = false;
+                
+                showNotification('PDF esportato con successo!', 'success');
+            })
+            .catch(error => {
+                console.error('Errore export PDF:', error);
+                
+                allTabs.forEach(tab => tab.classList.remove('active'));
+                if (currentActiveTab) currentActiveTab.classList.add('active');
+                
+                exportButton.innerHTML = originalButtonText;
+                exportButton.disabled = false;
+                
+                showNotification('Errore durante l\'esportazione', 'error');
+            });
+    }, 500);
+}
+
+// Funzione per mostrare notifiche
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 px-6 py-3 rounded-md shadow-lg z-50 ${
+        type === 'success' ? 'bg-green-500' : 'bg-red-500'
+    } text-white`;
+    notification.innerHTML = `
+        <div class="flex items-center">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} mr-2"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transition = 'opacity 0.5s ease';
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 500);
+    }, 3000);
+}
+
+// Auto-refresh ogni 5 minuti
+setInterval(async () => {
+    const { data: sessionData } = await supabaseClient.auth.getSession();
+    if (sessionData.session) {
+        await loadUserData(sessionData.session.user.email);
+        calculateAllScores();
+        updateDashboard();
+    }
+}, 300000); // 5 minuti
+
+// Gestione logout
+document.getElementById('logout-btn')?.addEventListener('click', async () => {
+    await supabaseClient.auth.signOut();
+    window.location.href = 'login.html';
+});
+</script>
 </body>
 </html>
