@@ -1052,55 +1052,95 @@ document.getElementById("btn-salva-profilo").addEventListener("click", async () 
 
   const email = session.data.session.user.email;
 
-  // 🔎 Raccoglie i valori dal DOM
+  // 🔎 Raccoglie TUTTI i valori dal DOM inclusi i NUOVI CAMPI
   const updatedData = {
     email,
+    // Dati anagrafici base
     eta: document.getElementById("profilo-eta")?.value,
     sesso: document.getElementById("profilo-sesso")?.value,
     tipo_lavoro: document.getElementById("profilo-tipo_lavoro")?.value,
     altezza: parseFloat(document.getElementById("profilo-altezza")?.value),
     peso: parseFloat(document.getElementById("profilo-peso")?.value),
+    
+    // Storia clinica
     patologie: document.getElementById("profilo-patologie")?.value,
     farmaci_dettaglio: document.getElementById("profilo-farmaci_dettaglio")?.value,
     intolleranze: document.getElementById("profilo-intolleranze")?.value,
     alimenti_esclusi: document.getElementById("profilo-alimenti_esclusi")?.value,
     preferenze: document.getElementById("profilo-preferenze")?.value,
+    
+    // Parametri ematici standard
     colesterolo_totale: parseFloat(document.getElementById("profilo-colesterolo_totale")?.value),
     colesterolo_hdl_valore: parseFloat(document.getElementById("profilo-colesterolo_hdl_valore")?.value),
     colesterolo_ldl_valore: parseFloat(document.getElementById("profilo-colesterolo_ldl_valore")?.value),
+    trigliceridi: parseFloat(document.getElementById("profilo-trigliceridi")?.value),
+    
+    // Parametri cardiovascolari
     pressione_sistolica: parseFloat(document.getElementById("profilo-pressione_sistolica")?.value),
     pressione_diastolica: parseFloat(document.getElementById("profilo-pressione_diastolica")?.value),
-    glicemia_valore: parseFloat(document.getElementById("profilo-glicemia_valore")?.value),
     pressione_alta: document.getElementById("profilo-pressione_alta")?.value,
-    familiari_diabete: document.getElementById("profilo-familiari_diabete")?.value,
-    durata_attivita: parseInt(document.getElementById("profilo-durata_attivita")?.value), 
+    
+    // Parametri glicemici
+    glicemia_valore: parseFloat(document.getElementById("profilo-glicemia_valore")?.value),
     diabete: document.getElementById("profilo-diabete")?.value,
-  frattura: document.getElementById("profilo-frattura")?.value,
-  famiglia_frattura_anca: document.getElementById("profilo-famiglia_frattura_anca")?.value,
-  corticosteroidi: document.getElementById("profilo-corticosteroidi")?.value,
-  alcol_eccessivo: document.getElementById("profilo-alcol_eccessivo")?.value,
-  artrite: document.getElementById("profilo-artrite")?.value,
-  vita: document.getElementById("profilo-vita")?.value,
-    trigliceridi: parseFloat(document.getElementById("profilo-trigliceridi")?.value),
-stanchezza: document.getElementById("profilo-stanchezza")?.value,
-  camminata: document.getElementById("profilo-camminata")?.value,
-  sollevamento: document.getElementById("profilo-sollevamento")?.value,
-  sedia: document.getElementById("profilo-sedia")?.value,
-  cadute: document.getElementById("profilo-cadute")?.value
+    familiari_diabete: document.getElementById("profilo-familiari_diabete")?.value,
+    
+    // 🆕 NUOVI PARAMETRI PER GLI SCORE
+    // HbA1c per SCORE2-Diabete
+    hba1c: parseFloat(document.getElementById("profilo-hba1c")?.value),
+    
+    // Transaminasi e piastrine per FIB4
+    ast: parseInt(document.getElementById("profilo-ast")?.value),
+    alt: parseInt(document.getElementById("profilo-alt")?.value),
+    piastrine: parseInt(document.getElementById("profilo-piastrine")?.value),
+    
+    // Albumina e linfociti per FNI
+    albumina: parseFloat(document.getElementById("profilo-albumina")?.value),
+    linfociti: parseInt(document.getElementById("profilo-linfociti")?.value),
+    
+    // Altri parametri esistenti
+    durata_attivita: parseInt(document.getElementById("profilo-durata_attivita")?.value),
+    fumatore: document.getElementById("profilo-fumatore")?.value,
+    frattura: document.getElementById("profilo-frattura")?.value,
+    famiglia_frattura_anca: document.getElementById("profilo-famiglia_frattura_anca")?.value,
+    corticosteroidi: document.getElementById("profilo-corticosteroidi")?.value,
+    alcol_eccessivo: document.getElementById("profilo-alcol_eccessivo")?.value,
+    artrite: document.getElementById("profilo-artrite")?.value,
+    vita: document.getElementById("profilo-vita")?.value,
+    stanchezza: document.getElementById("profilo-stanchezza")?.value,
+    camminata: document.getElementById("profilo-camminata")?.value,
+    sollevamento: document.getElementById("profilo-sollevamento")?.value,
+    sedia: document.getElementById("profilo-sedia")?.value,
+    cadute: document.getElementById("profilo-cadute")?.value
   };
 
-  // ✅ Salvataggio con Supabase (upsert: aggiorna se esiste, inserisce se no)
-  const { error } = await supabase
-    .from("anagrafica_utenti")
-    .upsert([updatedData], { onConflict: ['email'] });
+  // 🧹 Pulisci i valori NaN sostituendoli con null
+  Object.keys(updatedData).forEach(key => {
+    if (typeof updatedData[key] === 'number' && isNaN(updatedData[key])) {
+      updatedData[key] = null;
+    }
+  });
 
-  if (error) {
-    alert("❌ Errore durante il salvataggio: " + error.message);
-  } else {
-    alert("✅ Dati salvati con successo!");
+  // ✅ Salvataggio con Supabase (upsert: aggiorna se esiste, inserisce se no)
+  try {
+    const { error } = await supabase
+      .from("anagrafica_utenti")
+      .upsert([updatedData], { onConflict: ['email'] });
+
+    if (error) {
+      console.error("❌ Errore durante il salvataggio:", error);
+      alert("❌ Errore durante il salvataggio: " + error.message);
+    } else {
+      console.log("✅ Profilo salvato con successo, inclusi nuovi parametri clinici!");
+      alert("✅ Dati salvati con successo!");
+      
+      // Opzionale: ricarica la pagina per mostrare i dati aggiornati
+      // window.location.reload();
+    }
+  } catch (err) {
+    console.error("❌ Errore imprevisto:", err);
+    alert("❌ Errore imprevisto durante il salvataggio");
   }
 });
-</script>
-   
 </body>
 </html>
