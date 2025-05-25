@@ -135,6 +135,7 @@ let ultimaRispostaBot = "";
   
   
 const aliasCondivisi = {
+  // ... mantieni tutti gli alias esistenti ...
   eta: ["eta"],
   sesso: ["sesso"],
   altezza: ["altezza"],
@@ -165,7 +166,14 @@ const aliasCondivisi = {
   camminata: ["camminata", "over_camminata"],
   sollevamento: ["sollevamento", "over_sollevamento"],
   sedia: ["sedia", "over_sedia"],
-  cadute: ["cadute", "over_cadute"]
+  cadute: ["cadute", "over_cadute"],
+  // 🆕 Aggiungi alias per i nuovi campi se necessario
+  ast: ["ast"],
+  alt: ["alt"],
+  piastrine: ["piastrine"],
+  albumina: ["albumina"],
+  linfociti: ["linfociti"],
+  hba1c: ["hba1c"]
 };
   function haRispostaCondivisa(domandaKey) {
   for (const [profiloKey, domandeKeys] of Object.entries(aliasCondivisi)) {
@@ -653,7 +661,7 @@ async function salvaAnagraficaNelDatabase(dati) {
       return;
     }
 
-    // ✅ Elenco dei soli campi presenti nella tabella reale
+    // ✅ Elenco COMPLETO dei campi validi inclusi i NUOVI
     const campiValidi = [
       "email", "eta", "sesso", "altezza", "peso",
       "origine_etnica", "vita", "glicemia", "glicemia_valore",
@@ -673,14 +681,32 @@ async function salvaAnagraficaNelDatabase(dati) {
       "predimed_5", "predimed_6", "predimed_7", "predimed_8",
       "predimed_9", "predimed_10", "predimed_11", "predimed_12",
       "predimed_13", "predimed_14", "depressione", "insonnia",
-      "tipo_insonnia", "stress", "frequenza_attivita_fisica", "durata_attivita", "tipo_attivita"
+      "tipo_insonnia", "stress", "frequenza_attivita_fisica", "durata_attivita", "tipo_attivita",
+      // 🆕 NUOVI CAMPI AGGIUNTI
+      "hba1c", "ast", "alt", "piastrine", "albumina", "linfociti",
+      "n_sigarette", "alcol", "eta_menarca", "eta_menopausa", 
+      "contraccettivi", "gravidanza", "familiarita_seno", 
+      "screening_seno", "papsmear", "over_peso", "over_malattie", 
+      "over_scale", "over_debolezza"
     ];
 
     // ✅ Filtra i soli campi validi prima di salvarli
     const payload = {};
     for (const chiave of campiValidi) {
       if (chiave in dati) {
-        payload[chiave] = dati[chiave];
+        // Converti i valori numerici correttamente
+        if (['ast', 'alt', 'piastrine', 'linfociti'].includes(chiave)) {
+          // Questi sono interi
+          const valore = parseInt(dati[chiave]);
+          payload[chiave] = isNaN(valore) ? null : valore;
+        } else if (['hba1c', 'albumina'].includes(chiave)) {
+          // Questi sono decimali
+          const valore = parseFloat(dati[chiave]);
+          payload[chiave] = isNaN(valore) ? null : valore;
+        } else {
+          // Altri campi mantengono il valore originale
+          payload[chiave] = dati[chiave];
+        }
       }
     }
 
@@ -690,9 +716,9 @@ async function salvaAnagraficaNelDatabase(dati) {
       .upsert([payload], { onConflict: "email" });
 
     if (error) {
-      console.error("Errore API salvataggio:", error);
+      console.error("❌ Errore API salvataggio:", error);
     } else {
-      console.log("✅ Dati anagrafici completi salvati:", data);
+      console.log("✅ Dati anagrafici completi salvati (inclusi nuovi campi):", data);
     }
   } catch (error) {
     console.error("❌ Errore di rete salvataggio:", error);
