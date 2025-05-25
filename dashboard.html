@@ -1119,13 +1119,22 @@ function calculateDiabetesRisk() {
         score += 1;
         factors.push('Ipertensione');
     }
-    
-    // Attività fisica
-    if (userData.attivita_fisica?.toLowerCase() === 'no' ||
-        userData.attivo30?.toLowerCase() === 'no') {
+   
+if (userData.attivita_fisica?.toLowerCase() === 'no') {
+    score += 1;
+    factors.push('Sedentarietà');
+} else {
+    const freq = userData.frequenza_attivita_fisica || '0 volte/settimana';
+    const durata = parseInt(userData.durata_attivita || '0');
+    const freqNum = parseInt(freq.match(/\d+/)?.[0]) || 0;
+    const weeklyMinutes = freqNum * durata;
+
+    if (weeklyMinutes < 150) {
         score += 1;
-        factors.push('Sedentarietà');
+        factors.push('Attività fisica insufficiente');
     }
+}
+
     
     dashboardData.diabetesRisk = {
         score: score,
