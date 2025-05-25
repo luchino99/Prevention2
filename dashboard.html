@@ -1107,18 +1107,21 @@ function calculateDiabetesRisk() {
         factors.push('Obesità grave');
     }
     
-    // Familiarità
-    if (userData.familiari_diabete?.toLowerCase() === 'sì') {
-        score += 1;
-        factors.push('Familiarità diabete');
-    }
     
-    // Ipertensione
-    if (userData.pressione_alta?.toLowerCase() === 'sì' || 
-        parseFloat(userData.pressione_sistolica) >= 140) {
-        score += 1;
-        factors.push('Ipertensione');
-    }
+const rispostaFam = userData.familiari_diabete?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+if (['si', 'sì', 'yes', 'true', 'ok', 'y'].includes(rispostaFam)) {
+    score += 1;
+    factors.push('Familiarità diabete');
+}
+
+// Ipertensione
+const rispostaIpertensione = userData.pressione_alta?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+if (['si', 'sì', 'yes', 'true', 'ok', 'y'].includes(rispostaIpertensione) ||
+    parseFloat(userData.pressione_sistolica) >= 140) {
+    score += 1;
+    factors.push('Ipertensione');
+}
+
    
 if (userData.attivita_fisica?.toLowerCase() === 'no') {
     score += 1;
