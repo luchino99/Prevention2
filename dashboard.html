@@ -496,56 +496,46 @@
                         </div>
                     </div>
 
-<!-- FIB4 -->
-<div id="fib4-banner" class="p-4 bg-gray-50 rounded-lg">
-    <h3 class="font-semibold mb-3">FIB4</h3>
-    <div class="flex items-center justify-center mb-4">
-        <svg width="120" height="120" viewBox="0 0 120 120">
-            <circle cx="60" cy="60" r="50" fill="none" stroke="#e6e6e6" stroke-width="10"></circle>
-            <circle id="fib4-ring" class="progress-ring__circle" cx="60" cy="60" r="50" fill="none" stroke="#FBBC05" stroke-width="10" stroke-linecap="round"></circle>
-            <text id="fib4-ring-text" x="60" y="65" text-anchor="middle" font-size="18" font-weight="bold" fill="var(--chart-text-color)">--</text>
-        </svg>
-    </div>
-    <div class="space-y-2">
-        <div class="flex justify-between text-sm">
-            <span>AST</span>
-            <span id="fib4-banner-ast" class="font-medium">--</span>
-        </div>
-        <div class="flex justify-between text-sm">
-            <span>ALT</span>
-            <span id="fib4-banner-alt" class="font-medium">--</span>
-        </div>
-        <div class="flex justify-between text-sm">
-            <span>Piastrine</span>
-            <span id="fib4-banner-plt" class="font-medium">--</span>
-        </div>
-    </div>
-</div>
+                    <!-- FIB4 -->
+                    <div id="fib4-banner" class="p-4 bg-gray-50 rounded-lg">
+                        <h3 class="font-semibold mb-3">FIB4</h3>
+                        <div class="flex items-center justify-center mb-4">
+                            <div id="fib4-banner-score" class="score-indicator score-medium text-2xl">--</div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-sm">
+                                <span>AST</span>
+                                <span id="fib4-banner-ast" class="font-medium">--</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span>ALT</span>
+                                <span id="fib4-banner-alt" class="font-medium">--</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span>Piastrine</span>
+                                <span id="fib4-banner-plt" class="font-medium">--</span>
+                            </div>
+                        </div>
+                    </div>
 
-
-
-<!-- FNI -->
-<div id="fni-banner" class="p-4 bg-gray-50 rounded-lg">
-    <h3 class="font-semibold mb-3">FNI - Nutrizione</h3>
-    <div class="flex items-center justify-center mb-4">
-        <svg width="120" height="120" viewBox="0 0 120 120">
-            <circle cx="60" cy="60" r="50" fill="none" stroke="#e6e6e6" stroke-width="10"></circle>
-            <circle id="fni-ring" class="progress-ring__circle" cx="60" cy="60" r="50" fill="none" stroke="#34A853" stroke-width="10" stroke-linecap="round"></circle>
-            <text id="fni-ring-text" x="60" y="65" text-anchor="middle" font-size="18" font-weight="bold" fill="var(--chart-text-color)">--</text>
-        </svg>
-    </div>
-    <div class="space-y-2">
-        <div class="flex justify-between text-sm">
-            <span>Albumina</span>
-            <span id="fni-banner-albumina" class="font-medium">--</span>
-        </div>
-        <div class="flex justify-between text-sm">
-            <span>Linfociti</span>
-            <span id="fni-banner-linfociti" class="font-medium">--</span>
-        </div>
-    </div>
-</div>
-
+                    <!-- FNI -->
+                    <div id="fni-banner" class="p-4 bg-gray-50 rounded-lg">
+                        <h3 class="font-semibold mb-3">FNI - Nutrizione</h3>
+                        <div class="flex items-center justify-center mb-4">
+                            <div id="fni-banner-score" class="score-indicator score-medium text-2xl">--</div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-sm">
+                                <span>Albumina</span>
+                                <span id="fni-banner-albumina" class="font-medium">--</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span>Linfociti</span>
+                                <span id="fni-banner-linfociti" class="font-medium">--</span>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="p-4 bg-gray-50 rounded-lg">
                         <h3 class="font-semibold mb-3">Rischio Cardiovascolare</h3>
                         <div class="flex items-center justify-center mb-4">
@@ -1766,23 +1756,7 @@ function updateDashboard() {
     updateActivityTab();
     updateRecommendations();
     updateNewScoreBanners();
-    // FIB4
-if (dashboardData.fib4?.value) {
-    updateProgressCircle('fib4-ring', parseFloat(dashboardData.fib4.value), 5);
-    document.getElementById('fib4-ring-text').textContent = dashboardData.fib4.value;
-    document.getElementById('fib4-banner-ast').textContent = dashboardData.fib4.ast;
-    document.getElementById('fib4-banner-alt').textContent = dashboardData.fib4.alt;
-    document.getElementById('fib4-banner-plt').textContent = dashboardData.fib4.plt;
-}
-
-// FNI
-if (dashboardData.fni?.value) {
-    updateProgressCircle('fni-ring', parseFloat(dashboardData.fni.value), 60);
-    document.getElementById('fni-ring-text').textContent = dashboardData.fni.value;
-    document.getElementById('fni-banner-albumina').textContent = dashboardData.fni.albumina;
-    document.getElementById('fni-banner-linfociti').textContent = dashboardData.fni.linfociti;
-}
-
+    
     console.log('✅ Dashboard aggiornata');
 }
 
@@ -1878,21 +1852,6 @@ function updateHealthSummary() {
     console.log('✅ Riepilogo salute aggiornato');
 }
 
-    function updateProgressCircle(id, value, max = 100) {
-    const circle = document.getElementById(id);
-    const radius = 50;
-    const circumference = 2 * Math.PI * radius;
-    const percent = Math.min(value / max, 1);
-    const offset = circumference - percent * circumference;
-
-    if (circle) {
-        circle.style.strokeDasharray = `${circumference}`;
-        circle.style.strokeDashoffset = `${offset}`;
-    }
-}
-
-
-        
 function updateMetabolicProfile() {
     const metabolicSection = document.querySelector('.card .space-y-3');
     if (!metabolicSection) return;
@@ -1923,13 +1882,19 @@ function updateRiskTab() {
     // Aggiorna grafico rischio cardiovascolare - USA FORMULA DI SCORE2-DIABETE
     const cvRisk = document.querySelector('#tab-rischi .progress-ring__circle');
     if (cvRisk) {
-const percent = parseFloat(dashboardData.score2.value); // es: 9
-const circle = document.querySelector('#cv-risk-text').previousElementSibling;
-const radius = 50;
-const circumference = 2 * Math.PI * radius;
-const offset = circumference - (percent / 100) * circumference;
-circle.style.strokeDashoffset = offset;
+        const percentage = parseFloat(dashboardData.score2.value);
+        console.log('🎯 === CORREZIONE GRAFICO CV ===');
+        console.log('Percentuale CV:', percentage + '%');
         
+        // USA LA STESSA FORMULA CHE FUNZIONA IN SCORE2-DIABETE
+        const circumference = 314.16;
+        const offset = circumference - (percentage / 100 * circumference);
+        
+        cvRisk.style.strokeDashoffset = offset;
+        console.log('✅ CV - Circumference:', circumference, 'Offset:', offset, 'per', percentage + '%');
+        console.log('🔍 Per 9% dovrebbe essere circa', circumference * 0.91, '- Applicato:', offset);
+        
+        // Cambia colore in base al rischio
         const strokeColor = dashboardData.score2.category === 'danger' ? '#EA4335' : 
                            dashboardData.score2.category === 'warning' ? '#FBBC05' : '#34A853';
         cvRisk.setAttribute('stroke', strokeColor);
@@ -1976,11 +1941,22 @@ circle.style.strokeDashoffset = offset;
     // Aggiorna rischio diabete - USA FORMULA DI SCORE2-DIABETE
     const diabetesCircle = document.querySelectorAll('#tab-rischi .progress-ring__circle')[1];
     if (diabetesCircle) {
-const adaScore = dashboardData.diabetesRisk.score;
-const adaMax = dashboardData.diabetesRisk.maxScore;
-const adaCircle = document.querySelector('#diabetes-risk-text').previousElementSibling;
-const adaOffset = circumference - (adaScore / adaMax) * circumference;
-adaCircle.style.strokeDashoffset = adaOffset;
+        const score = dashboardData.diabetesRisk.score;
+        const maxScore = dashboardData.diabetesRisk.maxScore;
+        const percentage = (score / maxScore) * 100;
+        
+        console.log('🎯 === CORREZIONE DEFINITIVA ADA RISK ===');
+        console.log('Score:', score, '/', maxScore, '=', percentage + '%');
+        
+        // USA LA STESSA FORMULA CHE FUNZIONA IN SCORE2-DIABETE
+        const circumference = 314.16;
+        const offset = circumference - (percentage / 100 * circumference);
+        
+        diabetesCircle.style.strokeDasharray = circumference;
+        diabetesCircle.style.strokeDashoffset = offset;
+        
+        console.log('✅ ADA - Circumference:', circumference, 'Offset:', offset);
+        console.log('🔍 Per 100% (8/8) offset dovrebbe essere 0 - Applicato:', offset);
         
         // Cambia colore
         const strokeColor = dashboardData.diabetesRisk.risk === 'Alto' ? '#EA4335' : 
