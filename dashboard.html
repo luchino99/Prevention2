@@ -1874,14 +1874,24 @@ function updateRiskTab() {
     console.log('📊 SCORE2 per grafico:', dashboardData.score2);
     console.log('📊 Diabetes Risk per grafico:', dashboardData.diabetesRisk);
     
-    // Aggiorna grafico rischio cardiovascolare
+    // Aggiorna grafico rischio cardiovascolare - CORREZIONE ANCHE QUI
     const cvRisk = document.querySelector('#tab-rischi .progress-ring__circle');
     if (cvRisk) {
         const percentage = parseFloat(dashboardData.score2.value);
         console.log('🎯 Aggiornamento grafico CV con percentuale:', percentage);
+        
         const circumference = 314.16;
-        const offset = circumference - (percentage / 100 * circumference);
+        // Formula corretta: per il SCORE2 usiamo percentuale diretta (es. 4.5% = 4.5% del cerchio)
+        const offset = circumference * (1 - percentage / 100);
+        
         cvRisk.style.strokeDashoffset = offset;
+        console.log('📊 Grafico CV - Circumference:', circumference, 'Offset:', offset, 'Percentage:', percentage + '%');
+        
+        // Cambia colore in base al rischio
+        const strokeColor = dashboardData.score2.category === 'danger' ? '#EA4335' : 
+                           dashboardData.score2.category === 'warning' ? '#FBBC05' : '#34A853';
+        cvRisk.setAttribute('stroke', strokeColor);
+        console.log('🎨 Colore grafico CV:', strokeColor, 'per categoria:', dashboardData.score2.category);
     } else {
         console.warn('⚠️ Elemento grafico CV non trovato');
     }
@@ -1921,15 +1931,28 @@ function updateRiskTab() {
         console.log('📝 Fumo CV aggiornato:', userData.fumatore);
     }
     
-    // Aggiorna rischio diabete
+    // Aggiorna rischio diabete - CORREZIONE GRAFICO CIRCOLARE
     const diabetesCircle = document.querySelectorAll('#tab-rischi .progress-ring__circle')[1];
     if (diabetesCircle) {
         const score = dashboardData.diabetesRisk.score;
         const maxScore = dashboardData.diabetesRisk.maxScore;
         const percentage = (score / maxScore) * 100;
         console.log('🎯 Aggiornamento grafico Diabetes con:', { score, maxScore, percentage });
-        const offset = 314.16 - (percentage / 100 * 314.16);
+        
+        // CORREZIONE: Formula corretta per il grafico circolare
+        const circumference = 314.16; // 2 * π * 50 (raggio 50)
+        // Per avere il cerchio pieno al 100%, l'offset deve essere 0
+        // Per avere il cerchio vuoto al 0%, l'offset deve essere 314.16
+        const offset = circumference * (1 - percentage / 100);
+        
         diabetesCircle.style.strokeDashoffset = offset;
+        console.log('📊 Grafico Diabetes - Circumference:', circumference, 'Offset:', offset, 'Percentage:', percentage + '%');
+        
+        // Cambia anche il colore in base al rischio
+        const strokeColor = dashboardData.diabetesRisk.risk === 'Alto' ? '#EA4335' : 
+                           dashboardData.diabetesRisk.risk === 'Moderato' ? '#FBBC05' : '#34A853';
+        diabetesCircle.setAttribute('stroke', strokeColor);
+        console.log('🎨 Colore grafico Diabetes:', strokeColor, 'per rischio:', dashboardData.diabetesRisk.risk);
     } else {
         console.warn('⚠️ Elemento grafico Diabetes non trovato');
     }
