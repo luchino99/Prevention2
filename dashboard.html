@@ -1938,48 +1938,11 @@ function updateRiskTab() {
         console.log('📝 Fumo CV aggiornato:', userData.fumatore);
     }
     
-    // Aggiorna rischio diabete - USA FORMULA DI SCORE2-DIABETE
-    const diabetesCircle = document.querySelectorAll('#tab-rischi .progress-ring__circle.ring-ada');
-    if (diabetesCircle) {
-        const score = dashboardData.diabetesRisk.score;
-        const maxScore = dashboardData.diabetesRisk.maxScore;
-        const percentage = (score / maxScore) * 100;
-        
-        console.log('🎯 === CORREZIONE DEFINITIVA ADA RISK ===');
-        console.log('Score:', score, '/', maxScore, '=', percentage + '%');
-        
-        // USA LA STESSA FORMULA CHE FUNZIONA IN SCORE2-DIABETE
-        const circumference = 314.16;
-        const offset = circumference - (percentage / 100 * circumference);
-        
-        diabetesCircle.style.strokeDashoffset = offset;
-        
-        console.log('✅ ADA - Circumference:', circumference, 'Offset:', offset);
-        console.log('🔍 Per 100% (8/8) offset dovrebbe essere 0 - Applicato:', offset);
-        
-        // Cambia colore
-        const strokeColor = dashboardData.diabetesRisk.risk === 'Alto' ? '#EA4335' : 
-                           dashboardData.diabetesRisk.risk === 'Moderato' ? '#FBBC05' : '#34A853';
-        diabetesCircle.setAttribute('stroke', strokeColor);
-        console.log('🎨 Colore ADA:', strokeColor, 'per rischio:', dashboardData.diabetesRisk.risk);
-        
-        
-        if (score === maxScore) {
-            console.log('🔴 ADA 8/8 - CERCHIO DOVREBBE ESSERE COMPLETAMENTE ROSSO');
-        }
-        
-    } else {
-        console.warn('⚠️ Elemento grafico Diabetes non trovato');
-    }
+
+// codice eliminato
+
+
     
-    // Aggiorna testo diabete usando ID specifico
-    const diabetesText = document.getElementById('diabetes-risk-text');
-    if (diabetesText) {
-        diabetesText.textContent = `${dashboardData.diabetesRisk.score}/${dashboardData.diabetesRisk.maxScore}`;
-        console.log('📝 Testo Diabetes aggiornato:', diabetesText.textContent);
-    } else {
-        console.warn('⚠️ Elemento testo Diabetes non trovato');
-    }
 
     // Aggiorna dettagli rischio diabete
     const glicemiaEl = document.getElementById('glicemia-valore');
