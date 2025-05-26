@@ -1004,6 +1004,11 @@ function calculateAllScores() {
         fib4: dashboardData.fib4,
         fni: dashboardData.fni
     });
+    
+    // Debug specifico per i valori che non si vedono
+    console.log('🔢 SCORE2 - Valore specifico:', dashboardData.score2.value, 'Rischio:', dashboardData.score2.risk);
+    console.log('🔢 ADA Risk - Score specifico:', dashboardData.diabetesRisk.score, '/', dashboardData.diabetesRisk.maxScore, 'Rischio:', dashboardData.diabetesRisk.risk);
+    console.log('🔢 Nuovi score - SCORE2D:', dashboardData.score2Diabetes?.value, 'FIB4:', dashboardData.fib4?.value, 'FNI:', dashboardData.fni?.value);
 }
 
 // 1. Calcolo BMI
@@ -1692,6 +1697,12 @@ function evaluatePhysicalActivity() {
 
 // Aggiorna tutti gli elementi della dashboard
 function updateDashboard() {
+    console.log('🔄 Inizio aggiornamento dashboard...');
+    console.log('📊 Dati da visualizzare:', {
+        score2: dashboardData.score2,
+        diabetesRisk: dashboardData.diabetesRisk
+    });
+    
     updateHealthSummary();
     updateMetabolicProfile();
     updateRiskTab();
@@ -1701,6 +1712,8 @@ function updateDashboard() {
     updateActivityTab();
     updateRecommendations();
     updateNewScoreBanners();
+    
+    console.log('✅ Dashboard aggiornata');
 }
 
 // Funzioni di aggiornamento UI
@@ -1758,17 +1771,29 @@ function updateMetabolicProfile() {
 }
 
 function updateRiskTab() {
+    console.log('🔄 Aggiornamento tab rischi...');
+    console.log('📊 SCORE2 per grafico:', dashboardData.score2);
+    console.log('📊 Diabetes Risk per grafico:', dashboardData.diabetesRisk);
+    
     // Aggiorna grafico rischio cardiovascolare
     const cvRisk = document.querySelector('#tab-rischi .progress-ring__circle');
     if (cvRisk) {
         const percentage = parseFloat(dashboardData.score2.value);
+        console.log('🎯 Aggiornamento grafico CV con percentuale:', percentage);
         const circumference = 314.16;
         const offset = circumference - (percentage / 100 * circumference);
         cvRisk.style.strokeDashoffset = offset;
+    } else {
+        console.warn('⚠️ Elemento grafico CV non trovato');
     }
     
     const cvText = document.querySelector('#tab-rischi text');
-    if (cvText) cvText.textContent = dashboardData.score2.value + '%';
+    if (cvText) {
+        cvText.textContent = dashboardData.score2.value + '%';
+        console.log('📝 Testo CV aggiornato:', cvText.textContent);
+    } else {
+        console.warn('⚠️ Elemento testo CV non trovato');
+    }
     
     const cvDetails = document.querySelector('#tab-rischi .space-y-2');
     if (cvDetails) {
@@ -1790,6 +1815,9 @@ function updateRiskTab() {
                 <span class="font-medium">${userData.fumatore || 'No'}</span>
             </div>
         `;
+        console.log('📝 Dettagli CV aggiornati');
+    } else {
+        console.warn('⚠️ Container dettagli CV non trovato');
     }
     
     // Aggiorna rischio diabete
@@ -1798,12 +1826,20 @@ function updateRiskTab() {
         const score = dashboardData.diabetesRisk.score;
         const maxScore = dashboardData.diabetesRisk.maxScore;
         const percentage = (score / maxScore) * 100;
+        console.log('🎯 Aggiornamento grafico Diabetes con:', { score, maxScore, percentage });
         const offset = 314.16 - (percentage / 100 * 314.16);
         diabetesCircle.style.strokeDashoffset = offset;
+    } else {
+        console.warn('⚠️ Elemento grafico Diabetes non trovato');
     }
     
     const diabetesText = document.querySelectorAll('#tab-rischi text')[1];
-    if (diabetesText) diabetesText.textContent = `${dashboardData.diabetesRisk.score}/${dashboardData.diabetesRisk.maxScore}`;
+    if (diabetesText) {
+        diabetesText.textContent = `${dashboardData.diabetesRisk.score}/${dashboardData.diabetesRisk.maxScore}`;
+        console.log('📝 Testo Diabetes aggiornato:', diabetesText.textContent);
+    } else {
+        console.warn('⚠️ Elemento testo Diabetes non trovato');
+    }
 
     // Aggiorna dettagli rischio diabete
     const glicemiaEl = document.getElementById('glicemia-valore');
@@ -1831,6 +1867,8 @@ function updateRiskTab() {
         const minutiSettimanali = parseInt(userData.durata_attivita) || 0;
         attivitaFisicaEl.textContent = minutiSettimanali >= 150 ? 'Adeguata' : 'Insufficiente';
     }
+    
+    console.log('✅ Tab rischi aggiornato');
 }
 
 function updateNewScoreBanners() {
