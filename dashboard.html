@@ -468,16 +468,18 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
                     <!-- SCORE2-Diabete -->
+<!-- SCORE2-Diabete -->
 <div id="score2d-banner" class="p-4 bg-gray-50 rounded-lg">
   <h3 class="font-semibold mb-3">SCORE2-Diabete</h3>
   <div class="flex items-center justify-center mb-4">
-    <svg width="120" height="120" viewBox="0 0 120 120">
-      <circle cx="60" cy="60" r="50" fill="none" stroke="#e6e6e6" stroke-width="10"></circle>
-      <circle class="progress-ring__circle" cx="60" cy="60" r="50" fill="none" stroke="#EA4335" stroke-width="10" stroke-dashoffset="220" stroke-linecap="round"></circle>
-      <text id="score2d-banner-text" x="60" y="65" text-anchor="middle" font-size="18" font-weight="bold" fill="var(--chart-text-color)">--%</text>
-    </svg>
+    <div id="score2d-score" class="score-indicator score-medium text-2xl">--</div>
   </div>
   <div class="space-y-2">
+    <div class="flex justify-between text-sm">
+      <span>Rischio</span>
+      <span id="score2d-status" class="font-medium">--</span>
+    </div>
+    <div class="badge" id="score2d-badge">--</div>
     <div class="flex justify-between text-sm">
       <span>HbA1c</span>
       <span id="score2d-banner-hba1c" class="font-medium">-- %</span>
@@ -495,11 +497,16 @@
 
 <!-- FIB4 -->
 <div id="fib4-banner" class="p-4 bg-gray-50 rounded-lg">
-  <h3 class="font-semibold mb-3">FIB4</h3>
+  <h3 class="font-semibold mb-3">FIB4 - Fibrosi Epatica</h3>
   <div class="flex items-center justify-center mb-4">
-    <div id="fib4-banner-score" class="score-indicator score-medium text-2xl">--</div>
+    <div id="fib4-score" class="score-indicator score-medium text-2xl">--</div>
   </div>
   <div class="space-y-2">
+    <div class="flex justify-between text-sm">
+      <span>Rischio</span>
+      <span id="fib4-status" class="font-medium">--</span>
+    </div>
+    <div class="badge" id="fib4-badge">--</div>
     <div class="flex justify-between text-sm">
       <span>AST</span>
       <span id="fib4-banner-ast" class="font-medium">--</span>
@@ -517,11 +524,16 @@
 
 <!-- FNI -->
 <div id="fni-banner" class="p-4 bg-gray-50 rounded-lg">
-  <h3 class="font-semibold mb-3">FNI - Nutrizione</h3>
+  <h3 class="font-semibold mb-3">FNI - Stato Nutrizionale</h3>
   <div class="flex items-center justify-center mb-4">
-    <div id="fni-banner-score" class="score-indicator score-medium text-2xl">--</div>
+    <div id="fni-score" class="score-indicator score-medium text-2xl">--</div>
   </div>
   <div class="space-y-2">
+    <div class="flex justify-between text-sm">
+      <span>Stato</span>
+      <span id="fni-status" class="font-medium">--</span>
+    </div>
+    <div class="badge" id="fni-badge">--</div>
     <div class="flex justify-between text-sm">
       <span>Albumina</span>
       <span id="fni-banner-albumina" class="font-medium">--</span>
@@ -1586,15 +1598,14 @@ function updateHealthSummary() {
         predimedCard.querySelector('.font-medium').textContent = dashboardData.predimed.adherence;
     }
     
-    // FIB4
-    const fib4Score = document.getElementById('fib4-score');
+const fib4Score = document.getElementById('fib4-score');
     const fib4Badge = document.getElementById('fib4-badge');
     const fib4Status = document.getElementById('fib4-status');
     
-    if (dashboardData.fib4.value > 0) {
+    if (fib4Score && dashboardData.fib4 && dashboardData.fib4.value > 0) {
         fib4Score.textContent = dashboardData.fib4.value;
-        fib4Score.className = `score-indicator score-${dashboardData.fib4.category === 'success' ? 'medium' : dashboardData.fib4.category === 'warning' ? 'low' : 'high'}`;
-        fib4Badge.textContent = dashboardData.fib4.risk.split(' ')[0];
+        fib4Score.className = `score-indicator score-${dashboardData.fib4.category === 'success' ? 'medium' : dashboardData.fib4.category === 'warning' ? 'low' : 'high'} text-2xl`;
+        fib4Badge.textContent = dashboardData.fib4.risk;
         fib4Badge.className = `badge badge-${dashboardData.fib4.category}`;
         fib4Status.textContent = dashboardData.fib4.risk;
     }
@@ -1604,33 +1615,33 @@ function updateHealthSummary() {
     const fniBadge = document.getElementById('fni-badge');
     const fniStatus = document.getElementById('fni-status');
     
-    if (dashboardData.fni.value > 0) {
+    if (fniScore && dashboardData.fni && dashboardData.fni.value > 0) {
         fniScore.textContent = dashboardData.fni.value;
-        fniScore.className = `score-indicator score-${dashboardData.fni.category === 'success' ? 'medium' : dashboardData.fni.category === 'warning' ? 'low' : 'high'}`;
-        fniBadge.textContent = dashboardData.fni.status.split(' ')[0];
+        fniScore.className = `score-indicator score-${dashboardData.fni.category === 'success' ? 'medium' : dashboardData.fni.category === 'warning' ? 'low' : 'high'} text-2xl`;
+        fniBadge.textContent = dashboardData.fni.status;
         fniBadge.className = `badge badge-${dashboardData.fni.category}`;
         fniStatus.textContent = dashboardData.fni.status;
     }
     
-const score2dScore = document.getElementById('score2d-score');
-const score2dBadge = document.getElementById('score2d-badge');
-const score2dStatus = document.getElementById('score2d-status');
-
-if (dashboardData.score2Diabetes.value > 0) {
-  score2dScore.textContent = dashboardData.score2Diabetes.value + '%';
-  score2dScore.className = `score-indicator score-${
-    dashboardData.score2Diabetes.category === 'success'
-      ? 'medium'
-      : dashboardData.score2Diabetes.category === 'warning'
-      ? 'low'
-      : 'high'
-  }`;
-  score2dBadge.textContent = dashboardData.score2Diabetes.risk;
-  score2dBadge.className = `badge badge-${dashboardData.score2Diabetes.category}`;
-  score2dStatus.textContent = dashboardData.score2Diabetes.risk;
-}
-
-}                                                          
+    // SCORE2-Diabete
+    const score2dScore = document.getElementById('score2d-score');
+    const score2dBadge = document.getElementById('score2d-badge');
+    const score2dStatus = document.getElementById('score2d-status');
+    
+    if (score2dScore && dashboardData.score2Diabetes && dashboardData.score2Diabetes.value > 0) {
+        score2dScore.textContent = dashboardData.score2Diabetes.value + '%';
+        score2dScore.className = `score-indicator score-${dashboardData.score2Diabetes.category === 'success' ? 'medium' : dashboardData.score2Diabetes.category === 'warning' ? 'low' : 'high'} text-2xl`;
+        
+        // Determina il testo del rischio
+        let riskText = 'Basso';
+        if (dashboardData.score2Diabetes.value > 15) riskText = 'Alto';
+        else if (dashboardData.score2Diabetes.value > 10) riskText = 'Moderato';
+        
+        score2dBadge.textContent = riskText;
+        score2dBadge.className = `badge badge-${dashboardData.score2Diabetes.category}`;
+        score2dStatus.textContent = riskText;
+    }
+}                                                        
 
 function updateMetabolicProfile() {
     const metabolicSection = document.querySelector('.card .space-y-3');
