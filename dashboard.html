@@ -152,7 +152,6 @@
             transition: transform var(--animation-speed), box-shadow var(--animation-speed), border-color var(--animation-speed);
         }
 
-
         .primary-gradient {
             background: var(--gradient-primary);
         }
@@ -354,7 +353,7 @@
         .dashboard-main {
           transition: background-color var(--animation-speed);
         }
-        </style>
+    </style>
 </head>
 <body>
     <!-- Header -->
@@ -430,7 +429,6 @@
                 </div>
             </div>
 
-            
             <div class="card  p-4">
                 <h2 class="text-lg font-bold mb-3">Profilo Metabolico</h2>
                 <div class="space-y-3">
@@ -468,70 +466,70 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
                     <!-- SCORE2-Diabete -->
-<div id="score2d-banner" class="p-4 bg-gray-50 rounded-lg">
-  <h3 class="font-semibold mb-3">SCORE2-Diabete</h3>
-  <div class="flex items-center justify-center mb-4">
-    <svg width="120" height="120" viewBox="0 0 120 120">
-      <circle cx="60" cy="60" r="50" fill="none" stroke="#e6e6e6" stroke-width="10"></circle>
-      <circle class="progress-ring__circle" cx="60" cy="60" r="50" fill="none" stroke="#EA4335" stroke-width="10" stroke-dashoffset="220" stroke-linecap="round"></circle>
-      <text id="score2d-banner-text" x="60" y="65" text-anchor="middle" font-size="18" font-weight="bold" fill="var(--chart-text-color)">--%</text>
-    </svg>
-  </div>
-  <div class="space-y-2">
-    <div class="flex justify-between text-sm">
-      <span>HbA1c</span>
-      <span id="score2d-banner-hba1c" class="font-medium">-- %</span>
-    </div>
-    <div class="flex justify-between text-sm">
-      <span>Glicemia</span>
-      <span id="score2d-banner-glucose" class="font-medium">-- mg/dL</span>
-    </div>
-    <div class="flex justify-between text-sm">
-      <span>Pressione</span>
-      <span id="score2d-banner-sbp" class="font-medium">-- mmHg</span>
-    </div>
-  </div>
-</div>
+                    <div id="score2d-banner" class="p-4 bg-gray-50 rounded-lg">
+                        <h3 class="font-semibold mb-3">SCORE2-Diabete</h3>
+                        <div class="flex items-center justify-center mb-4">
+                            <svg width="120" height="120" viewBox="0 0 120 120">
+                                <circle cx="60" cy="60" r="50" fill="none" stroke="#e6e6e6" stroke-width="10"></circle>
+                                <circle class="progress-ring__circle" cx="60" cy="60" r="50" fill="none" stroke="#EA4335" stroke-width="10" stroke-dashoffset="220" stroke-linecap="round"></circle>
+                                <text id="score2d-banner-text" x="60" y="65" text-anchor="middle" font-size="18" font-weight="bold" fill="var(--chart-text-color)">--%</text>
+                            </svg>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-sm">
+                                <span>HbA1c</span>
+                                <span id="score2d-banner-hba1c" class="font-medium">-- %</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span>Glicemia</span>
+                                <span id="score2d-banner-glucose" class="font-medium">-- mg/dL</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span>Pressione</span>
+                                <span id="score2d-banner-sbp" class="font-medium">-- mmHg</span>
+                            </div>
+                        </div>
+                    </div>
 
-<!-- FIB4 -->
-<div id="fib4-banner" class="p-4 bg-gray-50 rounded-lg">
-  <h3 class="font-semibold mb-3">FIB4</h3>
-  <div class="flex items-center justify-center mb-4">
-    <div id="fib4-banner-score" class="score-indicator score-medium text-2xl">--</div>
-  </div>
-  <div class="space-y-2">
-    <div class="flex justify-between text-sm">
-      <span>AST</span>
-      <span id="fib4-banner-ast" class="font-medium">--</span>
-    </div>
-    <div class="flex justify-between text-sm">
-      <span>ALT</span>
-      <span id="fib4-banner-alt" class="font-medium">--</span>
-    </div>
-    <div class="flex justify-between text-sm">
-      <span>Piastrine</span>
-      <span id="fib4-banner-plt" class="font-medium">--</span>
-    </div>
-  </div>
-</div>
+                    <!-- FIB4 -->
+                    <div id="fib4-banner" class="p-4 bg-gray-50 rounded-lg">
+                        <h3 class="font-semibold mb-3">FIB4</h3>
+                        <div class="flex items-center justify-center mb-4">
+                            <div id="fib4-banner-score" class="score-indicator score-medium text-2xl">--</div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-sm">
+                                <span>AST</span>
+                                <span id="fib4-banner-ast" class="font-medium">--</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span>ALT</span>
+                                <span id="fib4-banner-alt" class="font-medium">--</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span>Piastrine</span>
+                                <span id="fib4-banner-plt" class="font-medium">--</span>
+                            </div>
+                        </div>
+                    </div>
 
-<!-- FNI -->
-<div id="fni-banner" class="p-4 bg-gray-50 rounded-lg">
-  <h3 class="font-semibold mb-3">FNI - Nutrizione</h3>
-  <div class="flex items-center justify-center mb-4">
-    <div id="fni-banner-score" class="score-indicator score-medium text-2xl">--</div>
-  </div>
-  <div class="space-y-2">
-    <div class="flex justify-between text-sm">
-      <span>Albumina</span>
-      <span id="fni-banner-albumina" class="font-medium">--</span>
-    </div>
-    <div class="flex justify-between text-sm">
-      <span>Linfociti</span>
-      <span id="fni-banner-linfociti" class="font-medium">--</span>
-    </div>
-  </div>
-</div>
+                    <!-- FNI -->
+                    <div id="fni-banner" class="p-4 bg-gray-50 rounded-lg">
+                        <h3 class="font-semibold mb-3">FNI - Nutrizione</h3>
+                        <div class="flex items-center justify-center mb-4">
+                            <div id="fni-banner-score" class="score-indicator score-medium text-2xl">--</div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-sm">
+                                <span>Albumina</span>
+                                <span id="fni-banner-albumina" class="font-medium">--</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span>Linfociti</span>
+                                <span id="fni-banner-linfociti" class="font-medium">--</span>
+                            </div>
+                        </div>
+                    </div>
                     
                     <div class="p-4 bg-gray-50 rounded-lg">
                         <h3 class="font-semibold mb-3">Rischio Cardiovascolare</h3>
@@ -571,24 +569,23 @@
                             </svg>
                         </div>
                         <div class="space-y-2">
-    <div class="flex justify-between text-sm">
-        <span>Glicemia</span>
-        <span id="glicemia-valore" class="font-medium text-yellow-600">-- mg/dL</span>
-    </div>
-    <div class="flex justify-between text-sm">
-        <span>Familiarità diabete</span>
-        <span id="familiarita-diabete" class="font-medium text-red-600">--</span>
-    </div>
-    <div class="flex justify-between text-sm">
-        <span>Ipertensione</span>
-        <span id="ipertensione" class="font-medium text-red-600">--</span>
-    </div>
-    <div class="flex justify-between text-sm">
-        <span>Attività fisica</span>
-        <span id="attivita-fisica" class="font-medium text-red-600">--</span>
-    </div>
-</div>
-
+                            <div class="flex justify-between text-sm">
+                                <span>Glicemia</span>
+                                <span id="glicemia-valore" class="font-medium text-yellow-600">-- mg/dL</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span>Familiarità diabete</span>
+                                <span id="familiarita-diabete" class="font-medium text-red-600">--</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span>Ipertensione</span>
+                                <span id="ipertensione" class="font-medium text-red-600">--</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span>Attività fisica</span>
+                                <span id="attivita-fisica" class="font-medium text-red-600">--</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -663,11 +660,11 @@
                         </div>
                         <div class="text-center">
                             <p id="predimed-score" class="text-sm text-gray-600">
-    Punteggio attuale: <span class="font-medium">8/14</span>
-</p>
-<p id="predimed-adherence" class="text-sm text-gray-600">
-    Aderenza alla dieta mediterranea: <span class="font-medium">Media</span>
-</p>
+                                Punteggio attuale: <span class="font-medium">8/14</span>
+                            </p>
+                            <p id="predimed-adherence" class="text-sm text-gray-600">
+                                Aderenza alla dieta mediterranea: <span class="font-medium">Media</span>
+                            </p>
                         </div>
                     </div>
                     <div class="p-4 bg-gray-50 rounded-lg">
@@ -855,15 +852,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Banner finale
-        <div class="card secondary-gradient text-white p-6 text-center">
-            <h2 class="text-xl font-bold mb-2">Monitora la tua salute con HealthAI</h2>
-            <p class="mb-4">Puoi migliorare il tuo benessere seguendo i nostri consigli personalizzati</p>
-            <button class=" text-blue-500 hover:bg-blue-50 font-medium py-2 px-6 rounded-full">
-                Prenota una consulenza
-            </button>
-        </div>-->
     </main>
 
     <!-- Footer -->
@@ -887,22 +875,20 @@ const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 // Variabili globali per i dati utente
 let userData = {};
 let dashboardData = {
-  bmi: { value: 0, category: '', status: '' },
-  score2: { value: 0, risk: '', category: '' },
-  predimed: { value: 0, adherence: '', status: '' },
-  metabolicSyndrome: { present: false, criteria: 0, factors: [] },
-  diabetesRisk: { score: 0, maxScore: 8, risk: '', factors: [] },
-  score2Diabetes: { value: 0, risk: '', category: '' },
-  fib4: { value: 0, risk: '', category: '' },
-  fni: { value: 0, status: '', category: '' },
-  recommendations: [],
-  screenings: [],
-  lifestyle: {},
-  nutrition: {},
-  activity: {}
+    bmi: { value: 0, category: '', status: '' },
+    score2: { value: 0, risk: '', category: '' },
+    predimed: { value: 0, adherence: '', status: '' },
+    metabolicSyndrome: { present: false, criteria: 0, factors: [] },
+    diabetesRisk: { score: 0, maxScore: 8, risk: '', factors: [] },
+    score2Diabetes: { value: 0, risk: '', category: '', hba1c: 0, glicemia: 0, sistolica: 0 },
+    fib4: { value: 0, risk: '', category: '', ast: 0, alt: 0, plt: 0 },
+    fni: { value: 0, status: '', category: '', albumina: 0, linfociti: 0 },
+    recommendations: [],
+    screenings: [],
+    lifestyle: {},
+    nutrition: {},
+    activity: {}
 };
-
-
 
 // Store chart instances globally
 let predimedChart = null;
@@ -922,17 +908,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         const emailUtente = sessionData.session.user.email;
         
         // Carica dati dal database
-await loadUserData(emailUtente);
-calculateAllScores();
-updateDashboard();
-updateNewScoreBanners(); // ✅ AGGIUNGI QUESTA RIGA
-initializeCharts();
-
-        
-        // Setup delle tabs
+        await loadUserData(emailUtente);
+        calculateAllScores();
+        updateDashboard();
+        initializeCharts();
         setupTabs();
-        
-        // Setup export PDF
         setupExportButton();
         
     } catch (error) {
@@ -961,56 +941,30 @@ async function loadUserData(email) {
 
 // Calcola tutti gli score clinici
 function calculateAllScores() {
-    // 1. Calcola BMI
     calculateBMI();
-    
-    // 2. Calcola SCORE2 (rischio cardiovascolare)
     calculateSCORE2();
-    
-    // 3. Calcola PREDIMED (dieta mediterranea)
     calculatePREDIMED();
-    
-    // 4. Verifica sindrome metabolica
     checkMetabolicSyndrome();
-    
-    // 5. Calcola rischio diabete (ADA)
     calculateDiabetesRisk();
-    
-    // 6. Genera raccomandazioni
-    generateRecommendations();
-    
-    // 7. Determina screening necessari
-    determineScreenings();
-    
-    // 8. Analizza stile di vita
-    analyzeLifestyle();
-    
-    // 9. Calcola fabbisogno nutrizionale
-    calculateNutritionalNeeds();
-    
-    // 10. Valuta attività fisica
-    evaluatePhysicalActivity();
-    
     calculateScore2Diabetes();
-    
     calculateFIB4();
-
     calculateFNI();
-
-    
-    
+    generateRecommendations();
+    determineScreenings();
+    analyzeLifestyle();
+    calculateNutritionalNeeds();
+    evaluatePhysicalActivity();
 }
 
 // 1. Calcolo BMI
 function calculateBMI() {
     const peso = parseFloat(userData.peso);
-    const altezza = parseFloat(userData.altezza) / 100; // converti in metri
+    const altezza = parseFloat(userData.altezza) / 100;
     
     if (peso && altezza) {
         const bmi = peso / (altezza * altezza);
         dashboardData.bmi.value = bmi.toFixed(1);
         
-        // Determina categoria
         if (bmi < 18.5) {
             dashboardData.bmi.category = 'Sottopeso';
             dashboardData.bmi.status = 'warning';
@@ -1037,35 +991,27 @@ function calculateSCORE2() {
     const fumatore = userData.fumatore?.toLowerCase() === 'sì';
     
     if (eta && sistolica && colTotale && hdl) {
-        // Formula semplificata SCORE2 (in realtà è più complessa)
         let score = 0;
         
-        // Fattore età
         if (eta >= 40 && eta < 50) score += 0;
         else if (eta >= 50 && eta < 60) score += 3;
         else if (eta >= 60 && eta < 70) score += 6;
         else if (eta >= 70) score += 9;
         
-        // Fattore pressione
         if (sistolica >= 140) score += 2;
         if (sistolica >= 160) score += 3;
         if (sistolica >= 180) score += 4;
         
-        // Fattore colesterolo
         const nonHDL = colTotale - hdl;
         if (nonHDL >= 190) score += 1;
         if (nonHDL >= 220) score += 2;
         if (nonHDL >= 280) score += 3;
         
-        // Fattore fumo
         if (fumatore) score += 4;
         
-        // Converti in percentuale di rischio
-        const riskPercent = Math.min(score * 0.5, 20); // Max 20%
-        
+        const riskPercent = Math.min(score * 0.5, 20);
         dashboardData.score2.value = riskPercent.toFixed(1);
         
-        // Determina categoria di rischio
         if (riskPercent < 1) {
             dashboardData.score2.risk = 'Basso';
             dashboardData.score2.category = 'success';
@@ -1086,17 +1032,15 @@ function calculateSCORE2() {
 function calculatePREDIMED() {
     let score = 0;
     
-    // Somma tutti i punteggi PREDIMED (14 domande)
     for (let i = 1; i <= 14; i++) {
         const value = String(userData[`predimed_${i}`]).toLowerCase();
-if (['sì', 'si', '1', 'true'].includes(value)) {
-    score++;
-}
+        if (['sì', 'si', '1', 'true'].includes(value)) {
+            score++;
+        }
     }
     
     dashboardData.predimed.value = score;
     
-    // Determina livello di aderenza
     if (score >= 10) {
         dashboardData.predimed.adherence = 'Alta aderenza';
         dashboardData.predimed.status = 'success';
@@ -1114,46 +1058,37 @@ function checkMetabolicSyndrome() {
     let criteria = 0;
     let factors = [];
     
-    // Criterio 1: Circonferenza vita
     if (userData.vita?.toLowerCase() === 'sì') {
         criteria++;
         factors.push('Girovita elevato');
     }
     
-    // Criterio 2: Glicemia
     const glicemia = parseFloat(userData.glicemia_valore || 0);
     if (glicemia >= 100 || userData.diabete?.toLowerCase() === 'sì') {
         criteria++;
         factors.push('Glicemia alta');
     }
     
-    // Criterio 3: HDL basso
-// Criterio 3: Colesterolo HDL basso in base al sesso
-const hdlValore = parseFloat(userData.colesterolo_hdl_valore);
-const sesso = userData.sesso?.toLowerCase();
-
-if (
-    (sesso === 'maschio' && hdlValore < 40) ||
-    (sesso === 'femmina' && hdlValore < 50)
-) {
-    criteria++;
-    factors.push('HDL basso');
-}
-
+    const hdlValore = parseFloat(userData.colesterolo_hdl_valore);
+    const sesso = userData.sesso?.toLowerCase();
     
-    // Criterio 4: Pressione alta
+    if ((sesso === 'maschio' && hdlValore < 40) || (sesso === 'femmina' && hdlValore < 50)) {
+        criteria++;
+        factors.push('HDL basso');
+    }
+    
     const sistolica = parseFloat(userData.pressione_sistolica);
     const diastolica = parseFloat(userData.pressione_diastolica);
     if (sistolica >= 130 || diastolica >= 85) {
         criteria++;
         factors.push('Pressione elevata');
     }
-   // Criterio 5: Trigliceridi > 150 mg/dL
-const trigli = parseFloat(userData.trigliceridi);
-if (trigli >= 150) {
-    criteria++;
-    factors.push('Trigliceridi elevati');
-}
+    
+    const trigli = parseFloat(userData.trigliceridi);
+    if (trigli >= 150) {
+        criteria++;
+        factors.push('Trigliceridi elevati');
+    }
 
     dashboardData.metabolicSyndrome = {
         present: criteria >= 3,
@@ -1168,10 +1103,8 @@ function calculateDiabetesRisk() {
     let factors = [];
     
     const eta = parseInt(userData.eta);
-    const sesso = userData.sesso?.toLowerCase();
     const bmi = parseFloat(dashboardData.bmi.value);
     
-    // Età
     if (eta >= 40 && eta < 50) {
         score += 1;
         factors.push('Età 40-49');
@@ -1183,7 +1116,6 @@ function calculateDiabetesRisk() {
         factors.push('Età ≥60');
     }
     
-    // BMI
     if (bmi >= 25 && bmi < 30) {
         score += 1;
         factors.push('Sovrappeso');
@@ -1195,43 +1127,37 @@ function calculateDiabetesRisk() {
         factors.push('Obesità grave');
     }
     
-    
-const rispostaFam = userData.familiari_diabete?.toLowerCase()
-  .normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    const rispostaFam = userData.familiari_diabete?.toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
 
-if (rispostaFam && (
-    rispostaFam.startsWith("si") ||
-    rispostaFam.startsWith("yes") ||
-    rispostaFam === "true" ||
-    rispostaFam === "ok" ||
-    rispostaFam === "y"
-)) {
-    score += 1;
-    factors.push("Familiarità diabete");
-}
-
-
-// Ipertensione
-const rispostaIpertensione = userData.pressione_alta?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-if (['si', 'sì', 'yes', 'true', 'ok', 'y'].includes(rispostaIpertensione) ||
-    parseFloat(userData.pressione_sistolica) >= 140) {
-    score += 1;
-    factors.push('Ipertensione');
-}
-
-   
-if (userData.attivita_fisica?.toLowerCase() === 'no') {
-    score += 1;
-    factors.push('Sedentarietà');
-} else {
-    
-    const durata = parseInt(userData.durata_attivita || '0');
-    if (durata < 150) {
+    if (rispostaFam && (
+        rispostaFam.startsWith("si") ||
+        rispostaFam.startsWith("yes") ||
+        rispostaFam === "true" ||
+        rispostaFam === "ok" ||
+        rispostaFam === "y"
+    )) {
         score += 1;
-        factors.push('Attività fisica insufficiente');
+        factors.push("Familiarità diabete");
     }
-}
 
+    const rispostaIpertensione = userData.pressione_alta?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    if (['si', 'sì', 'yes', 'true', 'ok', 'y'].includes(rispostaIpertensione) ||
+        parseFloat(userData.pressione_sistolica) >= 140) {
+        score += 1;
+        factors.push('Ipertensione');
+    }
+
+    if (userData.attivita_fisica?.toLowerCase() === 'no') {
+        score += 1;
+        factors.push('Sedentarietà');
+    } else {
+        const durata = parseInt(userData.durata_attivita || '0');
+        if (durata < 150) {
+            score += 1;
+            factors.push('Attività fisica insufficiente');
+        }
+    }
     
     dashboardData.diabetesRisk = {
         score: score,
@@ -1241,11 +1167,139 @@ if (userData.attivita_fisica?.toLowerCase() === 'no') {
     };
 }
 
-// 6. Genera raccomandazioni personalizzate
+// 6. Calcolo SCORE2-Diabete
+function calculateScore2Diabetes() {
+    const hba1c = parseFloat(userData.hba1c);
+    const glicemia = parseFloat(userData.glicemia_valore);
+    const sistolica = parseFloat(userData.pressione_sistolica);
+    const eta = parseInt(userData.eta);
+
+    if (!isNaN(hba1c) || !isNaN(glicemia) || !isNaN(sistolica)) {
+        // Formula semplificata per SCORE2-Diabete
+        let riskScore = 0;
+        
+        // Contributo HbA1c
+        if (!isNaN(hba1c)) {
+            if (hba1c >= 9) riskScore += 4;
+            else if (hba1c >= 8) riskScore += 3;
+            else if (hba1c >= 7) riskScore += 2;
+            else if (hba1c >= 6.5) riskScore += 1;
+        }
+        
+        // Contributo glicemia a digiuno
+        if (!isNaN(glicemia)) {
+            if (glicemia >= 200) riskScore += 3;
+            else if (glicemia >= 140) riskScore += 2;
+            else if (glicemia >= 110) riskScore += 1;
+        }
+        
+        // Contributo pressione sistolica
+        if (!isNaN(sistolica)) {
+            if (sistolica >= 180) riskScore += 3;
+            else if (sistolica >= 160) riskScore += 2;
+            else if (sistolica >= 140) riskScore += 1;
+        }
+        
+        // Contributo età
+        if (!isNaN(eta)) {
+            if (eta >= 70) riskScore += 2;
+            else if (eta >= 60) riskScore += 1;
+        }
+        
+        // Converti in percentuale (max 15%, scala da 0 a 15)
+        const riskPercent = Math.min(riskScore * 1.2, 15);
+        
+        let category = 'success';
+        let risk = 'Basso';
+        
+        if (riskPercent >= 10) {
+            category = 'danger';
+            risk = 'Alto';
+        } else if (riskPercent >= 5) {
+            category = 'warning';
+            risk = 'Moderato';
+        }
+
+        dashboardData.score2Diabetes = {
+            value: riskPercent.toFixed(1),
+            hba1c: hba1c || 0,
+            glicemia: glicemia || 0,
+            sistolica: sistolica || 0,
+            risk: risk,
+            category: category
+        };
+    }
+}
+
+// 7. Calcolo FIB4
+function calculateFIB4() {
+    const age = parseInt(userData.eta);
+    const ast = parseFloat(userData.ast);
+    const alt = parseFloat(userData.alt);
+    const plt = parseFloat(userData.piastrine);
+
+    if (!isNaN(age) && !isNaN(ast) && !isNaN(alt) && !isNaN(plt) && alt !== 0 && plt !== 0) {
+        // Formula FIB4: (Age × AST) / (Platelets × √ALT)
+        const fib4 = (age * ast) / (plt * Math.sqrt(alt));
+        const fib4Rounded = fib4.toFixed(2);
+        
+        let risk = 'Basso rischio';
+        let category = 'success';
+
+        if (fib4 >= 3.25) {
+            risk = 'Alto rischio';
+            category = 'danger';
+        } else if (fib4 >= 1.45) {
+            risk = 'Rischio intermedio';
+            category = 'warning';
+        }
+
+        dashboardData.fib4 = {
+            value: fib4Rounded,
+            ast: ast,
+            alt: alt,
+            plt: plt,
+            risk: risk,
+            category: category
+        };
+    }
+}
+
+// 8. Calcolo FNI (Functional Nutritional Index)
+function calculateFNI() {
+    const albumina = parseFloat(userData.albumina);
+    const linfociti = parseFloat(userData.linfociti);
+
+    if (!isNaN(albumina) && !isNaN(linfociti)) {
+        // Formula FNI: (10 × albumina) + (0.005 × linfociti)
+        const fni = (10 * albumina) + (0.005 * linfociti);
+        const fniRounded = fni.toFixed(1);
+        
+        let status = 'Normale';
+        let category = 'success';
+
+        if (fni < 35) {
+            status = 'Malnutrizione severa';
+            category = 'danger';
+        } else if (fni < 45) {
+            status = 'Malnutrizione lieve';
+            category = 'warning';
+        }
+
+        dashboardData.fni = {
+            value: fniRounded,
+            albumina: albumina,
+            linfociti: linfociti,
+            status: status,
+            category: category
+        };
+    }
+}
+
+// 9. Genera raccomandazioni personalizzate
 function generateRecommendations() {
     dashboardData.recommendations = [];
     
-    // Raccomandazioni basate su BMI
     if (dashboardData.bmi.status === 'warning' || dashboardData.bmi.status === 'danger') {
         dashboardData.recommendations.push({
             title: 'Controllo del peso',
@@ -1254,7 +1308,6 @@ function generateRecommendations() {
         });
     }
     
-    // Raccomandazioni basate su rischio cardiovascolare
     if (parseFloat(dashboardData.score2.value) >= 5) {
         dashboardData.recommendations.push({
             title: 'Ridurre rischio cardiovascolare',
@@ -1263,7 +1316,6 @@ function generateRecommendations() {
         });
     }
     
-    // Raccomandazioni basate su PREDIMED
     if (dashboardData.predimed.value < 10) {
         dashboardData.recommendations.push({
             title: 'Migliorare alimentazione',
@@ -1272,7 +1324,6 @@ function generateRecommendations() {
         });
     }
     
-    // Raccomandazioni attività fisica
     if (userData.attivita_fisica?.toLowerCase() === 'no') {
         dashboardData.recommendations.push({
             title: 'Aumentare attività fisica',
@@ -1281,7 +1332,6 @@ function generateRecommendations() {
         });
     }
     
-    // Raccomandazioni sonno/stress
     if (userData.insonnia?.toLowerCase() === 'sì' || parseInt(userData.stress) > 7) {
         dashboardData.recommendations.push({
             title: 'Migliorare qualità del sonno',
@@ -1289,15 +1339,39 @@ function generateRecommendations() {
             priority: 'medium'
         });
     }
+
+    // Raccomandazioni basate sui nuovi score
+    if (dashboardData.fib4.category === 'danger') {
+        dashboardData.recommendations.push({
+            title: 'Valutazione epatica',
+            description: 'Consultare uno specialista per approfondimenti sulla funzionalità epatica',
+            priority: 'high'
+        });
+    }
+
+    if (dashboardData.fni.category === 'danger' || dashboardData.fni.category === 'warning') {
+        dashboardData.recommendations.push({
+            title: 'Migliorare stato nutrizionale',
+            description: 'Consultare un nutrizionista per ottimizzare l\'apporto proteico',
+            priority: 'high'
+        });
+    }
+
+    if (dashboardData.score2Diabetes.category === 'danger') {
+        dashboardData.recommendations.push({
+            title: 'Controllo glicemico urgente',
+            description: 'Controllo diabetologico per ottimizzazione terapia',
+            priority: 'high'
+        });
+    }
 }
 
-// 7. Determina screening necessari
+// 10. Determina screening necessari
 function determineScreenings() {
     dashboardData.screenings = [];
     const eta = parseInt(userData.eta);
     const sesso = userData.sesso?.toLowerCase();
     
-    // Screening universali
     dashboardData.screenings.push({
         name: 'Controllo pressione arteriosa',
         frequency: 'Annuale',
@@ -1312,7 +1386,6 @@ function determineScreenings() {
         dueIn: 'Scaduto'
     });
     
-    // Screening età-specifici
     if (eta >= 50) {
         dashboardData.screenings.push({
             name: 'Screening colon-retto',
@@ -1331,7 +1404,6 @@ function determineScreenings() {
         });
     }
     
-    // Screening sesso-specifici
     if ((sesso === 'femmina' || sesso === 'donna') && eta >= 40) {
         dashboardData.screenings.push({
             name: 'Mammografia',
@@ -1340,9 +1412,19 @@ function determineScreenings() {
             dueIn: '3 mesi'
         });
     }
+
+    // Screening basati sui nuovi score
+    if (dashboardData.fib4.category === 'warning' || dashboardData.fib4.category === 'danger') {
+        dashboardData.screenings.push({
+            name: 'Ecografia epatica',
+            frequency: 'Secondo necessità',
+            status: 'pending',
+            dueIn: '1 mese'
+        });
+    }
 }
 
-// 8. Analizza stile di vita
+// 11. Analizza stile di vita
 function analyzeLifestyle() {
     const stress = parseInt(userData.stress) || 5;
     const hasInsomnia = userData.insonnia?.toLowerCase() === 'sì';
@@ -1366,7 +1448,7 @@ function analyzeLifestyle() {
     };
 }
 
-// 9. Calcola fabbisogno nutrizionale
+// 12. Calcola fabbisogno nutrizionale
 function calculateNutritionalNeeds() {
     const peso = parseFloat(userData.peso);
     const altezza = parseFloat(userData.altezza);
@@ -1374,7 +1456,6 @@ function calculateNutritionalNeeds() {
     const sesso = userData.sesso?.toLowerCase();
     const attivita = userData.tipo_lavoro || 'sedentario';
     
-    // Calcolo BMR (Mifflin-St Jeor)
     let bmr;
     if (sesso === 'maschio' || sesso === 'uomo') {
         bmr = (10 * peso) + (6.25 * altezza) - (5 * eta) + 5;
@@ -1382,7 +1463,6 @@ function calculateNutritionalNeeds() {
         bmr = (10 * peso) + (6.25 * altezza) - (5 * eta) - 161;
     }
     
-    // Fattori attività
     const activityFactors = {
         'sedentario': 1.2,
         'leggermente attivo': 1.375,
@@ -1392,8 +1472,6 @@ function calculateNutritionalNeeds() {
     };
     
     const tdee = bmr * (activityFactors[attivita] || 1.2);
-    
-    // Obiettivo calorico (assumiamo dimagrimento moderato se BMI > 25)
     const targetCalories = dashboardData.bmi.value > 25 ? tdee - 300 : tdee;
     
     dashboardData.nutrition = {
@@ -1410,15 +1488,12 @@ function calculateNutritionalNeeds() {
     };
 }
 
-// 10. Valuta attività fisica
+// 13. Valuta attività fisica
 function evaluatePhysicalActivity() {
-    const isActive = userData.attivita_fisica?.toLowerCase() === 'sì';
     const frequency = userData.frequenza_attivita_fisica || '0 volte/settimana';
     const type = userData.tipo_attivita || '';
     const duration = parseInt(userData.durata_attivita) || 0;
-    const durata = parseInt(userData.durata_attivita) || 0;
-    const weeklyMinutes = durata;
-
+    const weeklyMinutes = duration;
     
     dashboardData.activity = {
         current: {
@@ -1439,7 +1514,6 @@ function evaluatePhysicalActivity() {
         suggestions: []
     };
     
-    // Genera suggerimenti
     if (weeklyMinutes < 150) {
         dashboardData.activity.suggestions.push({
             type: 'Obiettivo principale',
@@ -1455,104 +1529,17 @@ function evaluatePhysicalActivity() {
     }
 }
 
-        function calculateScore2Diabetes() {
-    const hba1c = parseFloat(userData.hba1c);
-    const glicemia = parseFloat(userData.glicemia_valore);
-    const sistolica = parseFloat(userData.pressione_sistolica);
-
-    if (!isNaN(hba1c) || !isNaN(glicemia) || !isNaN(sistolica)) {
-        const score = ((hba1c || 0) * 3 + (glicemia || 0) / 10 + (sistolica || 0) / 20).toFixed(1);
-        dashboardData.score2Diabetes = {
-            value: score,
-            hba1c,
-            glicemia,
-            sistolica,
-            category: score > 15 ? 'danger' : score > 10 ? 'warning' : 'success'
-        };
-    }
-}
-
-function calculateFIB4() {
-    const age = parseInt(userData.eta);
-    const ast = parseFloat(userData.ast);
-    const alt = parseFloat(userData.alt);
-    const plt = parseFloat(userData.piastrine);
-
-    if (!isNaN(age) && !isNaN(ast) && !isNaN(alt) && !isNaN(plt) && alt !== 0) {
-        const fib4 = ((age * ast) / (plt * Math.sqrt(alt))).toFixed(2);
-        let risk = 'Basso rischio';
-        let category = 'success';
-
-        if (fib4 >= 3.25) {
-            risk = 'Alto rischio';
-            category = 'danger';
-        } else if (fib4 >= 1.45) {
-            risk = 'Rischio intermedio';
-            category = 'warning';
-        }
-
-        dashboardData.fib4 = {
-            value: fib4,
-            ast,
-            alt,
-            plt,
-            risk,
-            category
-        };
-    }
-}
-
-function calculateFNI() {
-    const albumina = parseFloat(userData.albumina);
-    const linfociti = parseFloat(userData.linfociti);
-
-    if (!isNaN(albumina) && !isNaN(linfociti)) {
-        const fni = (10 * albumina + 0.005 * linfociti).toFixed(1);
-        let status = 'Normale';
-        let category = 'success';
-
-        if (fni < 35) {
-            status = 'Malnutrizione severa';
-            category = 'danger';
-        } else if (fni < 45) {
-            status = 'Malnutrizione lieve';
-            category = 'warning';
-        }
-
-        dashboardData.fni = {
-            value: fni,
-            albumina,
-            linfociti,
-            status,
-            category
-        };
-    }
-}
-
-
 // Aggiorna tutti gli elementi della dashboard
 function updateDashboard() {
-    // Aggiorna sezione riepilogo salute
     updateHealthSummary();
-    
-    // Aggiorna profilo metabolico
     updateMetabolicProfile();
-    
-    // Aggiorna contenuti delle tab
     updateRiskTab();
     updateScreeningTab();
     updateLifestyleTab();
     updateNutritionTab();
     updateActivityTab();
-    
-    // Aggiorna raccomandazioni
     updateRecommendations();
-    updateScore2DiabetesBanner();
-updateFIB4Banner();
-updateFNIBanner();
-    
-  
-    
+    updateNewScoreBanners();
 }
 
 // Funzioni di aggiornamento UI
@@ -1585,73 +1572,24 @@ function updateHealthSummary() {
         predimedCard.querySelector('.badge').className = `badge badge-${dashboardData.predimed.status}`;
         predimedCard.querySelector('.font-medium').textContent = dashboardData.predimed.adherence;
     }
-    
-    // FIB4
-    const fib4Score = document.getElementById('fib4-score');
-    const fib4Badge = document.getElementById('fib4-badge');
-    const fib4Status = document.getElementById('fib4-status');
-    
-    if (dashboardData.fib4.value > 0) {
-        fib4Score.textContent = dashboardData.fib4.value;
-        fib4Score.className = `score-indicator score-${dashboardData.fib4.category === 'success' ? 'medium' : dashboardData.fib4.category === 'warning' ? 'low' : 'high'}`;
-        fib4Badge.textContent = dashboardData.fib4.risk.split(' ')[0];
-        fib4Badge.className = `badge badge-${dashboardData.fib4.category}`;
-        fib4Status.textContent = dashboardData.fib4.risk;
-    }
-    
-    // FNI
-    const fniScore = document.getElementById('fni-score');
-    const fniBadge = document.getElementById('fni-badge');
-    const fniStatus = document.getElementById('fni-status');
-    
-    if (dashboardData.fni.value > 0) {
-        fniScore.textContent = dashboardData.fni.value;
-        fniScore.className = `score-indicator score-${dashboardData.fni.category === 'success' ? 'medium' : dashboardData.fni.category === 'warning' ? 'low' : 'high'}`;
-        fniBadge.textContent = dashboardData.fni.status.split(' ')[0];
-        fniBadge.className = `badge badge-${dashboardData.fni.category}`;
-        fniStatus.textContent = dashboardData.fni.status;
-    }
-    
-const score2dScore = document.getElementById('score2d-score');
-const score2dBadge = document.getElementById('score2d-badge');
-const score2dStatus = document.getElementById('score2d-status');
-
-if (dashboardData.score2Diabetes.value > 0) {
-  score2dScore.textContent = dashboardData.score2Diabetes.value + '%';
-  score2dScore.className = `score-indicator score-${
-    dashboardData.score2Diabetes.category === 'success'
-      ? 'medium'
-      : dashboardData.score2Diabetes.category === 'warning'
-      ? 'low'
-      : 'high'
-  }`;
-  score2dBadge.textContent = dashboardData.score2Diabetes.risk;
-  score2dBadge.className = `badge badge-${dashboardData.score2Diabetes.category}`;
-  score2dStatus.textContent = dashboardData.score2Diabetes.risk;
 }
-
-}                                                          
 
 function updateMetabolicProfile() {
     const metabolicSection = document.querySelector('.card .space-y-3');
     if (!metabolicSection) return;
     
-    // Aggiorna stato sindrome metabolica
     const badge = metabolicSection.querySelector('.badge');
     badge.textContent = dashboardData.metabolicSyndrome.present ? 'Presente' : 'Assente';
     badge.className = `badge badge-${dashboardData.metabolicSyndrome.present ? 'danger' : 'success'}`;
     
-    // Aggiorna progress bar
     const progressBar = metabolicSection.querySelector('.bg-red-500');
     const percentage = (dashboardData.metabolicSyndrome.criteria / 5) * 100;
     progressBar.style.width = percentage + '%';
     progressBar.className = `h-2.5 rounded-full ${dashboardData.metabolicSyndrome.present ? 'bg-red-500' : 'bg-yellow-500'}`;
     
-    // Aggiorna testo criteri
     metabolicSection.querySelector('.text-xs').textContent = 
         `${dashboardData.metabolicSyndrome.criteria} criteri soddisfatti su 5`;
     
-    // Aggiorna badges dei fattori
     const factorsContainer = metabolicSection.querySelector('.flex.flex-wrap.gap-2');
     factorsContainer.innerHTML = dashboardData.metabolicSyndrome.factors
         .map(factor => `<div class="badge badge-danger">${factor}</div>`)
@@ -1663,16 +1601,14 @@ function updateRiskTab() {
     const cvRisk = document.querySelector('#tab-rischi .progress-ring__circle');
     if (cvRisk) {
         const percentage = parseFloat(dashboardData.score2.value);
-        const circumference = 314.16; // 2 * π * 50
+        const circumference = 314.16;
         const offset = circumference - (percentage / 100 * circumference);
         cvRisk.style.strokeDashoffset = offset;
     }
     
-    // Aggiorna testo rischio CV
     const cvText = document.querySelector('#tab-rischi text');
     if (cvText) cvText.textContent = dashboardData.score2.value + '%';
     
-    // Aggiorna dettagli
     const cvDetails = document.querySelector('#tab-rischi .space-y-2');
     if (cvDetails) {
         cvDetails.innerHTML = `
@@ -1705,39 +1641,96 @@ function updateRiskTab() {
         diabetesCircle.style.strokeDashoffset = offset;
     }
     
-    // Aggiorna testo rischio diabete
     const diabetesText = document.querySelectorAll('#tab-rischi text')[1];
     if (diabetesText) diabetesText.textContent = `${dashboardData.diabetesRisk.score}/${dashboardData.diabetesRisk.maxScore}`;
 
-const glicemiaEl = document.getElementById('glicemia-valore');
-if (glicemiaEl) {
-    const glicemia = parseFloat(userData.glicemia_valore || 0);
-    glicemiaEl.textContent = `${glicemia} mg/dL`;
+    // Aggiorna dettagli rischio diabete
+    const glicemiaEl = document.getElementById('glicemia-valore');
+    if (glicemiaEl) {
+        const glicemia = parseFloat(userData.glicemia_valore || 0);
+        glicemiaEl.textContent = `${glicemia} mg/dL`;
+    }
+
+    const famDiabeteEl = document.getElementById('familiarita-diabete');
+    if (famDiabeteEl) {
+        const rispostaGrezza = userData.familiari_diabete?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const risposta = ['si', 'sì', 'yes', 'y', 'true', 'ok'].includes(rispostaGrezza) ? 'Sì' : 'No';
+        famDiabeteEl.textContent = risposta;
+    }
+
+    const ipertensioneEl = document.getElementById('ipertensione');
+    if (ipertensioneEl) {
+        const pressioneAlta = userData.pressione_alta?.toLowerCase() === 'sì' ||
+                              parseFloat(userData.pressione_sistolica) >= 140;
+        ipertensioneEl.textContent = pressioneAlta ? 'Sì' : 'No';
+    }
+
+    const attivitaFisicaEl = document.getElementById('attivita-fisica');
+    if (attivitaFisicaEl) {
+        const minutiSettimanali = parseInt(userData.durata_attivita) || 0;
+        attivitaFisicaEl.textContent = minutiSettimanali >= 150 ? 'Adeguata' : 'Insufficiente';
+    }
 }
 
-const famDiabeteEl = document.getElementById('familiarita-diabete');
-if (famDiabeteEl) {
-    const rispostaGrezza = userData.familiari_diabete?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // rimuove accenti
-    const risposta = ['si', 'sì', 'yes', 'y', 'true', 'ok'].includes(rispostaGrezza) ? 'Sì' : 'No';
-    famDiabeteEl.textContent = risposta;
+function updateNewScoreBanners() {
+    // SCORE2-Diabete
+    if (dashboardData.score2Diabetes?.value > 0) {
+        const circle = document.querySelector('#score2d-banner .progress-ring__circle');
+        const text = document.getElementById('score2d-banner-text');
+        const hba1cEl = document.getElementById('score2d-banner-hba1c');
+        const glicemiaEl = document.getElementById('score2d-banner-glucose');
+        const sbpEl = document.getElementById('score2d-banner-sbp');
+
+        if (circle && text) {
+            const percentage = parseFloat(dashboardData.score2Diabetes.value);
+            const offset = 314.16 - (percentage / 100 * 314.16);
+            circle.style.strokeDashoffset = offset;
+            
+            // Cambia colore del cerchio in base al rischio
+            const strokeColor = dashboardData.score2Diabetes.category === 'danger' ? '#EA4335' : 
+                               dashboardData.score2Diabetes.category === 'warning' ? '#FBBC05' : '#34A853';
+            circle.setAttribute('stroke', strokeColor);
+            
+            text.textContent = `${dashboardData.score2Diabetes.value}%`;
+        }
+
+        if (hba1cEl) hba1cEl.textContent = `${dashboardData.score2Diabetes.hba1c || '--'} %`;
+        if (glicemiaEl) glicemiaEl.textContent = `${dashboardData.score2Diabetes.glicemia || '--'} mg/dL`;
+        if (sbpEl) sbpEl.textContent = `${dashboardData.score2Diabetes.sistolica || '--'} mmHg`;
+    }
+
+    // FIB4
+    if (dashboardData.fib4?.value > 0) {
+        const scoreEl = document.getElementById('fib4-banner-score');
+        const astEl = document.getElementById('fib4-banner-ast');
+        const altEl = document.getElementById('fib4-banner-alt');
+        const pltEl = document.getElementById('fib4-banner-plt');
+
+        if (scoreEl) {
+            scoreEl.textContent = dashboardData.fib4.value;
+            scoreEl.className = `score-indicator text-2xl score-${dashboardData.fib4.category === 'success' ? 'medium' : dashboardData.fib4.category === 'warning' ? 'low' : 'high'}`;
+        }
+
+        if (astEl) astEl.textContent = `${dashboardData.fib4.ast || '--'} U/L`;
+        if (altEl) altEl.textContent = `${dashboardData.fib4.alt || '--'} U/L`;
+        if (pltEl) pltEl.textContent = `${dashboardData.fib4.plt || '--'} x10⁹/L`;
+    }
+
+    // FNI
+    if (dashboardData.fni?.value > 0) {
+        const scoreEl = document.getElementById('fni-banner-score');
+        const albuminaEl = document.getElementById('fni-banner-albumina');
+        const linfocitiEl = document.getElementById('fni-banner-linfociti');
+
+        if (scoreEl) {
+            scoreEl.textContent = dashboardData.fni.value;
+            scoreEl.className = `score-indicator text-2xl score-${dashboardData.fni.category === 'success' ? 'medium' : dashboardData.fni.category === 'warning' ? 'low' : 'high'}`;
+        }
+
+        if (albuminaEl) albuminaEl.textContent = `${dashboardData.fni.albumina || '--'} g/dL`;
+        if (linfocitiEl) linfocitiEl.textContent = `${dashboardData.fni.linfociti || '--'} /mm³`;
+    }
 }
-
-
-const ipertensioneEl = document.getElementById('ipertensione');
-if (ipertensioneEl) {
-    const pressioneAlta = userData.pressione_alta?.toLowerCase() === 'sì' ||
-                          parseFloat(userData.pressione_sistolica) >= 140;
-    ipertensioneEl.textContent = pressioneAlta ? 'Sì' : 'No';
-}
-
-const attivitaFisicaEl = document.getElementById('attivita-fisica');
-if (attivitaFisicaEl) {
-    const minutiSettimanali = parseInt(userData.durata_attivita) || 0;
-    attivitaFisicaEl.textContent = minutiSettimanali >= 150 ? 'Adeguata' : 'Insufficiente';
-}
-
-}
-
 
 function updateScreeningTab() {
     const container = document.querySelector('#tab-screening .space-y-3');
@@ -1767,7 +1760,6 @@ function updateScreeningTab() {
 }
 
 function updateLifestyleTab() {
-    // Aggiorna grafico PREDIMED
     if (predimedChart) {
         const predimedData = [
             userData.predimed_1 === 'sì' ? 1 : 0,
@@ -1783,20 +1775,17 @@ function updateLifestyleTab() {
         predimedChart.update();
     }
     
-    // Aggiorna punteggio PREDIMED
-const predimedScoreEl = document.getElementById('predimed-score');
-const predimedAdherenceEl = document.getElementById('predimed-adherence');
+    const predimedScoreEl = document.getElementById('predimed-score');
+    const predimedAdherenceEl = document.getElementById('predimed-adherence');
 
-if (predimedScoreEl) {
-    predimedScoreEl.innerHTML = `Punteggio attuale: <span class="font-medium">${dashboardData.predimed.value}/14</span>`;
-}
+    if (predimedScoreEl) {
+        predimedScoreEl.innerHTML = `Punteggio attuale: <span class="font-medium">${dashboardData.predimed.value}/14</span>`;
+    }
 
-if (predimedAdherenceEl) {
-    predimedAdherenceEl.innerHTML = `Aderenza alla dieta mediterranea: <span class="font-medium">${dashboardData.predimed.adherence}</span>`;
-}
-
+    if (predimedAdherenceEl) {
+        predimedAdherenceEl.innerHTML = `Aderenza alla dieta mediterranea: <span class="font-medium">${dashboardData.predimed.adherence}</span>`;
+    }
     
-    // Aggiorna benessere psicologico
     const stressBar = document.querySelector('#tab-stile-vita .bg-yellow-500');
     if (stressBar) {
         stressBar.style.width = dashboardData.lifestyle.stress.percentage + '%';
@@ -1816,7 +1805,6 @@ if (predimedAdherenceEl) {
 }
 
 function updateNutritionTab() {
-    // Aggiorna fabbisogno calorico
     const nutritionDetails = document.querySelector('#tab-nutritional .space-y-3');
     if (nutritionDetails) {
         nutritionDetails.innerHTML = `
@@ -1843,7 +1831,6 @@ function updateNutritionTab() {
         `;
     }
     
-    // Aggiorna grafico macronutrienti
     if (macroChart) {
         macroChart.data.datasets[0].data = [
             dashboardData.nutrition.macros.protein.percentage,
@@ -1853,7 +1840,6 @@ function updateNutritionTab() {
         macroChart.update();
     }
     
-    // Aggiorna dettagli macronutrienti
     const macroDetails = document.querySelector('#tab-nutritional .grid.grid-cols-3');
     if (macroDetails) {
         macroDetails.innerHTML = `
@@ -1877,7 +1863,6 @@ function updateNutritionTab() {
 }
 
 function updateActivityTab() {
-    // Aggiorna attività attuale
     const activityDetails = document.querySelector('#tab-attivita .space-y-3');
     if (activityDetails) {
         activityDetails.innerHTML = `
@@ -1904,7 +1889,6 @@ function updateActivityTab() {
         `;
     }
     
-    // Aggiorna suggerimenti
     const suggestionsContainer = document.querySelectorAll('#tab-attivita .space-y-3')[1];
     if (suggestionsContainer) {
         suggestionsContainer.innerHTML = dashboardData.activity.suggestions.map(suggestion => `
@@ -1926,7 +1910,7 @@ function updateRecommendations() {
     if (!container) return;
     
     container.innerHTML = dashboardData.recommendations
-        .slice(0, 3) // Mostra solo le prime 3 raccomandazioni
+        .slice(0, 3)
         .map(rec => `
             <div class="recommendation-card p-3 bg-gray-50">
                 <h3 class="font-medium">${rec.title}</h3>
@@ -1934,107 +1918,12 @@ function updateRecommendations() {
             </div>
         `).join('');
 }
-    
-
-function updateNextSteps() {
-    const container = document.querySelector('.card:last-child .space-y-3');
-    if (!container) return;
-    
-    const nextSteps = [];
-    
-    // Aggiungi visite basate sui rischi
-    if (dashboardData.score2.risk === 'Alto' || dashboardData.score2.risk === 'Molto alto') {
-        nextSteps.push({
-            title: 'Visita cardiologica',
-            description: 'Per rivalutazione parametri cardiovascolari',
-            timeframe: 'Entro 30 giorni'
-        });
-    }
-    
-    if (dashboardData.diabetesRisk.risk === 'Alto') {
-        nextSteps.push({
-            title: 'Visita diabetologica',
-            description: 'Per valutazione rischio diabete',
-            timeframe: 'Entro 30 giorni'
-        });
-    }
-    
-    // Aggiungi esami se necessari
-    const overdueScreenings = dashboardData.screenings.filter(s => s.status === 'overdue');
-    if (overdueScreenings.length > 0) {
-        nextSteps.push({
-            title: overdueScreenings[0].name,
-            description: `Screening ${overdueScreenings[0].status}`,
-            timeframe: 'Immediato'
-        });
-    }
-    
-    // Se non ci sono passi urgenti, aggiungi consigli generali
-    if (nextSteps.length === 0) {
-        nextSteps.push({
-            title: 'Mantenere stile di vita sano',
-            description: 'Continua con le buone abitudini',
-            timeframe: 'Ongoing'
-        });
-    }
-    
-    container.innerHTML = nextSteps.map((step, index) => `
-        <div class="flex items-center p-2 bg-gray-50 rounded">
-            <div class="bg-blue-100 text-blue-800 h-8 w-8 rounded-full flex items-center justify-center mr-3">${index + 1}</div>
-            <div>
-                <h4 class="font-medium">${step.title}</h4>
-                <p class="text-xs text-gray-500">${step.timeframe}</p>
-            </div>
-        </div>
-    `).join('');
-}
-
-    function updateScore2DiabetesBanner() {
-    const data = dashboardData.score2Diabetes;
-    if (!data || !data.value) return;
-
-    const circle = document.querySelector('#score2d-banner .progress-ring__circle');
-    const text = document.getElementById('score2d-banner-text');
-    const hba1cEl = document.getElementById('score2d-banner-hba1c');
-    const glicemiaEl = document.getElementById('score2d-banner-glucose');
-    const sbpEl = document.getElementById('score2d-banner-sbp');
-
-    const offset = 314.16 - (parseFloat(data.value) / 100 * 314.16);
-    circle.style.strokeDashoffset = offset;
-    text.textContent = `${data.value}%`;
-    hba1cEl.textContent = `${data.hba1c || '--'} %`;
-    glicemiaEl.textContent = `${data.glicemia || '--'} mg/dL`;
-    sbpEl.textContent = `${data.sistolica || '--'} mmHg`;
-}
-
-function updateFIB4Banner() {
-    const data = dashboardData.fib4;
-    if (!data || !data.value) return;
-
-    document.getElementById('fib4-banner-score').textContent = data.value;
-    document.getElementById('fib4-banner-score').className = `score-indicator text-2xl score-${data.category === 'success' ? 'medium' : data.category === 'warning' ? 'low' : 'high'}`;
-    document.getElementById('fib4-banner-ast').textContent = `${data.ast || '--'} U/L`;
-    document.getElementById('fib4-banner-alt').textContent = `${data.alt || '--'} U/L`;
-    document.getElementById('fib4-banner-plt').textContent = `${data.plt || '--'} x10⁹/L`;
-}
-
-function updateFNIBanner() {
-    const data = dashboardData.fni;
-    if (!data || !data.value) return;
-
-    document.getElementById('fni-banner-score').textContent = data.value;
-    document.getElementById('fni-banner-score').className = `score-indicator text-2xl score-${data.category === 'success' ? 'medium' : data.category === 'warning' ? 'low' : 'high'}`;
-    document.getElementById('fni-banner-albumina').textContent = `${data.albumina || '--'} g/dL`;
-    document.getElementById('fni-banner-linfociti').textContent = `${data.linfociti || '--'} /mm³`;
-}
-
 
 // Inizializza i grafici
 function initializeCharts() {
-    // Predimed Chart
+    // PREDIMED Chart
     const predimedCtx = document.getElementById('predimed-chart').getContext('2d');
 
-    // Destroys previous instance if exists
     if (predimedChart) {
         predimedChart.destroy();
     }
@@ -2099,14 +1988,12 @@ function initializeCharts() {
     });
 }
 
-
 // Setup delle tabs
 function setupTabs() {
     document.querySelectorAll('.tab-button').forEach(button => {
         button.addEventListener('click', () => {
             const tabId = button.getAttribute('data-tab');
 
-            // Deactivate all tabs
             document.querySelectorAll('.tab-button').forEach(btn => {
                 btn.classList.remove('active');
             });
@@ -2114,11 +2001,9 @@ function setupTabs() {
                 content.classList.remove('active');
             });
 
-            // Activate current tab
             button.classList.add('active');
             document.getElementById(tabId).classList.add('active');
 
-            // Update charts if needed
             if (tabId === 'tab-stile-vita' && predimedChart) {
                 predimedChart.update();
             }
@@ -2145,12 +2030,10 @@ async function exportDashboardPDF() {
     exportButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Esportazione...';
     exportButton.disabled = true;
 
-    // Mostra temporaneamente tutte le tabs per l'export
     const currentActiveTab = document.querySelector('.tab-content.active');
     const allTabs = document.querySelectorAll('.tab-content');
     allTabs.forEach(tab => tab.classList.add('active'));
 
-    // Aggiorna i grafici
     if (predimedChart) predimedChart.update();
     if (macroChart) macroChart.update();
 
@@ -2173,7 +2056,6 @@ async function exportDashboardPDF() {
 
         html2pdf().from(dashboardContent).set(options).save()
             .then(() => {
-                // Ripristina solo la tab attiva originale
                 allTabs.forEach(tab => tab.classList.remove('active'));
                 if (currentActiveTab) currentActiveTab.classList.add('active');
                 
@@ -2226,360 +2108,45 @@ setInterval(async () => {
     if (sessionData.session) {
         await loadUserData(sessionData.session.user.email);
         calculateAllScores();
-        
         updateDashboard();
-        updateNextSteps();
     }
-}, 300000); // 5 minuti
+}, 300000);
 
 // Gestione logout
 document.getElementById('logout-btn')?.addEventListener('click', async () => {
     await supabaseClient.auth.signOut();
     window.location.href = 'login.html';
 });
-</script>
-    <script>
-        // Tab navigation
-        document.querySelectorAll('.tab-button').forEach(button => {
-            button.addEventListener('click', () => {
-                const tabId = button.getAttribute('data-tab');
 
-                // Deactivate all tabs
-                document.querySelectorAll('.tab-button').forEach(btn => {
-                    btn.classList.remove('active');
-                });
-                document.querySelectorAll('.tab-content').forEach(content => {
-                    content.classList.remove('active');
-                });
+// Gestione temi
+document.addEventListener('DOMContentLoaded', function () {
+    const themeToggle = document.getElementById('theme-toggle');
 
-                // Activate current tab
-                button.classList.add('active');
-                document.getElementById(tabId).classList.add('active');
-            });
+    function applyTheme(theme) {
+        const html = document.documentElement;
+        html.setAttribute('data-theme', theme);
+
+        if (themeToggle) {
+            themeToggle.textContent = (theme === 'dark') ? '☀️' : '🌙';
+        }
+    }
+
+    if (themeToggle) {
+        themeToggle.addEventListener('click', function () {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+            applyTheme(newTheme);
+            window.parent.postMessage({ type: 'theme', theme: newTheme }, '*');
         });
+    }
 
-        // Charts initialization
-        window.addEventListener('DOMContentLoaded', () => {
-            // PREDIMED Chart
-            const predimedCtx = document.getElementById('predimed-chart').getContext('2d');
-            const predimedChart = new Chart(predimedCtx, {
-                type: 'radar',
-                data: {
-                    labels: ['Olio oliva', 'Verdura', 'Frutta', 'Cereali', 'Legumi', 'Pesce', 'Vino'],
-                    datasets: [{
-                        label: 'Punteggio attuale',
-                        data: [1, 1, 1, 0, 1, 0, 0],
-                        backgroundColor: 'rgba(66, 133, 244, 0.2)',
-                        borderColor: '#4285F4',
-                        borderWidth: 2,
-                        pointBackgroundColor: '#4285F4'
-                    }, {
-                        label: 'Obiettivo',
-                        data: [1, 1, 1, 1, 1, 1, 1],
-                        backgroundColor: 'rgba(52, 168, 83, 0.1)',
-                        borderColor: '#34A853',
-                        borderWidth: 1,
-                        borderDash: [5, 5],
-                        pointBackgroundColor: '#34A853'
-                    }]
-                },
-                options: {
-                    scale: {
-                        ticks: {
-                            beginAtZero: true,
-                            max: 1,
-                            stepSize: 1
-                        }
-                    }
-                }
-            });
-
-            // Macronutrienti Chart
-            const macroCtx = document.getElementById('macro-chart').getContext('2d');
-            const macroChart = new Chart(macroCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Proteine', 'Carboidrati', 'Grassi'],
-                    datasets: [{
-                        data: [25, 45, 30],
-                        backgroundColor: ['#34A853', '#4285F4', '#FBBC05'],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    cutout: '70%',
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    }
-                }
-            });
-        });
-
-        document.addEventListener('DOMContentLoaded', function() {
-
-            // Store chart instances globally
-            let predimedChart = null;
-            let macroChart = null;
-
-            // Initialize charts
-            initializeCharts();
-
-            function initializeCharts() {
-                // PREDIMED Chart
-                const predimedCtx = document.getElementById('predimed-chart').getContext('2d');
-                predimedChart = new Chart(predimedCtx, {
-                    type: 'radar',
-                    data: {
-                        labels: ['Olio oliva', 'Verdura', 'Frutta', 'Cereali', 'Legumi', 'Pesce', 'Vino'],
-                        datasets: [{
-                            label: 'Punteggio attuale',
-                            data: [1, 1, 1, 0, 1, 0, 0],
-                            backgroundColor: 'rgba(66, 133, 244, 0.2)',
-                            borderColor: '#4285F4',
-                            borderWidth: 2,
-                            pointBackgroundColor: '#4285F4'
-                        }, {
-                            label: 'Obiettivo',
-                            data: [1, 1, 1, 1, 1, 1, 1],
-                            backgroundColor: 'rgba(52, 168, 83, 0.1)',
-                            borderColor: '#34A853',
-                            borderWidth: 1,
-                            borderDash: [5, 5],
-                            pointBackgroundColor: '#34A853'
-                        }]
-                    },
-                    options: {
-                        scale: {
-                            ticks: {
-                                beginAtZero: true,
-                                max: 1,
-                                stepSize: 1
-                            }
-                        }
-                    }
-                });
-
-                // Macronutrienti Chart
-                const macroCtx = document.getElementById('macro-chart').getContext('2d');
-                macroChart = new Chart(macroCtx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Proteine', 'Carboidrati', 'Grassi'],
-                        datasets: [{
-                            data: [25, 45, 30],
-                            backgroundColor: ['#34A853', '#4285F4', '#FBBC05'],
-                            borderWidth: 0
-                        }]
-                    },
-                    options: {
-                        cutout: '70%',
-                        plugins: {
-                            legend: {
-                                display: false
-                            }
-                        }
-                    }
-                });
-            }
-
-            // Find the export button
-            const exportButton = document.querySelector('button:has(i.fas.fa-file-pdf)') ||
-                                 document.querySelector('button i.fas.fa-file-pdf')?.closest('button');
-
-            // Add click event listener to the export button
-            if (exportButton) {
-                exportButton.addEventListener('click', function() {
-                    // Show loading indicator
-                    const originalButtonText = exportButton.innerHTML;
-                    exportButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Esportazione...';
-                    exportButton.disabled = true;
-
-                    // Make sure all tabs are displayed before export (to ensure charts are rendered)
-                    const currentActiveTab = document.querySelector('.tab-content.active');
-                    const allTabs = document.querySelectorAll('.tab-content');
-
-                    // Show all tabs temporarily
-                    allTabs.forEach(tab => tab.classList.add('active'));
-
-                    // Force chart update to ensure they're rendered
-                    if (predimedChart) predimedChart.update();
-                    if (macroChart) macroChart.update();
-
-                    // Small delay to ensure all charts are fully rendered
-                    setTimeout(() => {
-                        // Get the dashboard content to export
-                        const dashboardContent = document.querySelector('main');
-
-                        // Set options for PDF generation
-                        const options = {
-                            margin: 10,
-                            filename: 'Dashboard_HealthAI_' + new Date().toLocaleDateString('it-IT') + '.pdf',
-                            image: { type: 'jpeg', quality: 0.98 },
-                            html2canvas: {
-                                scale: 1,
-                                useCORS: true,
-                                logging: false,
-                                allowTaint: true,
-                                foreignObjectRendering: false
-                            },
-                            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-                        };
-
-                        // Generate and download PDF
-                        html2pdf().from(dashboardContent).set(options).save()
-                            .then(() => {
-                                // Hide all tabs except the one that was originally active
-                                allTabs.forEach(tab => tab.classList.remove('active'));
-                                if (currentActiveTab) currentActiveTab.classList.add('active');
-
-                                // Restore button text after PDF is generated
-                                exportButton.innerHTML = originalButtonText;
-                                exportButton.disabled = false;
-
-                                // Show success notification
-                                showNotification('PDF esportato con successo!', 'success');
-                            })
-                            .catch(error => {
-                                console.error('Errore durante l\'esportazione del PDF:', error);
-
-                                // Hide all tabs except the one that was originally active
-                                allTabs.forEach(tab => tab.classList.remove('active'));
-                                if (currentActiveTab) currentActiveTab.classList.add('active');
-
-                                exportButton.innerHTML = originalButtonText;
-                                exportButton.disabled = false;
-
-                                // Show error notification
-                                showNotification('Errore durante l\'esportazione del PDF', 'error');
-                            });
-                    }, 500); // Wait 500ms for charts to render
-                });
-            }
-
-            // Function to show notifications
-            function showNotification(message, type) {
-                // Create notification element
-                const notification = document.createElement('div');
-                notification.className = `fixed top-4 right-4 px-6 py-3 rounded-md shadow-lg z-50 ${
-                    type === 'success' ? 'bg-green-500' : 'bg-red-500'
-                } text-white`;
-                notification.innerHTML = `
-                    <div class="flex items-center">
-                        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} mr-2"></i>
-                        <span>${message}</span>
-                    </div>
-                `;
-
-                // Add to document
-                document.body.appendChild(notification);
-
-                // Remove after 3 seconds
-                setTimeout(() => {
-                    notification.style.opacity = '0';
-                    notification.style.transition = 'opacity 0.5s ease';
-                    setTimeout(() => {
-                        document.body.removeChild(notification);
-                    }, 500);
-                }, 3000);
-            }
-
-            // Tab navigation
-            document.querySelectorAll('.tab-button').forEach(button => {
-                button.addEventListener('click', () => {
-                    const tabId = button.getAttribute('data-tab');
-
-                    // Deactivate all tabs
-                    document.querySelectorAll('.tab-button').forEach(btn => {
-                        btn.classList.remove('active');
-                    });
-                    document.querySelectorAll('.tab-content').forEach(content => {
-                        content.classList.remove('active');
-                    });
-
-                    // Activate current tab
-                    button.classList.add('active');
-                    document.getElementById(tabId).classList.add('active');
-
-                    // Update the charts if they're in the active tab
-                    if (tabId === 'tab-stile-vita' && predimedChart) {
-                        predimedChart.update();
-                    }
-                    if (tabId === 'tab-nutritional' && macroChart) {
-                        macroChart.update();
-                    }
-                });
-            });
-        });
-
-// Gestione temi (da mantenere in tutte le pagine)
-        document.addEventListener('DOMContentLoaded', function () {
-            const themeToggle = document.getElementById('theme-toggle');
-
-            function applyTheme(theme) {
-                const html = document.documentElement;
-                html.setAttribute('data-theme', theme);
-
-                if (themeToggle) {
-                    themeToggle.textContent = (theme === 'dark') ? '☀️' : '🌙';
-                }
-            }
-
-            // Listener per il toggle manuale
-            if (themeToggle) {
-                themeToggle.addEventListener('click', function () {
-                    const currentTheme = document.documentElement.getAttribute('data-theme');
-                    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-
-                    applyTheme(newTheme);
-
-                    // Comunica al parent il nuovo tema
-                    window.parent.postMessage({ type: 'theme', theme: newTheme }, '*');
-                });
-            }
-
-            // Listener per ricevere tema dal parent
-            window.addEventListener('message', function (event) {
-                if (event.data && event.data.type === 'theme') {
-                    applyTheme(event.data.theme);
-                }
-            });
-        });
+    window.addEventListener('message', function (event) {
+        if (event.data && event.data.type === 'theme') {
+            applyTheme(event.data.theme);
+        }
+    });
+});
     </script>
-
-    <script>
-function updateNewScoreBanners() {
-  // SCORE2-Diabete
-  const score2d = dashboardData.score2Diabetes;
-  if (score2d?.value > 0) {
-    document.getElementById('score2d-banner-text').textContent = score2d.value + '%';
-    document.getElementById('score2d-banner-hba1c').textContent = userData.hba1c || '--';
-    document.getElementById('score2d-banner-glucose').textContent = userData.glicemia_valore || '--';
-    document.getElementById('score2d-banner-sbp').textContent = userData.pressione_sistolica || '--';
-  }
-
-  // FIB4
-  const fib4 = dashboardData.fib4;
-  if (fib4?.value > 0) {
-    const fib4ScoreEl = document.getElementById('fib4-banner-score');
-    fib4ScoreEl.textContent = fib4.value;
-    fib4ScoreEl.className = `score-indicator score-${fib4.category === 'success' ? 'medium' : fib4.category === 'warning' ? 'low' : 'high'} text-2xl`;
-    document.getElementById('fib4-banner-ast').textContent = userData.ast || '--';
-    document.getElementById('fib4-banner-alt').textContent = userData.alt || '--';
-    document.getElementById('fib4-banner-plt').textContent = userData.piastrine || '--';
-  }
-
-  // FNI
-  const fni = dashboardData.fni;
-  if (fni?.value > 0) {
-    const fniScoreEl = document.getElementById('fni-banner-score');
-    fniScoreEl.textContent = fni.value;
-    fniScoreEl.className = `score-indicator score-${fni.category === 'success' ? 'medium' : fni.category === 'warning' ? 'low' : 'high'} text-2xl`;
-    document.getElementById('fni-banner-albumina').textContent = userData.albumina || '--';
-    document.getElementById('fni-banner-linfociti').textContent = userData.linfociti || '--';
-  }
-}
-</script>
 </body>
 </html>
