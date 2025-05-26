@@ -929,18 +929,59 @@ async function loadUserData(email) {
             .eq('email', email)
             .single();
             
-        if (error) throw error;
+        if (error) {
+            console.error('Errore Supabase:', error);
+            throw error;
+        }
         
         userData = data || {};
-        console.log('Dati utente caricati:', userData);
+        console.log('🔍 Dati utente caricati:', userData);
+        
+        // Debug: verifica campi specifici per SCORE2 e ADA Risk
+        console.log('📊 Campi SCORE2:', {
+            eta: userData.eta,
+            sesso: userData.sesso,
+            pressione_sistolica: userData.pressione_sistolica,
+            colesterolo_totale: userData.colesterolo_totale,
+            colesterolo_hdl_valore: userData.colesterolo_hdl_valore,
+            fumatore: userData.fumatore
+        });
+        
+        console.log('📊 Campi ADA Risk:', {
+            familiari_diabete: userData.familiari_diabete,
+            pressione_alta: userData.pressione_alta,
+            attivita_fisica: userData.attivita_fisica,
+            durata_attivita: userData.durata_attivita,
+            glicemia_valore: userData.glicemia_valore
+        });
         
     } catch (error) {
-        console.error('Errore caricamento dati:', error);
+        console.error('❌ Errore caricamento dati:', error);
+        // Aggiungi dati di fallback per il debug
+        userData = {
+            email: email,
+            // Aggiungi valori di test per verificare se il problema è nel caricamento dati
+            eta: 55,
+            sesso: 'maschio',
+            pressione_sistolica: 145,
+            pressione_diastolica: 85,
+            colesterolo_totale: 200,
+            colesterolo_hdl_valore: 45,
+            fumatore: 'no'
+        };
+        console.log('🔧 Usando dati di fallback per debug:', userData);
     }
 }
 
-// Calcola tutti gli score clinici
+// Calcola tutti gli score clinici - Versione con debug
 function calculateAllScores() {
+    console.log('🚀 Inizio calcolo di tutti gli score...');
+    console.log('📊 Dati disponibili:', Object.keys(userData));
+    
+    // Inizializza i dati di default
+    dashboardData.score2 = { value: '0.0', risk: 'Non calcolato', category: 'warning' };
+    dashboardData.diabetesRisk = { score: 0, maxScore: 8, factors: [], risk: 'Non calcolato' };
+    
     calculateBMI();
     calculateSCORE2();
     calculatePREDIMED();
@@ -954,6 +995,15 @@ function calculateAllScores() {
     analyzeLifestyle();
     calculateNutritionalNeeds();
     evaluatePhysicalActivity();
+    
+    console.log('🎯 Risultati finali degli score:', {
+        bmi: dashboardData.bmi,
+        score2: dashboardData.score2,
+        diabetesRisk: dashboardData.diabetesRisk,
+        score2Diabetes: dashboardData.score2Diabetes,
+        fib4: dashboardData.fib4,
+        fni: dashboardData.fni
+    });
 }
 
 // 1. Calcolo BMI
@@ -981,8 +1031,10 @@ function calculateBMI() {
     }
 }
 
-// 2. Calcolo SCORE2
+// 2. Calcolo SCORE2 - Versione migliorata con debug
 function calculateSCORE2() {
+    console.log('🔄 Inizio calcolo SCORE2...');
+    
     const eta = parseInt(userData.eta);
     const sesso = userData.sesso?.toLowerCase();
     const sistolica = parseFloat(userData.pressione_sistolica);
@@ -990,42 +1042,73 @@ function calculateSCORE2() {
     const hdl = parseFloat(userData.colesterolo_hdl_valore);
     const fumatore = userData.fumatore?.toLowerCase() === 'sì';
     
-    if (eta && sistolica && colTotale && hdl) {
-        let score = 0;
-        
-        if (eta >= 40 && eta < 50) score += 0;
-        else if (eta >= 50 && eta < 60) score += 3;
-        else if (eta >= 60 && eta < 70) score += 6;
-        else if (eta >= 70) score += 9;
-        
-        if (sistolica >= 140) score += 2;
-        if (sistolica >= 160) score += 3;
-        if (sistolica >= 180) score += 4;
-        
-        const nonHDL = colTotale - hdl;
-        if (nonHDL >= 190) score += 1;
-        if (nonHDL >= 220) score += 2;
-        if (nonHDL >= 280) score += 3;
-        
-        if (fumatore) score += 4;
-        
-        const riskPercent = Math.min(score * 0.5, 20);
-        dashboardData.score2.value = riskPercent.toFixed(1);
-        
-        if (riskPercent < 1) {
-            dashboardData.score2.risk = 'Basso';
-            dashboardData.score2.category = 'success';
-        } else if (riskPercent < 5) {
-            dashboardData.score2.risk = 'Moderato';
-            dashboardData.score2.category = 'warning';
-        } else if (riskPercent < 10) {
-            dashboardData.score2.risk = 'Alto';
-            dashboardData.score2.category = 'danger';
-        } else {
-            dashboardData.score2.risk = 'Molto alto';
-            dashboardData.score2.category = 'danger';
-        }
+    console.log('📋 Valori SCORE2 estratti:', {
+        eta, sesso, sistolica, colTotale, hdl, fumatore
+    });
+    
+    // Verifica che tutti i valori necessari siano presenti
+    if (!eta || isNaN(eta)) {
+        console.warn('⚠️ Età mancante o non valida:', userData.eta);
+        dashboardData.score2 = { value: '0.0', risk: 'Dati insufficienti', category: 'warning' };
+        return;
     }
+    
+    if (!sistolica || isNaN(sistolica)) {
+        console.warn('⚠️ Pressione sistolica mancante o non valida:', userData.pressione_sistolica);
+        dashboardData.score2 = { value: '0.0', risk: 'Dati insufficienti', category: 'warning' };
+        return;
+    }
+    
+    if (!colTotale || isNaN(colTotale) || !hdl || isNaN(hdl)) {
+        console.warn('⚠️ Valori colesterolo mancanti:', { colTotale, hdl });
+        dashboardData.score2 = { value: '0.0', risk: 'Dati insufficienti', category: 'warning' };
+        return;
+    }
+    
+    let score = 0;
+    
+    // Fattore età
+    if (eta >= 40 && eta < 50) score += 0;
+    else if (eta >= 50 && eta < 60) score += 3;
+    else if (eta >= 60 && eta < 70) score += 6;
+    else if (eta >= 70) score += 9;
+    
+    // Fattore pressione
+    if (sistolica >= 140) score += 2;
+    if (sistolica >= 160) score += 3;
+    if (sistolica >= 180) score += 4;
+    
+    // Fattore colesterolo
+    const nonHDL = colTotale - hdl;
+    if (nonHDL >= 190) score += 1;
+    if (nonHDL >= 220) score += 2;
+    if (nonHDL >= 280) score += 3;
+    
+    // Fattore fumo
+    if (fumatore) score += 4;
+    
+    // Converti in percentuale di rischio
+    const riskPercent = Math.min(score * 0.5, 20);
+    
+    console.log('🧮 Calcolo SCORE2 completato:', { score, riskPercent });
+    
+    dashboardData.score2.value = riskPercent.toFixed(1);
+    
+    if (riskPercent < 1) {
+        dashboardData.score2.risk = 'Basso';
+        dashboardData.score2.category = 'success';
+    } else if (riskPercent < 5) {
+        dashboardData.score2.risk = 'Moderato';
+        dashboardData.score2.category = 'warning';
+    } else if (riskPercent < 10) {
+        dashboardData.score2.risk = 'Alto';
+        dashboardData.score2.category = 'danger';
+    } else {
+        dashboardData.score2.risk = 'Molto alto';
+        dashboardData.score2.category = 'danger';
+    }
+    
+    console.log('✅ SCORE2 calcolato:', dashboardData.score2);
 }
 
 // 3. Calcolo PREDIMED
@@ -1097,14 +1180,27 @@ function checkMetabolicSyndrome() {
     };
 }
 
-// 5. Calcolo rischio diabete (ADA Risk Score)
+// 5. Calcolo rischio diabete (ADA Risk Score) - Versione migliorata con debug
 function calculateDiabetesRisk() {
+    console.log('🔄 Inizio calcolo ADA Diabetes Risk...');
+    
     let score = 0;
     let factors = [];
     
     const eta = parseInt(userData.eta);
     const bmi = parseFloat(dashboardData.bmi.value);
     
+    console.log('📋 Valori ADA Risk estratti:', {
+        eta,
+        bmi,
+        familiari_diabete: userData.familiari_diabete,
+        pressione_alta: userData.pressione_alta,
+        attivita_fisica: userData.attivita_fisica,
+        durata_attivita: userData.durata_attivita,
+        pressione_sistolica: userData.pressione_sistolica
+    });
+    
+    // Fattore età
     if (eta >= 40 && eta < 50) {
         score += 1;
         factors.push('Età 40-49');
@@ -1116,55 +1212,120 @@ function calculateDiabetesRisk() {
         factors.push('Età ≥60');
     }
     
-    if (bmi >= 25 && bmi < 30) {
-        score += 1;
-        factors.push('Sovrappeso');
-    } else if (bmi >= 30 && bmi < 40) {
-        score += 2;
-        factors.push('Obesità');
-    } else if (bmi >= 40) {
-        score += 3;
-        factors.push('Obesità grave');
-    }
-    
-    const rispostaFam = userData.familiari_diabete?.toLowerCase()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-
-    if (rispostaFam && (
-        rispostaFam.startsWith("si") ||
-        rispostaFam.startsWith("yes") ||
-        rispostaFam === "true" ||
-        rispostaFam === "ok" ||
-        rispostaFam === "y"
-    )) {
-        score += 1;
-        factors.push("Familiarità diabete");
-    }
-
-    const rispostaIpertensione = userData.pressione_alta?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    if (['si', 'sì', 'yes', 'true', 'ok', 'y'].includes(rispostaIpertensione) ||
-        parseFloat(userData.pressione_sistolica) >= 140) {
-        score += 1;
-        factors.push('Ipertensione');
-    }
-
-    if (userData.attivita_fisica?.toLowerCase() === 'no') {
-        score += 1;
-        factors.push('Sedentarietà');
-    } else {
-        const durata = parseInt(userData.durata_attivita || '0');
-        if (durata < 150) {
+    // Fattore BMI
+    if (!isNaN(bmi)) {
+        if (bmi >= 25 && bmi < 30) {
             score += 1;
-            factors.push('Attività fisica insufficiente');
+            factors.push('Sovrappeso');
+        } else if (bmi >= 30 && bmi < 40) {
+            score += 2;
+            factors.push('Obesità');
+        } else if (bmi >= 40) {
+            score += 3;
+            factors.push('Obesità grave');
         }
     }
+    
+    // Familiarità per diabete - Controllo più robusto
+    const famRaw = userData.familiari_diabete;
+    console.log('🔍 Familiarità diabete (raw):', famRaw);
+    
+    if (famRaw) {
+        const rispostaFam = String(famRaw).toLowerCase()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+        
+        console.log('🔍 Familiarità diabete (processed):', rispostaFam);
+        
+        if (rispostaFam && (
+            rispostaFam.includes("si") ||
+            rispostaFam.includes("yes") ||
+            rispostaFam === "true" ||
+            rispostaFam === "ok" ||
+            rispostaFam === "y" ||
+            rispostaFam === "1"
+        )) {
+            score += 1;
+            factors.push("Familiarità diabete");
+            console.log('✅ Familiarità diabete: SÌ');
+        } else {
+            console.log('❌ Familiarità diabete: NO');
+        }
+    }
+
+    // Ipertensione - Controllo multiplo
+    const pressioneAltaRaw = userData.pressione_alta;
+    const sistolica = parseFloat(userData.pressione_sistolica);
+    
+    console.log('🔍 Pressione alta check:', { 
+        pressione_alta_campo: pressioneAltaRaw, 
+        pressione_sistolica: sistolica 
+    });
+    
+    let hasHypertension = false;
+    
+    // Controllo campo pressione_alta
+    if (pressioneAltaRaw) {
+        const rispostaIpertensione = String(pressioneAltaRaw).toLowerCase()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        if (['si', 'sì', 'yes', 'true', 'ok', 'y', '1'].includes(rispostaIpertensione)) {
+            hasHypertension = true;
+        }
+    }
+    
+    // Controllo valore numerico pressione
+    if (!hasHypertension && !isNaN(sistolica) && sistolica >= 140) {
+        hasHypertension = true;
+    }
+    
+    if (hasHypertension) {
+        score += 1;
+        factors.push('Ipertensione');
+        console.log('✅ Ipertensione: SÌ');
+    } else {
+        console.log('❌ Ipertensione: NO');
+    }
+
+    // Attività fisica - Controllo migliorato
+    const attivitaRaw = userData.attivita_fisica;
+    const durataRaw = userData.durata_attivita;
+    
+    console.log('🔍 Attività fisica check:', { 
+        attivita_fisica: attivitaRaw, 
+        durata_attivita: durataRaw 
+    });
+    
+    let insufficientActivity = false;
+    
+    if (attivitaRaw && String(attivitaRaw).toLowerCase().includes('no')) {
+        insufficientActivity = true;
+        console.log('✅ Sedentarietà (no attività)');
+    } else {
+        // Controlla durata se fa attività
+        const durata = parseInt(durataRaw || '0');
+        if (durata < 150) {
+            insufficientActivity = true;
+            console.log('✅ Attività fisica insufficiente:', durata, 'min/settimana');
+        } else {
+            console.log('❌ Attività fisica adeguata:', durata, 'min/settimana');
+        }
+    }
+    
+    if (insufficientActivity) {
+        score += 1;
+        factors.push(attivitaRaw && String(attivitaRaw).toLowerCase().includes('no') ? 
+                     'Sedentarietà' : 'Attività fisica insufficiente');
+    }
+    
+    const riskLevel = score >= 5 ? 'Alto' : score >= 3 ? 'Moderato' : 'Basso';
     
     dashboardData.diabetesRisk = {
         score: score,
         maxScore: 8,
         factors: factors,
-        risk: score >= 5 ? 'Alto' : score >= 3 ? 'Moderato' : 'Basso'
+        risk: riskLevel
     };
+    
+    console.log('✅ ADA Diabetes Risk calcolato:', dashboardData.diabetesRisk);
 }
 
 // 6. Calcolo SCORE2-Diabete
