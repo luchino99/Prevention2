@@ -1879,18 +1879,20 @@ function updateRiskTab() {
     console.log('📊 SCORE2 per grafico:', dashboardData.score2);
     console.log('📊 Diabetes Risk per grafico:', dashboardData.diabetesRisk);
     
-    // Aggiorna grafico rischio cardiovascolare - CORREZIONE ANCHE QUI
+    // Aggiorna grafico rischio cardiovascolare - USA FORMULA DI SCORE2-DIABETE
     const cvRisk = document.querySelector('#tab-rischi .progress-ring__circle');
     if (cvRisk) {
         const percentage = parseFloat(dashboardData.score2.value);
-        console.log('🎯 Aggiornamento grafico CV con percentuale:', percentage);
+        console.log('🎯 === CORREZIONE GRAFICO CV ===');
+        console.log('Percentuale CV:', percentage + '%');
         
+        // USA LA STESSA FORMULA CHE FUNZIONA IN SCORE2-DIABETE
         const circumference = 314.16;
-        // Formula corretta: per il SCORE2 usiamo percentuale diretta (es. 4.5% = 4.5% del cerchio)
-        const offset = circumference * (1 - percentage / 100);
+        const offset = circumference - (percentage / 100 * circumference);
         
         cvRisk.style.strokeDashoffset = offset;
-        console.log('📊 Grafico CV - Circumference:', circumference, 'Offset:', offset, 'Percentage:', percentage + '%');
+        console.log('✅ CV - Circumference:', circumference, 'Offset:', offset, 'per', percentage + '%');
+        console.log('🔍 Per 9% dovrebbe essere circa', circumference * 0.91, '- Applicato:', offset);
         
         // Cambia colore in base al rischio
         const strokeColor = dashboardData.score2.category === 'danger' ? '#EA4335' : 
@@ -1936,45 +1938,34 @@ function updateRiskTab() {
         console.log('📝 Fumo CV aggiornato:', userData.fumatore);
     }
     
-    // Aggiorna rischio diabete - CORREZIONE DEFINITIVA
+    // Aggiorna rischio diabete - USA FORMULA DI SCORE2-DIABETE
     const diabetesCircle = document.querySelectorAll('#tab-rischi .progress-ring__circle')[1];
     if (diabetesCircle) {
         const score = dashboardData.diabetesRisk.score;
         const maxScore = dashboardData.diabetesRisk.maxScore;
         const percentage = (score / maxScore) * 100;
         
-        console.log('🎯 === CORREZIONE DEFINITIVA GRAFICO DIABETES ===');
-        console.log('Score:', score, 'MaxScore:', maxScore, 'Percentage:', percentage + '%');
+        console.log('🎯 === CORREZIONE DEFINITIVA ADA RISK ===');
+        console.log('Score:', score, '/', maxScore, '=', percentage + '%');
         
-        // FORMULA CORRETTA: Per 100% il cerchio deve essere pieno (offset = 0)
+        // USA LA STESSA FORMULA CHE FUNZIONA IN SCORE2-DIABETE
         const circumference = 314.16;
-        const offset = circumference * (1 - percentage / 100);
+        const offset = circumference - (percentage / 100 * circumference);
         
-        console.log('🧮 Formula corretta:');
-        console.log('- Circumference:', circumference);
-        console.log('- Percentage:', percentage + '%');
-        console.log('- Offset calcolato:', offset);
-        console.log('- Per 100% offset dovrebbe essere 0:', offset === 0 ? '✅' : '❌');
-        
-        // Applica i valori corretti
         diabetesCircle.style.strokeDasharray = circumference;
         diabetesCircle.style.strokeDashoffset = offset;
         
-        console.log('✅ APPLICATO: dasharray=' + circumference + ', dashoffset=' + offset);
+        console.log('✅ ADA - Circumference:', circumference, 'Offset:', offset);
+        console.log('🔍 Per 100% (8/8) offset dovrebbe essere 0 - Applicato:', offset);
         
         // Cambia colore
         const strokeColor = dashboardData.diabetesRisk.risk === 'Alto' ? '#EA4335' : 
                            dashboardData.diabetesRisk.risk === 'Moderato' ? '#FBBC05' : '#34A853';
         diabetesCircle.setAttribute('stroke', strokeColor);
-        console.log('🎨 Colore applicato:', strokeColor);
+        console.log('🎨 Colore ADA:', strokeColor, 'per rischio:', dashboardData.diabetesRisk.risk);
         
-        // Test visivo
-        if (percentage === 100) {
-            console.log('🔴 CERCHIO DOVREBBE ESSERE COMPLETAMENTE ROSSO');
-        } else if (percentage === 0) {
-            console.log('⚪ CERCHIO DOVREBBE ESSERE VUOTO');
-        } else {
-            console.log('🟡 CERCHIO DOVREBBE ESSERE PARZIALMENTE RIEMPITO AL ' + percentage + '%');
+        if (score === maxScore) {
+            console.log('🔴 ADA 8/8 - CERCHIO DOVREBBE ESSERE COMPLETAMENTE ROSSO');
         }
         
     } else {
@@ -2025,7 +2016,9 @@ function updateRiskTab() {
 }
 
 function updateNewScoreBanners() {
-    // SCORE2-Diabete
+    console.log('🔄 === AGGIORNAMENTO GRAFICI NUOVI SCORE ===');
+    
+    // SCORE2-Diabete (questo funziona già bene)
     if (dashboardData.score2Diabetes?.value > 0) {
         const circle = document.querySelector('#score2d-banner .progress-ring__circle');
         const text = document.getElementById('score2d-banner-text');
@@ -2035,15 +2028,19 @@ function updateNewScoreBanners() {
 
         if (circle && text) {
             const percentage = parseFloat(dashboardData.score2Diabetes.value);
-            const offset = 314.16 - (percentage / 100 * 314.16);
+            console.log('📊 SCORE2-Diabete:', percentage + '%');
+            
+            // Usa la stessa logica che funziona
+            const circumference = 314.16;
+            const offset = circumference - (percentage / 100 * circumference);
             circle.style.strokeDashoffset = offset;
             
-            // Cambia colore del cerchio in base al rischio
             const strokeColor = dashboardData.score2Diabetes.category === 'danger' ? '#EA4335' : 
                                dashboardData.score2Diabetes.category === 'warning' ? '#FBBC05' : '#34A853';
             circle.setAttribute('stroke', strokeColor);
             
             text.textContent = `${dashboardData.score2Diabetes.value}%`;
+            console.log('✅ SCORE2-Diabete aggiornato: ' + percentage + '% con offset ' + offset);
         }
 
         if (hba1cEl) hba1cEl.textContent = `${dashboardData.score2Diabetes.hba1c || '--'} %`;
@@ -2051,8 +2048,10 @@ function updateNewScoreBanners() {
         if (sbpEl) sbpEl.textContent = `${dashboardData.score2Diabetes.sistolica || '--'} mmHg`;
     }
 
-    // FIB4
+    // FIB4 - CORREZIONE GRAFICO
     if (dashboardData.fib4?.value > 0) {
+        console.log('📊 FIB4 - Valore:', dashboardData.fib4.value, 'Categoria:', dashboardData.fib4.category);
+        
         const scoreEl = document.getElementById('fib4-banner-score');
         const astEl = document.getElementById('fib4-banner-ast');
         const altEl = document.getElementById('fib4-banner-alt');
@@ -2061,15 +2060,20 @@ function updateNewScoreBanners() {
         if (scoreEl) {
             scoreEl.textContent = dashboardData.fib4.value;
             scoreEl.className = `score-indicator text-2xl score-${dashboardData.fib4.category === 'success' ? 'medium' : dashboardData.fib4.category === 'warning' ? 'low' : 'high'}`;
+            console.log('✅ FIB4 score indicator aggiornato:', dashboardData.fib4.value);
         }
 
         if (astEl) astEl.textContent = `${dashboardData.fib4.ast || '--'} U/L`;
         if (altEl) altEl.textContent = `${dashboardData.fib4.alt || '--'} U/L`;
         if (pltEl) pltEl.textContent = `${dashboardData.fib4.plt || '--'} x10⁹/L`;
+        
+        console.log('✅ FIB4 non ha grafico circolare - usa solo indicator');
     }
 
-    // FNI
+    // FNI - CORREZIONE GRAFICO  
     if (dashboardData.fni?.value > 0) {
+        console.log('📊 FNI - Valore:', dashboardData.fni.value, 'Categoria:', dashboardData.fni.category);
+        
         const scoreEl = document.getElementById('fni-banner-score');
         const albuminaEl = document.getElementById('fni-banner-albumina');
         const linfocitiEl = document.getElementById('fni-banner-linfociti');
@@ -2077,11 +2081,16 @@ function updateNewScoreBanners() {
         if (scoreEl) {
             scoreEl.textContent = dashboardData.fni.value;
             scoreEl.className = `score-indicator text-2xl score-${dashboardData.fni.category === 'success' ? 'medium' : dashboardData.fni.category === 'warning' ? 'low' : 'high'}`;
+            console.log('✅ FNI score indicator aggiornato:', dashboardData.fni.value);
         }
 
         if (albuminaEl) albuminaEl.textContent = `${dashboardData.fni.albumina || '--'} g/dL`;
         if (linfocitiEl) linfocitiEl.textContent = `${dashboardData.fni.linfociti || '--'} /mm³`;
+        
+        console.log('✅ FNI non ha grafico circolare - usa solo indicator');
     }
+    
+    console.log('✅ Tutti i nuovi score aggiornati');
 }
 
 function updateScreeningTab() {
