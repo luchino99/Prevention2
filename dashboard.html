@@ -1952,7 +1952,7 @@ function updateRiskTab() {
         const circumference = 314.16;
         const offset = circumference - (percentage / 100 * circumference);
         
-        diabetesCircle.style.stroke-dashoffset = offset;
+        diabetesCircle.style.strokeDashoffset = offset;
         
         console.log('✅ ADA - Circumference:', circumference, 'Offset:', offset);
         console.log('🔍 Per 100% (8/8) offset dovrebbe essere 0 - Applicato:', offset);
