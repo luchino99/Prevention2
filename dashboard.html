@@ -2036,15 +2036,21 @@ function updateFNIBanner() {
 
 // Inizializza i grafici
 function initializeCharts() {
-    // PREDIMED Chart
+    // Predimed Chart
     const predimedCtx = document.getElementById('predimed-chart').getContext('2d');
+
+    // Destroys previous instance if exists
+    if (predimedChart) {
+        predimedChart.destroy();
+    }
+
     predimedChart = new Chart(predimedCtx, {
         type: 'radar',
         data: {
             labels: ['Olio oliva', 'Verdura', 'Frutta', 'Cereali', 'Legumi', 'Pesce', 'Vino'],
             datasets: [{
                 label: 'Punteggio attuale',
-                data: [0, 0, 0, 0, 0, 0, 0], // Sarà aggiornato dopo
+                data: [0, 0, 0, 0, 0, 0, 0],
                 backgroundColor: 'rgba(66, 133, 244, 0.2)',
                 borderColor: '#4285F4',
                 borderWidth: 2,
@@ -2072,12 +2078,17 @@ function initializeCharts() {
 
     // Macronutrienti Chart
     const macroCtx = document.getElementById('macro-chart').getContext('2d');
+
+    if (macroChart) {
+        macroChart.destroy();
+    }
+
     macroChart = new Chart(macroCtx, {
         type: 'doughnut',
         data: {
             labels: ['Proteine', 'Carboidrati', 'Grassi'],
             datasets: [{
-                data: [25, 45, 30], // Sarà aggiornato dopo
+                data: [25, 45, 30],
                 backgroundColor: ['#34A853', '#4285F4', '#FBBC05'],
                 borderWidth: 0
             }]
@@ -2092,6 +2103,7 @@ function initializeCharts() {
         }
     });
 }
+
 
 // Setup delle tabs
 function setupTabs() {
