@@ -922,16 +922,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         const emailUtente = sessionData.session.user.email;
         
         // Carica dati dal database
-        await loadUserData(emailUtente);
-        
-        // Calcola tutti gli score
-        calculateAllScores();
-        
-        // Aggiorna la dashboard
-        updateDashboard();
-        
-        // Inizializza i grafici
-        initializeCharts();
+await loadUserData(emailUtente);
+calculateAllScores();
+updateDashboard();
+updateNewScoreBanners(); // ✅ AGGIUNGI QUESTA RIGA
+initializeCharts();
+
         
         // Setup delle tabs
         setupTabs();
