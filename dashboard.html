@@ -2018,7 +2018,9 @@ function updateRiskTab() {
 function updateNewScoreBanners() {
     console.log('🔄 === AGGIORNAMENTO GRAFICI NUOVI SCORE ===');
     
-    // SCORE2-Diabete (questo funziona già bene)
+    const circumference = 314.16;
+    
+    // SCORE2-Diabete - USA FORMULA CORRETTA
     if (dashboardData.score2Diabetes?.value > 0) {
         const circle = document.querySelector('#score2d-banner .progress-ring__circle');
         const text = document.getElementById('score2d-banner-text');
@@ -2030,9 +2032,10 @@ function updateNewScoreBanners() {
             const percentage = parseFloat(dashboardData.score2Diabetes.value);
             console.log('📊 SCORE2-Diabete:', percentage + '%');
             
-            // Usa la stessa logica che funziona
-            const circumference = 314.16;
-            const offset = circumference - (percentage / 100 * circumference);
+            // FORMULA CORRETTA: pct = ((100 - percentage) / 100) * circumference
+            const offset = ((100 - percentage) / 100) * circumference;
+            
+            circle.style.strokeDasharray = circumference;
             circle.style.strokeDashoffset = offset;
             
             const strokeColor = dashboardData.score2Diabetes.category === 'danger' ? '#EA4335' : 
@@ -2048,9 +2051,36 @@ function updateNewScoreBanners() {
         if (sbpEl) sbpEl.textContent = `${dashboardData.score2Diabetes.sistolica || '--'} mmHg`;
     }
 
-    // FIB4 - CORREZIONE GRAFICO
+    // FIB4 - CONTROLLA SE HA GRAFICO
     if (dashboardData.fib4?.value > 0) {
         console.log('📊 FIB4 - Valore:', dashboardData.fib4.value, 'Categoria:', dashboardData.fib4.category);
+        
+        // Controlla se c'è un grafico SVG per FIB4
+        const fib4Circle = document.querySelector('#fib4-banner .progress-ring__circle');
+        if (fib4Circle) {
+            // Se c'è un grafico, calcoliamo la percentuale per FIB4
+            // FIB4 valori: <1.45 = basso, 1.45-3.25 = intermedio, >3.25 = alto
+            const fib4Value = parseFloat(dashboardData.fib4.value);
+            let percentage = 0;
+            
+            if (fib4Value >= 3.25) {
+                percentage = 100; // Alto rischio = 100%
+            } else if (fib4Value >= 1.45) {
+                percentage = 60;  // Intermedio = 60%
+            } else {
+                percentage = 20;  // Basso = 20%
+            }
+            
+            const offset = ((100 - percentage) / 100) * circumference;
+            fib4Circle.style.strokeDasharray = circumference;
+            fib4Circle.style.strokeDashoffset = offset;
+            
+            const strokeColor = dashboardData.fib4.category === 'danger' ? '#EA4335' : 
+                               dashboardData.fib4.category === 'warning' ? '#FBBC05' : '#34A853';
+            fib4Circle.setAttribute('stroke', strokeColor);
+            
+            console.log('✅ FIB4 grafico aggiornato: ' + percentage + '% (valore ' + fib4Value + ')');
+        }
         
         const scoreEl = document.getElementById('fib4-banner-score');
         const astEl = document.getElementById('fib4-banner-ast');
@@ -2066,13 +2096,38 @@ function updateNewScoreBanners() {
         if (astEl) astEl.textContent = `${dashboardData.fib4.ast || '--'} U/L`;
         if (altEl) altEl.textContent = `${dashboardData.fib4.alt || '--'} U/L`;
         if (pltEl) pltEl.textContent = `${dashboardData.fib4.plt || '--'} x10⁹/L`;
-        
-        console.log('✅ FIB4 non ha grafico circolare - usa solo indicator');
     }
 
-    // FNI - CORREZIONE GRAFICO  
+    // FNI - CONTROLLA SE HA GRAFICO  
     if (dashboardData.fni?.value > 0) {
         console.log('📊 FNI - Valore:', dashboardData.fni.value, 'Categoria:', dashboardData.fni.category);
+        
+        // Controlla se c'è un grafico SVG per FNI
+        const fniCircle = document.querySelector('#fni-banner .progress-ring__circle');
+        if (fniCircle) {
+            // Se c'è un grafico, calcoliamo la percentuale per FNI
+            // FNI valori: <35 = malnutrizione severa, 35-45 = lieve, ≥45 = normale
+            const fniValue = parseFloat(dashboardData.fni.value);
+            let percentage = 0;
+            
+            if (fniValue >= 45) {
+                percentage = 100; // Normale = 100%
+            } else if (fniValue >= 35) {
+                percentage = 60;  // Malnutrizione lieve = 60%
+            } else {
+                percentage = 20;  // Malnutrizione severa = 20%
+            }
+            
+            const offset = ((100 - percentage) / 100) * circumference;
+            fniCircle.style.strokeDasharray = circumference;
+            fniCircle.style.strokeDashoffset = offset;
+            
+            const strokeColor = dashboardData.fni.category === 'success' ? '#34A853' : 
+                               dashboardData.fni.category === 'warning' ? '#FBBC05' : '#EA4335';
+            fniCircle.setAttribute('stroke', strokeColor);
+            
+            console.log('✅ FNI grafico aggiornato: ' + percentage + '% (valore ' + fniValue + ')');
+        }
         
         const scoreEl = document.getElementById('fni-banner-score');
         const albuminaEl = document.getElementById('fni-banner-albumina');
@@ -2085,6 +2140,11 @@ function updateNewScoreBanners() {
         }
 
         if (albuminaEl) albuminaEl.textContent = `${dashboardData.fni.albumina || '--'} g/dL`;
+        if (linfocitiEl) linfocitiEl.textContent = `${dashboardData.fni.linfociti || '--'} /mm³`;
+    }
+    
+    console.log('✅ Tutti i nuovi score aggiornati');
+}${dashboardData.fni.albumina || '--'} g/dL`;
         if (linfocitiEl) linfocitiEl.textContent = `${dashboardData.fni.linfociti || '--'} /mm³`;
         
         console.log('✅ FNI non ha grafico circolare - usa solo indicator');
