@@ -1937,9 +1937,30 @@ function updateRiskTab() {
         cvSmoking.textContent = userData.fumatore || 'No';
         console.log('📝 Fumo CV aggiornato:', userData.fumatore);
     }
-    
+    // Aggiorna grafico rischio diabete (ADA)
+const diabetesCircle = document.querySelector('#tab-rischi .progress-ring__circle.ring-ada');
+const diabetesText = document.getElementById('diabetes-risk-text');
 
-// codice eliminato
+if (diabetesCircle && diabetesText) {
+    const score = dashboardData.diabetesRisk.score;
+    const maxScore = dashboardData.diabetesRisk.maxScore;
+
+    const percentage = (score / maxScore) * 100;
+    const circumference = 314.16;
+    const offset = circumference - (percentage / 100 * circumference);
+
+    diabetesCircle.style.strokeDashoffset = offset;
+
+    const strokeColor = dashboardData.diabetesRisk.risk === 'Alto' ? '#EA4335' :
+                        dashboardData.diabetesRisk.risk === 'Moderato' ? '#FBBC05' : '#34A853';
+
+    diabetesCircle.setAttribute('stroke', strokeColor);
+    diabetesText.textContent = `${score}/${maxScore}`;
+
+    console.log('✅ ADA Risk grafico aggiornato:', { score, maxScore, percentage, offset });
+} else {
+    console.warn('⚠️ Elemento ADA Risk ring o testo non trovato');
+}
 
 
     
