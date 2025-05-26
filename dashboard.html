@@ -139,7 +139,7 @@
             transition: background-color var(--animation-speed), box-shadow var(--animation-speed);
         }
 
-        .card, .badge, .score-indicator, .tab-button, .recommendation-card,
+        .card, .badge, .score-indicator, .score-indicator-2 .tab-button, .recommendation-card,
         ., .bg-gray-50, .bg-blue-50, .bg-gray-200, .bg-blue-100,
         .border-l-4, svg circle, svg text, .progress-ring__circle {
             transition: all var(--animation-speed);
@@ -170,6 +170,19 @@
             font-weight: bold;
             font-size: 20px;
         }
+
+.score-indicator-2 {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 24px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
 
         .score-low {
             background-color: var(--score-low-bg);
@@ -500,7 +513,7 @@
                     <div id="fib4-banner" class="p-4 bg-gray-50 rounded-lg">
                         <h3 class="font-semibold mb-3">FIB4</h3>
                         <div class="flex items-center justify-center mb-4">
-                            <div id="fib4-banner-score" class="score-indicator score-medium text-2xl">--</div>
+                            <div id="fib4-banner-score" class="score-indicator-2 score-medium text-2xl">--</div>
                         </div>
                         <div class="space-y-2">
                             <div class="flex justify-between text-sm">
@@ -522,7 +535,7 @@
                     <div id="fni-banner" class="p-4 bg-gray-50 rounded-lg">
                         <h3 class="font-semibold mb-3">FNI - Nutrizione</h3>
                         <div class="flex items-center justify-center mb-4">
-                            <div id="fni-banner-score" class="score-indicator score-medium text-2xl">--</div>
+                            <div id="fni-banner-score" class="score-indicator-2 score-medium text-2xl">--</div>
                         </div>
                         <div class="space-y-2">
                             <div class="flex justify-between text-sm">
@@ -2043,7 +2056,7 @@ function updateNewScoreBanners() {
 
         if (scoreEl) {
             scoreEl.textContent = dashboardData.fib4.value;
-            scoreEl.className = `score-indicator text-2xl score-${dashboardData.fib4.category === 'success' ? 'medium' : dashboardData.fib4.category === 'warning' ? 'low' : 'high'}`;
+            scoreEl.className = `score-indicator-2 text-2xl score-${dashboardData.fib4.category === 'success' ? 'medium' : dashboardData.fib4.category === 'warning' ? 'low' : 'high'}`;
             console.log('✅ FIB4 score indicator aggiornato:', dashboardData.fib4.value);
         }
 
@@ -2064,7 +2077,7 @@ function updateNewScoreBanners() {
 
         if (scoreEl) {
             scoreEl.textContent = dashboardData.fni.value;
-            scoreEl.className = `score-indicator text-2xl score-${dashboardData.fni.category === 'success' ? 'medium' : dashboardData.fni.category === 'warning' ? 'low' : 'high'}`;
+            scoreEl.className = `score-indicator-2 text-2xl score-${dashboardData.fni.category === 'success' ? 'medium' : dashboardData.fni.category === 'warning' ? 'low' : 'high'}`;
             console.log('✅ FNI score indicator aggiornato:', dashboardData.fni.value);
         }
 
