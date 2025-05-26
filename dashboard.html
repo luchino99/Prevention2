@@ -1880,7 +1880,7 @@ function updateRiskTab() {
     console.log('📊 Diabetes Risk per grafico:', dashboardData.diabetesRisk);
     
     // Aggiorna grafico rischio cardiovascolare - USA FORMULA DI SCORE2-DIABETE
-    const cvRisk = document.querySelector('#tab-rischi .progress-ring__circle');
+    const cvRisk = document.querySelector('#tab-rischi .progress-ring__circle')[1];
     if (cvRisk) {
         const percentage = parseFloat(dashboardData.score2.value);
         console.log('🎯 === CORREZIONE GRAFICO CV ===');
@@ -1939,7 +1939,7 @@ function updateRiskTab() {
     }
     
     // Aggiorna rischio diabete - USA FORMULA DI SCORE2-DIABETE
-    const diabetesCircle = document.querySelectorAll('#tab-rischi .progress-ring__circle')[1];
+    const diabetesCircle = document.querySelectorAll('#tab-rischi .progress-ring__circle');
     if (diabetesCircle) {
         const score = dashboardData.diabetesRisk.score;
         const maxScore = dashboardData.diabetesRisk.maxScore;
