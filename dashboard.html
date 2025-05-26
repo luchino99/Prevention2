@@ -1185,7 +1185,7 @@ function checkMetabolicSyndrome() {
     };
 }
 
-// 5. Calcolo rischio diabete (ADA Risk Score) - Versione migliorata con debug
+// 5. Calcolo rischio diabete (ADA Risk Score) - Versione con debug ultra-dettagliato
 function calculateDiabetesRisk() {
     console.log('🔄 Inizio calcolo ADA Diabetes Risk...');
     
@@ -1195,76 +1195,98 @@ function calculateDiabetesRisk() {
     const eta = parseInt(userData.eta);
     const bmi = parseFloat(dashboardData.bmi.value);
     
-    console.log('📋 Valori ADA Risk estratti:', {
-        eta,
-        bmi,
-        familiari_diabete: userData.familiari_diabete,
-        pressione_alta: userData.pressione_alta,
-        attivita_fisica: userData.attivita_fisica,
-        durata_attivita: userData.durata_attivita,
-        pressione_sistolica: userData.pressione_sistolica
+    console.log('📋 Valori base ADA Risk:', {
+        eta: eta,
+        bmi: bmi,
+        peso: userData.peso,
+        altezza: userData.altezza
     });
     
-    // Fattore età
+    // 1. FATTORE ETÀ
+    console.log('🎂 === CONTROLLO ETÀ ===');
+    console.log('Età utente:', eta);
+    
     if (eta >= 40 && eta < 50) {
         score += 1;
         factors.push('Età 40-49');
+        console.log('✅ Età 40-49: +1 punto');
     } else if (eta >= 50 && eta < 60) {
         score += 2;
         factors.push('Età 50-59');
+        console.log('✅ Età 50-59: +2 punti');
     } else if (eta >= 60) {
         score += 3;
         factors.push('Età ≥60');
+        console.log('✅ Età ≥60: +3 punti');
+    } else {
+        console.log('❌ Età <40: 0 punti');
     }
+    console.log('Punteggio dopo età:', score);
     
-    // Fattore BMI
+    // 2. FATTORE BMI
+    console.log('⚖️ === CONTROLLO BMI ===');
+    console.log('BMI calcolato:', bmi);
+    
     if (!isNaN(bmi)) {
         if (bmi >= 25 && bmi < 30) {
             score += 1;
             factors.push('Sovrappeso');
+            console.log('✅ BMI 25-30 (Sovrappeso): +1 punto');
         } else if (bmi >= 30 && bmi < 40) {
             score += 2;
             factors.push('Obesità');
+            console.log('✅ BMI 30-40 (Obesità): +2 punti');
         } else if (bmi >= 40) {
             score += 3;
             factors.push('Obesità grave');
+            console.log('✅ BMI ≥40 (Obesità grave): +3 punti');
+        } else {
+            console.log('❌ BMI normale (<25): 0 punti');
         }
+    } else {
+        console.log('⚠️ BMI non calcolabile');
     }
+    console.log('Punteggio dopo BMI:', score);
     
-    // Familiarità per diabete - Controllo più robusto
+    // 3. FAMILIARITÀ DIABETE
+    console.log('👨‍👩‍👧‍👦 === CONTROLLO FAMILIARITÀ ===');
     const famRaw = userData.familiari_diabete;
-    console.log('🔍 Familiarità diabete (raw):', famRaw);
+    console.log('Familiarità diabete (raw):', famRaw, 'Tipo:', typeof famRaw);
     
     if (famRaw) {
         const rispostaFam = String(famRaw).toLowerCase()
             .normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
         
-        console.log('🔍 Familiarità diabete (processed):', rispostaFam);
+        console.log('Familiarità diabete (processed):', rispostaFam);
         
-        if (rispostaFam && (
+        const hasFamilyHistory = rispostaFam && (
             rispostaFam.includes("si") ||
             rispostaFam.includes("yes") ||
             rispostaFam === "true" ||
             rispostaFam === "ok" ||
             rispostaFam === "y" ||
             rispostaFam === "1"
-        )) {
+        );
+        
+        if (hasFamilyHistory) {
             score += 1;
             factors.push("Familiarità diabete");
-            console.log('✅ Familiarità diabete: SÌ');
+            console.log('✅ Familiarità diabete: +1 punto');
         } else {
-            console.log('❌ Familiarità diabete: NO');
+            console.log('❌ Nessuna familiarità diabete: 0 punti');
         }
+    } else {
+        console.log('❌ Campo familiarità vuoto: 0 punti');
     }
+    console.log('Punteggio dopo familiarità:', score);
 
-    // Ipertensione - Controllo multiplo
+    // 4. IPERTENSIONE
+    console.log('🩺 === CONTROLLO IPERTENSIONE ===');
     const pressioneAltaRaw = userData.pressione_alta;
     const sistolica = parseFloat(userData.pressione_sistolica);
     
-    console.log('🔍 Pressione alta check:', { 
-        pressione_alta_campo: pressioneAltaRaw, 
-        pressione_sistolica: sistolica 
-    });
+    console.log('Pressione alta (campo):', pressioneAltaRaw, 'Tipo:', typeof pressioneAltaRaw);
+    console.log('Pressione sistolica:', sistolica, 'Tipo:', typeof sistolica);
     
     let hasHypertension = false;
     
@@ -1272,56 +1294,73 @@ function calculateDiabetesRisk() {
     if (pressioneAltaRaw) {
         const rispostaIpertensione = String(pressioneAltaRaw).toLowerCase()
             .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        console.log('Pressione alta (processed):', rispostaIpertensione);
+        
         if (['si', 'sì', 'yes', 'true', 'ok', 'y', '1'].includes(rispostaIpertensione)) {
             hasHypertension = true;
+            console.log('✅ Ipertensione da campo "pressione_alta": SÌ');
         }
     }
     
     // Controllo valore numerico pressione
     if (!hasHypertension && !isNaN(sistolica) && sistolica >= 140) {
         hasHypertension = true;
+        console.log('✅ Ipertensione da valore sistolica ≥140: SÌ');
     }
     
     if (hasHypertension) {
         score += 1;
         factors.push('Ipertensione');
-        console.log('✅ Ipertensione: SÌ');
+        console.log('✅ Ipertensione: +1 punto');
     } else {
-        console.log('❌ Ipertensione: NO');
+        console.log('❌ Nessuna ipertensione: 0 punti');
     }
+    console.log('Punteggio dopo ipertensione:', score);
 
-    // Attività fisica - Controllo migliorato
+    // 5. ATTIVITÀ FISICA
+    console.log('🏃‍♂️ === CONTROLLO ATTIVITÀ FISICA ===');
     const attivitaRaw = userData.attivita_fisica;
     const durataRaw = userData.durata_attivita;
     
-    console.log('🔍 Attività fisica check:', { 
-        attivita_fisica: attivitaRaw, 
-        durata_attivita: durataRaw 
-    });
+    console.log('Attività fisica (campo):', attivitaRaw, 'Tipo:', typeof attivitaRaw);
+    console.log('Durata attività:', durataRaw, 'Tipo:', typeof durataRaw);
     
     let insufficientActivity = false;
     
     if (attivitaRaw && String(attivitaRaw).toLowerCase().includes('no')) {
         insufficientActivity = true;
-        console.log('✅ Sedentarietà (no attività)');
+        console.log('✅ Sedentario (attività_fisica = no)');
     } else {
         // Controlla durata se fa attività
         const durata = parseInt(durataRaw || '0');
+        console.log('Durata attività fisica:', durata, 'minuti/settimana');
+        
         if (durata < 150) {
             insufficientActivity = true;
-            console.log('✅ Attività fisica insufficiente:', durata, 'min/settimana');
+            console.log('✅ Attività fisica insufficiente (<150 min/settimana)');
         } else {
-            console.log('❌ Attività fisica adeguata:', durata, 'min/settimana');
+            console.log('❌ Attività fisica adeguata (≥150 min/settimana)');
         }
     }
     
     if (insufficientActivity) {
         score += 1;
-        factors.push(attivitaRaw && String(attivitaRaw).toLowerCase().includes('no') ? 
-                     'Sedentarietà' : 'Attività fisica insufficiente');
+        const reason = attivitaRaw && String(attivitaRaw).toLowerCase().includes('no') ? 
+                      'Sedentarietà' : 'Attività fisica insufficiente';
+        factors.push(reason);
+        console.log('✅ Attività fisica insufficiente: +1 punto');
+    } else {
+        console.log('❌ Attività fisica adeguata: 0 punti');
     }
+    console.log('Punteggio dopo attività fisica:', score);
     
+    // RISULTATO FINALE
     const riskLevel = score >= 5 ? 'Alto' : score >= 3 ? 'Moderato' : 'Basso';
+    
+    console.log('🎯 === RISULTATO FINALE ADA ===');
+    console.log('Punteggio totale:', score, '/ 8');
+    console.log('Fattori di rischio:', factors);
+    console.log('Livello di rischio:', riskLevel);
     
     dashboardData.diabetesRisk = {
         score: score,
