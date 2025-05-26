@@ -1611,14 +1611,25 @@ function updateHealthSummary() {
         fniStatus.textContent = dashboardData.fni.status;
     }
     
-    // SCORE2-Diabete
-    const score2dScore = document.getElementById('score2d-score');
-    const score2dBadge = document.getElementById('score2d-badge');
-    const score2dStatus = document.getElementById('score2d-status');
-    
-    if (dashboardData.score2Diabetes.value > 0) {
-        score2dScore.textContent = dashboardData.score2Diabetes.value + '%';
-        score2dScore.className = `score-indicator score-${dashboardData.score2Diabetes.category === 'success' ? 'medium' : dashboardData.score2Diabetes.category === 'warning// Variabili globali per i dati utente
+const score2dScore = document.getElementById('score2d-score');
+const score2dBadge = document.getElementById('score2d-badge');
+const score2dStatus = document.getElementById('score2d-status');
+
+if (dashboardData.score2Diabetes.value > 0) {
+  score2dScore.textContent = dashboardData.score2Diabetes.value + '%';
+  score2dScore.className = `score-indicator score-${
+    dashboardData.score2Diabetes.category === 'success'
+      ? 'medium'
+      : dashboardData.score2Diabetes.category === 'warning'
+      ? 'low'
+      : 'high'
+  }`;
+  score2dBadge.textContent = dashboardData.score2Diabetes.risk;
+  score2dBadge.className = `badge badge-${dashboardData.score2Diabetes.category}`;
+  score2dStatus.textContent = dashboardData.score2Diabetes.risk;
+}
+
+
 let userData = {};
 let dashboardData = {
     bmi: { value: 0, category: '', status: '' },
