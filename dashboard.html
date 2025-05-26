@@ -390,39 +390,39 @@
                     <div class="flex-1 bg-blue-50 rounded-lg p-3">
                         <div class="flex justify-between items-center mb-2">
                             <h3 class="text-sm font-medium text-gray-600">BMI</h3>
-                            <span class="badge badge-success">Normale</span>
+                            <span class="badge badge-success" id="bmi-badge">Caricamento</span>
                         </div>
                         <div class="flex items-center space-x-2">
-                            <div class="score-indicator score-medium">23.5</div>
+                            <div class="score-indicator score-medium" id="bmi-indicator">--</div>
                             <div>
                                 <div class="text-sm text-gray-500">Categoria</div>
-                                <div class="font-medium">Normopeso</div>
+                                <div class="font-medium" id="bmi-category">Caricamento...</div>
                             </div>
                         </div>
                     </div>
                     <div class="flex-1 bg-blue-50 rounded-lg p-3">
                         <div class="flex justify-between items-center mb-2">
                             <h3 class="text-sm font-medium text-gray-600">SCORE2</h3>
-                            <span class="badge badge-warning">Moderato</span>
+                            <span class="badge badge-warning" id="score2-badge">Caricamento</span>
                         </div>
                         <div class="flex items-center space-x-2">
-                            <div class="score-indicator score-low">2.5%</div>
+                            <div class="score-indicator score-low" id="score2-indicator">--%</div>
                             <div>
                                 <div class="text-sm text-gray-500">Rischio CV</div>
-                                <div class="font-medium">Moderato</div>
+                                <div class="font-medium" id="score2-category">Caricamento...</div>
                             </div>
                         </div>
                     </div>
                     <div class="flex-1 bg-blue-50 rounded-lg p-3">
                         <div class="flex justify-between items-center mb-2">
                             <h3 class="text-sm font-medium text-gray-600">PREDIMED</h3>
-                            <span class="badge badge-warning">Migliorabile</span>
+                            <span class="badge badge-warning" id="predimed-badge">Caricamento</span>
                         </div>
                         <div class="flex items-center space-x-2">
-                            <div class="score-indicator score-low">8</div>
+                            <div class="score-indicator score-low" id="predimed-indicator">--</div>
                             <div>
                                 <div class="text-sm text-gray-500">Dieta</div>
-                                <div class="font-medium">Media aderenza</div>
+                                <div class="font-medium" id="predimed-category">Caricamento...</div>
                             </div>
                         </div>
                     </div>
@@ -1725,8 +1725,11 @@ function updateHealthSummary() {
         predimed: dashboardData.predimed
     });
     
-    // BMI
-    const bmiIndicator = document.querySelector('.score-indicator.score-medium');
+    // BMI - Usa ID specifici
+    const bmiIndicator = document.getElementById('bmi-indicator');
+    const bmiBadge = document.getElementById('bmi-badge');
+    const bmiCategory = document.getElementById('bmi-category');
+    
     if (bmiIndicator) {
         bmiIndicator.textContent = dashboardData.bmi.value;
         bmiIndicator.className = `score-indicator score-${dashboardData.bmi.status === 'success' ? 'medium' : dashboardData.bmi.status === 'warning' ? 'low' : 'high'}`;
@@ -1735,81 +1738,71 @@ function updateHealthSummary() {
         console.warn('⚠️ BMI indicator non trovato');
     }
     
-    const bmiCard = document.querySelector('.bg-blue-50:first-child');
-    if (bmiCard) {
-        const badge = bmiCard.querySelector('.badge');
-        const fontMedium = bmiCard.querySelector('.font-medium');
-        
-        if (badge) {
-            badge.textContent = dashboardData.bmi.category;
-            badge.className = `badge badge-${dashboardData.bmi.status}`;
-            console.log('✅ BMI badge aggiornato:', dashboardData.bmi.category);
-        }
-        
-        if (fontMedium) {
-            fontMedium.textContent = dashboardData.bmi.category;
-            console.log('✅ BMI categoria aggiornata:', dashboardData.bmi.category);
-        }
-    } else {
-        console.warn('⚠️ BMI card non trovata');
+    if (bmiBadge) {
+        bmiBadge.textContent = dashboardData.bmi.category;
+        bmiBadge.className = `badge badge-${dashboardData.bmi.status}`;
+        console.log('✅ BMI badge aggiornato:', dashboardData.bmi.category);
     }
     
-    // SCORE2
-    const score2Card = document.querySelectorAll('.bg-blue-50')[1];
-    if (score2Card) {
-        const indicator = score2Card.querySelector('.score-indicator');
-        const badge = score2Card.querySelector('.badge');
-        const fontMedium = score2Card.querySelector('.font-medium');
-        
-        if (indicator) {
-            indicator.textContent = dashboardData.score2.value + '%';
-            console.log('✅ SCORE2 indicator aggiornato:', dashboardData.score2.value + '%');
-        } else {
-            console.warn('⚠️ SCORE2 indicator non trovato');
-        }
-        
-        if (badge) {
-            badge.textContent = dashboardData.score2.risk;
-            badge.className = `badge badge-${dashboardData.score2.category === 'success' ? 'success' : dashboardData.score2.category === 'warning' ? 'warning' : 'danger'}`;
-            console.log('✅ SCORE2 badge aggiornato:', dashboardData.score2.risk);
-        } else {
-            console.warn('⚠️ SCORE2 badge non trovato');
-        }
-        
-        if (fontMedium) {
-            fontMedium.textContent = dashboardData.score2.risk;
-            console.log('✅ SCORE2 categoria aggiornata:', dashboardData.score2.risk);
-        } else {
-            console.warn('⚠️ SCORE2 font-medium non trovato');
-        }
-    } else {
-        console.warn('⚠️ SCORE2 card non trovata');
+    if (bmiCategory) {
+        bmiCategory.textContent = dashboardData.bmi.category;
+        console.log('✅ BMI categoria aggiornata:', dashboardData.bmi.category);
     }
     
-    // PREDIMED
-    const predimedCard = document.querySelectorAll('.bg-blue-50')[2];
-    if (predimedCard) {
-        const indicator = predimedCard.querySelector('.score-indicator');
-        const badge = predimedCard.querySelector('.badge');
-        const fontMedium = predimedCard.querySelector('.font-medium');
-        
-        if (indicator) {
-            indicator.textContent = dashboardData.predimed.value;
-            console.log('✅ PREDIMED indicator aggiornato:', dashboardData.predimed.value);
-        }
-        
-        if (badge) {
-            badge.textContent = dashboardData.predimed.status === 'success' ? 'Buona' : dashboardData.predimed.status === 'warning' ? 'Migliorabile' : 'Scarsa';
-            badge.className = `badge badge-${dashboardData.predimed.status}`;
-            console.log('✅ PREDIMED badge aggiornato');
-        }
-        
-        if (fontMedium) {
-            fontMedium.textContent = dashboardData.predimed.adherence;
-            console.log('✅ PREDIMED categoria aggiornata:', dashboardData.predimed.adherence);
-        }
+    // SCORE2 - Usa ID specifici
+    const score2Indicator = document.getElementById('score2-indicator');
+    const score2Badge = document.getElementById('score2-badge');
+    const score2Category = document.getElementById('score2-category');
+    
+    if (score2Indicator) {
+        score2Indicator.textContent = dashboardData.score2.value + '%';
+        score2Indicator.className = `score-indicator score-${dashboardData.score2.category === 'success' ? 'medium' : dashboardData.score2.category === 'warning' ? 'low' : 'high'}`;
+        console.log('✅ SCORE2 indicator aggiornato:', dashboardData.score2.value + '%');
     } else {
-        console.warn('⚠️ PREDIMED card non trovata');
+        console.warn('⚠️ SCORE2 indicator non trovato');
+    }
+    
+    if (score2Badge) {
+        score2Badge.textContent = dashboardData.score2.risk;
+        score2Badge.className = `badge badge-${dashboardData.score2.category === 'success' ? 'success' : dashboardData.score2.category === 'warning' ? 'warning' : 'danger'}`;
+        console.log('✅ SCORE2 badge aggiornato:', dashboardData.score2.risk);
+    } else {
+        console.warn('⚠️ SCORE2 badge non trovato');
+    }
+    
+    if (score2Category) {
+        score2Category.textContent = dashboardData.score2.risk;
+        console.log('✅ SCORE2 categoria aggiornata:', dashboardData.score2.risk);
+    } else {
+        console.warn('⚠️ SCORE2 categoria non trovata');
+    }
+    
+    // PREDIMED - Usa ID specifici
+    const predimedIndicator = document.getElementById('predimed-indicator');
+    const predimedBadge = document.getElementById('predimed-badge');  
+    const predimedCategory = document.getElementById('predimed-category');
+    
+    if (predimedIndicator) {
+        predimedIndicator.textContent = dashboardData.predimed.value;
+        predimedIndicator.className = `score-indicator score-${dashboardData.predimed.status === 'success' ? 'medium' : dashboardData.predimed.status === 'warning' ? 'low' : 'high'}`;
+        console.log('✅ PREDIMED indicator aggiornato:', dashboardData.predimed.value);
+    } else {
+        console.warn('⚠️ PREDIMED indicator non trovato');
+    }
+    
+    if (predimedBadge) {
+        predimedBadge.textContent = dashboardData.predimed.status === 'success' ? 'Buona' : dashboardData.predimed.status === 'warning' ? 'Migliorabile' : 'Scarsa';
+        predimedBadge.className = `badge badge-${dashboardData.predimed.status}`;
+        console.log('✅ PREDIMED badge aggiornato');
+    } else {
+        console.warn('⚠️ PREDIMED badge non trovato');
+    }
+    
+    if (predimedCategory) {
+        predimedCategory.textContent = dashboardData.predimed.adherence;
+        console.log('✅ PREDIMED categoria aggiornata:', dashboardData.predimed.adherence);
+    } else {
+        console.warn('⚠️ PREDIMED categoria non trovata');
     }
     
     console.log('✅ Riepilogo salute aggiornato');
