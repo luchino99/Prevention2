@@ -1952,7 +1952,6 @@ function updateRiskTab() {
         const circumference = 314.16;
         const offset = circumference - (percentage / 100 * circumference);
         
-        diabetesCircle.style.strokeDasharray = circumference;
         diabetesCircle.style.strokeDashoffset = offset;
         
         console.log('✅ ADA - Circumference:', circumference, 'Offset:', offset);
@@ -1963,6 +1962,7 @@ function updateRiskTab() {
                            dashboardData.diabetesRisk.risk === 'Moderato' ? '#FBBC05' : '#34A853';
         diabetesCircle.setAttribute('stroke', strokeColor);
         console.log('🎨 Colore ADA:', strokeColor, 'per rischio:', dashboardData.diabetesRisk.risk);
+        
         
         if (score === maxScore) {
             console.log('🔴 ADA 8/8 - CERCHIO DOVREBBE ESSERE COMPLETAMENTE ROSSO');
