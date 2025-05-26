@@ -534,9 +534,9 @@
                     <div class="p-4 bg-gray-50 rounded-lg">
                         <h3 class="font-semibold mb-3">Rischio Cardiovascolare</h3>
                         <div class="flex items-center justify-center mb-4">
-                            <svg width="120" height="120" viewBox="0 0 120 120">
+                            <svg width="120" height="120" viewBox="0 0 120 120" class="progress-ring">
                                 <circle cx="60" cy="60" r="50" fill="none" stroke="#e6e6e6" stroke-width="10"></circle>
-                                <circle class="progress-ring__circle" cx="60" cy="60" r="50" fill="none" stroke="#4285F4" stroke-width="10" stroke-dashoffset="220" stroke-linecap="round"></circle>
+                                <circle class="progress-ring__circle" cx="60" cy="60" r="50" fill="none" stroke="#4285F4" stroke-width="10" stroke-dasharray="314.16" stroke-dashoffset="220" stroke-linecap="round"></circle>
                                 <text x="60" y="65" text-anchor="middle" font-size="18" font-weight="bold" fill="var(--chart-text-color)" id="cv-risk-text">--%</text>
                             </svg>
                         </div>
@@ -562,9 +562,9 @@
                     <div class="p-4 bg-gray-50 rounded-lg">
                         <h3 class="font-semibold mb-3">Rischio Diabete (ADA)</h3>
                         <div class="flex items-center justify-center mb-4">
-                            <svg width="120" height="120" viewBox="0 0 120 120">
+                            <svg width="120" height="120" viewBox="0 0 120 120" class="progress-ring">
                                 <circle cx="60" cy="60" r="50" fill="none" stroke="#e6e6e6" stroke-width="10"></circle>
-                                <circle class="progress-ring__circle" cx="60" cy="60" r="50" fill="none" stroke="#FBBC05" stroke-width="10" stroke-dashoffset="157" stroke-linecap="round"></circle>
+                                <circle class="progress-ring__circle" cx="60" cy="60" r="50" fill="none" stroke="#FBBC05" stroke-width="10" stroke-dasharray="314.16" stroke-dashoffset="157" stroke-linecap="round"></circle>
                                 <text x="60" y="65" text-anchor="middle" font-size="18" font-weight="bold" fill="var(--chart-text-color)" id="diabetes-risk-text">--/--</text>
                             </svg>
                         </div>
@@ -1931,28 +1931,57 @@ function updateRiskTab() {
         console.log('📝 Fumo CV aggiornato:', userData.fumatore);
     }
     
-    // Aggiorna rischio diabete - CORREZIONE GRAFICO CIRCOLARE
+    // Aggiorna rischio diabete - DEBUG COMPLETO SVG
     const diabetesCircle = document.querySelectorAll('#tab-rischi .progress-ring__circle')[1];
     if (diabetesCircle) {
         const score = dashboardData.diabetesRisk.score;
         const maxScore = dashboardData.diabetesRisk.maxScore;
         const percentage = (score / maxScore) * 100;
-        console.log('🎯 Aggiornamento grafico Diabetes con:', { score, maxScore, percentage });
         
-        // CORREZIONE: Formula corretta per il grafico circolare
-        const circumference = 314.16; // 2 * π * 50 (raggio 50)
-        // Per avere il cerchio pieno al 100%, l'offset deve essere 0
-        // Per avere il cerchio vuoto al 0%, l'offset deve essere 314.16
-        const offset = circumference * (1 - percentage / 100);
+        console.log('🎯 === DEBUG GRAFICO DIABETES ===');
+        console.log('Score:', score, 'MaxScore:', maxScore, 'Percentage:', percentage + '%');
         
-        diabetesCircle.style.strokeDashoffset = offset;
-        console.log('📊 Grafico Diabetes - Circumference:', circumference, 'Offset:', offset, 'Percentage:', percentage + '%');
+        // Leggi attributi SVG esistenti
+        const radius = diabetesCircle.getAttribute('r') || 50;
+        const currentDashArray = diabetesCircle.style.strokeDasharray || diabetesCircle.getAttribute('stroke-dasharray');
+        const currentDashOffset = diabetesCircle.style.strokeDashoffset;
         
-        // Cambia anche il colore in base al rischio
+        console.log('📊 Attributi SVG attuali:');
+        console.log('- Radius:', radius);
+        console.log('- Current dasharray:', currentDashArray);
+        console.log('- Current dashoffset:', currentDashOffset);
+        
+        // Calcola la circonferenza reale
+        const realCircumference = 2 * Math.PI * radius;
+        console.log('- Circonferenza reale:', realCircumference);
+        
+        // Diversi approcci di calcolo
+        console.log('🧮 Test diverse formule:');
+        
+        // Metodo 1: Offset normale
+        const offset1 = realCircumference * (1 - percentage / 100);
+        console.log('Metodo 1 (1-%):', offset1);
+        
+        // Metodo 2: Offset inverso 
+        const offset2 = realCircumference * (percentage / 100);
+        console.log('Metodo 2 (%):', offset2);
+        
+        // Metodo 3: Sottrazione diretta
+        const offset3 = realCircumference - (percentage / 100 * realCircumference);
+        console.log('Metodo 3 (sottrazione):', offset3);
+        
+        // Prova il metodo 2 (offset inverso)
+        diabetesCircle.style.strokeDasharray = realCircumference;
+        diabetesCircle.style.strokeDashoffset = offset2;
+        
+        console.log('✅ Applicato: dasharray=' + realCircumference + ', dashoffset=' + offset2);
+        
+        // Cambia colore
         const strokeColor = dashboardData.diabetesRisk.risk === 'Alto' ? '#EA4335' : 
                            dashboardData.diabetesRisk.risk === 'Moderato' ? '#FBBC05' : '#34A853';
         diabetesCircle.setAttribute('stroke', strokeColor);
-        console.log('🎨 Colore grafico Diabetes:', strokeColor, 'per rischio:', dashboardData.diabetesRisk.risk);
+        console.log('🎨 Colore applicato:', strokeColor);
+        
     } else {
         console.warn('⚠️ Elemento grafico Diabetes non trovato');
     }
