@@ -1,4 +1,4 @@
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -667,6 +667,30 @@
 
                 // Display user data
                 displayUserProfile(data);
+              // Gestione upload immagine
+const uploadInput = document.getElementById("upload-immagine");
+uploadInput.addEventListener("change", async function () {
+    const file = this.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+        const base64String = reader.result;
+
+        // Aggiorna preview
+        const avatarDiv = document.getElementById("avatar-preview");
+        avatarDiv.innerHTML = `<img src="${base64String}" alt="Avatar" class="w-full h-full object-cover rounded-full" />
+            <label class="avatar-upload" for="upload-immagine">
+                <i class="fas fa-camera"></i>
+            </label>
+            <input type="file" id="upload-immagine" accept="image/*" style="display: none;" />`;
+
+        // Memorizza l’immagine temporaneamente per il salvataggio
+        window.__immagine_base64 = base64String;
+    };
+    reader.readAsDataURL(file);
+});
+
 
             } catch (error) {
                 document.getElementById("user-data").innerHTML =
@@ -683,14 +707,19 @@
                 <!-- Avatar e informazioni principali -->
                 <div class="form-box mb-6">
                     <div class="avatar-section">
-                        <div class="avatar">
-                            <span class="avatar-initials">U</span>
-                            <div class="avatar-upload">
-                                <i class="fas fa-camera"></i>
-                            </div>
-                        </div>
-                        <h2 class="text-xl font-semibold">${userData.email || ''}</h2>
-                        <p class="text-sm text-gray-500">ID: ${userData.id || ''}</p>
+<div class="avatar" id="avatar-preview">
+    ${
+        userData.immagine
+            ? `<img src="${userData.immagine}" alt="Avatar" class="w-full h-full object-cover rounded-full" />`
+            : `<span class="avatar-initials">${(userData.nome?.charAt(0) || '') + (userData.cognome?.charAt(0) || '')}</span>`
+    }
+    <label class="avatar-upload" for="upload-immagine">
+        <i class="fas fa-camera"></i>
+    </label>
+    <input type="file" id="upload-immagine" accept="image/*" style="display: none;" />
+</div>
+<h2 class="text-xl font-semibold">${userData.nome || ''} ${userData.cognome || ''}</h2>
+<p class="text-sm text-gray-500">ID: ${userData.id || ''}</p>
                     </div>
 
                     <h3 class="text-lg font-semibold mb-4">Informazioni personali</h3>
@@ -1055,6 +1084,9 @@ document.getElementById("btn-salva-profilo").addEventListener("click", async () 
   // 🔎 Raccoglie TUTTI i valori dal DOM inclusi i NUOVI CAMPI
   const updatedData = {
     email,
+    nome,
+    cognome,
+    immagine: window.__immagine_base64 || userData.immagine || null,
     // Dati anagrafici base
     eta: document.getElementById("profilo-eta")?.value,
     sesso: document.getElementById("profilo-sesso")?.value,
