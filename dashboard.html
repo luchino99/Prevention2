@@ -140,7 +140,7 @@
         }
 
         .card, .badge, .score-indicator, .tab-button, .recommendation-card,
-        ., .bg-gray-50, .bg-blue-50, .bg-gray-200, .bg-blue-100,
+        .bg-gray-50, .bg-blue-50, .bg-gray-200, .bg-blue-100,
         .border-l-4, svg circle, svg text, .progress-ring__circle {
             transition: all var(--animation-speed);
         }
@@ -266,7 +266,7 @@
         }
 
         /* Stili specifici per elementi vari */
-        . {
+        .bg-white {
             background-color: var(--card-bg) !important;
         }
 
@@ -389,7 +389,7 @@
     <main class="dashboard-main container mx-auto px-4 pb-8">
         <!-- Panoramica principale -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div class="card  p-4 col-span-2">
+            <div class="card bg-white p-4 col-span-2">
                 <h2 class="text-lg font-bold mb-3">Riepilogo Salute</h2>
                 <div class="flex flex-wrap gap-4">
                     <div class="flex-1 bg-blue-50 rounded-lg p-3">
@@ -434,7 +434,7 @@
                 </div>
             </div>
 
-            <div class="card  p-4">
+            <div class="card bg-white p-4">
                 <h2 class="text-lg font-bold mb-3">Profilo Metabolico</h2>
                 <div class="space-y-3">
                     <div class="flex justify-between items-center">
@@ -457,7 +457,7 @@
         </div>
 
         <!-- Tabs per il contenuto dettagliato -->
-        <div class="card  p-4 mb-6">
+        <div class="card bg-white p-4 mb-6">
             <div class="flex space-x-2 mb-4 overflow-x-auto pb-2">
                 <button class="tab-button active" data-tab="tab-rischi">Rischi</button>
                 <button class="tab-button" data-tab="tab-screening">Screening</button>
@@ -601,7 +601,7 @@
                     <div class="bg-gray-50 p-4 rounded-lg">
                         <h3 class="font-semibold mb-3">Screening Raccomandati</h3>
                         <div class="space-y-3">
-                            <div class="flex items-center p-2  rounded border-l-4 border-green-500">
+                            <div class="flex items-center p-2 bg-white rounded border-l-4 border-green-500">
                                 <div class="flex-1">
                                     <h4 class="font-medium">Screening Colon-retto</h4>
                                     <p class="text-sm text-gray-600">Raccomandato ogni 2 anni dopo i 50 anni</p>
@@ -611,7 +611,7 @@
                                     <span class="text-xs text-gray-500">2024</span>
                                 </div>
                             </div>
-                            <div class="flex items-center p-2  rounded border-l-4 border-yellow-500">
+                            <div class="flex items-center p-2 bg-white rounded border-l-4 border-yellow-500">
                                 <div class="flex-1">
                                     <h4 class="font-medium">Controllo Pressione</h4>
                                     <p class="text-sm text-gray-600">Raccomandato annualmente</p>
@@ -621,7 +621,7 @@
                                     <span class="text-xs text-gray-500">1 mese</span>
                                 </div>
                             </div>
-                            <div class="flex items-center p-2  rounded border-l-4 border-red-500">
+                            <div class="flex items-center p-2 bg-white rounded border-l-4 border-red-500">
                                 <div class="flex-1">
                                     <h4 class="font-medium">Esami Sangue</h4>
                                     <p class="text-sm text-gray-600">Raccomandato annualmente</p>
@@ -636,14 +636,14 @@
                     <div class="bg-blue-50 p-4 rounded-lg">
                         <h3 class="font-semibold mb-3">Visite Specialistiche Suggerite</h3>
                         <div class="space-y-3">
-                            <div class="flex justify-between items-center p-2  rounded">
+                            <div class="flex justify-between items-center p-2 bg-white rounded">
                                 <div>
                                     <h4 class="font-medium">Visita Cardiologica</h4>
                                     <p class="text-sm text-gray-600">Per rivalutazione parametri cardiovascolari</p>
                                 </div>
                                 <span class="text-blue-500 cursor-pointer hover:underline">Prenota</span>
                             </div>
-                            <div class="flex justify-between items-center p-2  rounded">
+                            <div class="flex justify-between items-center p-2 bg-white rounded">
                                 <div>
                                     <h4 class="font-medium">Visita Diabetologica</h4>
                                     <p class="text-sm text-gray-600">Per valutazione rischio diabete</p>
@@ -675,7 +675,7 @@
                     <div class="p-4 bg-gray-50 rounded-lg">
                         <h3 class="font-semibold mb-3">Benessere Psicologico</h3>
                         <div class="space-y-4">
-                            <div class="p-3  rounded-lg">
+                            <div class="p-3 bg-white rounded-lg">
                                 <div class="flex justify-between mb-1">
                                     <span class="text-sm font-medium">Stress</span>
                                     <span class="text-sm font-medium text-yellow-600">Medio</span>
@@ -684,7 +684,7 @@
                                     <div class="bg-yellow-500 h-2 rounded-full" style="width: 60%"></div>
                                 </div>
                             </div>
-                            <div class="p-3  rounded-lg">
+                            <div class="p-3 bg-white rounded-lg">
                                 <div class="flex justify-between mb-1">
                                     <span class="text-sm font-medium">Sonno</span>
                                     <span class="text-sm font-medium text-red-600">Insufficiente</span>
@@ -694,7 +694,7 @@
                                 </div>
                                 <p class="text-xs text-gray-500 mt-1">Insonnia moderata</p>
                             </div>
-                            <div class="p-3  rounded-lg">
+                            <div class="p-3 bg-white rounded-lg">
                                 <div class="flex justify-between mb-1">
                                     <span class="text-sm font-medium">Umore</span>
                                     <span class="text-sm font-medium text-green-600">Buono</span>
@@ -742,17 +742,17 @@
                             <canvas id="macro-chart" width="200" height="200"></canvas>
                         </div>
                         <div class="grid grid-cols-3 gap-2 text-center">
-                            <div class="p-2  rounded-lg">
+                            <div class="p-2 bg-white rounded-lg">
                                 <div class="text-sm font-medium">Proteine</div>
                                 <div class="text-lg font-bold text-green-600">25%</div>
                                 <div class="text-xs text-gray-500">119g</div>
                             </div>
-                            <div class="p-2  rounded-lg">
+                            <div class="p-2 bg-white rounded-lg">
                                 <div class="text-sm font-medium">Carboidrati</div>
                                 <div class="text-lg font-bold text-blue-600">45%</div>
                                 <div class="text-xs text-gray-500">214g</div>
                             </div>
-                            <div class="p-2  rounded-lg">
+                            <div class="p-2 bg-white rounded-lg">
                                 <div class="text-sm font-medium">Grassi</div>
                                 <div class="text-lg font-bold text-yellow-600">30%</div>
                                 <div class="text-xs text-gray-500">63g</div>
@@ -793,15 +793,15 @@
                     <div class="p-4 bg-gray-50 rounded-lg">
                         <h3 class="font-semibold mb-3">Suggerimenti Personalizzati</h3>
                         <div class="space-y-3">
-                            <div class="p-3  rounded-lg border-l-4 border-blue-500">
+                            <div class="p-3 bg-white rounded-lg border-l-4 border-blue-500">
                                 <h4 class="font-medium">Obiettivo Principale</h4>
                                 <p class="text-sm text-gray-600">Aumentare l'attività aerobica a 150 min/settimana</p>
                             </div>
-                            <div class="p-3  rounded-lg border-l-4 border-green-500">
+                            <div class="p-3 bg-white rounded-lg border-l-4 border-green-500">
                                 <h4 class="font-medium">Tipo di Allenamento</h4>
                                 <p class="text-sm text-gray-600">Combinare cardio (60%) e forza (40%)</p>
                             </div>
-                            <div class="p-3  rounded-lg border-l-4 border-yellow-500">
+                            <div class="p-3 bg-white rounded-lg border-l-4 border-yellow-500">
                                 <h4 class="font-medium">Progressione</h4>
                                 <p class="text-sm text-gray-600">Aumentare di 10 min/settimana fino a 150 min</p>
                             </div>
@@ -813,7 +813,7 @@
 
         <!-- Raccomandazioni personalizzate -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <div class="card  p-4">
+            <div class="card bg-white p-4">
                 <h2 class="text-lg font-bold mb-3">Suggerimenti Prioritari</h2>
                 <div class="space-y-3">
                     <div class="recommendation-card p-3 bg-gray-50">
@@ -830,7 +830,7 @@
                     </div>
                 </div>
             </div>
-            <div class="card  p-4">
+            <div class="card bg-white p-4">
                 <h2 class="text-lg font-bold mb-3">Prossimi Passi</h2>
                 <div class="space-y-3">
                     <div class="flex items-center p-2 bg-gray-50 rounded">
@@ -1047,129 +1047,6 @@ function calculateSCORE2() {
     
     const eta = parseInt(userData.eta);
     const sesso = userData.sesso?.toLowerCase();
-    const sistolica = parseFloat(userData.pressione_sistolica);
-    const colTotale = parseFloat(userData.colesterolo_totale);
-    const hdl = parseFloat(userData.colesterolo_hdl_valore);
-    const fumatore = userData.fumatore?.toLowerCase() === 'sì';
-    
-    console.log('📋 Valori SCORE2 estratti:', {
-        eta, sesso, sistolica, colTotale, hdl, fumatore
-    });
-    
-    // Verifica che tutti i valori necessari siano presenti
-    if (!eta || isNaN(eta)) {
-        console.warn('⚠️ Età mancante o non valida:', userData.eta);
-        dashboardData.score2 = { value: '0.0', risk: 'Dati insufficienti', category: 'warning' };
-        return;
-    }
-    
-    if (!sistolica || isNaN(sistolica)) {
-        console.warn('⚠️ Pressione sistolica mancante o non valida:', userData.pressione_sistolica);
-        dashboardData.score2 = { value: '0.0', risk: 'Dati insufficienti', category: 'warning' };
-        return;
-    }
-    
-    if (!colTotale || isNaN(colTotale) || !hdl || isNaN(hdl)) {
-        console.warn('⚠️ Valori colesterolo mancanti:', { colTotale, hdl });
-        dashboardData.score2 = { value: '0.0', risk: 'Dati insufficienti', category: 'warning' };
-        return;
-    }
-    
-    let score = 0;
-    
-    // Fattore età
-    if (eta >= 40 && eta < 50) score += 0;
-    else if (eta >= 50 && eta < 60) score += 3;
-    else if (eta >= 60 && eta < 70) score += 6;
-    else if (eta >= 70) score += 9;
-    
-    // Fattore pressione
-    if (sistolica >= 140) score += 2;
-    if (sistolica >= 160) score += 3;
-    if (sistolica >= 180) score += 4;
-    
-    // Fattore colesterolo
-    const nonHDL = colTotale - hdl;
-    if (nonHDL >= 190) score += 1;
-    if (nonHDL >= 220) score += 2;
-    if (nonHDL >= 280) score += 3;
-    
-    // Fattore fumo
-    if (fumatore) score += 4;
-    
-    // Converti in percentuale di rischio
-    const riskPercent = Math.min(score * 0.5, 20);
-    
-    console.log('🧮 Calcolo SCORE2 completato:', { score, riskPercent });
-    
-    dashboardData.score2.value = riskPercent.toFixed(1);
-    
-    if (riskPercent < 1) {
-        dashboardData.score2.risk = 'Basso';
-        dashboardData.score2.category = 'success';
-    } else if (riskPercent < 5) {
-        dashboardData.score2.risk = 'Moderato';
-        dashboardData.score2.category = 'warning';
-    } else if (riskPercent < 10) {
-        dashboardData.score2.risk = 'Alto';
-        dashboardData.score2.category = 'danger';
-    } else {
-        dashboardData.score2.risk = 'Molto alto';
-        dashboardData.score2.category = 'danger';
-    }
-    
-    console.log('✅ SCORE2 calcolato:', dashboardData.score2);
-}
-
-// 3. Calcolo PREDIMED
-function calculatePREDIMED() {
-    let score = 0;
-    
-    for (let i = 1; i <= 14; i++) {
-        const value = String(userData[`predimed_${i}`]).toLowerCase();
-        if (['sì', 'si', '1', 'true'].includes(value)) {
-            score++;
-        }
-    }
-    
-    dashboardData.predimed.value = score;
-    
-    if (score >= 10) {
-        dashboardData.predimed.adherence = 'Alta aderenza';
-        dashboardData.predimed.status = 'success';
-    } else if (score >= 6) {
-        dashboardData.predimed.adherence = 'Media aderenza';
-        dashboardData.predimed.status = 'warning';
-    } else {
-        dashboardData.predimed.adherence = 'Bassa aderenza';
-        dashboardData.predimed.status = 'danger';
-    }
-}
-
-// 4. Verifica sindrome metabolica
-function checkMetabolicSyndrome() {
-    let criteria = 0;
-    let factors = [];
-    
-    if (userData.vita?.toLowerCase() === 'sì') {
-        criteria++;
-        factors.push('Girovita elevato');
-    }
-    
-    const glicemia = parseFloat(userData.glicemia_valore || 0);
-    if (glicemia >= 100 || userData.diabete?.toLowerCase() === 'sì') {
-        criteria++;
-        factors.push('Glicemia alta');
-    }
-    
-    const hdlValore = parseFloat(userData.colesterolo_hdl_valore);
-    const sesso = userData.sesso?.toLowerCase();
-    
-    if ((sesso === 'maschio' && hdlValore < 40) || (sesso === 'femmina' && hdlValore < 50)) {
-        criteria++;
-        factors.push('HDL basso');
-    }
-    
     const sistolica = parseFloat(userData.pressione_sistolica);
     const diastolica = parseFloat(userData.pressione_diastolica);
     if (sistolica >= 130 || diastolica >= 85) {
@@ -2144,13 +2021,6 @@ function updateNewScoreBanners() {
     }
     
     console.log('✅ Tutti i nuovi score aggiornati');
-}${dashboardData.fni.albumina || '--'} g/dL`;
-        if (linfocitiEl) linfocitiEl.textContent = `${dashboardData.fni.linfociti || '--'} /mm³`;
-        
-        console.log('✅ FNI non ha grafico circolare - usa solo indicator');
-    }
-    
-    console.log('✅ Tutti i nuovi score aggiornati');
 }
 
 function updateScreeningTab() {
@@ -2166,7 +2036,7 @@ function updateScreeningTab() {
                         screening.status === 'pending' ? 'In scadenza' : 'Scaduto';
         
         return `
-            <div class="flex items-center p-2 rounded border-l-4 ${borderColor}">
+            <div class="flex items-center p-2 bg-white rounded border-l-4 ${borderColor}">
                 <div class="flex-1">
                     <h4 class="font-medium">${screening.name}</h4>
                     <p class="text-sm text-gray-600">Raccomandato ${screening.frequency}</p>
@@ -2264,17 +2134,17 @@ function updateNutritionTab() {
     const macroDetails = document.querySelector('#tab-nutritional .grid.grid-cols-3');
     if (macroDetails) {
         macroDetails.innerHTML = `
-            <div class="p-2 rounded-lg">
+            <div class="p-2 bg-white rounded-lg">
                 <div class="text-sm font-medium">Proteine</div>
                 <div class="text-lg font-bold text-green-600">${dashboardData.nutrition.macros.protein.percentage}%</div>
                 <div class="text-xs text-gray-500">${dashboardData.nutrition.macros.protein.grams}g</div>
             </div>
-            <div class="p-2 rounded-lg">
+            <div class="p-2 bg-white rounded-lg">
                 <div class="text-sm font-medium">Carboidrati</div>
                 <div class="text-lg font-bold text-blue-600">${dashboardData.nutrition.macros.carbs.percentage}%</div>
                 <div class="text-xs text-gray-500">${dashboardData.nutrition.macros.carbs.grams}g</div>
             </div>
-            <div class="p-2 rounded-lg">
+            <div class="p-2 bg-white rounded-lg">
                 <div class="text-sm font-medium">Grassi</div>
                 <div class="text-lg font-bold text-yellow-600">${dashboardData.nutrition.macros.fats.percentage}%</div>
                 <div class="text-xs text-gray-500">${dashboardData.nutrition.macros.fats.grams}g</div>
@@ -2313,12 +2183,12 @@ function updateActivityTab() {
     const suggestionsContainer = document.querySelectorAll('#tab-attivita .space-y-3')[1];
     if (suggestionsContainer) {
         suggestionsContainer.innerHTML = dashboardData.activity.suggestions.map(suggestion => `
-            <div class="p-3 rounded-lg border-l-4 border-blue-500">
+            <div class="p-3 bg-white rounded-lg border-l-4 border-blue-500">
                 <h4 class="font-medium">${suggestion.type}</h4>
                 <p class="text-sm text-gray-600">${suggestion.text}</p>
             </div>
         `).join('') || `
-            <div class="p-3 rounded-lg border-l-4 border-green-500">
+            <div class="p-3 bg-white rounded-lg border-l-4 border-green-500">
                 <h4 class="font-medium">Ottimo lavoro!</h4>
                 <p class="text-sm text-gray-600">Stai già raggiungendo gli obiettivi di attività fisica raccomandati</p>
             </div>
@@ -2421,9 +2291,6 @@ function setupTabs() {
             document.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.remove('active');
             });
-
-            button.classList.add('active');
-            document.getElementById(tabId).classList.add('active');
 
             if (tabId === 'tab-stile-vita' && predimedChart) {
                 predimedChart.update();
