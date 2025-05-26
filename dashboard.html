@@ -539,31 +539,32 @@
                     <div class="p-4 bg-gray-50 rounded-lg">
                         <h3 class="font-semibold mb-3">Rischio Cardiovascolare</h3>
                         <div class="flex items-center justify-center mb-4">
-                            <svg width="120" height="120" viewBox="0 0 120 120" class="progress-ring">
+                            <svg width="120" height="120" viewBox="0 0 120 120">
                                 <circle cx="60" cy="60" r="50" fill="none" stroke="#e6e6e6" stroke-width="10"></circle>
-                                <circle class="progress-ring__circle" cx="60" cy="60" r="50" fill="none" stroke="#4285F4" stroke-width="10" stroke-dasharray="314.16" stroke-dashoffset="220" stroke-linecap="round"></circle>
-                                <text x="60" y="65" text-anchor="middle" font-size="18" font-weight="bold" fill="var(--chart-text-color)" id="cv-risk-text">--%</text>
+                                <circle class="progress-ring__circle" cx="60" cy="60" r="50" fill="none" stroke="#4285F4" stroke-width="10" stroke-dashoffset="220" stroke-linecap="round"></circle>
+                                <text x="60" y="65" text-anchor="middle" font-size="18" font-weight="bold" fill="var(--chart-text-color)">2.5%</text>
                             </svg>
                         </div>
                         <div class="space-y-2">
                             <div class="flex justify-between text-sm">
                                 <span>Età</span>
-                                <span class="font-medium" id="cv-age">-- anni</span>
+                                <span class="font-medium">55 anni</span>
                             </div>
                             <div class="flex justify-between text-sm">
                                 <span>Pressione</span>
-                                <span class="font-medium" id="cv-pressure">-- mmHg</span>
+                                <span class="font-medium">145/85 mmHg</span>
                             </div>
                             <div class="flex justify-between text-sm">
                                 <span>Colesterolo</span>
-                                <span class="font-medium" id="cv-cholesterol">-- mg/dL</span>
+                                <span class="font-medium">HDL 45 mg/dL</span>
                             </div>
                             <div class="flex justify-between text-sm">
                                 <span>Fumo</span>
-                                <span class="font-medium" id="cv-smoking">--</span>
+                                <span class="font-medium">No</span>
                             </div>
                         </div>
                     </div>
+                    
                     <div class="p-4 bg-gray-50 rounded-lg">
                         <h3 class="font-semibold mb-3">Rischio Diabete (ADA)</h3>
                         <div class="flex items-center justify-center mb-4">
@@ -1878,64 +1879,41 @@ function updateRiskTab() {
     console.log('🔄 Aggiornamento tab rischi...');
     console.log('📊 SCORE2 per grafico:', dashboardData.score2);
     console.log('📊 Diabetes Risk per grafico:', dashboardData.diabetesRisk);
-    
-    // Aggiorna grafico rischio cardiovascolare - USA FORMULA DI SCORE2-DIABETE
+
+    // Aggiorna grafico rischio cardiovascolare
     const cvRisk = document.querySelector('#tab-rischi .progress-ring__circle');
     if (cvRisk) {
         const percentage = parseFloat(dashboardData.score2.value);
-        console.log('🎯 === CORREZIONE GRAFICO CV ===');
-        console.log('Percentuale CV:', percentage + '%');
-        
-        // USA LA STESSA FORMULA CHE FUNZIONA IN SCORE2-DIABETE
-        const circumference = 314.16;
+        const circumference = 314.16; // 2 * π * 50
         const offset = circumference - (percentage / 100 * circumference);
-        
         cvRisk.style.strokeDashoffset = offset;
-        console.log('✅ CV - Circumference:', circumference, 'Offset:', offset, 'per', percentage + '%');
-        console.log('🔍 Per 9% dovrebbe essere circa', circumference * 0.91, '- Applicato:', offset);
-        
-        // Cambia colore in base al rischio
-        const strokeColor = dashboardData.score2.category === 'danger' ? '#EA4335' : 
-                           dashboardData.score2.category === 'warning' ? '#FBBC05' : '#34A853';
-        cvRisk.setAttribute('stroke', strokeColor);
-        console.log('🎨 Colore grafico CV:', strokeColor, 'per categoria:', dashboardData.score2.category);
-    } else {
-        console.warn('⚠️ Elemento grafico CV non trovato');
     }
     
-    // Aggiorna testo CV usando ID specifico
-    const cvText = document.getElementById('cv-risk-text');
-    if (cvText) {
-        cvText.textContent = dashboardData.score2.value + '%';
-        console.log('📝 Testo CV aggiornato:', cvText.textContent);
-    } else {
-        console.warn('⚠️ Elemento testo CV non trovato');
-    }
+    // Aggiorna testo rischio CV
+    const cvText = document.querySelector('#tab-rischi text');
+    if (cvText) cvText.textContent = dashboardData.score2.value + '%';
     
-    // Aggiorna dettagli CV usando ID specifici
-    const cvAge = document.getElementById('cv-age');
-    const cvPressure = document.getElementById('cv-pressure');
-    const cvCholesterol = document.getElementById('cv-cholesterol');
-    const cvSmoking = document.getElementById('cv-smoking');
-    
-    if (cvAge) {
-        cvAge.textContent = `${userData.eta || '--'} anni`;
-        console.log('📝 Età CV aggiornata:', userData.eta);
-    }
-    
-    if (cvPressure) {
-        cvPressure.textContent = `${userData.pressione_sistolica || '--'}/${userData.pressione_diastolica || '--'} mmHg`;
-        console.log('📝 Pressione CV aggiornata:', userData.pressione_sistolica, userData.pressione_diastolica);
-    }
-    
-    if (cvCholesterol) {
-        cvCholesterol.textContent = `HDL ${userData.colesterolo_hdl_valore || '--'} mg/dL`;
-        console.log('📝 Colesterolo CV aggiornato:', userData.colesterolo_hdl_valore);
-    }
-    
-    if (cvSmoking) {
-        cvSmoking.textContent = userData.fumatore || 'No';
-        console.log('📝 Fumo CV aggiornato:', userData.fumatore);
+    // Aggiorna dettagli
+    const cvDetails = document.querySelector('#tab-rischi .space-y-2');
+    if (cvDetails) {
+        cvDetails.innerHTML = `
+            <div class="flex justify-between text-sm">
+                <span>Età</span>
+                <span class="font-medium">${userData.eta || 'N/D'} anni</span>
+            </div>
+            <div class="flex justify-between text-sm">
+                <span>Pressione</span>
+                <span class="font-medium">${userData.pressione_sistolica || 'N/D'}/${userData.pressione_diastolica || 'N/D'} mmHg</span>
+            </div>
+            <div class="flex justify-between text-sm">
+                <span>Colesterolo HDL</span>
+                <span class="font-medium">${userData.colesterolo_hdl_valore || 'N/D'} mg/dL</span>
+            </div>
+            <div class="flex justify-between text-sm">
+                <span>Fumo</span>
+                <span class="font-medium">${userData.fumatore || 'No'}</span>
+            </div>
+        `;
     }
     
     // Aggiorna rischio diabete - USA FORMULA DI SCORE2-DIABETE
