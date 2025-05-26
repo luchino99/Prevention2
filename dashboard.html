@@ -537,25 +537,25 @@
                             <svg width="120" height="120" viewBox="0 0 120 120">
                                 <circle cx="60" cy="60" r="50" fill="none" stroke="#e6e6e6" stroke-width="10"></circle>
                                 <circle class="progress-ring__circle" cx="60" cy="60" r="50" fill="none" stroke="#4285F4" stroke-width="10" stroke-dashoffset="220" stroke-linecap="round"></circle>
-                                <text x="60" y="65" text-anchor="middle" font-size="18" font-weight="bold" fill="var(--chart-text-color)">2.5%</text>
+                                <text x="60" y="65" text-anchor="middle" font-size="18" font-weight="bold" fill="var(--chart-text-color)" id="cv-risk-text">--%</text>
                             </svg>
                         </div>
                         <div class="space-y-2">
                             <div class="flex justify-between text-sm">
                                 <span>Età</span>
-                                <span class="font-medium">55 anni</span>
+                                <span class="font-medium" id="cv-age">-- anni</span>
                             </div>
                             <div class="flex justify-between text-sm">
                                 <span>Pressione</span>
-                                <span class="font-medium">145/85 mmHg</span>
+                                <span class="font-medium" id="cv-pressure">-- mmHg</span>
                             </div>
                             <div class="flex justify-between text-sm">
                                 <span>Colesterolo</span>
-                                <span class="font-medium">HDL 45 mg/dL</span>
+                                <span class="font-medium" id="cv-cholesterol">-- mg/dL</span>
                             </div>
                             <div class="flex justify-between text-sm">
                                 <span>Fumo</span>
-                                <span class="font-medium">No</span>
+                                <span class="font-medium" id="cv-smoking">--</span>
                             </div>
                         </div>
                     </div>
@@ -565,7 +565,7 @@
                             <svg width="120" height="120" viewBox="0 0 120 120">
                                 <circle cx="60" cy="60" r="50" fill="none" stroke="#e6e6e6" stroke-width="10"></circle>
                                 <circle class="progress-ring__circle" cx="60" cy="60" r="50" fill="none" stroke="#FBBC05" stroke-width="10" stroke-dashoffset="157" stroke-linecap="round"></circle>
-                                <text x="60" y="65" text-anchor="middle" font-size="18" font-weight="bold" fill="var(--chart-text-color)">4/8</text>
+                                <text x="60" y="65" text-anchor="middle" font-size="18" font-weight="bold" fill="var(--chart-text-color)" id="diabetes-risk-text">--/--</text>
                             </svg>
                         </div>
                         <div class="space-y-2">
@@ -1847,7 +1847,8 @@ function updateRiskTab() {
         console.warn('⚠️ Elemento grafico CV non trovato');
     }
     
-    const cvText = document.querySelector('#tab-rischi text');
+    // Aggiorna testo CV usando ID specifico
+    const cvText = document.getElementById('cv-risk-text');
     if (cvText) {
         cvText.textContent = dashboardData.score2.value + '%';
         console.log('📝 Testo CV aggiornato:', cvText.textContent);
@@ -1855,29 +1856,30 @@ function updateRiskTab() {
         console.warn('⚠️ Elemento testo CV non trovato');
     }
     
-    const cvDetails = document.querySelector('#tab-rischi .space-y-2');
-    if (cvDetails) {
-        cvDetails.innerHTML = `
-            <div class="flex justify-between text-sm">
-                <span>Età</span>
-                <span class="font-medium">${userData.eta || 'N/D'} anni</span>
-            </div>
-            <div class="flex justify-between text-sm">
-                <span>Pressione</span>
-                <span class="font-medium">${userData.pressione_sistolica || 'N/D'}/${userData.pressione_diastolica || 'N/D'} mmHg</span>
-            </div>
-            <div class="flex justify-between text-sm">
-                <span>Colesterolo HDL</span>
-                <span class="font-medium">${userData.colesterolo_hdl_valore || 'N/D'} mg/dL</span>
-            </div>
-            <div class="flex justify-between text-sm">
-                <span>Fumo</span>
-                <span class="font-medium">${userData.fumatore || 'No'}</span>
-            </div>
-        `;
-        console.log('📝 Dettagli CV aggiornati');
-    } else {
-        console.warn('⚠️ Container dettagli CV non trovato');
+    // Aggiorna dettagli CV usando ID specifici
+    const cvAge = document.getElementById('cv-age');
+    const cvPressure = document.getElementById('cv-pressure');
+    const cvCholesterol = document.getElementById('cv-cholesterol');
+    const cvSmoking = document.getElementById('cv-smoking');
+    
+    if (cvAge) {
+        cvAge.textContent = `${userData.eta || '--'} anni`;
+        console.log('📝 Età CV aggiornata:', userData.eta);
+    }
+    
+    if (cvPressure) {
+        cvPressure.textContent = `${userData.pressione_sistolica || '--'}/${userData.pressione_diastolica || '--'} mmHg`;
+        console.log('📝 Pressione CV aggiornata:', userData.pressione_sistolica, userData.pressione_diastolica);
+    }
+    
+    if (cvCholesterol) {
+        cvCholesterol.textContent = `HDL ${userData.colesterolo_hdl_valore || '--'} mg/dL`;
+        console.log('📝 Colesterolo CV aggiornato:', userData.colesterolo_hdl_valore);
+    }
+    
+    if (cvSmoking) {
+        cvSmoking.textContent = userData.fumatore || 'No';
+        console.log('📝 Fumo CV aggiornato:', userData.fumatore);
     }
     
     // Aggiorna rischio diabete
@@ -1893,7 +1895,8 @@ function updateRiskTab() {
         console.warn('⚠️ Elemento grafico Diabetes non trovato');
     }
     
-    const diabetesText = document.querySelectorAll('#tab-rischi text')[1];
+    // Aggiorna testo diabete usando ID specifico
+    const diabetesText = document.getElementById('diabetes-risk-text');
     if (diabetesText) {
         diabetesText.textContent = `${dashboardData.diabetesRisk.score}/${dashboardData.diabetesRisk.maxScore}`;
         console.log('📝 Testo Diabetes aggiornato:', diabetesText.textContent);
@@ -1906,26 +1909,30 @@ function updateRiskTab() {
     if (glicemiaEl) {
         const glicemia = parseFloat(userData.glicemia_valore || 0);
         glicemiaEl.textContent = `${glicemia} mg/dL`;
+        console.log('📝 Glicemia aggiornata:', glicemia);
     }
 
     const famDiabeteEl = document.getElementById('familiarita-diabete');
     if (famDiabeteEl) {
-        const rispostaGrezza = userData.familiari_diabete?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const rispostaGrezza = String(userData.familiari_diabete || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         const risposta = ['si', 'sì', 'yes', 'y', 'true', 'ok'].includes(rispostaGrezza) ? 'Sì' : 'No';
         famDiabeteEl.textContent = risposta;
+        console.log('📝 Familiarità diabete aggiornata:', risposta, '(raw:', userData.familiari_diabete, ')');
     }
 
     const ipertensioneEl = document.getElementById('ipertensione');
     if (ipertensioneEl) {
-        const pressioneAlta = userData.pressione_alta?.toLowerCase() === 'sì' ||
+        const pressioneAlta = String(userData.pressione_alta || '').toLowerCase() === 'sì' ||
                               parseFloat(userData.pressione_sistolica) >= 140;
         ipertensioneEl.textContent = pressioneAlta ? 'Sì' : 'No';
+        console.log('📝 Ipertensione aggiornata:', pressioneAlta);
     }
 
     const attivitaFisicaEl = document.getElementById('attivita-fisica');
     if (attivitaFisicaEl) {
         const minutiSettimanali = parseInt(userData.durata_attivita) || 0;
         attivitaFisicaEl.textContent = minutiSettimanali >= 150 ? 'Adeguata' : 'Insufficiente';
+        console.log('📝 Attività fisica aggiornata:', minutiSettimanali, 'min/settimana');
     }
     
     console.log('✅ Tab rischi aggiornato');
