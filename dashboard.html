@@ -215,6 +215,11 @@
             transform-origin: 50% 50%;
         }
 
+        .progress-ring text {
+            transform: rotate(90deg);
+            transform-origin: 50% 50%;
+        }
+
         .progress-ring__circle {
             stroke-dasharray: 314.16;
             transition: stroke-dashoffset var(--animation-speed);
@@ -1931,56 +1936,46 @@ function updateRiskTab() {
         console.log('📝 Fumo CV aggiornato:', userData.fumatore);
     }
     
-    // Aggiorna rischio diabete - DEBUG COMPLETO SVG
+    // Aggiorna rischio diabete - CORREZIONE DEFINITIVA
     const diabetesCircle = document.querySelectorAll('#tab-rischi .progress-ring__circle')[1];
     if (diabetesCircle) {
         const score = dashboardData.diabetesRisk.score;
         const maxScore = dashboardData.diabetesRisk.maxScore;
         const percentage = (score / maxScore) * 100;
         
-        console.log('🎯 === DEBUG GRAFICO DIABETES ===');
+        console.log('🎯 === CORREZIONE DEFINITIVA GRAFICO DIABETES ===');
         console.log('Score:', score, 'MaxScore:', maxScore, 'Percentage:', percentage + '%');
         
-        // Leggi attributi SVG esistenti
-        const radius = diabetesCircle.getAttribute('r') || 50;
-        const currentDashArray = diabetesCircle.style.strokeDasharray || diabetesCircle.getAttribute('stroke-dasharray');
-        const currentDashOffset = diabetesCircle.style.strokeDashoffset;
+        // FORMULA CORRETTA: Per 100% il cerchio deve essere pieno (offset = 0)
+        const circumference = 314.16;
+        const offset = circumference * (1 - percentage / 100);
         
-        console.log('📊 Attributi SVG attuali:');
-        console.log('- Radius:', radius);
-        console.log('- Current dasharray:', currentDashArray);
-        console.log('- Current dashoffset:', currentDashOffset);
+        console.log('🧮 Formula corretta:');
+        console.log('- Circumference:', circumference);
+        console.log('- Percentage:', percentage + '%');
+        console.log('- Offset calcolato:', offset);
+        console.log('- Per 100% offset dovrebbe essere 0:', offset === 0 ? '✅' : '❌');
         
-        // Calcola la circonferenza reale
-        const realCircumference = 2 * Math.PI * radius;
-        console.log('- Circonferenza reale:', realCircumference);
+        // Applica i valori corretti
+        diabetesCircle.style.strokeDasharray = circumference;
+        diabetesCircle.style.strokeDashoffset = offset;
         
-        // Diversi approcci di calcolo
-        console.log('🧮 Test diverse formule:');
-        
-        // Metodo 1: Offset normale
-        const offset1 = realCircumference * (1 - percentage / 100);
-        console.log('Metodo 1 (1-%):', offset1);
-        
-        // Metodo 2: Offset inverso 
-        const offset2 = realCircumference * (percentage / 100);
-        console.log('Metodo 2 (%):', offset2);
-        
-        // Metodo 3: Sottrazione diretta
-        const offset3 = realCircumference - (percentage / 100 * realCircumference);
-        console.log('Metodo 3 (sottrazione):', offset3);
-        
-        // Prova il metodo 2 (offset inverso)
-        diabetesCircle.style.strokeDasharray = realCircumference;
-        diabetesCircle.style.strokeDashoffset = offset2;
-        
-        console.log('✅ Applicato: dasharray=' + realCircumference + ', dashoffset=' + offset2);
+        console.log('✅ APPLICATO: dasharray=' + circumference + ', dashoffset=' + offset);
         
         // Cambia colore
         const strokeColor = dashboardData.diabetesRisk.risk === 'Alto' ? '#EA4335' : 
                            dashboardData.diabetesRisk.risk === 'Moderato' ? '#FBBC05' : '#34A853';
         diabetesCircle.setAttribute('stroke', strokeColor);
         console.log('🎨 Colore applicato:', strokeColor);
+        
+        // Test visivo
+        if (percentage === 100) {
+            console.log('🔴 CERCHIO DOVREBBE ESSERE COMPLETAMENTE ROSSO');
+        } else if (percentage === 0) {
+            console.log('⚪ CERCHIO DOVREBBE ESSERE VUOTO');
+        } else {
+            console.log('🟡 CERCHIO DOVREBBE ESSERE PARZIALMENTE RIEMPITO AL ' + percentage + '%');
+        }
         
     } else {
         console.warn('⚠️ Elemento grafico Diabetes non trovato');
