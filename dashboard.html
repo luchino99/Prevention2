@@ -2009,6 +2009,8 @@ function updateNextSteps() {
     const hba1cEl = document.getElementById('score2d-banner-hba1c');
     const glicemiaEl = document.getElementById('score2d-banner-glucose');
     const sbpEl = document.getElementById('score2d-banner-sbp');
+    if (!circle || !text || !hba1cEl || !glicemiaEl || !sbpEl) return;
+
 
     const offset = 314.16 - (parseFloat(data.value) / 100 * 314.16);
     circle.style.strokeDashoffset = offset;
@@ -2393,7 +2395,7 @@ document.getElementById('logout-btn')?.addEventListener('click', async () => {
                         }
                     }
                 });
-            }
+            
 
             // Find the export button
             const exportButton = document.querySelector('button:has(i.fas.fa-file-pdf)') ||
