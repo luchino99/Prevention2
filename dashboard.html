@@ -541,7 +541,7 @@
                         <div class="flex items-center justify-center mb-4">
                             <svg width="120" height="120" viewBox="0 0 120 120" class="progress-ring">
                                 <circle cx="60" cy="60" r="50" fill="none" stroke="#e6e6e6" stroke-width="10"></circle>
-                                <circle class="progress-ring__circle" cx="60" cy="60" r="50" fill="none" stroke="#4285F4" stroke-width="10" stroke-dasharray="314.16" stroke-dashoffset="220" stroke-linecap="round"></circle>
+                                <circle class="progress-ring__circle ring-cv" cx="60" cy="60" r="50" fill="none" stroke="#4285F4" stroke-width="10" stroke-dasharray="314.16" stroke-dashoffset="220" stroke-linecap="round"></circle>
                                 <text x="60" y="65" text-anchor="middle" font-size="18" font-weight="bold" fill="var(--chart-text-color)" id="cv-risk-text">--%</text>
                             </svg>
                         </div>
@@ -569,7 +569,7 @@
                         <div class="flex items-center justify-center mb-4">
                             <svg width="120" height="120" viewBox="0 0 120 120" class="progress-ring">
                                 <circle cx="60" cy="60" r="50" fill="none" stroke="#e6e6e6" stroke-width="10"></circle>
-                                <circle class="progress-ring__circle" cx="60" cy="60" r="50" fill="none" stroke="#FBBC05" stroke-width="10" stroke-dasharray="314.16" stroke-dashoffset="157" stroke-linecap="round"></circle>
+                                <circle class="progress-ring__circle ring-ada" cx="60" cy="60" r="50" fill="none" stroke="#FBBC05" stroke-width="10" stroke-dasharray="314.16" stroke-dashoffset="157" stroke-linecap="round"></circle>
                                 <text x="60" y="65" text-anchor="middle" font-size="18" font-weight="bold" fill="var(--chart-text-color)" id="diabetes-risk-text">--/--</text>
                             </svg>
                         </div>
@@ -1880,7 +1880,7 @@ function updateRiskTab() {
     console.log('📊 Diabetes Risk per grafico:', dashboardData.diabetesRisk);
     
     // Aggiorna grafico rischio cardiovascolare - USA FORMULA DI SCORE2-DIABETE
-    const cvRisk = document.querySelector('#tab-rischi .progress-ring__circle')[1];
+    const cvRisk = document.querySelector('#tab-rischi .progress-ring__circle ring-cv');
     if (cvRisk) {
         const percentage = parseFloat(dashboardData.score2.value);
         console.log('🎯 === CORREZIONE GRAFICO CV ===');
@@ -1939,7 +1939,7 @@ function updateRiskTab() {
     }
     
     // Aggiorna rischio diabete - USA FORMULA DI SCORE2-DIABETE
-    const diabetesCircle = document.querySelectorAll('#tab-rischi .progress-ring__circle');
+    const diabetesCircle = document.querySelectorAll('#tab-rischi .progress-ring__circle ring-ada');
     if (diabetesCircle) {
         const score = dashboardData.diabetesRisk.score;
         const maxScore = dashboardData.diabetesRisk.maxScore;
