@@ -1718,34 +1718,101 @@ function updateDashboard() {
 
 // Funzioni di aggiornamento UI
 function updateHealthSummary() {
+    console.log('🔄 Aggiornamento riepilogo salute...');
+    console.log('📊 Dati per riepilogo:', {
+        bmi: dashboardData.bmi,
+        score2: dashboardData.score2,
+        predimed: dashboardData.predimed
+    });
+    
     // BMI
-    document.querySelector('.score-indicator.score-medium').textContent = dashboardData.bmi.value;
-    document.querySelector('.score-indicator.score-medium').className = `score-indicator score-${dashboardData.bmi.status === 'success' ? 'medium' : dashboardData.bmi.status === 'warning' ? 'low' : 'high'}`;
+    const bmiIndicator = document.querySelector('.score-indicator.score-medium');
+    if (bmiIndicator) {
+        bmiIndicator.textContent = dashboardData.bmi.value;
+        bmiIndicator.className = `score-indicator score-${dashboardData.bmi.status === 'success' ? 'medium' : dashboardData.bmi.status === 'warning' ? 'low' : 'high'}`;
+        console.log('✅ BMI indicator aggiornato:', dashboardData.bmi.value);
+    } else {
+        console.warn('⚠️ BMI indicator non trovato');
+    }
     
     const bmiCard = document.querySelector('.bg-blue-50:first-child');
     if (bmiCard) {
-        bmiCard.querySelector('.badge').textContent = dashboardData.bmi.category;
-        bmiCard.querySelector('.badge').className = `badge badge-${dashboardData.bmi.status}`;
-        bmiCard.querySelector('.font-medium').textContent = dashboardData.bmi.category;
+        const badge = bmiCard.querySelector('.badge');
+        const fontMedium = bmiCard.querySelector('.font-medium');
+        
+        if (badge) {
+            badge.textContent = dashboardData.bmi.category;
+            badge.className = `badge badge-${dashboardData.bmi.status}`;
+            console.log('✅ BMI badge aggiornato:', dashboardData.bmi.category);
+        }
+        
+        if (fontMedium) {
+            fontMedium.textContent = dashboardData.bmi.category;
+            console.log('✅ BMI categoria aggiornata:', dashboardData.bmi.category);
+        }
+    } else {
+        console.warn('⚠️ BMI card non trovata');
     }
     
     // SCORE2
     const score2Card = document.querySelectorAll('.bg-blue-50')[1];
     if (score2Card) {
-        score2Card.querySelector('.score-indicator').textContent = dashboardData.score2.value + '%';
-        score2Card.querySelector('.badge').textContent = dashboardData.score2.risk;
-        score2Card.querySelector('.badge').className = `badge badge-${dashboardData.score2.category === 'success' ? 'success' : dashboardData.score2.category === 'warning' ? 'warning' : 'danger'}`;
-        score2Card.querySelector('.font-medium').textContent = dashboardData.score2.risk;
+        const indicator = score2Card.querySelector('.score-indicator');
+        const badge = score2Card.querySelector('.badge');
+        const fontMedium = score2Card.querySelector('.font-medium');
+        
+        if (indicator) {
+            indicator.textContent = dashboardData.score2.value + '%';
+            console.log('✅ SCORE2 indicator aggiornato:', dashboardData.score2.value + '%');
+        } else {
+            console.warn('⚠️ SCORE2 indicator non trovato');
+        }
+        
+        if (badge) {
+            badge.textContent = dashboardData.score2.risk;
+            badge.className = `badge badge-${dashboardData.score2.category === 'success' ? 'success' : dashboardData.score2.category === 'warning' ? 'warning' : 'danger'}`;
+            console.log('✅ SCORE2 badge aggiornato:', dashboardData.score2.risk);
+        } else {
+            console.warn('⚠️ SCORE2 badge non trovato');
+        }
+        
+        if (fontMedium) {
+            fontMedium.textContent = dashboardData.score2.risk;
+            console.log('✅ SCORE2 categoria aggiornata:', dashboardData.score2.risk);
+        } else {
+            console.warn('⚠️ SCORE2 font-medium non trovato');
+        }
+    } else {
+        console.warn('⚠️ SCORE2 card non trovata');
     }
     
     // PREDIMED
     const predimedCard = document.querySelectorAll('.bg-blue-50')[2];
     if (predimedCard) {
-        predimedCard.querySelector('.score-indicator').textContent = dashboardData.predimed.value;
-        predimedCard.querySelector('.badge').textContent = dashboardData.predimed.status === 'success' ? 'Buona' : dashboardData.predimed.status === 'warning' ? 'Migliorabile' : 'Scarsa';
-        predimedCard.querySelector('.badge').className = `badge badge-${dashboardData.predimed.status}`;
-        predimedCard.querySelector('.font-medium').textContent = dashboardData.predimed.adherence;
+        const indicator = predimedCard.querySelector('.score-indicator');
+        const badge = predimedCard.querySelector('.badge');
+        const fontMedium = predimedCard.querySelector('.font-medium');
+        
+        if (indicator) {
+            indicator.textContent = dashboardData.predimed.value;
+            console.log('✅ PREDIMED indicator aggiornato:', dashboardData.predimed.value);
+        }
+        
+        if (badge) {
+            badge.textContent = dashboardData.predimed.status === 'success' ? 'Buona' : dashboardData.predimed.status === 'warning' ? 'Migliorabile' : 'Scarsa';
+            badge.className = `badge badge-${dashboardData.predimed.status}`;
+            console.log('✅ PREDIMED badge aggiornato');
+        }
+        
+        if (fontMedium) {
+            fontMedium.textContent = dashboardData.predimed.adherence;
+            console.log('✅ PREDIMED categoria aggiornata:', dashboardData.predimed.adherence);
+        }
+    } else {
+        console.warn('⚠️ PREDIMED card non trovata');
     }
+    
+    console.log('✅ Riepilogo salute aggiornato');
 }
 
 function updateMetabolicProfile() {
