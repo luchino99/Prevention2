@@ -1084,7 +1084,9 @@ document.getElementById("btn-salva-profilo").addEventListener("click", async () 
   // 🔎 Raccoglie TUTTI i valori dal DOM inclusi i NUOVI CAMPI
   const updatedData = {
     email,
-    immagine: window.__immagine_base64 || userData.immagine || null,
+    immagine: (typeof window.__immagine_base64 !== "undefined")
+  ? window.__immagine_base64
+  : document.querySelector("#avatar-preview img")?.src || null,
     // Dati anagrafici base
     eta: document.getElementById("profilo-eta")?.value,
     sesso: document.getElementById("profilo-sesso")?.value,
