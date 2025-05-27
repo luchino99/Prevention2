@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calcolatore SCORE2-Diabetes</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .form-container {
+            padding: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .form-col {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+
+        input[type="number"], select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e6ed;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        input[type="number"]:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 8px;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 10px 15px;
+            border-radius: 10px;
+            transition: background 0.3s ease;
+        }
+
+        .radio-option:hover {
+            background: #f0f4ff;
+        }
+
+        .radio-option input[type="radio"] {
+            width: auto;
+            margin: 0;
+        }
+
+        .calculate-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .calculate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 25px;
+            background: linear-gradient(135deg, #a8edea, #fed6e3);
+            border-radius: 15px;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+
+        .result.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .result h3 {
+            color: #2c3e50;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+        }
+
+        .risk-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .risk-category {
+            font-size: 1.2em;
+            font-weight: 600;
+            padding: 8px 20px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .risk-low { background: #d4edda; color: #155724; }
+        .risk-moderate { background: #fff3cd; color: #856404; }
+        .risk-high { background: #f8d7da; color: #721c24; }
+        .risk-very-high { background: #d1ecf1; color: #0c5460; }
+
+        .info-section {
+            background: #f8f9fa;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-section h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .info-section p {
+            color: #5a6c7d;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .form-container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 SCORE2-Diabetes Calculator</h1>
+            <p>Calcolatore del rischio cardiovascolare a 10 anni per pazienti diabetici</p>
+        </div>
+        
+        <div class="form-container">
+            <form id="score2Form">
+                <div class="form-group">
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label for="age">Età (anni):</label>
+                            <input type="number" id="age" min="40" max="80" required>
+                        </div>
+                        <div class="form-col">
+                            <label>Sesso:</label>
+                            <div class="radio-group">
+                                <div class="radio-option">
+                                    <input type="radio" id="male" name="gender" value="male" required>
+                                    <label for="male">Maschio</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="female" name="gender" value="female" required>
+                                    <label for="female">Femmina</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label>Fumatore attuale:</label>
+                            <div class="radio-group">
+                                <div class="radio-option">
+                                    <input type="radio" id="smoker_yes" name="smoking" value="1" required>
+                                    <label for="smoker_yes">Sì</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="smoker_no" name="smoking" value="0" required>
+                                    <label for="smoker_no">No</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <label for="sbp">Pressione sistolica (mmHg):</label>
+                            <input type="number" id="sbp" min="80" max="200" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label for="tchol">Colesterolo totale (mmol/L):</label>
+                            <input type="number" id="tchol" step="0.1" min="2" max="12" required>
+                        </div>
+                        <div class="form-col">
+                            <label for="hdl">Colesterolo HDL (mmol/L):</label>
+                            <input type="number" id="hdl" step="0.1" min="0.5" max="3" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label for="agediab">Età alla diagnosi di diabete (anni):</label>
+                            <input type="number" id="agediab" min="10" max="80" required>
+                        </div>
+                        <div class="form-col">
+                            <label for="hba1c">HbA1c (mmol/mol):</label>
+                            <input type="number" id="hba1c" min="20" max="150" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label for="egfr">eGFR (mL/min/1.73m²):</label>
+                            <input type="number" id="egfr" min="15" max="150" required>
+                        </div>
+                        <div class="form-col">
+                            <label for="riskRegion">Regione di rischio:</label>
+                            <select id="riskRegion" required>
+                                <option value="">Seleziona regione</option>
+                                <option value="low">Basso rischio</option>
+                                <option value="moderate">Rischio moderato</option>
+                                <option value="high">Alto rischio</option>
+                                <option value="very_high">Rischio molto alto</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="calculate-btn">🧮 Calcola Rischio SCORE2-Diabetes</button>
+            </form>
+
+            <div id="result" class="result">
+                <h3>Risultato del calcolo</h3>
+                <div class="risk-value" id="riskValue">--</div>
+                <div class="risk-category" id="riskCategory">--</div>
+            </div>
+
+            <div class="info-section">
+                <h4>ℹ️ Informazioni sul SCORE2-Diabetes</h4>
+                <p>
+                    Il SCORE2-Diabetes è uno strumento validato per stimare il rischio di malattie cardiovascolari 
+                    a 10 anni in pazienti con diabete di tipo 2. Il calcolo considera diversi fattori di rischio 
+                    inclusi età, sesso, abitudine al fumo, pressione sanguigna, profilo lipidico, controllo glicemico 
+                    e funzione renale. I risultati devono essere interpretati nel contesto clinico appropriato.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Coefficienti del modello SCORE2-Diabetes
+        const coefficients = {
+            male: {
+                age: 0.5368,
+                smoking: 0.4774,
+                sbp: 0.1322,
+                diabetes: 0.6457,
+                tchol: 0.1102,
+                hdl: -0.1087,
+                smoking_age: -0.0672,
+                sbp_age: -0.0268,
+                diabetes_age: -0.0983,
+                tchol_age: -0.0181,
+                hdl_age: 0.0095,
+                agediab: -0.0998,
+                hba1c: 0.0955,
+                egfr: -0.0591,
+                egfr2: 0.0058,
+                hba1c_age: -0.0134,
+                egfr_age: 0.0115,
+                baseline_survival: 0.9605
+            },
+            female: {
+                age: 0.6624,
+                smoking: 0.6139,
+                sbp: 0.1421,
+                diabetes: 0.8096,
+                tchol: 0.1127,
+                hdl: -0.1568,
+                smoking_age: -0.1122,
+                sbp_age: -0.0167,
+                diabetes_age: -0.1272,
+                tchol_age: -0.0200,
+                hdl_age: 0.0186,
+                agediab: -0.1180,
+                hba1c: 0.1173,
+                egfr: -0.0640,
+                egfr2: 0.0062,
+                hba1c_age: -0.0196,
+                egfr_age: 0.0169,
+                baseline_survival: 0.9776
+            }
+        };
+
+        // Scale per calibrazione regionale
+        const scales = {
+            male: {
+                low: { scale1: -0.5699, scale2: 0.7476 },
+                moderate: { scale1: -0.1565, scale2: 0.8009 },
+                high: { scale1: 0.3207, scale2: 0.9360 },
+                very_high: { scale1: 0.5836, scale2: 0.8294 }
+            },
+            female: {
+                low: { scale1: -0.7380, scale2: 0.7019 },
+                moderate: { scale1: -0.3143, scale2: 0.7701 },
+                high: { scale1: 0.5710, scale2: 0.9369 },
+                very_high: { scale1: 0.9412, scale2: 0.8329 }
+            }
+        };
+
+        function calculateSCORE2Diabetes(data) {
+            const coef = coefficients[data.gender];
+            
+            // Trasformazioni delle variabili
+            const cage = (data.age - 60) / 5;
+            const csbp = (data.sbp - 120) / 20;
+            const ctchol = data.tchol - 6;
+            const chdl = (data.hdl - 1.3) / 0.5;
+            const cagediab = (data.agediab - 50) / 5;
+            const ca1c = (data.hba1c - 31) / 9.34;
+            const cegfr = (Math.log(data.egfr) - 4.5) / 0.15;
+            const cegfr2 = cegfr * cegfr;
+
+            // Calcolo X (somma dei prodotti beta * variabili trasformate)
+            let x = 0;
+            x += coef.age * cage;
+            x += coef.smoking * data.smoking;
+            x += coef.sbp * csbp;
+            x += coef.diabetes * 1; // sempre 1 perché è per diabetici
+            x += coef.tchol * ctchol;
+            x += coef.hdl * chdl;
+            x += coef.smoking_age * data.smoking * cage;
+            x += coef.sbp_age * csbp * cage;
+            x += coef.diabetes_age * 1 * cage; // sempre 1 perché è per diabetici
+            x += coef.tchol_age * ctchol * cage;
+            x += coef.hdl_age * chdl * cage;
+            x += coef.agediab * cagediab;
+            x += coef.hba1c * ca1c;
+            x += coef.egfr * cegfr;
+            x += coef.egfr2 * cegfr2;
+            x += coef.hba1c_age * ca1c * cage;
+            x += coef.egfr_age * cegfr * cage;
+
+            // Calcolo rischio a 10 anni
+            const tenYearRisk = 1 - Math.pow(coef.baseline_survival, Math.exp(x));
+
+            // Calibrazione regionale
+            const scale = scales[data.gender][data.riskRegion];
+            const calibratedRisk = (1 - Math.exp(-Math.exp(scale.scale1 + scale.scale2 * Math.log(-Math.log(1 - tenYearRisk))))) * 100;
+
+            return Math.max(0, Math.min(100, calibratedRisk));
+        }
+
+        function getRiskCategory(risk) {
+            if (risk < 5) return { category: 'Basso', class: 'risk-low' };
+            if (risk < 10) return { category: 'Moderato', class: 'risk-moderate' };
+            if (risk < 20) return { category: 'Alto', class: 'risk-high' };
+            return { category: 'Molto Alto', class: 'risk-very-high' };
+        }
+
+        document.getElementById('score2Form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = {
+                age: parseInt(formData.get('age')),
+                gender: formData.get('gender'),
+                smoking: parseInt(formData.get('smoking')),
+                sbp: parseInt(formData.get('sbp')),
+                tchol: parseFloat(formData.get('tchol')),
+                hdl: parseFloat(formData.get('hdl')),
+                agediab: parseInt(formData.get('agediab')),
+                hba1c: parseInt(formData.get('hba1c')),
+                egfr: parseInt(formData.get('egfr')),
+                riskRegion: formData.get('riskRegion')
+            };
+
+            // Validazioni
+            if (data.agediab > data.age) {
+                alert('L\'età alla diagnosi di diabete non può essere superiore all\'età attuale.');
+                return;
+            }
+
+            try {
+                const risk = calculateSCORE2Diabetes(data);
+                const riskInfo = getRiskCategory(risk);
+                
+                document.getElementById('riskValue').textContent = risk.toFixed(1) + '%';
+                document.getElementById('riskCategory').textContent = 'Rischio ' + riskInfo.category;
+                document.getElementById('riskCategory').className = 'risk-category ' + riskInfo.class;
+                
+                const resultDiv = document.getElementById('result');
+                resultDiv.classList.add('show');
+                resultDiv.scrollIntoView({ behavior: 'smooth' });
+                
+            } catch (error) {
+                alert('Errore nel calcolo. Verificare i dati inseriti.');
+                console.error('Errore di calcolo:', error);
+            }
+        });
+
+        // Validazione in tempo reale
+        document.getElementById('age').addEventListener('input', function() {
+            const ageDiabInput = document.getElementById('agediab');
+            if (this.value) {
+                ageDiabInput.max = this.value;
+            }
+        });
+    </script>
+</body>
+</html>
