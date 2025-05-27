@@ -1951,7 +1951,7 @@ if (colesteroloTotaleEl) {
     // Aggiorna dettagli CV usando ID specifici
     const cvAge = document.getElementById('cv-age');
     const cvPressure = document.getElementById('cv-pressure');
-    const cvCholesterol = document.getElementById('cv-cholesterol');
+    
     const cvSmoking = document.getElementById('cv-smoking');
 
     if (cvAge) {
@@ -1965,11 +1965,15 @@ if (colesteroloTotaleEl) {
     }
 
 
-if (cvCholesterol && userData) {
-  const totale = userData.colesterolo_totale || '--';
-  const hdl = userData.colesterolo_hdl_valore || '--';
-  cvCholesterol.innerHTML = `Colesterolo Totale: ${totale} mg/dL<br>Colesterolo HDL: ${hdl} mg/dL`;
-}
+setTimeout(() => {
+  const cvCholesterol = document.getElementById('cv-cholesterol');
+  if (cvCholesterol) {
+    const totale = userData.colesterolo_totale || '--';
+    const hdl = userData.colesterolo_hdl_valore || '--';
+    cvCholesterol.innerHTML = `Colesterolo Totale: ${totale} mg/dL<br>Colesterolo HDL: ${hdl} mg/dL`;
+  }
+}, 100);
+
 
     if (cvSmoking) {
       cvSmoking.textContent = userData.fumatore || 'No';
