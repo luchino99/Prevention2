@@ -1,3 +1,5 @@
+Link sito formule corrette score: https://www.mdcalc.com/calc/10510/score2-diabetes#evidence
+
 creare continuità conversazione modalità oltre sintomi, o inserire stop chat.
 mettere pulsante domanda precedente o successiva
 pulsante invio per andare avanti senza digitare  nulla
