@@ -569,10 +569,11 @@
                 <span>Pressione</span>
                 <span class="font-medium" id="cv-pressure">-- mmHg</span>
               </div>
-              <div class="flex justify-between text-sm">
-                <span>Colesterolo</span>
-                <span class="font-medium" id="cv-cholesterol">-- mg/dL</span>
-              </div>
+<div class="text-sm text-gray-500" id="cv-cholesterol">
+  Colesterolo Totale: -- mg/dL<br>
+  Colesterolo HDL: -- mg/dL
+</div>
+
               <div class="flex justify-between text-sm">
                 <span>Fumo</span>
                 <span class="font-medium" id="cv-smoking">--</span>
@@ -1963,10 +1964,11 @@ if (colesteroloTotaleEl) {
       console.log('📝 Pressione CV aggiornata:', userData.pressione_sistolica, userData.pressione_diastolica);
     }
 
-    if (cvCholesterol) {
-      cvCholesterol.textContent = `HDL ${userData.colesterolo_hdl_valore || '--'} mg/dL`;
-      console.log('📝 Colesterolo CV aggiornato:', userData.colesterolo_hdl_valore);
-    }
+if (cvCholesterol) {
+  const totale = userData.colesterolo_totale || '--';
+  const hdl = userData.colesterolo_hdl_valore || '--';
+  cvCholesterol.innerHTML = `Colesterolo Totale: ${totale} mg/dL<br>Colesterolo HDL: ${hdl} mg/dL`;
+}
 
     if (cvSmoking) {
       cvSmoking.textContent = userData.fumatore || 'No';
