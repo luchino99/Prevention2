@@ -421,6 +421,11 @@
           <div class="flex-1 bg-blue-50 rounded-lg p-3">
             <div class="flex justify-between items-center mb-2">
               <h3 class="text-sm font-medium text-gray-600">SCORE2</h3>
+              <div class="flex items-center space-x-2 mt-2">
+  <div class="text-sm text-gray-500">Colesterolo totale:</div>
+  <div class="font-medium" id="colesterolo-totale-indicatore">-- mg/dL</div>
+</div>
+
               <span class="badge badge-warning" id="score2-badge">Caricamento</span>
             </div>
             <div class="flex items-center space-x-2">
@@ -1798,6 +1803,11 @@ function calculateScore2Diabetes() {
     const bmiIndicator = document.getElementById('bmi-indicator');
     const bmiBadge = document.getElementById('bmi-badge');
     const bmiCategory = document.getElementById('bmi-category');
+    const colesteroloTotaleEl = document.getElementById("colesterolo-totale-indicatore");
+if (colesteroloTotaleEl) {
+  colesteroloTotaleEl.textContent = (userData.colesterolo_totale || "--") + " mg/dL";
+}
+
 
     if (bmiIndicator) {
       bmiIndicator.textContent = dashboardData.bmi.value;
