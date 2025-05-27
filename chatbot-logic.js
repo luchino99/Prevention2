@@ -11,6 +11,7 @@ const domandeBase = [
   { key: "altezza", testo: "Quanto sei alto/a in cm?" },
   { key: "peso", testo: "Quanto pesi in kg?" },
   { key: "vita", testo: "La misura del tuo giro vita è maggiore di 88 cm (se sei donna) o maggiore di 102 cm (se sei uomo)?" },
+  { key: "circonferenza_vita", testo: "Qual è la misura esatta della tua circonferenza vita in cm?" },
   { key: "glicemia", testo: "La tua glicemia è inferiore a 100 mg/dL?" },
   { key: "glicemia_valore", testo: "Sai a quanto corrisponde il valore della tua glicemia a digiuno?" },
   { key: "hba1c", testo: "Conosci il valore della tua emoglobina glicata (HbA1c)? (in %)" },
@@ -26,6 +27,18 @@ const domandeBase = [
   { key: "piastrine", testo: "Conosci il valore delle tue piastrine? (x10^9/L o x1000/mm³)" },
   { key: "albumina", testo: "Conosci il valore della tua albumina sierica? (g/dL)" },
   { key: "linfociti", testo: "Conosci il numero dei tuoi linfociti? (per mm³)" },
+  
+  // 🆕 NUOVE DOMANDE PER SCORE2-DIABETES
+  { key: "creatinina", testo: "Conosci il valore della tua creatinina sierica? (mg/dL) - Necessaria per calcolare la funzione renale" },
+  
+  // 🆕 NUOVE DOMANDE PER FATTY LIVER INDEX
+  { key: "ggt", testo: "Conosci il valore della tua gamma-glutamiltransferasi (GGT)? (U/L)" },
+  
+  // 🆕 NUOVE DOMANDE PER FRAX
+  { key: "dexa_tscore", testo: "Hai mai fatto una densitometria ossea (DEXA)? Se sì, indica il T-score del collo femorale" },
+  { key: "cause_secondarie_osteoporosi", testo: "Hai una delle seguenti condizioni: diabete tipo 1, ipertiroidismo non trattato, ipogonadismo, menopausa precoce (<45 anni), malassorbimento cronico, malattie epatiche croniche? (sì/no)" },
+  
+  { key: "trigliceridi", testo: "Qual è il valore dei tuoi trigliceridi (mg/dL)?" },
   { key: "malattie_croniche", testo: "Hai malattie croniche diagnosticate (es. diabete, ipertensione)?" },
   { key: "farmaci", testo: "Assumi farmaci?" },
   { key: "farmaci_dettaglio", testo: "Se assumi farmaci, elencali nella casella di testo sottostante.", condizione: "farmaci" },
@@ -41,8 +54,9 @@ const domandeBase = [
   { key: "frequenza_attivita_fisica", testo: "Con quale frequenza svogli questa attività" , condizione: "attivita_fisica" },
   { key: "tipo_attivita", testo: "Che tipo di attività fisica svolgi? (aerobica, rafforzamento muscolare, rafforzamento osseo e stretching)" , condizione: "attivita_fisica" },
   { key: "durata_attivita", testo: "Quanto dura ogni allenamento? (in minuti)" , condizione: "attivita_fisica" },
+  
+  // Domande PREDIMED (mantenute)
   { key: "predimed_1", testo: "Usi l'olio extravergine di oliva come condimento principale (es. per cucinare, condire insalate)?" },
-  { key: "trigliceridi", testo: "Qual è il valore dei tuoi trigliceridi (mg/dL)?" },
   { key: "predimed_2", testo: "Ne usi più di 4 cucchiai al giorno?" },
   { key: "predimed_3", testo: "Mangi almeno 2 porzioni di verdura al giorno? (1 porzione = 200g circa)" },
   { key: "predimed_4", testo: "Mangi almeno 3 porzioni di frutta al giorno? (1 porzione = 1 frutto medio o 100g circa)" },
@@ -56,14 +70,15 @@ const domandeBase = [
   { key: "predimed_12", testo: "Mangi frutta secca almeno 3 volte a settimana?" },
   { key: "predimed_13", testo: "Usi soffritti con pomodoro, cipolla, aglio e olio d'oliva almeno 2 volte a settimana?" },
   { key: "predimed_14", testo: "Pensi che la tua alimentazione sia vicina alla dieta mediterranea?" },
+  
   { key: "stanchezza", testo: "In genere ti senti stanco/a?" },
   { key: "depressione", testo: "Hai mai avuto episodi di depressione?" },
   { key: "insonnia", testo: "Hai difficoltà a dormire?" },
   { key: "tipo_insonnia", testo: "Se hai difficoltà a dormire, descrivi la difficoltà (es. fatica ad addormentarti, risvegli notturni...)" },
   { key: "stress", testo: "Livello percepito di stress (da 1 = niente stress a 10 = stress molto elevato)" },
   { key: "preferenze", testo: "C'è qualcosa di specifico sulla tua salute che ti interessa approfondire? (es: alimentazione, cuore, sonno, stress, screening oncologici, attività fisica, benessere mentale)" }
-
 ];
+
 
 const domandeOver65 = [
   { key: "over_stanchezza", testo: "Ti senti stanco/a frequentemente?" },
@@ -135,7 +150,7 @@ let ultimaRispostaBot = "";
   
   
 const aliasCondivisi = {
-  // ... mantieni tutti gli alias esistenti ...
+  // Dati esistenti
   eta: ["eta"],
   sesso: ["sesso"],
   altezza: ["altezza"],
@@ -167,13 +182,20 @@ const aliasCondivisi = {
   sollevamento: ["sollevamento", "over_sollevamento"],
   sedia: ["sedia", "over_sedia"],
   cadute: ["cadute", "over_cadute"],
-  // 🆕 Aggiungi alias per i nuovi campi se necessario
+  
+  // 🆕 NUOVI ALIAS PER GLI SCORE
   ast: ["ast"],
   alt: ["alt"],
   piastrine: ["piastrine"],
   albumina: ["albumina"],
   linfociti: ["linfociti"],
-  hba1c: ["hba1c"]
+  hba1c: ["hba1c"],
+  creatinina: ["creatinina"],
+  ggt: ["ggt"],
+  dexa_tscore: ["dexa_tscore"],
+  cause_secondarie_osteoporosi: ["cause_secondarie_osteoporosi"],
+  circonferenza_vita: ["circonferenza_vita"],
+  trigliceridi: ["trigliceridi"]
 };
   function haRispostaCondivisa(domandaKey) {
   for (const [profiloKey, domandeKeys] of Object.entries(aliasCondivisi)) {
