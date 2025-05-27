@@ -1394,67 +1394,84 @@
 
   // 6. Calcolo SCORE2-Diabete
   function calculateScore2Diabetes() {
-    const hba1c = parseFloat(userData.hba1c);
-    const glicemia = parseFloat(userData.glicemia_valore);
-    const sistolica = parseFloat(userData.pressione_sistolica);
-    const eta = parseInt(userData.eta);
+  const hba1c = parseFloat(userData.hba1c);
+  const glicemia = parseFloat(userData.glicemia_valore);
+  const sistolica = parseFloat(userData.pressione_sistolica);
+  const eta = parseInt(userData.eta);
+  const haDiabete = String(userData.diabete || "").toLowerCase().includes("sì");
 
-    if (!isNaN(hba1c) || !isNaN(glicemia) || !isNaN(sistolica)) {
-      // Formula semplificata per SCORE2-Diabete
-      let riskScore = 0;
-
-      // Contributo HbA1c
-      if (!isNaN(hba1c)) {
-        if (hba1c >= 9) riskScore += 4;
-        else if (hba1c >= 8) riskScore += 3;
-        else if (hba1c >= 7) riskScore += 2;
-        else if (hba1c >= 6.5) riskScore += 1;
-      }
-
-      // Contributo glicemia a digiuno
-      if (!isNaN(glicemia)) {
-        if (glicemia >= 200) riskScore += 3;
-        else if (glicemia >= 140) riskScore += 2;
-        else if (glicemia >= 110) riskScore += 1;
-      }
-
-      // Contributo pressione sistolica
-      if (!isNaN(sistolica)) {
-        if (sistolica >= 180) riskScore += 3;
-        else if (sistolica >= 160) riskScore += 2;
-        else if (sistolica >= 140) riskScore += 1;
-      }
-
-      // Contributo età
-      if (!isNaN(eta)) {
-        if (eta >= 70) riskScore += 2;
-        else if (eta >= 60) riskScore += 1;
-      }
-
-      // Converti in percentuale (max 15%, scala da 0 a 15)
-      const riskPercent = Math.min(riskScore * 1.2, 15);
-
-      let category = 'success';
-      let risk = 'Basso';
-
-      if (riskPercent >= 10) {
-        category = 'danger';
-        risk = 'Alto';
-      } else if (riskPercent >= 5) {
-        category = 'warning';
-        risk = 'Moderato';
-      }
-
-      dashboardData.score2Diabetes = {
-        value: riskPercent.toFixed(1),
-        hba1c: hba1c || 0,
-        glicemia: glicemia || 0,
-        sistolica: sistolica || 0,
-        risk: risk,
-        category: category
-      };
-    }
+  // ✅ SCORE2-Diabetes si applica solo se il diabete è diagnosticato
+  if (!haDiabete) {
+    console.warn("⛔ SCORE2-Diabetes non calcolato: il paziente non ha diabete diagnosticato.");
+    dashboardData.score2Diabetes = {
+      value: 'ND',
+      hba1c: hba1c || 0,
+      glicemia: glicemia || 0,
+      sistolica: sistolica || 0,
+      risk: 'Non applicabile',
+      category: 'warning'
+    };
+    return;
   }
+
+  // Inizio calcolo
+  let riskScore = 0;
+
+  // Contributo HbA1c
+  if (!isNaN(hba1c)) {
+    if (hba1c >= 9) riskScore += 4;
+    else if (hba1c >= 8) riskScore += 3;
+    else if (hba1c >= 7) riskScore += 2;
+    else if (hba1c >= 6.5) riskScore += 1;
+  }
+
+  // Contributo glicemia a digiuno
+  if (!isNaN(glicemia)) {
+    if (glicemia >= 200) riskScore += 3;
+    else if (glicemia >= 140) riskScore += 2;
+    else if (glicemia >= 110) riskScore += 1;
+  }
+
+  // Contributo pressione sistolica
+  if (!isNaN(sistolica)) {
+    if (sistolica >= 180) riskScore += 3;
+    else if (sistolica >= 160) riskScore += 2;
+    else if (sistolica >= 140) riskScore += 1;
+  }
+
+  // Contributo età
+  if (!isNaN(eta)) {
+    if (eta >= 70) riskScore += 2;
+    else if (eta >= 60) riskScore += 1;
+  }
+
+  // ✅ Diabete diagnosticato → punteggio fisso
+  riskScore += 2;
+
+  // Percentuale finale
+  const riskPercent = Math.min(riskScore * 1.2, 15);
+
+  // Categoria rischio
+  let category = 'success';
+  let risk = 'Basso';
+  if (riskPercent >= 10) {
+    category = 'danger';
+    risk = 'Alto';
+  } else if (riskPercent >= 5) {
+    category = 'warning';
+    risk = 'Moderato';
+  }
+
+  dashboardData.score2Diabetes = {
+    value: riskPercent.toFixed(1),
+    hba1c: hba1c || 0,
+    glicemia: glicemia || 0,
+    sistolica: sistolica || 0,
+    risk: risk,
+    category: category
+  };
+}
+
 
   // 7. Calcolo FIB4
   function calculateFIB4() {
