@@ -1065,7 +1065,14 @@
   const hdl = parseFloat(userData.colesterolo_hdl_valore);
   const fumatore = (userData.fumatore || "").toLowerCase() === "sì";
 
-  console.log("📊 SCORE2 dati:", { eta, sesso, sistolica, colTotale, hdl, fumatore });
+  console.log("🎯 SCORE2 INPUT DEBUG:", {
+  eta: userData.eta,
+  sesso: userData.sesso,
+  fumatore: userData.fumatore,
+  pressione_sistolica: userData.pressione_sistolica,
+  colesterolo_totale: userData.colesterolo_totale,
+  colesterolo_hdl_valore: userData.colesterolo_hdl_valore
+});
 
   if (isNaN(eta) || isNaN(sistolica) || isNaN(colTotale) || isNaN(hdl)) {
     dashboardData.score2 = {
