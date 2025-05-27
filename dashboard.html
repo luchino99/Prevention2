@@ -1964,7 +1964,8 @@ if (colesteroloTotaleEl) {
       console.log('📝 Pressione CV aggiornata:', userData.pressione_sistolica, userData.pressione_diastolica);
     }
 
-if (cvCholesterol) {
+
+if (cvCholesterol && userData) {
   const totale = userData.colesterolo_totale || '--';
   const hdl = userData.colesterolo_hdl_valore || '--';
   cvCholesterol.innerHTML = `Colesterolo Totale: ${totale} mg/dL<br>Colesterolo HDL: ${hdl} mg/dL`;
