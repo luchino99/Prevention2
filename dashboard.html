@@ -1433,7 +1433,8 @@
   else if (hba1c >= 9) riskScore += 3;
 
   // Rischio stimato (più realistico)
-  const riskPercent = Math.min(riskScore * 1.2, 30);
+  const riskPercent = riskScore * 1.3; // oppure *1.4
+
 
   let category = 'success';
   let risk = 'Basso';
