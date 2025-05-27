@@ -1162,19 +1162,19 @@
         console.error("❌ Errore durante il salvataggio:", error);
         saveButton.innerHTML = originalButtonText;
         saveButton.disabled = false;
-        showNotification('❌ Errore durante il salvataggio: ' + error.message, 'error');
+        showNotification('Errore durante il salvataggio: ' + error.message, 'error');
       } else {
         console.log("✅ Profilo salvato con successo, inclusi nuovi parametri clinici!");
         saveButton.innerHTML = originalButtonText;
         saveButton.disabled = false;
-        showNotification('✅ Dati salvati con successo!', 'success');
+        showNotification('Dati salvati con successo!', 'success');
       }
 
     } catch (err) {
       console.error("❌ Errore imprevisto:", err);
       saveButton.innerHTML = originalButtonText;
       saveButton.disabled = false;
-      showNotification('❌ Errore imprevisto durante il salvataggio', 'error');
+      showNotification('Errore imprevisto durante il salvataggio', 'error');
     }
   }
 
