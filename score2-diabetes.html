@@ -442,21 +442,25 @@
         document.getElementById('score2Form').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            const formData = new FormData(this);
             const data = {
-                age: parseInt(formData.get('age')),
-                gender: formData.get('gender'),
-                smoking: parseInt(formData.get('smoking')),
-                sbp: parseInt(formData.get('sbp')),
-                tchol: parseFloat(formData.get('tchol')),
-                hdl: parseFloat(formData.get('hdl')),
-                agediab: parseInt(formData.get('agediab')),
-                hba1c: parseInt(formData.get('hba1c')),
-                egfr: parseInt(formData.get('egfr')),
-                riskRegion: formData.get('riskRegion')
+                age: parseInt(document.getElementById('age').value),
+                gender: document.querySelector('input[name="gender"]:checked').value,
+                smoking: parseInt(document.querySelector('input[name="smoking"]:checked').value),
+                sbp: parseInt(document.getElementById('sbp').value),
+                tchol: parseFloat(document.getElementById('tchol').value),
+                hdl: parseFloat(document.getElementById('hdl').value),
+                agediab: parseInt(document.getElementById('agediab').value),
+                hba1c: parseInt(document.getElementById('hba1c').value),
+                egfr: parseInt(document.getElementById('egfr').value),
+                riskRegion: document.getElementById('riskRegion').value
             };
 
             // Validazioni
+            if (!data.gender || !data.smoking === null || !data.riskRegion) {
+                alert('Per favore, completa tutti i campi obbligatori.');
+                return;
+            }
+            
             if (data.agediab > data.age) {
                 alert('L\'età alla diagnosi di diabete non può essere superiore all\'età attuale.');
                 return;
