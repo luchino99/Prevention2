@@ -1058,83 +1058,69 @@
 
   // 2. Calcolo SCORE2 - Versione migliorata con debug
   function calculateSCORE2() {
-    console.log('🔄 Inizio calcolo SCORE2...');
+  const eta = parseInt(userData.eta);
+  const sesso = (userData.sesso || "").toLowerCase();
+  const sistolica = parseFloat(userData.pressione_sistolica);
+  const colTotale = parseFloat(userData.colesterolo_totale);
+  const hdl = parseFloat(userData.colesterolo_hdl_valore);
+  const fumatore = (userData.fumatore || "").toLowerCase() === "sì";
 
-    const eta = parseInt(userData.eta);
-    const sesso = userData.sesso?.toLowerCase();
-    const sistolica = parseFloat(userData.pressione_sistolica);
-    const colTotale = parseFloat(userData.colesterolo_totale);
-    const hdl = parseFloat(userData.colesterolo_hdl_valore);
-    const fumatore = userData.fumatore?.toLowerCase() === 'sì';
+  console.log("📊 SCORE2 dati:", { eta, sesso, sistolica, colTotale, hdl, fumatore });
 
-    console.log('📋 Valori SCORE2 estratti:', {
-      eta, sesso, sistolica, colTotale, hdl, fumatore
-    });
-
-    // Verifica che tutti i valori necessari siano presenti
-    if (!eta || isNaN(eta)) {
-      console.warn('⚠️ Età mancante o non valida:', userData.eta);
-      dashboardData.score2 = { value: '0.0', risk: 'Dati insufficienti', category: 'warning' };
-      return;
-    }
-
-    if (!sistolica || isNaN(sistolica)) {
-      console.warn('⚠️ Pressione sistolica mancante o non valida:', userData.pressione_sistolica);
-      dashboardData.score2 = { value: '0.0', risk: 'Dati insufficienti', category: 'warning' };
-      return;
-    }
-
-    if (!colTotale || isNaN(colTotale) || !hdl || isNaN(hdl)) {
-      console.warn('⚠️ Valori colesterolo mancanti:', { colTotale, hdl });
-      dashboardData.score2 = { value: '0.0', risk: 'Dati insufficienti', category: 'warning' };
-      return;
-    }
-
-    let score = 0;
-
-    // Fattore età
-    if (eta >= 40 && eta < 50) score += 0;
-    else if (eta >= 50 && eta < 60) score += 3;
-    else if (eta >= 60 && eta < 70) score += 6;
-    else if (eta >= 70) score += 9;
-
-    // Fattore pressione
-    if (sistolica >= 140) score += 2;
-    if (sistolica >= 160) score += 3;
-    if (sistolica >= 180) score += 4;
-
-    // Fattore colesterolo
-    const nonHDL = colTotale - hdl;
-    if (nonHDL >= 190) score += 1;
-    if (nonHDL >= 220) score += 2;
-    if (nonHDL >= 280) score += 3;
-
-    // Fattore fumo
-    if (fumatore) score += 4;
-
-    // Converti in percentuale di rischio
-    const riskPercent = Math.min(score * 0.5, 20);
-
-    console.log('🧮 Calcolo SCORE2 completato:', { score, riskPercent });
-
-    dashboardData.score2.value = riskPercent.toFixed(1);
-
-    if (riskPercent < 1) {
-      dashboardData.score2.risk = 'Basso';
-      dashboardData.score2.category = 'success';
-    } else if (riskPercent < 5) {
-      dashboardData.score2.risk = 'Moderato';
-      dashboardData.score2.category = 'warning';
-    } else if (riskPercent < 10) {
-      dashboardData.score2.risk = 'Alto';
-      dashboardData.score2.category = 'danger';
-    } else {
-      dashboardData.score2.risk = 'Molto alto';
-      dashboardData.score2.category = 'danger';
-    }
-
-    console.log('✅ SCORE2 calcolato:', dashboardData.score2);
+  if (isNaN(eta) || isNaN(sistolica) || isNaN(colTotale) || isNaN(hdl)) {
+    dashboardData.score2 = {
+      value: 'ND',
+      risk: 'Dati insufficienti',
+      category: 'warning'
+    };
+    return;
   }
+
+  // SCORE2 non applicabile <40 anni
+  if (eta < 40 || eta > 69) {
+    dashboardData.score2 = {
+      value: '<1',
+      risk: 'Molto basso o non stimabile <40 anni',
+      category: 'success'
+    };
+    return;
+  }
+
+  // Calcolo rischio stimato approssimativo in base a griglie SCORE2 (ESC 2021)
+  const nonHDL = colTotale - hdl;
+  let rischioBase = 0.5; // base per uomini <50 non fumatori, colesterolo normale
+
+  if (sistolica >= 140) rischioBase += 0.3;
+  if (sistolica >= 160) rischioBase += 0.3;
+
+  if (nonHDL >= 130 && nonHDL < 160) rischioBase += 0.5;
+  else if (nonHDL >= 160 && nonHDL < 190) rischioBase += 1;
+  else if (nonHDL >= 190) rischioBase += 2;
+
+  if (fumatore) rischioBase += 1;
+
+  if (eta >= 50 && eta < 60) rischioBase *= 1.6;
+  else if (eta >= 60) rischioBase *= 2;
+
+  const riskPercent = Math.min(rischioBase, 20).toFixed(1);
+
+  let categoria = 'success';
+  let rischio = 'Basso';
+  if (riskPercent >= 5) {
+    categoria = 'danger';
+    rischio = 'Alto';
+  } else if (riskPercent >= 1) {
+    categoria = 'warning';
+    rischio = 'Moderato';
+  }
+
+  dashboardData.score2 = {
+    value: riskPercent,
+    risk: rischio,
+    category: categoria
+  };
+}
+
 
   // 3. Calcolo PREDIMED
   function calculatePREDIMED() {
