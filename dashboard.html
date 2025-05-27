@@ -1951,6 +1951,12 @@ if (colesteroloTotaleEl) {
     // Aggiorna dettagli CV usando ID specifici
     const cvAge = document.getElementById('cv-age');
     const cvPressure = document.getElementById('cv-pressure');
+    const cvColesteroloInfo = document.getElementById("cv-colesterolo-info");
+if (cvColesteroloInfo && userData) {
+  const totale = userData.colesterolo_totale || '--';
+  const hdl = userData.colesterolo_hdl_valore || '--';
+  cvColesteroloInfo.innerHTML = `Colesterolo Totale: ${totale} mg/dL<br>Colesterolo HDL: ${hdl} mg/dL`;
+}
     
     const cvSmoking = document.getElementById('cv-smoking');
 
@@ -1963,16 +1969,6 @@ if (colesteroloTotaleEl) {
       cvPressure.textContent = `${userData.pressione_sistolica || '--'}/${userData.pressione_diastolica || '--'} mmHg`;
       console.log('📝 Pressione CV aggiornata:', userData.pressione_sistolica, userData.pressione_diastolica);
     }
-
-
-setTimeout(() => {
-  const cvCholesterol = document.getElementById('cv-cholesterol');
-  if (cvCholesterol) {
-    const totale = userData.colesterolo_totale || '--';
-    const hdl = userData.colesterolo_hdl_valore || '--';
-    cvCholesterol.innerHTML = `Colesterolo Totale: ${totale} mg/dL<br>Colesterolo HDL: ${hdl} mg/dL`;
-  }
-}, 100);
 
 
     if (cvSmoking) {
