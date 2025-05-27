@@ -1099,7 +1099,13 @@
 
   const prob = 1 - Math.pow(0.9874, Math.exp(riskScore)); // base hazard per Sud Europa
 
-  const percent = Math.max(0, Math.min(prob * 100);
+  const percent = prob * 100;
+
+dashboardData.score2 = {
+  value: percent.toFixed(1),
+  risk: percent >= 10 ? "Alto" : percent >= 5 ? "Moderato" : "Basso",
+  category: percent >= 10 ? "danger" : percent >= 5 ? "warning" : "success"
+};
 
   let riskLevel = "Basso";
   let category = "success";
