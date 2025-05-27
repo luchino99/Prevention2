@@ -398,7 +398,7 @@
     </div>
   </header>
 
-    <!-- Main Content -->
+  <!-- Main Content -->
   <main class="dashboard-main container mx-auto px-4 pb-8">
     <!-- Panoramica principale -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -569,11 +569,10 @@
                 <span>Pressione</span>
                 <span class="font-medium" id="cv-pressure">-- mmHg</span>
               </div>
-<div class="text-sm text-gray-500" id="cv-cholesterol">
-  Colesterolo Totale: -- mg/dL<br>
-  Colesterolo HDL: -- mg/dL
-</div>
-
+              <div class="flex justify-between text-sm">
+                <span>Colesterolo</span>
+                <span class="font-medium" id="cv-cholesterol">-- mg/dL</span>
+              </div>
               <div class="flex justify-between text-sm">
                 <span>Fumo</span>
                 <span class="font-medium" id="cv-smoking">--</span>
@@ -1017,11 +1016,6 @@
     calculateNutritionalNeeds();
     evaluatePhysicalActivity();
 
-    console.log("🧪 Verifica colesterolo nel momento del calcolo:", {
-  totale: userData.colesterolo_totale,
-  hdl: userData.colesterolo_hdl_valore
-});
-
     console.log('🎯 Risultati finali degli score:', {
       bmi: dashboardData.bmi,
       score2: dashboardData.score2,
@@ -1064,67 +1058,83 @@
 
   // 2. Calcolo SCORE2 - Versione migliorata con debug
   function calculateSCORE2() {
-  const eta = parseInt(userData.eta);
-  const sesso = userData.sesso;
-  const fumatore = userData.fumatore === 'si';
-  const pressione = parseFloat(userData.pressione_sistolica);
-  const colTotale = parseFloat(userData.colesterolo_totale);
-  const hdl = parseFloat(userData.colesterolo_hdl_valore);
+    console.log('🔄 Inizio calcolo SCORE2...');
 
-  if (isNaN(eta) || isNaN(pressione) || isNaN(colTotale) || isNaN(hdl) || !sesso) return;
+    const eta = parseInt(userData.eta);
+    const sesso = userData.sesso?.toLowerCase();
+    const sistolica = parseFloat(userData.pressione_sistolica);
+    const colTotale = parseFloat(userData.colesterolo_totale);
+    const hdl = parseFloat(userData.colesterolo_hdl_valore);
+    const fumatore = userData.fumatore?.toLowerCase() === 'sì';
 
-  const etaCalcolo = eta < 40 ? 55 : eta;
-  const nonHDL = colTotale - hdl;
+    console.log('📋 Valori SCORE2 estratti:', {
+      eta, sesso, sistolica, colTotale, hdl, fumatore
+    });
 
-  // Coefficienti per uomini, Sud Europa (semplificati)
-  let coeff = {
-    age: 3.112,
-    nonHDL: 1.2,
-    sbp: 1.6,
-    smoke: 0.8,
-    const: -22.1
-  };
+    // Verifica che tutti i valori necessari siano presenti
+    if (!eta || isNaN(eta)) {
+      console.warn('⚠️ Età mancante o non valida:', userData.eta);
+      dashboardData.score2 = { value: '0.0', risk: 'Dati insufficienti', category: 'warning' };
+      return;
+    }
 
-  // Log-transformati
-  const logAge = Math.log(etaCalcolo);
-  const logNonHDL = Math.log(nonHDL);
-  const logSBP = Math.log(pressione);
-  const smoke = fumatore ? 1 : 0;
+    if (!sistolica || isNaN(sistolica)) {
+      console.warn('⚠️ Pressione sistolica mancante o non valida:', userData.pressione_sistolica);
+      dashboardData.score2 = { value: '0.0', risk: 'Dati insufficienti', category: 'warning' };
+      return;
+    }
 
-  const riskScore = coeff.const +
-                    coeff.age * logAge +
-                    coeff.nonHDL * logNonHDL +
-                    coeff.sbp * logSBP +
-                    coeff.smoke * smoke;
+    if (!colTotale || isNaN(colTotale) || !hdl || isNaN(hdl)) {
+      console.warn('⚠️ Valori colesterolo mancanti:', { colTotale, hdl });
+      dashboardData.score2 = { value: '0.0', risk: 'Dati insufficienti', category: 'warning' };
+      return;
+    }
 
-  const prob = 1 - Math.pow(0.9874, Math.exp(riskScore)); // base hazard per Sud Europa
+    let score = 0;
 
-  const percent = prob * 100;
+    // Fattore età
+    if (eta >= 40 && eta < 50) score += 0;
+    else if (eta >= 50 && eta < 60) score += 3;
+    else if (eta >= 60 && eta < 70) score += 6;
+    else if (eta >= 70) score += 9;
 
-dashboardData.score2 = {
-  value: percent.toFixed(1),
-  risk: percent >= 10 ? "Alto" : percent >= 5 ? "Moderato" : "Basso",
-  category: percent >= 10 ? "danger" : percent >= 5 ? "warning" : "success"
-};
+    // Fattore pressione
+    if (sistolica >= 140) score += 2;
+    if (sistolica >= 160) score += 3;
+    if (sistolica >= 180) score += 4;
 
-  let riskLevel = "Basso";
-  let category = "success";
-  if (percent >= 10) {
-    riskLevel = "Alto";
-    category = "danger";
-  } else if (percent >= 5) {
-    riskLevel = "Moderato";
-    category = "warning";
+    // Fattore colesterolo
+    const nonHDL = colTotale - hdl;
+    if (nonHDL >= 190) score += 1;
+    if (nonHDL >= 220) score += 2;
+    if (nonHDL >= 280) score += 3;
+
+    // Fattore fumo
+    if (fumatore) score += 4;
+
+    // Converti in percentuale di rischio
+    const riskPercent = Math.min(score * 0.5, 20);
+
+    console.log('🧮 Calcolo SCORE2 completato:', { score, riskPercent });
+
+    dashboardData.score2.value = riskPercent.toFixed(1);
+
+    if (riskPercent < 1) {
+      dashboardData.score2.risk = 'Basso';
+      dashboardData.score2.category = 'success';
+    } else if (riskPercent < 5) {
+      dashboardData.score2.risk = 'Moderato';
+      dashboardData.score2.category = 'warning';
+    } else if (riskPercent < 10) {
+      dashboardData.score2.risk = 'Alto';
+      dashboardData.score2.category = 'danger';
+    } else {
+      dashboardData.score2.risk = 'Molto alto';
+      dashboardData.score2.category = 'danger';
+    }
+
+    console.log('✅ SCORE2 calcolato:', dashboardData.score2);
   }
-
-  dashboardData.score2 = {
-    value: percent.toFixed(1),
-    risk: riskLevel,
-    category: category
-  };
-}
-
-
 
   // 3. Calcolo PREDIMED
   function calculatePREDIMED() {
@@ -1383,85 +1393,68 @@ dashboardData.score2 = {
   }
 
   // 6. Calcolo SCORE2-Diabete
-function calculateScore2Diabetes() {
-  const hba1c = parseFloat(userData.hba1c);
-  const glicemia = parseFloat(userData.glicemia_valore);
-  const sistolica = parseFloat(userData.pressione_sistolica);
-  const eta = parseInt(userData.eta);
-  const haDiabete = String(userData.diabete || "").toLowerCase().includes("sì");
+  function calculateScore2Diabetes() {
+    const hba1c = parseFloat(userData.hba1c);
+    const glicemia = parseFloat(userData.glicemia_valore);
+    const sistolica = parseFloat(userData.pressione_sistolica);
+    const eta = parseInt(userData.eta);
 
-  // ✅ SCORE2-Diabetes si applica solo se il diabete è diagnosticato
-  if (!haDiabete) {
-    console.warn("⛔ SCORE2-Diabetes non calcolato: il paziente non ha diabete diagnosticato.");
-    dashboardData.score2Diabetes = {
-      value: 'ND',
-      hba1c: hba1c || 0,
-      glicemia: glicemia || 0,
-      sistolica: sistolica || 0,
-      risk: 'Non applicabile',
-      category: 'warning'
-    };
-    return;
+    if (!isNaN(hba1c) || !isNaN(glicemia) || !isNaN(sistolica)) {
+      // Formula semplificata per SCORE2-Diabete
+      let riskScore = 0;
+
+      // Contributo HbA1c
+      if (!isNaN(hba1c)) {
+        if (hba1c >= 9) riskScore += 4;
+        else if (hba1c >= 8) riskScore += 3;
+        else if (hba1c >= 7) riskScore += 2;
+        else if (hba1c >= 6.5) riskScore += 1;
+      }
+
+      // Contributo glicemia a digiuno
+      if (!isNaN(glicemia)) {
+        if (glicemia >= 200) riskScore += 3;
+        else if (glicemia >= 140) riskScore += 2;
+        else if (glicemia >= 110) riskScore += 1;
+      }
+
+      // Contributo pressione sistolica
+      if (!isNaN(sistolica)) {
+        if (sistolica >= 180) riskScore += 3;
+        else if (sistolica >= 160) riskScore += 2;
+        else if (sistolica >= 140) riskScore += 1;
+      }
+
+      // Contributo età
+      if (!isNaN(eta)) {
+        if (eta >= 70) riskScore += 2;
+        else if (eta >= 60) riskScore += 1;
+      }
+
+      // Converti in percentuale (max 15%, scala da 0 a 15)
+      const riskPercent = Math.min(riskScore * 1.2, 15);
+
+      let category = 'success';
+      let risk = 'Basso';
+
+      if (riskPercent >= 10) {
+        category = 'danger';
+        risk = 'Alto';
+      } else if (riskPercent >= 5) {
+        category = 'warning';
+        risk = 'Moderato';
+      }
+
+      dashboardData.score2Diabetes = {
+        value: riskPercent.toFixed(1),
+        hba1c: hba1c || 0,
+        glicemia: glicemia || 0,
+        sistolica: sistolica || 0,
+        risk: risk,
+        category: category
+      };
+    }
   }
-
-  // Inizio calcolo
-  let riskScore = 0;
-
-  // Contributo HbA1c
-  if (!isNaN(hba1c)) {
-    if (hba1c >= 9) riskScore += 4;
-    else if (hba1c >= 8) riskScore += 3;
-    else if (hba1c >= 7) riskScore += 2;
-    else if (hba1c >= 6.5) riskScore += 1;
-  }
-
-  // Contributo glicemia a digiuno
-  if (!isNaN(glicemia)) {
-    if (glicemia >= 200) riskScore += 3;
-    else if (glicemia >= 140) riskScore += 2;
-    else if (glicemia >= 110) riskScore += 1;
-  }
-
-  // Contributo pressione sistolica
-  if (!isNaN(sistolica)) {
-    if (sistolica >= 180) riskScore += 3;
-    else if (sistolica >= 160) riskScore += 2;
-    else if (sistolica >= 140) riskScore += 1;
-  }
-
-  // Contributo età
-  if (!isNaN(eta)) {
-    if (eta >= 70) riskScore += 2;
-    else if (eta >= 60) riskScore += 1;
-  }
-
-  // ✅ Diabete diagnosticato → punteggio fisso
-  riskScore += 2;
-
-  // Percentuale finale
-  const riskPercent = Math.min(riskScore * 1.2, 15);
-
-  // Categoria rischio
-  let category = 'success';
-  let risk = 'Basso';
-  if (riskPercent >= 10) {
-    category = 'danger';
-    risk = 'Alto';
-  } else if (riskPercent >= 5) {
-    category = 'warning';
-    risk = 'Moderato';
-  }
-
-  dashboardData.score2Diabetes = {
-    value: riskPercent.toFixed(1),
-    hba1c: hba1c || 0,
-    glicemia: glicemia || 0,
-    sistolica: sistolica || 0,
-    risk: risk,
-    category: category
-  };
-}
-
 
   // 7. Calcolo FIB4
   function calculateFIB4() {
@@ -1795,14 +1788,6 @@ function calculateScore2Diabetes() {
     const bmiIndicator = document.getElementById('bmi-indicator');
     const bmiBadge = document.getElementById('bmi-badge');
     const bmiCategory = document.getElementById('bmi-category');
-    const cvColesterolo = document.getElementById("cv-colesterolo");
-if (cvColesterolo) {
-  const totale = userData.colesterolo_totale || '--';
-  const hdl = userData.colesterolo_hdl_valore || '--';
-  cvColesterolo.innerHTML = `Colesterolo Totale: ${totale} mg/dL<br>Colesterolo HDL: ${hdl} mg/dL`;
-}
-
-
 
     if (bmiIndicator) {
       bmiIndicator.textContent = dashboardData.bmi.value;
@@ -1945,15 +1930,8 @@ if (cvColesterolo) {
     // Aggiorna dettagli CV usando ID specifici
     const cvAge = document.getElementById('cv-age');
     const cvPressure = document.getElementById('cv-pressure');
+    const cvCholesterol = document.getElementById('cv-cholesterol');
     const cvSmoking = document.getElementById('cv-smoking');
-    const cvColesterolo = document.getElementById("cv-colesterolo");
-    
-    if (cvColesterolo) {
-  const totale = userData.colesterolo_totale || '--';
-  const hdl = userData.colesterolo_hdl_valore || '--';
-  cvColesterolo.innerHTML = `Colesterolo Totale: ${totale} mg/dL<br>Colesterolo HDL: ${hdl} mg/dL`;
-}
-
 
     if (cvAge) {
       cvAge.textContent = `${userData.eta || '--'} anni`;
@@ -1965,7 +1943,10 @@ if (cvColesterolo) {
       console.log('📝 Pressione CV aggiornata:', userData.pressione_sistolica, userData.pressione_diastolica);
     }
 
-
+    if (cvCholesterol) {
+      cvCholesterol.textContent = `HDL ${userData.colesterolo_hdl_valore || '--'} mg/dL`;
+      console.log('📝 Colesterolo CV aggiornato:', userData.colesterolo_hdl_valore);
+    }
 
     if (cvSmoking) {
       cvSmoking.textContent = userData.fumatore || 'No';
