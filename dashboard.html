@@ -1395,18 +1395,15 @@
   // 6. Calcolo SCORE2-Diabete
   function calculateScore2Diabetes() {
   const hba1c = parseFloat(userData.hba1c);
-  const glicemia = parseFloat(userData.glicemia_valore);
   const sistolica = parseFloat(userData.pressione_sistolica);
   const eta = parseInt(userData.eta);
   const haDiabete = String(userData.diabete || "").toLowerCase().includes("sì");
+  const fumatore = String(userData.fumatore || "").toLowerCase().includes("sì");
 
-  // ✅ SCORE2-Diabetes si applica solo se il diabete è diagnosticato
   if (!haDiabete) {
-    console.warn("⛔ SCORE2-Diabetes non calcolato: il paziente non ha diabete diagnosticato.");
     dashboardData.score2Diabetes = {
       value: 'ND',
       hba1c: hba1c || 0,
-      glicemia: glicemia || 0,
       sistolica: sistolica || 0,
       risk: 'Non applicabile',
       category: 'warning'
@@ -1414,50 +1411,39 @@
     return;
   }
 
-  // Inizio calcolo
   let riskScore = 0;
 
-  // Contributo HbA1c
-  if (!isNaN(hba1c)) {
-    if (hba1c >= 9) riskScore += 4;
-    else if (hba1c >= 8) riskScore += 3;
-    else if (hba1c >= 7) riskScore += 2;
-    else if (hba1c >= 6.5) riskScore += 1;
-  }
+  // Età
+  if (eta >= 40 && eta < 50) riskScore += 2;
+  else if (eta >= 50 && eta < 60) riskScore += 4;
+  else if (eta >= 60 && eta < 70) riskScore += 6;
+  else if (eta >= 70) riskScore += 8;
 
-  // Contributo glicemia a digiuno
-  if (!isNaN(glicemia)) {
-    if (glicemia >= 200) riskScore += 3;
-    else if (glicemia >= 140) riskScore += 2;
-    else if (glicemia >= 110) riskScore += 1;
-  }
+  // Pressione sistolica
+  if (sistolica >= 130) riskScore += 2;
+  if (sistolica >= 160) riskScore += 3;
+  if (sistolica >= 180) riskScore += 4;
 
-  // Contributo pressione sistolica
-  if (!isNaN(sistolica)) {
-    if (sistolica >= 180) riskScore += 3;
-    else if (sistolica >= 160) riskScore += 2;
-    else if (sistolica >= 140) riskScore += 1;
-  }
+  // Fumo
+  if (fumatore) riskScore += 3;
 
-  // Contributo età
-  if (!isNaN(eta)) {
-    if (eta >= 70) riskScore += 2;
-    else if (eta >= 60) riskScore += 1;
-  }
+  // HbA1c
+  if (hba1c >= 6.5 && hba1c < 7.5) riskScore += 1;
+  else if (hba1c >= 7.5 && hba1c < 9) riskScore += 2;
+  else if (hba1c >= 9) riskScore += 3;
 
-  // ✅ Diabete diagnosticato → punteggio fisso
-  riskScore += 2;
+  // Rischio stimato (più realistico)
+  const riskPercent = Math.min(riskScore * 1.2, 30);
 
-  // Percentuale finale
-  const riskPercent = Math.min(riskScore * 1.2, 15);
-
-  // Categoria rischio
   let category = 'success';
   let risk = 'Basso';
-  if (riskPercent >= 10) {
+  if (riskPercent >= 20) {
+    category = 'danger';
+    risk = 'Molto alto';
+  } else if (riskPercent >= 15) {
     category = 'danger';
     risk = 'Alto';
-  } else if (riskPercent >= 5) {
+  } else if (riskPercent >= 10) {
     category = 'warning';
     risk = 'Moderato';
   }
@@ -1465,7 +1451,6 @@
   dashboardData.score2Diabetes = {
     value: riskPercent.toFixed(1),
     hba1c: hba1c || 0,
-    glicemia: glicemia || 0,
     sistolica: sistolica || 0,
     risk: risk,
     category: category
