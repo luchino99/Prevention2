@@ -1,177 +1,177 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - HealthAI</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.6/dist/umd/supabase.min.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <style>
-        :root {
-            --primary-color: #4a6fa5;
-            --primary-light: #5a7fb5;
-            --primary-dark: #3a5f95;
-            --accent-color: #54c0a0;
-            --text-color: #333333;
-            --text-light: #777777;
-            --background-color: #f9f9fb;
-            --card-color: #ffffff;
-            --border-color: #e0e0e6;
-            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            --bot-message-bg: #eef4ff;
-            --user-message-bg: #54c0a0;
-            --user-message-text: white;
-            --font-family: 'Segoe UI', 'Roboto', sans-serif;
-            --radius: 20px;
-            --animation-speed: 0.3s;
-            --primary-blue: #4285F4;
-            --primary-light-blue: #E8F0FE;
-            --light-gray: #F8F9FA;
-            --text-dark: #202124;
-            --text-medium: #5F6368;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - HealthAI</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.6/dist/umd/supabase.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+  :root {
+    --primary-color: #4a6fa5;
+    --primary-light: #5a7fb5;
+    --primary-dark: #3a5f95;
+    --accent-color: #54c0a0;
+    --text-color: #333333;
+    --text-light: #777777;
+    --background-color: #f9f9fb;
+    --card-color: #ffffff;
+    --border-color: #e0e0e6;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --bot-message-bg: #eef4ff;
+    --user-message-bg: #54c0a0;
+    --user-message-text: white;
+    --font-family: 'Segoe UI', 'Roboto', sans-serif;
+    --radius: 20px;
+    --animation-speed: 0.3s;
+    --primary-blue: #4285F4;
+    --primary-light-blue: #E8F0FE;
+    --light-gray: #F8F9FA;
+    --text-dark: #202124;
+    --text-medium: #5F6368;
 
-            /* Nuove variabili per supportare meglio il tema */
-            --card-bg: #ffffff;
-            --secondary-bg: #f8f9fa;
-            --highlight-bg: #e8f0fe;
-            --success-bg: #E6F4EA;
-            --success-color: #34A853;
-            --warning-bg: #FEF7E0;
-            --warning-color: #FBBC05;
-            --danger-bg: #FCE8E6;
-            --danger-color: #EA4335;
-            --header-bg: #ffffff;
-            --footer-bg: #202124;
-            --footer-text: #ffffff;
-            --score-low-bg: #FBBC05;
-            --score-medium-bg: #34A853;
-            --score-high-bg: #EA4335;
-            --badge-text: #ffffff;
-            --progress-bg: #e0e0e6;
-            --border-highlight: #4285F4;
-            --border-success: #34A853;
-            --border-warning: #FBBC05;
-            --border-danger: #EA4335;
-            --button-primary-bg: #4285F4;
-            --button-primary-text: #ffffff;
-            --button-hover-bg: #357ae8;
-            --icon-color: #4285F4;
-            --link-color: #4285F4;
-            --link-hover: #357ae8;
-            --tab-active-bg: #4285F4;
-            --tab-active-text: #ffffff;
-            --tab-inactive-bg: transparent;
-            --tab-inactive-text: #5F6368;
-            --gradient-primary: linear-gradient(135deg, #4285F4, #34A853);
-            --gradient-secondary: linear-gradient(135deg, #4285F4, #5B8DEF);
-            --chart-text-color: #333333;
-            --footer-bg: var(--card-color);
-            --animation-speed: 0.3s;
-        }
+    /* Nuove variabili per supportare meglio il tema */
+    --card-bg: #ffffff;
+    --secondary-bg: #f8f9fa;
+    --highlight-bg: #e8f0fe;
+    --success-bg: #E6F4EA;
+    --success-color: #34A853;
+    --warning-bg: #FEF7E0;
+    --warning-color: #FBBC05;
+    --danger-bg: #FCE8E6;
+    --danger-color: #EA4335;
+    --header-bg: #ffffff;
+    --footer-bg: #202124;
+    --footer-text: #ffffff;
+    --score-low-bg: #FBBC05;
+    --score-medium-bg: #34A853;
+    --score-high-bg: #EA4335;
+    --badge-text: #ffffff;
+    --progress-bg: #e0e0e6;
+    --border-highlight: #4285F4;
+    --border-success: #34A853;
+    --border-warning: #FBBC05;
+    --border-danger: #EA4335;
+    --button-primary-bg: #4285F4;
+    --button-primary-text: #ffffff;
+    --button-hover-bg: #357ae8;
+    --icon-color: #4285F4;
+    --link-color: #4285F4;
+    --link-hover: #357ae8;
+    --tab-active-bg: #4285F4;
+    --tab-active-text: #ffffff;
+    --tab-inactive-bg: transparent;
+    --tab-inactive-text: #5F6368;
+    --gradient-primary: linear-gradient(135deg, #4285F4, #34A853);
+    --gradient-secondary: linear-gradient(135deg, #4285F4, #5B8DEF);
+    --chart-text-color: #333333;
+    --footer-bg: var(--card-color);
+    --animation-speed: 0.3s;
+  }
 
-        [data-theme="dark"] {
-            --primary-color: #5a7fb5;
-            --primary-light: #6a8fc5;
-            --primary-dark: #4a6fa5;
-            --accent-color: #64d0b0;
-            --text-color: #e0e0e0;
-            --text-light: #a0a0a0;
-            --background-color: #1a1a20;
-            --card-color: #27272f;
-            --border-color: #3a3a45;
-            --shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            --bot-message-bg: #2a3548;
-            --user-message-bg: #446655;
-            --user-message-text: #e0e0e0;
-            --text-dark: #e0e0e0;
-            --text-medium: #a0a0a0;
+  [data-theme="dark"] {
+    --primary-color: #5a7fb5;
+    --primary-light: #6a8fc5;
+    --primary-dark: #4a6fa5;
+    --accent-color: #64d0b0;
+    --text-color: #e0e0e0;
+    --text-light: #a0a0a0;
+    --background-color: #1a1a20;
+    --card-color: #27272f;
+    --border-color: #3a3a45;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    --bot-message-bg: #2a3548;
+    --user-message-bg: #446655;
+    --user-message-text: #e0e0e0;
+    --text-dark: #e0e0e0;
+    --text-medium: #a0a0a0;
 
-            /* Nuove variabili per tema scuro */
-            --card-bg: #27272f;
-            --secondary-bg: #1f1f27;
-            --highlight-bg: #2a3548;
-            --success-bg: #1e3a2e;
-            --success-color: #4eca6f;
-            --warning-bg: #3d3520;
-            --warning-color: #ffce44;
-            --danger-bg: #3d2a27;
-            --danger-color: #ff7169;
-            --header-bg: #27272f;
-            --footer-bg: #1a1a20;
-            --footer-text: #a0a0a0;
-            --score-low-bg: #ffce44;
-            --score-medium-bg: #4eca6f;
-            --score-high-bg: #ff7169;
-            --badge-text: #1a1a20;
-            --progress-bg: #3a3a45;
-            --border-highlight: #5a7fb5;
-            --border-success: #4eca6f;
-            --border-warning: #ffce44;
-            --border-danger: #ff7169;
-            --button-primary-bg: #5a7fb5;
-            --button-primary-text: #e0e0e0;
-            --button-hover-bg: #6a8fc5;
-            --icon-color: #5a7fb5;
-            --link-color: #6a8fc5;
-            --link-hover: #7a9fd5;
-            --tab-active-bg: #5a7fb5;
-            --tab-active-text: #e0e0e0;
-            --tab-inactive-bg: transparent;
-            --tab-inactive-text: #a0a0a0;
-            --gradient-primary: linear-gradient(135deg, #5a7fb5, #4eca6f);
-            --gradient-secondary: linear-gradient(135deg, #5a7fb5, #6a8fc5);
-            --chart-text-color: #ffffff;
-            --footer-bg: var(--card-color);
-        }
+    /* Nuove variabili per tema scuro */
+    --card-bg: #27272f;
+    --secondary-bg: #1f1f27;
+    --highlight-bg: #2a3548;
+    --success-bg: #1e3a2e;
+    --success-color: #4eca6f;
+    --warning-bg: #3d3520;
+    --warning-color: #ffce44;
+    --danger-bg: #3d2a27;
+    --danger-color: #ff7169;
+    --header-bg: #27272f;
+    --footer-bg: #1a1a20;
+    --footer-text: #a0a0a0;
+    --score-low-bg: #ffce44;
+    --score-medium-bg: #4eca6f;
+    --score-high-bg: #ff7169;
+    --badge-text: #1a1a20;
+    --progress-bg: #3a3a45;
+    --border-highlight: #5a7fb5;
+    --border-success: #4eca6f;
+    --border-warning: #ffce44;
+    --border-danger: #ff7169;
+    --button-primary-bg: #5a7fb5;
+    --button-primary-text: #e0e0e0;
+    --button-hover-bg: #6a8fc5;
+    --icon-color: #5a7fb5;
+    --link-color: #6a8fc5;
+    --link-hover: #7a9fd5;
+    --tab-active-bg: #5a7fb5;
+    --tab-active-text: #e0e0e0;
+    --tab-inactive-bg: transparent;
+    --tab-inactive-text: #a0a0a0;
+    --gradient-primary: linear-gradient(135deg, #5a7fb5, #4eca6f);
+    --gradient-secondary: linear-gradient(135deg, #5a7fb5, #6a8fc5);
+    --chart-text-color: #ffffff;
+    --footer-bg: var(--card-color);
+  }
 
-        body {
-            font-family: 'Roboto', sans-serif;
-            background-color: var(--background-color);
-            color: var(--text-color);
-            transition: background-color var(--animation-speed);
-        }
+  body {
+    font-family: 'Roboto', sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    transition: background-color var(--animation-speed);
+  }
 
-        /* Aggiungi questa regola al tuo CSS */
-        *, *::before, *::after {
-            transition: background-color var(--animation-speed), box-shadow var(--animation-speed);
-        }
+  /* Aggiungi questa regola al tuo CSS */
+  *, *::before, *::after {
+    transition: background-color var(--animation-speed), box-shadow var(--animation-speed);
+  }
 
-        .card, .badge, .score-indicator, .score-indicator-2 .tab-button, .recommendation-card,
-        ., .bg-gray-50, .bg-blue-50, .bg-gray-200, .bg-blue-100,
-        .border-l-4, svg circle, svg text, .progress-ring__circle {
-            transition: all var(--animation-speed);
-        }
+  .card, .badge, .score-indicator, .score-indicator-2 .tab-button, .recommendation-card,
+  ., .bg-gray-50, .bg-blue-50, .bg-gray-200, .bg-blue-100,
+  .border-l-4, svg circle, svg text, .progress-ring__circle {
+    transition: all var(--animation-speed);
+  }
 
-        .card {
-            border-radius: 12px;
-            background-color: var(--card-bg);
-            box-shadow: 0 2px 10px var(--border-color);
-            transition: transform var(--animation-speed), box-shadow var(--animation-speed), border-color var(--animation-speed);
-        }
+  .card {
+    border-radius: 12px;
+    background-color: var(--card-bg);
+    box-shadow: 0 2px 10px var(--border-color);
+    transition: transform var(--animation-speed), box-shadow var(--animation-speed), border-color var(--animation-speed);
+  }
 
-        .primary-gradient {
-            background: var(--gradient-primary);
-        }
+  .primary-gradient {
+    background: var(--gradient-primary);
+  }
 
-        .secondary-gradient {
-            background: var(--gradient-secondary);
-        }
+  .secondary-gradient {
+    background: var(--gradient-secondary);
+  }
 
-        .score-indicator {
-            width: 64px;
-            height: 64px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 20px;
-        }
+  .score-indicator {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 20px;
+  }
 
-.score-indicator-2 {
+  .score-indicator-2 {
     width: 100px;
     height: 100px;
     border-radius: 50%;
@@ -181,720 +181,720 @@
     font-weight: bold;
     font-size: 24px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-}
+  }
 
 
-        .score-low {
-            background-color: var(--score-low-bg);
-            color: var(--badge-text);
-        }
+  .score-low {
+    background-color: var(--score-low-bg);
+    color: var(--badge-text);
+  }
 
-        .score-medium {
-            background-color: var(--score-medium-bg);
-            color: var(--badge-text);
-        }
+  .score-medium {
+    background-color: var(--score-medium-bg);
+    color: var(--badge-text);
+  }
 
-        .score-high {
-            background-color: var(--score-high-bg);
-            color: var(--badge-text);
-        }
+  .score-high {
+    background-color: var(--score-high-bg);
+    color: var(--badge-text);
+  }
 
-        .tab-button {
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 500;
-            color: var(--tab-inactive-text);
-            background-color: var(--tab-inactive-bg);
-            transition: background-color var(--animation-speed);
-        }
+  .tab-button {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--tab-inactive-text);
+    background-color: var(--tab-inactive-bg);
+    transition: background-color var(--animation-speed);
+  }
 
-        .tab-button.active {
-            background-color: var(--tab-active-bg);
-            color: var(--tab-active-text);
-        }
+  .tab-button.active {
+    background-color: var(--tab-active-bg);
+    color: var(--tab-active-text);
+  }
 
-        .tab-content {
-            display: none;
-        }
+  .tab-content {
+    display: none;
+  }
 
-        .tab-content.active {
-            display: block;
-        }
+  .tab-content.active {
+    display: block;
+  }
 
-        /* Personalizzazioni per grafici e indicatori */
-        .progress-ring {
-            transform: rotate(-90deg);
-            transform-origin: 50% 50%;
-        }
+  /* Personalizzazioni per grafici e indicatori */
+  .progress-ring {
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+  }
 
-        .progress-ring text {
-            transform: rotate(90deg);
-            transform-origin: 50% 50%;
-        }
+  .progress-ring text {
+    transform: rotate(90deg);
+    transform-origin: 50% 50%;
+  }
 
-        .progress-ring__circle {
-            stroke-dasharray: 314.16;
-            transition: stroke-dashoffset var(--animation-speed);
-        }
+  .progress-ring__circle {
+    stroke-dasharray: 314.16;
+    transition: stroke-dashoffset var(--animation-speed);
+  }
 
-        .badge {
-            border-radius: 16px;
-            padding: 0.25rem 0.75rem;
-            font-size: 0.75rem;
-            font-weight: 500;
-        }
+  .badge {
+    border-radius: 16px;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
 
-        .badge-success {
-            background-color: var(--success-bg);
-            color: var(--success-color);
-        }
+  .badge-success {
+    background-color: var(--success-bg);
+    color: var(--success-color);
+  }
 
-        .badge-warning {
-            background-color: var(--warning-bg);
-            color: var(--warning-color);
-        }
+  .badge-warning {
+    background-color: var(--warning-bg);
+    color: var(--warning-color);
+  }
 
-        .badge-danger {
-            background-color: var(--danger-bg);
-            color: var(--danger-color);
-        }
+  .badge-danger {
+    background-color: var(--danger-bg);
+    color: var(--danger-color);
+  }
 
-        .recommendation-card {
-            border-left: 3px solid var(--border-highlight);
-        }
+  .recommendation-card {
+    border-left: 3px solid var(--border-highlight);
+  }
 
-        .theme-toggle {
-            background: none;
-            border: none;
-            color: var(--text-color);
-            font-size: 20px;
-            cursor: pointer;
-            outline: none;
-            transition: transform var(--animation-speed);
-        }
+  .theme-toggle {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-size: 20px;
+    cursor: pointer;
+    outline: none;
+    transition: transform var(--animation-speed);
+  }
 
-        .theme-toggle:hover {
-            transform: scale(1.1);
-        }
+  .theme-toggle:hover {
+    transform: scale(1.1);
+  }
 
-        /* Stili specifici per elementi vari */
-        . {
-            background-color: var(--card-bg) !important;
-        }
+  /* Stili specifici per elementi vari */
+  . {
+    background-color: var(--card-bg) !important;
+  }
 
-        .bg-gray-50, .bg-blue-50 {
-            background-color: var(--secondary-bg) !important;
-        }
+  .bg-gray-50, .bg-blue-50 {
+    background-color: var(--secondary-bg) !important;
+  }
 
-        .text-gray-600, .text-gray-500 {
-            color: var(--text-light) !important;
-        }
+  .text-gray-600, .text-gray-500 {
+    color: var(--text-light) !important;
+  }
 
-        .text-blue-500, .text-blue-600 {
-            color: var(--link-color) !important;
-        }
+  .text-blue-500, .text-blue-600 {
+    color: var(--link-color) !important;
+  }
 
-        .text-yellow-600 {
-            color: var(--warning-color) !important;
-        }
+  .text-yellow-600 {
+    color: var(--warning-color) !important;
+  }
 
-        .text-red-600, .text-red-500 {
-            color: var(--danger-color) !important;
-        }
+  .text-red-600, .text-red-500 {
+    color: var(--danger-color) !important;
+  }
 
-        .text-green-600, .text-green-500 {
-            color: var(--success-color) !important;
-        }
+  .text-green-600, .text-green-500 {
+    color: var(--success-color) !important;
+  }
 
-        .bg-gray-200 {
-            background-color: var(--progress-bg) !important;
-        }
+  .bg-gray-200 {
+    background-color: var(--progress-bg) !important;
+  }
 
-        .bg-red-500 {
-            background-color: var(--danger-color) !important;
-        }
+  .bg-red-500 {
+    background-color: var(--danger-color) !important;
+  }
 
-        .bg-green-500 {
-            background-color: var(--success-color) !important;
-        }
+  .bg-green-500 {
+    background-color: var(--success-color) !important;
+  }
 
-        .bg-yellow-500 {
-            background-color: var(--warning-color) !important;
-        }
+  .bg-yellow-500 {
+    background-color: var(--warning-color) !important;
+  }
 
-        .bg-blue-500 {
-            background-color: var(--button-primary-bg) !important;
-        }
+  .bg-blue-500 {
+    background-color: var(--button-primary-bg) !important;
+  }
 
-        .bg-blue-100 {
-            background-color: var(--highlight-bg) !important;
-        }
+  .bg-blue-100 {
+    background-color: var(--highlight-bg) !important;
+  }
 
-        .hover\:bg-blue-600:hover {
-            background-color: var(--button-hover-bg) !important;
-        }
+  .hover\:bg-blue-600:hover {
+    background-color: var(--button-hover-bg) !important;
+  }
 
-        .hover\:bg-blue-50:hover {
-            background-color: var(--secondary-bg) !important;
-        }
+  .hover\:bg-blue-50:hover {
+    background-color: var(--secondary-bg) !important;
+  }
 
-        .hover\:text-blue-700:hover, .hover\:text-white:hover {
-            color: var(--link-hover) !important;
-        }
+  .hover\:text-blue-700:hover, .hover\:text-white:hover {
+    color: var(--link-hover) !important;
+  }
 
-        .border-l-4.border-green-500 {
-            border-left-color: var(--border-success) !important;
-        }
+  .border-l-4.border-green-500 {
+    border-left-color: var(--border-success) !important;
+  }
 
-        .border-l-4.border-yellow-500 {
-            border-left-color: var(--border-warning) !important;
-        }
+  .border-l-4.border-yellow-500 {
+    border-left-color: var(--border-warning) !important;
+  }
 
-        .border-l-4.border-red-500 {
-            border-left-color: var(--border-danger) !important;
-        }
+  .border-l-4.border-red-500 {
+    border-left-color: var(--border-danger) !important;
+  }
 
-        .border-l-4.border-blue-500 {
-            border-left-color: var(--border-highlight) !important;
-        }
+  .border-l-4.border-blue-500 {
+    border-left-color: var(--border-highlight) !important;
+  }
 
-        /* Footer specifico */
-        .bg-gray-800 {
-            background-color: var(--footer-bg) !important;
-        }
+  /* Footer specifico */
+  .bg-gray-800 {
+    background-color: var(--footer-bg) !important;
+  }
 
-        .text-gray-300 {
-            color: var(--footer-text) !important;
-        }
+  .text-gray-300 {
+    color: var(--footer-text) !important;
+  }
 
-        .dashboard-main {
-          transition: background-color var(--animation-speed);
-        }
-    </style>
+  .dashboard-main {
+    transition: background-color var(--animation-speed);
+  }
+  </style>
 </head>
 <body>
-    <!-- Header -->
-    <header class="shadow-sm mb-4 sticky top-0 z-10 chat-header" style="background-color: var(--card-color); color: var(--text-color); border-bottom: 1px solid var(--border-color); transition: border-color var(--animation-speed);">
-        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-            <div class="flex items-center">
-                <svg class="h-6 w-6 text-blue-500 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
-                </svg>
-                <h1 class="text-xl font-bold">Dashboard HealthAI</h1>
+  <!-- Header -->
+  <header class="shadow-sm mb-4 sticky top-0 z-10 chat-header" style="background-color: var(--card-color); color: var(--text-color); border-bottom: 1px solid var(--border-color); transition: border-color var(--animation-speed);">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+      <div class="flex items-center">
+        <svg class="h-6 w-6 text-blue-500 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+        </svg>
+        <h1 class="text-xl font-bold">Dashboard HealthAI</h1>
+      </div>
+      <div class="flex items-center space-x-4">
+        <button class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-full flex items-center text-sm">
+          <i class="fas fa-file-pdf mr-2"></i>
+          Esporta report
+        </button>
+        <button class="text-blue-500 hover:text-blue-700">
+          <i class="fas fa-sync-alt"></i>
+        </button>
+      </div>
+      <div class="flex items-center space-x-4">
+        <button id="theme-toggle" class="text-blue-500 text-xl hover:text-blue-700">🌙</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="dashboard-main container mx-auto px-4 pb-8">
+    <!-- Panoramica principale -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div class="card  p-4 col-span-2">
+        <h2 class="text-lg font-bold mb-3">Riepilogo Salute</h2>
+        <div class="flex flex-wrap gap-4">
+          <div class="flex-1 bg-blue-50 rounded-lg p-3">
+            <div class="flex justify-between items-center mb-2">
+              <h3 class="text-sm font-medium text-gray-600">BMI</h3>
+              <span class="badge badge-success" id="bmi-badge">Caricamento</span>
             </div>
-            <div class="flex items-center space-x-4">
-                <button class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-full flex items-center text-sm">
-                    <i class="fas fa-file-pdf mr-2"></i>
-                    Esporta report
-                </button>
-                <button class="text-blue-500 hover:text-blue-700">
-                    <i class="fas fa-sync-alt"></i>
-                </button>
+            <div class="flex items-center space-x-2">
+              <div class="score-indicator score-medium" id="bmi-indicator">--</div>
+              <div>
+                <div class="text-sm text-gray-500">Categoria</div>
+                <div class="font-medium" id="bmi-category">Caricamento...</div>
+              </div>
             </div>
-            <div class="flex items-center space-x-4">
-              <button id="theme-toggle" class="text-blue-500 text-xl hover:text-blue-700">🌙</button>
+          </div>
+          <div class="flex-1 bg-blue-50 rounded-lg p-3">
+            <div class="flex justify-between items-center mb-2">
+              <h3 class="text-sm font-medium text-gray-600">SCORE2</h3>
+              <span class="badge badge-warning" id="score2-badge">Caricamento</span>
             </div>
+            <div class="flex items-center space-x-2">
+              <div class="score-indicator score-low" id="score2-indicator">--%</div>
+              <div>
+                <div class="text-sm text-gray-500">Rischio CV</div>
+                <div class="font-medium" id="score2-category">Caricamento...</div>
+              </div>
+            </div>
+          </div>
+          <div class="flex-1 bg-blue-50 rounded-lg p-3">
+            <div class="flex justify-between items-center mb-2">
+              <h3 class="text-sm font-medium text-gray-600">PREDIMED</h3>
+              <span class="badge badge-warning" id="predimed-badge">Caricamento</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <div class="score-indicator score-low" id="predimed-indicator">--</div>
+              <div>
+                <div class="text-sm text-gray-500">Dieta</div>
+                <div class="font-medium" id="predimed-category">Caricamento...</div>
+              </div>
+            </div>
+          </div>
         </div>
-    </header>
+      </div>
 
-    <!-- Main Content -->
-    <main class="dashboard-main container mx-auto px-4 pb-8">
-        <!-- Panoramica principale -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div class="card  p-4 col-span-2">
-                <h2 class="text-lg font-bold mb-3">Riepilogo Salute</h2>
-                <div class="flex flex-wrap gap-4">
-                    <div class="flex-1 bg-blue-50 rounded-lg p-3">
-                        <div class="flex justify-between items-center mb-2">
-                            <h3 class="text-sm font-medium text-gray-600">BMI</h3>
-                            <span class="badge badge-success" id="bmi-badge">Caricamento</span>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <div class="score-indicator score-medium" id="bmi-indicator">--</div>
-                            <div>
-                                <div class="text-sm text-gray-500">Categoria</div>
-                                <div class="font-medium" id="bmi-category">Caricamento...</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="flex-1 bg-blue-50 rounded-lg p-3">
-                        <div class="flex justify-between items-center mb-2">
-                            <h3 class="text-sm font-medium text-gray-600">SCORE2</h3>
-                            <span class="badge badge-warning" id="score2-badge">Caricamento</span>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <div class="score-indicator score-low" id="score2-indicator">--%</div>
-                            <div>
-                                <div class="text-sm text-gray-500">Rischio CV</div>
-                                <div class="font-medium" id="score2-category">Caricamento...</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="flex-1 bg-blue-50 rounded-lg p-3">
-                        <div class="flex justify-between items-center mb-2">
-                            <h3 class="text-sm font-medium text-gray-600">PREDIMED</h3>
-                            <span class="badge badge-warning" id="predimed-badge">Caricamento</span>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <div class="score-indicator score-low" id="predimed-indicator">--</div>
-                            <div>
-                                <div class="text-sm text-gray-500">Dieta</div>
-                                <div class="font-medium" id="predimed-category">Caricamento...</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card  p-4">
-                <h2 class="text-lg font-bold mb-3">Profilo Metabolico</h2>
-                <div class="space-y-3">
-                    <div class="flex justify-between items-center">
-                        <span class="text-sm text-gray-600">Sindrome Metabolica</span>
-                        <span class="badge badge-danger">Presente</span>
-                    </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2.5">
-                        <div class="bg-red-500 h-2.5 rounded-full" style="width: 75%"></div>
-                    </div>
-                    <div class="text-xs text-gray-500">
-                        3 criteri soddisfatti su 5
-                    </div>
-                    <div class="flex flex-wrap gap-2 mt-2">
-                        <div class="badge badge-danger">Girovita elevato</div>
-                        <div class="badge badge-danger">Glicemia alta</div>
-                        <div class="badge badge-danger">HDL basso</div>
-                    </div>
-                </div>
-            </div>
+      <div class="card  p-4">
+        <h2 class="text-lg font-bold mb-3">Profilo Metabolico</h2>
+        <div class="space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="text-sm text-gray-600">Sindrome Metabolica</span>
+            <span class="badge badge-danger">Presente</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2.5">
+            <div class="bg-red-500 h-2.5 rounded-full" style="width: 75%"></div>
+          </div>
+          <div class="text-xs text-gray-500">
+            3 criteri soddisfatti su 5
+          </div>
+          <div class="flex flex-wrap gap-2 mt-2">
+            <div class="badge badge-danger">Girovita elevato</div>
+            <div class="badge badge-danger">Glicemia alta</div>
+            <div class="badge badge-danger">HDL basso</div>
+          </div>
         </div>
+      </div>
+    </div>
 
-        <!-- Tabs per il contenuto dettagliato -->
-        <div class="card  p-4 mb-6">
-            <div class="flex space-x-2 mb-4 overflow-x-auto pb-2">
-                <button class="tab-button active" data-tab="tab-rischi">Rischi</button>
-                <button class="tab-button" data-tab="tab-screening">Screening</button>
-                <button class="tab-button" data-tab="tab-stile-vita">Stile di vita</button>
-                <button class="tab-button" data-tab="tab-nutritional">Nutrizione</button>
-                <button class="tab-button" data-tab="tab-attivita">Attività fisica</button>
+    <!-- Tabs per il contenuto dettagliato -->
+    <div class="card  p-4 mb-6">
+      <div class="flex space-x-2 mb-4 overflow-x-auto pb-2">
+        <button class="tab-button active" data-tab="tab-rischi">Rischi</button>
+        <button class="tab-button" data-tab="tab-screening">Screening</button>
+        <button class="tab-button" data-tab="tab-stile-vita">Stile di vita</button>
+        <button class="tab-button" data-tab="tab-nutritional">Nutrizione</button>
+        <button class="tab-button" data-tab="tab-attivita">Attività fisica</button>
+      </div>
+
+      <!-- Contenuto tab rischi -->
+      <div id="tab-rischi" class="tab-content active">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          <!-- SCORE2-Diabete -->
+          <div id="score2d-banner" class="p-4 bg-gray-50 rounded-lg">
+            <h3 class="font-semibold mb-3">SCORE2-Diabete</h3>
+            <div class="flex items-center justify-center mb-4">
+              <svg width="120" height="120" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="50" fill="none" stroke="#e6e6e6" stroke-width="10"></circle>
+                <circle class="progress-ring__circle" cx="60" cy="60" r="50" fill="none" stroke="#EA4335" stroke-width="10" stroke-dashoffset="220" stroke-linecap="round"></circle>
+                <text id="score2d-banner-text" x="60" y="65" text-anchor="middle" font-size="18" font-weight="bold" fill="var(--chart-text-color)">--%</text>
+              </svg>
             </div>
-
-            <!-- Contenuto tab rischi -->
-            <div id="tab-rischi" class="tab-content active">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-                    <!-- SCORE2-Diabete -->
-                    <div id="score2d-banner" class="p-4 bg-gray-50 rounded-lg">
-                        <h3 class="font-semibold mb-3">SCORE2-Diabete</h3>
-                        <div class="flex items-center justify-center mb-4">
-                            <svg width="120" height="120" viewBox="0 0 120 120">
-                                <circle cx="60" cy="60" r="50" fill="none" stroke="#e6e6e6" stroke-width="10"></circle>
-                                <circle class="progress-ring__circle" cx="60" cy="60" r="50" fill="none" stroke="#EA4335" stroke-width="10" stroke-dashoffset="220" stroke-linecap="round"></circle>
-                                <text id="score2d-banner-text" x="60" y="65" text-anchor="middle" font-size="18" font-weight="bold" fill="var(--chart-text-color)">--%</text>
-                            </svg>
-                        </div>
-                        <div class="space-y-2">
-                            <div class="flex justify-between text-sm">
-                                <span>HbA1c</span>
-                                <span id="score2d-banner-hba1c" class="font-medium">-- %</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span>Glicemia</span>
-                                <span id="score2d-banner-glucose" class="font-medium">-- mg/dL</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span>Pressione</span>
-                                <span id="score2d-banner-sbp" class="font-medium">-- mmHg</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- FIB4 -->
-                    <div id="fib4-banner" class="p-4 bg-gray-50 rounded-lg flex flex-col justify-between h-[320px]">
-
-                        <h3 class="font-semibold mb-3">FIB4</h3>
-                        <div class="flex items-center justify-center mb-4">
-                            <div id="fib4-banner-score" class="score-indicator-2 score-medium text-2xl">--</div>
-                        </div>
-                        <div class="space-y-2">
-                            <div class="flex justify-between text-sm">
-                                <span>AST</span>
-                                <span id="fib4-banner-ast" class="font-medium">--</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span>ALT</span>
-                                <span id="fib4-banner-alt" class="font-medium">--</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span>Piastrine</span>
-                                <span id="fib4-banner-plt" class="font-medium">--</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- FNI -->
-                    <div id="fni-banner" class="p-4 bg-gray-50 rounded-lg flex flex-col justify-between h-[320px]">
-
-                        <h3 class="font-semibold mb-3">FNI - Nutrizione</h3>
-                        <div class="flex items-center justify-center mb-4">
-                            <div id="fni-banner-score" class="score-indicator-2 score-medium text-2xl">--</div>
-                        </div>
-                        <div class="space-y-2">
-                            <div class="flex justify-between text-sm">
-                                <span>Albumina</span>
-                                <span id="fni-banner-albumina" class="font-medium">--</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span>Linfociti</span>
-                                <span id="fni-banner-linfociti" class="font-medium">--</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="p-4 bg-gray-50 rounded-lg">
-                        <h3 class="font-semibold mb-3">Rischio Cardiovascolare</h3>
-                        <div class="flex items-center justify-center mb-4">
-                            <svg width="120" height="120" viewBox="0 0 120 120" class="progress-ring">
-                                <circle cx="60" cy="60" r="50" fill="none" stroke="#e6e6e6" stroke-width="10"></circle>
-                                <circle class="progress-ring__circle ring-cv" cx="60" cy="60" r="50" fill="none" stroke="#4285F4" stroke-width="10" stroke-dasharray="314.16" stroke-dashoffset="220" stroke-linecap="round"></circle>
-                                <text x="60" y="65" text-anchor="middle" font-size="18" font-weight="bold" fill="var(--chart-text-color)" id="cv-risk-text">--%</text>
-                            </svg>
-                        </div>
-                        <div class="space-y-2">
-                            <div class="flex justify-between text-sm">
-                                <span>Età</span>
-                                <span class="font-medium" id="cv-age">-- anni</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span>Pressione</span>
-                                <span class="font-medium" id="cv-pressure">-- mmHg</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span>Colesterolo</span>
-                                <span class="font-medium" id="cv-cholesterol">-- mg/dL</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span>Fumo</span>
-                                <span class="font-medium" id="cv-smoking">--</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="p-4 bg-gray-50 rounded-lg">
-                        <h3 class="font-semibold mb-3">Rischio Diabete (ADA)</h3>
-                        <div class="flex items-center justify-center mb-4">
-                            <svg width="120" height="120" viewBox="0 0 120 120" class="progress-ring">
-                                <circle cx="60" cy="60" r="50" fill="none" stroke="#e6e6e6" stroke-width="10"></circle>
-                                <circle class="progress-ring__circle ring-ada" cx="60" cy="60" r="50" fill="none" stroke="#FBBC05" stroke-width="10" stroke-dasharray="314.16" stroke-dashoffset="157" stroke-linecap="round"></circle>
-                                <text x="60" y="65" text-anchor="middle" font-size="18" font-weight="bold" fill="var(--chart-text-color)" id="diabetes-risk-text">--/--</text>
-                            </svg>
-                        </div>
-                        <div class="space-y-2">
-                            <div class="flex justify-between text-sm">
-                                <span>Glicemia</span>
-                                <span id="glicemia-valore" class="font-medium text-yellow-600">-- mg/dL</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span>Familiarità diabete</span>
-                                <span id="familiarita-diabete" class="font-medium text-red-600">--</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span>Ipertensione</span>
-                                <span id="ipertensione" class="font-medium text-red-600">--</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span>Attività fisica</span>
-                                <span id="attivita-fisica" class="font-medium text-red-600">--</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div class="space-y-2">
+              <div class="flex justify-between text-sm">
+                <span>HbA1c</span>
+                <span id="score2d-banner-hba1c" class="font-medium">-- %</span>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span>Glicemia</span>
+                <span id="score2d-banner-glucose" class="font-medium">-- mg/dL</span>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span>Pressione</span>
+                <span id="score2d-banner-sbp" class="font-medium">-- mmHg</span>
+              </div>
             </div>
+          </div>
 
-            <!-- Contenuto tab screening -->
-            <div id="tab-screening" class="tab-content">
-                <div class="space-y-4">
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <h3 class="font-semibold mb-3">Screening Raccomandati</h3>
-                        <div class="space-y-3">
-                            <div class="flex items-center p-2  rounded border-l-4 border-green-500">
-                                <div class="flex-1">
-                                    <h4 class="font-medium">Screening Colon-retto</h4>
-                                    <p class="text-sm text-gray-600">Raccomandato ogni 2 anni dopo i 50 anni</p>
-                                </div>
-                                <div class="flex items-center space-x-2">
-                                    <span class="badge badge-success">Completo</span>
-                                    <span class="text-xs text-gray-500">2024</span>
-                                </div>
-                            </div>
-                            <div class="flex items-center p-2  rounded border-l-4 border-yellow-500">
-                                <div class="flex-1">
-                                    <h4 class="font-medium">Controllo Pressione</h4>
-                                    <p class="text-sm text-gray-600">Raccomandato annualmente</p>
-                                </div>
-                                <div class="flex items-center space-x-2">
-                                    <span class="badge badge-warning">In scadenza</span>
-                                    <span class="text-xs text-gray-500">1 mese</span>
-                                </div>
-                            </div>
-                            <div class="flex items-center p-2  rounded border-l-4 border-red-500">
-                                <div class="flex-1">
-                                    <h4 class="font-medium">Esami Sangue</h4>
-                                    <p class="text-sm text-gray-600">Raccomandato annualmente</p>
-                                </div>
-                                <div class="flex items-center space-x-2">
-                                    <span class="badge badge-danger">Scaduto</span>
-                                    <span class="text-xs text-gray-500">3 mesi</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-blue-50 p-4 rounded-lg">
-                        <h3 class="font-semibold mb-3">Visite Specialistiche Suggerite</h3>
-                        <div class="space-y-3">
-                            <div class="flex justify-between items-center p-2  rounded">
-                                <div>
-                                    <h4 class="font-medium">Visita Cardiologica</h4>
-                                    <p class="text-sm text-gray-600">Per rivalutazione parametri cardiovascolari</p>
-                                </div>
-                                <span class="text-blue-500 cursor-pointer hover:underline">Prenota</span>
-                            </div>
-                            <div class="flex justify-between items-center p-2  rounded">
-                                <div>
-                                    <h4 class="font-medium">Visita Diabetologica</h4>
-                                    <p class="text-sm text-gray-600">Per valutazione rischio diabete</p>
-                                </div>
-                                <span class="text-blue-500 cursor-pointer hover:underline">Prenota</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+          <!-- FIB4 -->
+          <div id="fib4-banner" class="p-4 bg-gray-50 rounded-lg flex flex-col justify-between h-[320px]">
 
-            <!-- Contenuto tab stile di vita -->
-            <div id="tab-stile-vita" class="tab-content">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="p-4 bg-gray-50 rounded-lg">
-                        <h3 class="font-semibold mb-3">Valutazione PREDIMED</h3>
-                        <div class="flex justify-center mb-4">
-                            <canvas id="predimed-chart" width="300" height="300"></canvas>
-                        </div>
-                        <div class="text-center">
-                            <p id="predimed-score" class="text-sm text-gray-600">
-                                Punteggio attuale: <span class="font-medium">8/14</span>
-                            </p>
-                            <p id="predimed-adherence" class="text-sm text-gray-600">
-                                Aderenza alla dieta mediterranea: <span class="font-medium">Media</span>
-                            </p>
-                        </div>
-                    </div>
-                    <div class="p-4 bg-gray-50 rounded-lg">
-                        <h3 class="font-semibold mb-3">Benessere Psicologico</h3>
-                        <div class="space-y-4">
-                            <div class="p-3  rounded-lg">
-                                <div class="flex justify-between mb-1">
-                                    <span class="text-sm font-medium">Stress</span>
-                                    <span class="text-sm font-medium text-yellow-600">Medio</span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2">
-                                    <div class="bg-yellow-500 h-2 rounded-full" style="width: 60%"></div>
-                                </div>
-                            </div>
-                            <div class="p-3  rounded-lg">
-                                <div class="flex justify-between mb-1">
-                                    <span class="text-sm font-medium">Sonno</span>
-                                    <span class="text-sm font-medium text-red-600">Insufficiente</span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2">
-                                    <div class="bg-red-500 h-2 rounded-full" style="width: 30%"></div>
-                                </div>
-                                <p class="text-xs text-gray-500 mt-1">Insonnia moderata</p>
-                            </div>
-                            <div class="p-3  rounded-lg">
-                                <div class="flex justify-between mb-1">
-                                    <span class="text-sm font-medium">Umore</span>
-                                    <span class="text-sm font-medium text-green-600">Buono</span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2">
-                                    <div class="bg-green-500 h-2 rounded-full" style="width: 75%"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <h3 class="font-semibold mb-3">FIB4</h3>
+            <div class="flex items-center justify-center mb-4">
+              <div id="fib4-banner-score" class="score-indicator-2 score-medium text-2xl">--</div>
             </div>
+            <div class="space-y-2">
+              <div class="flex justify-between text-sm">
+                <span>AST</span>
+                <span id="fib4-banner-ast" class="font-medium">--</span>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span>ALT</span>
+                <span id="fib4-banner-alt" class="font-medium">--</span>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span>Piastrine</span>
+                <span id="fib4-banner-plt" class="font-medium">--</span>
+              </div>
+            </div>
+          </div>
 
-            <!-- Contenuto tab nutrizione -->
-            <div id="tab-nutritional" class="tab-content">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="p-4 bg-gray-50 rounded-lg">
-                        <h3 class="font-semibold mb-3">Fabbisogno Calorico</h3>
-                        <div class="space-y-3">
-                            <div class="flex justify-between">
-                                <span class="text-sm text-gray-600">BMR</span>
-                                <span class="font-medium">1650 kcal</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-sm text-gray-600">TDEE</span>
-                                <span class="font-medium">2200 kcal</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-sm text-gray-600">Obiettivo</span>
-                                <span class="font-medium">Dimagrimento moderato</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-sm text-gray-600">Calorie suggerite</span>
-                                <span class="font-medium text-blue-600">1900 kcal</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-sm text-gray-600">Attività fisica</span>
-                                <span class="font-medium">Moderatamente attivo</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="p-4 bg-gray-50 rounded-lg">
-                        <h3 class="font-semibold mb-3">Ripartizione Macronutrienti</h3>
-                        <div class="flex justify-center mb-3">
-                            <canvas id="macro-chart" width="200" height="200"></canvas>
-                        </div>
-                        <div class="grid grid-cols-3 gap-2 text-center">
-                            <div class="p-2  rounded-lg">
-                                <div class="text-sm font-medium">Proteine</div>
-                                <div class="text-lg font-bold text-green-600">25%</div>
-                                <div class="text-xs text-gray-500">119g</div>
-                            </div>
-                            <div class="p-2  rounded-lg">
-                                <div class="text-sm font-medium">Carboidrati</div>
-                                <div class="text-lg font-bold text-blue-600">45%</div>
-                                <div class="text-xs text-gray-500">214g</div>
-                            </div>
-                            <div class="p-2  rounded-lg">
-                                <div class="text-sm font-medium">Grassi</div>
-                                <div class="text-lg font-bold text-yellow-600">30%</div>
-                                <div class="text-xs text-gray-500">63g</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+          <!-- FNI -->
+          <div id="fni-banner" class="p-4 bg-gray-50 rounded-lg flex flex-col justify-between h-[320px]">
 
-            <!-- Contenuto tab attività fisica -->
-            <div id="tab-attivita" class="tab-content">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="p-4 bg-gray-50 rounded-lg">
-                        <h3 class="font-semibold mb-3">Attività Attuale</h3>
-                        <div class="space-y-3">
-                            <div class="flex justify-between">
-                                <span class="text-sm text-gray-600">Frequenza</span>
-                                <span class="font-medium">2 volte/settimana</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-sm text-gray-600">Tipo</span>
-                                <span class="font-medium">Camminata veloce</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-sm text-gray-600">Durata</span>
-                                <span class="font-medium">30 minuti</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-sm text-gray-600">Intensità</span>
-                                <span class="font-medium text-yellow-600">Moderata</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-sm text-gray-600">Minuti/settimana</span>
-                                <span class="font-medium text-red-600">60 (< 150 min)</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="p-4 bg-gray-50 rounded-lg">
-                        <h3 class="font-semibold mb-3">Suggerimenti Personalizzati</h3>
-                        <div class="space-y-3">
-                            <div class="p-3  rounded-lg border-l-4 border-blue-500">
-                                <h4 class="font-medium">Obiettivo Principale</h4>
-                                <p class="text-sm text-gray-600">Aumentare l'attività aerobica a 150 min/settimana</p>
-                            </div>
-                            <div class="p-3  rounded-lg border-l-4 border-green-500">
-                                <h4 class="font-medium">Tipo di Allenamento</h4>
-                                <p class="text-sm text-gray-600">Combinare cardio (60%) e forza (40%)</p>
-                            </div>
-                            <div class="p-3  rounded-lg border-l-4 border-yellow-500">
-                                <h4 class="font-medium">Progressione</h4>
-                                <p class="text-sm text-gray-600">Aumentare di 10 min/settimana fino a 150 min</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <h3 class="font-semibold mb-3">FNI - Nutrizione</h3>
+            <div class="flex items-center justify-center mb-4">
+              <div id="fni-banner-score" class="score-indicator-2 score-medium text-2xl">--</div>
             </div>
+            <div class="space-y-2">
+              <div class="flex justify-between text-sm">
+                <span>Albumina</span>
+                <span id="fni-banner-albumina" class="font-medium">--</span>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span>Linfociti</span>
+                <span id="fni-banner-linfociti" class="font-medium">--</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-4 bg-gray-50 rounded-lg">
+            <h3 class="font-semibold mb-3">Rischio Cardiovascolare</h3>
+            <div class="flex items-center justify-center mb-4">
+              <svg width="120" height="120" viewBox="0 0 120 120" class="progress-ring">
+                <circle cx="60" cy="60" r="50" fill="none" stroke="#e6e6e6" stroke-width="10"></circle>
+                <circle class="progress-ring__circle ring-cv" cx="60" cy="60" r="50" fill="none" stroke="#4285F4" stroke-width="10" stroke-dasharray="314.16" stroke-dashoffset="220" stroke-linecap="round"></circle>
+                <text x="60" y="65" text-anchor="middle" font-size="18" font-weight="bold" fill="var(--chart-text-color)" id="cv-risk-text">--%</text>
+              </svg>
+            </div>
+            <div class="space-y-2">
+              <div class="flex justify-between text-sm">
+                <span>Età</span>
+                <span class="font-medium" id="cv-age">-- anni</span>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span>Pressione</span>
+                <span class="font-medium" id="cv-pressure">-- mmHg</span>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span>Colesterolo</span>
+                <span class="font-medium" id="cv-cholesterol">-- mg/dL</span>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span>Fumo</span>
+                <span class="font-medium" id="cv-smoking">--</span>
+              </div>
+            </div>
+          </div>
+          <div class="p-4 bg-gray-50 rounded-lg">
+            <h3 class="font-semibold mb-3">Rischio Diabete (ADA)</h3>
+            <div class="flex items-center justify-center mb-4">
+              <svg width="120" height="120" viewBox="0 0 120 120" class="progress-ring">
+                <circle cx="60" cy="60" r="50" fill="none" stroke="#e6e6e6" stroke-width="10"></circle>
+                <circle class="progress-ring__circle ring-ada" cx="60" cy="60" r="50" fill="none" stroke="#FBBC05" stroke-width="10" stroke-dasharray="314.16" stroke-dashoffset="157" stroke-linecap="round"></circle>
+                <text x="60" y="65" text-anchor="middle" font-size="18" font-weight="bold" fill="var(--chart-text-color)" id="diabetes-risk-text">--/--</text>
+              </svg>
+            </div>
+            <div class="space-y-2">
+              <div class="flex justify-between text-sm">
+                <span>Glicemia</span>
+                <span id="glicemia-valore" class="font-medium text-yellow-600">-- mg/dL</span>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span>Familiarità diabete</span>
+                <span id="familiarita-diabete" class="font-medium text-red-600">--</span>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span>Ipertensione</span>
+                <span id="ipertensione" class="font-medium text-red-600">--</span>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span>Attività fisica</span>
+                <span id="attivita-fisica" class="font-medium text-red-600">--</span>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
 
-        <!-- Raccomandazioni personalizzate -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <div class="card  p-4">
-                <h2 class="text-lg font-bold mb-3">Suggerimenti Prioritari</h2>
-                <div class="space-y-3">
-                    <div class="recommendation-card p-3 bg-gray-50">
-                        <h3 class="font-medium">Migliorare il controllo glicemico</h3>
-                        <p class="text-sm text-gray-600">Ridurre l'apporto di carboidrati semplici e aumentare l'attività fisica</p>
-                    </div>
-                    <div class="recommendation-card p-3 bg-gray-50">
-                        <h3 class="font-medium">Aumentare l'attività fisica</h3>
-                        <p class="text-sm text-gray-600">Raggiungere almeno 150 minuti di attività moderata a settimana</p>
-                    </div>
-                    <div class="recommendation-card p-3 bg-gray-50">
-                        <h3 class="font-medium">Migliorare la qualità del sonno</h3>
-                        <p class="text-sm text-gray-600">Creare una routine serale e limitare l'uso di dispositivi elettronici</p>
-                    </div>
+      <!-- Contenuto tab screening -->
+      <div id="tab-screening" class="tab-content">
+        <div class="space-y-4">
+          <div class="bg-gray-50 p-4 rounded-lg">
+            <h3 class="font-semibold mb-3">Screening Raccomandati</h3>
+            <div class="space-y-3">
+              <div class="flex items-center p-2  rounded border-l-4 border-green-500">
+                <div class="flex-1">
+                  <h4 class="font-medium">Screening Colon-retto</h4>
+                  <p class="text-sm text-gray-600">Raccomandato ogni 2 anni dopo i 50 anni</p>
                 </div>
-            </div>
-            <div class="card  p-4">
-                <h2 class="text-lg font-bold mb-3">Prossimi Passi</h2>
-                <div class="space-y-3">
-                    <div class="flex items-center p-2 bg-gray-50 rounded">
-                        <div class="bg-blue-100 text-blue-800 h-8 w-8 rounded-full flex items-center justify-center mr-3">1</div>
-                        <div>
-                            <h4 class="font-medium">Visita diabetologica</h4>
-                            <p class="text-xs text-gray-500">Entro 30 giorni</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center p-2 bg-gray-50 rounded">
-                        <div class="bg-blue-100 text-blue-800 h-8 w-8 rounded-full flex items-center justify-center mr-3">2</div>
-                        <div>
-                            <h4 class="font-medium">Esami del sangue</h4>
-                            <p class="text-xs text-gray-500">Entro 2 settimane</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center p-2 bg-gray-50 rounded">
-                        <div class="bg-blue-100 text-blue-800 h-8 w-8 rounded-full flex items-center justify-center mr-3">3</div>
-                        <div>
-                            <h4 class="font-medium">Iniziare il piano alimentare</h4>
-                            <p class="text-xs text-gray-500">Immediatamente</p>
-                        </div>
-                    </div>
+                <div class="flex items-center space-x-2">
+                  <span class="badge badge-success">Completo</span>
+                  <span class="text-xs text-gray-500">2024</span>
                 </div>
+              </div>
+              <div class="flex items-center p-2  rounded border-l-4 border-yellow-500">
+                <div class="flex-1">
+                  <h4 class="font-medium">Controllo Pressione</h4>
+                  <p class="text-sm text-gray-600">Raccomandato annualmente</p>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <span class="badge badge-warning">In scadenza</span>
+                  <span class="text-xs text-gray-500">1 mese</span>
+                </div>
+              </div>
+              <div class="flex items-center p-2  rounded border-l-4 border-red-500">
+                <div class="flex-1">
+                  <h4 class="font-medium">Esami Sangue</h4>
+                  <p class="text-sm text-gray-600">Raccomandato annualmente</p>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <span class="badge badge-danger">Scaduto</span>
+                  <span class="text-xs text-gray-500">3 mesi</span>
+                </div>
+              </div>
             </div>
-        </div>
-    </main>
-
-    <!-- Footer -->
-    <footer class="py-4 mt-8" style="border-top: 1px solid var(--border-color); background-color: var(--card-color); color: var(--text-color); transition: border-color var(--animation-speed);">
-        <div class="container mx-auto px-4 text-center text-sm">
-            <p>&copy; 2025 HealthAI - Sistema di monitoraggio della salute</p>
-            <div class="mt-2">
-                <a href="#" class="mx-2" style="color: var(--text-light); hover:color: var(--text-color);">Privacy</a>
-                <a href="#" class="mx-2" style="color: var(--text-light); hover:color: var(--text-color);">Termini di servizio</a>
-                <a href="#" class="mx-2" style="color: var(--text-light); hover:color: var(--text-color);">Contatti</a>
+          </div>
+          <div class="bg-blue-50 p-4 rounded-lg">
+            <h3 class="font-semibold mb-3">Visite Specialistiche Suggerite</h3>
+            <div class="space-y-3">
+              <div class="flex justify-between items-center p-2  rounded">
+                <div>
+                  <h4 class="font-medium">Visita Cardiologica</h4>
+                  <p class="text-sm text-gray-600">Per rivalutazione parametri cardiovascolari</p>
+                </div>
+                <span class="text-blue-500 cursor-pointer hover:underline">Prenota</span>
+              </div>
+              <div class="flex justify-between items-center p-2  rounded">
+                <div>
+                  <h4 class="font-medium">Visita Diabetologica</h4>
+                  <p class="text-sm text-gray-600">Per valutazione rischio diabete</p>
+                </div>
+                <span class="text-blue-500 cursor-pointer hover:underline">Prenota</span>
+              </div>
             </div>
+          </div>
         </div>
-    </footer>
+      </div>
 
-    <script>
-// Configuration constants
-const supabaseUrl = 'https://lwuhdgrkaoyvejmzfbtx.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3dWhkZ3JrYW95dmVqbXpmYnR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2NzU1MDcsImV4cCI6MjA2MTI1MTUwN30.1c5iH4PYW-HeigfXkPSgnVK3t02Gv3krSeo7dDSqqsk';
-const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+      <!-- Contenuto tab stile di vita -->
+      <div id="tab-stile-vita" class="tab-content">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="p-4 bg-gray-50 rounded-lg">
+            <h3 class="font-semibold mb-3">Valutazione PREDIMED</h3>
+            <div class="flex justify-center mb-4">
+              <canvas id="predimed-chart" width="300" height="300"></canvas>
+            </div>
+            <div class="text-center">
+              <p id="predimed-score" class="text-sm text-gray-600">
+                Punteggio attuale: <span class="font-medium">8/14</span>
+              </p>
+              <p id="predimed-adherence" class="text-sm text-gray-600">
+                Aderenza alla dieta mediterranea: <span class="font-medium">Media</span>
+              </p>
+            </div>
+          </div>
+          <div class="p-4 bg-gray-50 rounded-lg">
+            <h3 class="font-semibold mb-3">Benessere Psicologico</h3>
+            <div class="space-y-4">
+              <div class="p-3  rounded-lg">
+                <div class="flex justify-between mb-1">
+                  <span class="text-sm font-medium">Stress</span>
+                  <span class="text-sm font-medium text-yellow-600">Medio</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                  <div class="bg-yellow-500 h-2 rounded-full" style="width: 60%"></div>
+                </div>
+              </div>
+              <div class="p-3  rounded-lg">
+                <div class="flex justify-between mb-1">
+                  <span class="text-sm font-medium">Sonno</span>
+                  <span class="text-sm font-medium text-red-600">Insufficiente</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                  <div class="bg-red-500 h-2 rounded-full" style="width: 30%"></div>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Insonnia moderata</p>
+              </div>
+              <div class="p-3  rounded-lg">
+                <div class="flex justify-between mb-1">
+                  <span class="text-sm font-medium">Umore</span>
+                  <span class="text-sm font-medium text-green-600">Buono</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                  <div class="bg-green-500 h-2 rounded-full" style="width: 75%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-// Variabili globali per i dati utente
-let userData = {};
-let dashboardData = {
+      <!-- Contenuto tab nutrizione -->
+      <div id="tab-nutritional" class="tab-content">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="p-4 bg-gray-50 rounded-lg">
+            <h3 class="font-semibold mb-3">Fabbisogno Calorico</h3>
+            <div class="space-y-3">
+              <div class="flex justify-between">
+                <span class="text-sm text-gray-600">BMR</span>
+                <span class="font-medium">1650 kcal</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-sm text-gray-600">TDEE</span>
+                <span class="font-medium">2200 kcal</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-sm text-gray-600">Obiettivo</span>
+                <span class="font-medium">Dimagrimento moderato</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-sm text-gray-600">Calorie suggerite</span>
+                <span class="font-medium text-blue-600">1900 kcal</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-sm text-gray-600">Attività fisica</span>
+                <span class="font-medium">Moderatamente attivo</span>
+              </div>
+            </div>
+          </div>
+          <div class="p-4 bg-gray-50 rounded-lg">
+            <h3 class="font-semibold mb-3">Ripartizione Macronutrienti</h3>
+            <div class="flex justify-center mb-3">
+              <canvas id="macro-chart" width="200" height="200"></canvas>
+            </div>
+            <div class="grid grid-cols-3 gap-2 text-center">
+              <div class="p-2  rounded-lg">
+                <div class="text-sm font-medium">Proteine</div>
+                <div class="text-lg font-bold text-green-600">25%</div>
+                <div class="text-xs text-gray-500">119g</div>
+              </div>
+              <div class="p-2  rounded-lg">
+                <div class="text-sm font-medium">Carboidrati</div>
+                <div class="text-lg font-bold text-blue-600">45%</div>
+                <div class="text-xs text-gray-500">214g</div>
+              </div>
+              <div class="p-2  rounded-lg">
+                <div class="text-sm font-medium">Grassi</div>
+                <div class="text-lg font-bold text-yellow-600">30%</div>
+                <div class="text-xs text-gray-500">63g</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contenuto tab attività fisica -->
+      <div id="tab-attivita" class="tab-content">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="p-4 bg-gray-50 rounded-lg">
+            <h3 class="font-semibold mb-3">Attività Attuale</h3>
+            <div class="space-y-3">
+              <div class="flex justify-between">
+                <span class="text-sm text-gray-600">Frequenza</span>
+                <span class="font-medium">2 volte/settimana</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-sm text-gray-600">Tipo</span>
+                <span class="font-medium">Camminata veloce</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-sm text-gray-600">Durata</span>
+                <span class="font-medium">30 minuti</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-sm text-gray-600">Intensità</span>
+                <span class="font-medium text-yellow-600">Moderata</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-sm text-gray-600">Minuti/settimana</span>
+                <span class="font-medium text-red-600">60 (< 150 min)</span>
+              </div>
+            </div>
+          </div>
+          <div class="p-4 bg-gray-50 rounded-lg">
+            <h3 class="font-semibold mb-3">Suggerimenti Personalizzati</h3>
+            <div class="space-y-3">
+              <div class="p-3  rounded-lg border-l-4 border-blue-500">
+                <h4 class="font-medium">Obiettivo Principale</h4>
+                <p class="text-sm text-gray-600">Aumentare l'attività aerobica a 150 min/settimana</p>
+              </div>
+              <div class="p-3  rounded-lg border-l-4 border-green-500">
+                <h4 class="font-medium">Tipo di Allenamento</h4>
+                <p class="text-sm text-gray-600">Combinare cardio (60%) e forza (40%)</p>
+              </div>
+              <div class="p-3  rounded-lg border-l-4 border-yellow-500">
+                <h4 class="font-medium">Progressione</h4>
+                <p class="text-sm text-gray-600">Aumentare di 10 min/settimana fino a 150 min</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Raccomandazioni personalizzate -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div class="card  p-4">
+        <h2 class="text-lg font-bold mb-3">Suggerimenti Prioritari</h2>
+        <div class="space-y-3">
+          <div class="recommendation-card p-3 bg-gray-50">
+            <h3 class="font-medium">Migliorare il controllo glicemico</h3>
+            <p class="text-sm text-gray-600">Ridurre l'apporto di carboidrati semplici e aumentare l'attività fisica</p>
+          </div>
+          <div class="recommendation-card p-3 bg-gray-50">
+            <h3 class="font-medium">Aumentare l'attività fisica</h3>
+            <p class="text-sm text-gray-600">Raggiungere almeno 150 minuti di attività moderata a settimana</p>
+          </div>
+          <div class="recommendation-card p-3 bg-gray-50">
+            <h3 class="font-medium">Migliorare la qualità del sonno</h3>
+            <p class="text-sm text-gray-600">Creare una routine serale e limitare l'uso di dispositivi elettronici</p>
+          </div>
+        </div>
+      </div>
+      <div class="card  p-4">
+        <h2 class="text-lg font-bold mb-3">Prossimi Passi</h2>
+        <div class="space-y-3">
+          <div class="flex items-center p-2 bg-gray-50 rounded">
+            <div class="bg-blue-100 text-blue-800 h-8 w-8 rounded-full flex items-center justify-center mr-3">1</div>
+            <div>
+              <h4 class="font-medium">Visita diabetologica</h4>
+              <p class="text-xs text-gray-500">Entro 30 giorni</p>
+            </div>
+          </div>
+          <div class="flex items-center p-2 bg-gray-50 rounded">
+            <div class="bg-blue-100 text-blue-800 h-8 w-8 rounded-full flex items-center justify-center mr-3">2</div>
+            <div>
+              <h4 class="font-medium">Esami del sangue</h4>
+              <p class="text-xs text-gray-500">Entro 2 settimane</p>
+            </div>
+          </div>
+          <div class="flex items-center p-2 bg-gray-50 rounded">
+            <div class="bg-blue-100 text-blue-800 h-8 w-8 rounded-full flex items-center justify-center mr-3">3</div>
+            <div>
+              <h4 class="font-medium">Iniziare il piano alimentare</h4>
+              <p class="text-xs text-gray-500">Immediatamente</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="py-4 mt-8" style="border-top: 1px solid var(--border-color); background-color: var(--card-color); color: var(--text-color); transition: border-color var(--animation-speed);">
+    <div class="container mx-auto px-4 text-center text-sm">
+      <p>&copy; 2025 HealthAI - Sistema di monitoraggio della salute</p>
+      <div class="mt-2">
+        <a href="#" class="mx-2" style="color: var(--text-light); hover:color: var(--text-color);">Privacy</a>
+        <a href="#" class="mx-2" style="color: var(--text-light); hover:color: var(--text-color);">Termini di servizio</a>
+        <a href="#" class="mx-2" style="color: var(--text-light); hover:color: var(--text-color);">Contatti</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+  // Configuration constants
+  const supabaseUrl = 'https://lwuhdgrkaoyvejmzfbtx.supabase.co';
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3dWhkZ3JrYW95dmVqbXpmYnR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2NzU1MDcsImV4cCI6MjA2MTI1MTUwN30.1c5iH4PYW-HeigfXkPSgnVK3t02Gv3krSeo7dDSqqsk';
+  const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+  // Variabili globali per i dati utente
+  let userData = {};
+  let dashboardData = {
     bmi: { value: 0, category: '', status: '' },
     score2: { value: 0, risk: '', category: '' },
     predimed: { value: 0, adherence: '', status: '' },
@@ -908,100 +908,100 @@ let dashboardData = {
     lifestyle: {},
     nutrition: {},
     activity: {}
-};
+  };
 
-// Store chart instances globally
-let predimedChart = null;
-let macroChart = null;
+  // Store chart instances globally
+  let predimedChart = null;
+  let macroChart = null;
 
-// Carica i dati dell'utente all'avvio
-document.addEventListener('DOMContentLoaded', async function() {
+  // Carica i dati dell'utente all'avvio
+  document.addEventListener('DOMContentLoaded', async function() {
     try {
-        // Verifica autenticazione
-        const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
-        
-        if (sessionError || !sessionData.session) {
-            window.location.href = 'login.html';
-            return;
-        }
+      // Verifica autenticazione
+      const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
 
-        const emailUtente = sessionData.session.user.email;
-        
-        // Carica dati dal database
-        await loadUserData(emailUtente);
-        calculateAllScores();
-        updateDashboard();
-        initializeCharts();
-        setupTabs();
-        setupExportButton();
-        
+      if (sessionError || !sessionData.session) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      const emailUtente = sessionData.session.user.email;
+
+      // Carica dati dal database
+      await loadUserData(emailUtente);
+      calculateAllScores();
+      updateDashboard();
+      initializeCharts();
+      setupTabs();
+      setupExportButton();
+
     } catch (error) {
-        console.error('Errore inizializzazione dashboard:', error);
+      console.error('Errore inizializzazione dashboard:', error);
     }
-});
+  });
 
-// Funzione per caricare i dati utente
-async function loadUserData(email) {
+  // Funzione per caricare i dati utente
+  async function loadUserData(email) {
     try {
-        const { data, error } = await supabaseClient
-            .from('anagrafica_utenti')
-            .select('*')
-            .eq('email', email)
-            .single();
-            
-        if (error) {
-            console.error('Errore Supabase:', error);
-            throw error;
-        }
-        
-        userData = data || {};
-        console.log('🔍 Dati utente caricati:', userData);
-        
-        // Debug: verifica campi specifici per SCORE2 e ADA Risk
-        console.log('📊 Campi SCORE2:', {
-            eta: userData.eta,
-            sesso: userData.sesso,
-            pressione_sistolica: userData.pressione_sistolica,
-            colesterolo_totale: userData.colesterolo_totale,
-            colesterolo_hdl_valore: userData.colesterolo_hdl_valore,
-            fumatore: userData.fumatore
-        });
-        
-        console.log('📊 Campi ADA Risk:', {
-            familiari_diabete: userData.familiari_diabete,
-            pressione_alta: userData.pressione_alta,
-            attivita_fisica: userData.attivita_fisica,
-            durata_attivita: userData.durata_attivita,
-            glicemia_valore: userData.glicemia_valore
-        });
-        
-    } catch (error) {
-        console.error('❌ Errore caricamento dati:', error);
-        // Aggiungi dati di fallback per il debug
-        userData = {
-            email: email,
-            // Aggiungi valori di test per verificare se il problema è nel caricamento dati
-            eta: 55,
-            sesso: 'maschio',
-            pressione_sistolica: 145,
-            pressione_diastolica: 85,
-            colesterolo_totale: 200,
-            colesterolo_hdl_valore: 45,
-            fumatore: 'no'
-        };
-        console.log('🔧 Usando dati di fallback per debug:', userData);
-    }
-}
+      const { data, error } = await supabaseClient
+      .from('anagrafica_utenti')
+      .select('*')
+      .eq('email', email)
+      .single();
 
-// Calcola tutti gli score clinici - Versione con debug
-function calculateAllScores() {
+      if (error) {
+        console.error('Errore Supabase:', error);
+        throw error;
+      }
+
+      userData = data || {};
+      console.log('🔍 Dati utente caricati:', userData);
+
+      // Debug: verifica campi specifici per SCORE2 e ADA Risk
+      console.log('📊 Campi SCORE2:', {
+        eta: userData.eta,
+        sesso: userData.sesso,
+        pressione_sistolica: userData.pressione_sistolica,
+        colesterolo_totale: userData.colesterolo_totale,
+        colesterolo_hdl_valore: userData.colesterolo_hdl_valore,
+        fumatore: userData.fumatore
+      });
+
+      console.log('📊 Campi ADA Risk:', {
+        familiari_diabete: userData.familiari_diabete,
+        pressione_alta: userData.pressione_alta,
+        attivita_fisica: userData.attivita_fisica,
+        durata_attivita: userData.durata_attivita,
+        glicemia_valore: userData.glicemia_valore
+      });
+
+    } catch (error) {
+      console.error('❌ Errore caricamento dati:', error);
+      // Aggiungi dati di fallback per il debug
+      userData = {
+        email: email,
+        // Aggiungi valori di test per verificare se il problema è nel caricamento dati
+        eta: 55,
+        sesso: 'maschio',
+        pressione_sistolica: 145,
+        pressione_diastolica: 85,
+        colesterolo_totale: 200,
+        colesterolo_hdl_valore: 45,
+        fumatore: 'no'
+      };
+      console.log('🔧 Usando dati di fallback per debug:', userData);
+    }
+  }
+
+  // Calcola tutti gli score clinici - Versione con debug
+  function calculateAllScores() {
     console.log('🚀 Inizio calcolo di tutti gli score...');
     console.log('📊 Dati disponibili:', Object.keys(userData));
-    
+
     // Inizializza i dati di default
     dashboardData.score2 = { value: '0.0', risk: 'Non calcolato', category: 'warning' };
     dashboardData.diabetesRisk = { score: 0, maxScore: 8, factors: [], risk: 'Non calcolato' };
-    
+
     calculateBMI();
     calculateSCORE2();
     calculatePREDIMED();
@@ -1015,288 +1015,288 @@ function calculateAllScores() {
     analyzeLifestyle();
     calculateNutritionalNeeds();
     evaluatePhysicalActivity();
-    
+
     console.log('🎯 Risultati finali degli score:', {
-        bmi: dashboardData.bmi,
-        score2: dashboardData.score2,
-        diabetesRisk: dashboardData.diabetesRisk,
-        score2Diabetes: dashboardData.score2Diabetes,
-        fib4: dashboardData.fib4,
-        fni: dashboardData.fni
+      bmi: dashboardData.bmi,
+      score2: dashboardData.score2,
+      diabetesRisk: dashboardData.diabetesRisk,
+      score2Diabetes: dashboardData.score2Diabetes,
+      fib4: dashboardData.fib4,
+      fni: dashboardData.fni
     });
-    
+
     // Debug specifico per i valori che non si vedono
     console.log('🔢 SCORE2 - Valore specifico:', dashboardData.score2.value, 'Rischio:', dashboardData.score2.risk);
     console.log('🔢 ADA Risk - Score specifico:', dashboardData.diabetesRisk.score, '/', dashboardData.diabetesRisk.maxScore, 'Rischio:', dashboardData.diabetesRisk.risk);
     console.log('🔢 Nuovi score - SCORE2D:', dashboardData.score2Diabetes?.value, 'FIB4:', dashboardData.fib4?.value, 'FNI:', dashboardData.fni?.value);
-}
+  }
 
-// 1. Calcolo BMI
-function calculateBMI() {
+  // 1. Calcolo BMI
+  function calculateBMI() {
     const peso = parseFloat(userData.peso);
     const altezza = parseFloat(userData.altezza) / 100;
-    
-    if (peso && altezza) {
-        const bmi = peso / (altezza * altezza);
-        dashboardData.bmi.value = bmi.toFixed(1);
-        
-        if (bmi < 18.5) {
-            dashboardData.bmi.category = 'Sottopeso';
-            dashboardData.bmi.status = 'warning';
-        } else if (bmi < 25) {
-            dashboardData.bmi.category = 'Normopeso';
-            dashboardData.bmi.status = 'success';
-        } else if (bmi < 30) {
-            dashboardData.bmi.category = 'Sovrappeso';
-            dashboardData.bmi.status = 'warning';
-        } else {
-            dashboardData.bmi.category = 'Obesità';
-            dashboardData.bmi.status = 'danger';
-        }
-    }
-}
 
-// 2. Calcolo SCORE2 - Versione migliorata con debug
-function calculateSCORE2() {
+    if (peso && altezza) {
+      const bmi = peso / (altezza * altezza);
+      dashboardData.bmi.value = bmi.toFixed(1);
+
+      if (bmi < 18.5) {
+        dashboardData.bmi.category = 'Sottopeso';
+        dashboardData.bmi.status = 'warning';
+      } else if (bmi < 25) {
+        dashboardData.bmi.category = 'Normopeso';
+        dashboardData.bmi.status = 'success';
+      } else if (bmi < 30) {
+        dashboardData.bmi.category = 'Sovrappeso';
+        dashboardData.bmi.status = 'warning';
+      } else {
+        dashboardData.bmi.category = 'Obesità';
+        dashboardData.bmi.status = 'danger';
+      }
+    }
+  }
+
+  // 2. Calcolo SCORE2 - Versione migliorata con debug
+  function calculateSCORE2() {
     console.log('🔄 Inizio calcolo SCORE2...');
-    
+
     const eta = parseInt(userData.eta);
     const sesso = userData.sesso?.toLowerCase();
     const sistolica = parseFloat(userData.pressione_sistolica);
     const colTotale = parseFloat(userData.colesterolo_totale);
     const hdl = parseFloat(userData.colesterolo_hdl_valore);
     const fumatore = userData.fumatore?.toLowerCase() === 'sì';
-    
+
     console.log('📋 Valori SCORE2 estratti:', {
-        eta, sesso, sistolica, colTotale, hdl, fumatore
+      eta, sesso, sistolica, colTotale, hdl, fumatore
     });
-    
+
     // Verifica che tutti i valori necessari siano presenti
     if (!eta || isNaN(eta)) {
-        console.warn('⚠️ Età mancante o non valida:', userData.eta);
-        dashboardData.score2 = { value: '0.0', risk: 'Dati insufficienti', category: 'warning' };
-        return;
+      console.warn('⚠️ Età mancante o non valida:', userData.eta);
+      dashboardData.score2 = { value: '0.0', risk: 'Dati insufficienti', category: 'warning' };
+      return;
     }
-    
+
     if (!sistolica || isNaN(sistolica)) {
-        console.warn('⚠️ Pressione sistolica mancante o non valida:', userData.pressione_sistolica);
-        dashboardData.score2 = { value: '0.0', risk: 'Dati insufficienti', category: 'warning' };
-        return;
+      console.warn('⚠️ Pressione sistolica mancante o non valida:', userData.pressione_sistolica);
+      dashboardData.score2 = { value: '0.0', risk: 'Dati insufficienti', category: 'warning' };
+      return;
     }
-    
+
     if (!colTotale || isNaN(colTotale) || !hdl || isNaN(hdl)) {
-        console.warn('⚠️ Valori colesterolo mancanti:', { colTotale, hdl });
-        dashboardData.score2 = { value: '0.0', risk: 'Dati insufficienti', category: 'warning' };
-        return;
+      console.warn('⚠️ Valori colesterolo mancanti:', { colTotale, hdl });
+      dashboardData.score2 = { value: '0.0', risk: 'Dati insufficienti', category: 'warning' };
+      return;
     }
-    
+
     let score = 0;
-    
+
     // Fattore età
     if (eta >= 40 && eta < 50) score += 0;
     else if (eta >= 50 && eta < 60) score += 3;
     else if (eta >= 60 && eta < 70) score += 6;
     else if (eta >= 70) score += 9;
-    
+
     // Fattore pressione
     if (sistolica >= 140) score += 2;
     if (sistolica >= 160) score += 3;
     if (sistolica >= 180) score += 4;
-    
+
     // Fattore colesterolo
     const nonHDL = colTotale - hdl;
     if (nonHDL >= 190) score += 1;
     if (nonHDL >= 220) score += 2;
     if (nonHDL >= 280) score += 3;
-    
+
     // Fattore fumo
     if (fumatore) score += 4;
-    
+
     // Converti in percentuale di rischio
     const riskPercent = Math.min(score * 0.5, 20);
-    
+
     console.log('🧮 Calcolo SCORE2 completato:', { score, riskPercent });
-    
+
     dashboardData.score2.value = riskPercent.toFixed(1);
-    
+
     if (riskPercent < 1) {
-        dashboardData.score2.risk = 'Basso';
-        dashboardData.score2.category = 'success';
+      dashboardData.score2.risk = 'Basso';
+      dashboardData.score2.category = 'success';
     } else if (riskPercent < 5) {
-        dashboardData.score2.risk = 'Moderato';
-        dashboardData.score2.category = 'warning';
+      dashboardData.score2.risk = 'Moderato';
+      dashboardData.score2.category = 'warning';
     } else if (riskPercent < 10) {
-        dashboardData.score2.risk = 'Alto';
-        dashboardData.score2.category = 'danger';
+      dashboardData.score2.risk = 'Alto';
+      dashboardData.score2.category = 'danger';
     } else {
-        dashboardData.score2.risk = 'Molto alto';
-        dashboardData.score2.category = 'danger';
+      dashboardData.score2.risk = 'Molto alto';
+      dashboardData.score2.category = 'danger';
     }
-    
+
     console.log('✅ SCORE2 calcolato:', dashboardData.score2);
-}
+  }
 
-// 3. Calcolo PREDIMED
-function calculatePREDIMED() {
+  // 3. Calcolo PREDIMED
+  function calculatePREDIMED() {
     let score = 0;
-    
-    for (let i = 1; i <= 14; i++) {
-        const value = String(userData[`predimed_${i}`]).toLowerCase();
-        if (['sì', 'si', '1', 'true'].includes(value)) {
-            score++;
-        }
-    }
-    
-    dashboardData.predimed.value = score;
-    
-    if (score >= 10) {
-        dashboardData.predimed.adherence = 'Alta aderenza';
-        dashboardData.predimed.status = 'success';
-    } else if (score >= 6) {
-        dashboardData.predimed.adherence = 'Media aderenza';
-        dashboardData.predimed.status = 'warning';
-    } else {
-        dashboardData.predimed.adherence = 'Bassa aderenza';
-        dashboardData.predimed.status = 'danger';
-    }
-}
 
-// 4. Verifica sindrome metabolica
-function checkMetabolicSyndrome() {
+    for (let i = 1; i <= 14; i++) {
+      const value = String(userData[`predimed_${i}`]).toLowerCase();
+      if (['sì', 'si', '1', 'true'].includes(value)) {
+        score++;
+      }
+    }
+
+    dashboardData.predimed.value = score;
+
+    if (score >= 10) {
+      dashboardData.predimed.adherence = 'Alta aderenza';
+      dashboardData.predimed.status = 'success';
+    } else if (score >= 6) {
+      dashboardData.predimed.adherence = 'Media aderenza';
+      dashboardData.predimed.status = 'warning';
+    } else {
+      dashboardData.predimed.adherence = 'Bassa aderenza';
+      dashboardData.predimed.status = 'danger';
+    }
+  }
+
+  // 4. Verifica sindrome metabolica
+  function checkMetabolicSyndrome() {
     let criteria = 0;
     let factors = [];
-    
+
     if (userData.vita?.toLowerCase() === 'sì') {
-        criteria++;
-        factors.push('Girovita elevato');
+      criteria++;
+      factors.push('Girovita elevato');
     }
-    
+
     const glicemia = parseFloat(userData.glicemia_valore || 0);
     if (glicemia >= 100 || userData.diabete?.toLowerCase() === 'sì') {
-        criteria++;
-        factors.push('Glicemia alta');
+      criteria++;
+      factors.push('Glicemia alta');
     }
-    
+
     const hdlValore = parseFloat(userData.colesterolo_hdl_valore);
     const sesso = userData.sesso?.toLowerCase();
-    
+
     if ((sesso === 'maschio' && hdlValore < 40) || (sesso === 'femmina' && hdlValore < 50)) {
-        criteria++;
-        factors.push('HDL basso');
+      criteria++;
+      factors.push('HDL basso');
     }
-    
+
     const sistolica = parseFloat(userData.pressione_sistolica);
     const diastolica = parseFloat(userData.pressione_diastolica);
     if (sistolica >= 130 || diastolica >= 85) {
-        criteria++;
-        factors.push('Pressione elevata');
+      criteria++;
+      factors.push('Pressione elevata');
     }
-    
+
     const trigli = parseFloat(userData.trigliceridi);
     if (trigli >= 150) {
-        criteria++;
-        factors.push('Trigliceridi elevati');
+      criteria++;
+      factors.push('Trigliceridi elevati');
     }
 
     dashboardData.metabolicSyndrome = {
-        present: criteria >= 3,
-        criteria: criteria,
-        factors: factors
+      present: criteria >= 3,
+      criteria: criteria,
+      factors: factors
     };
-}
+  }
 
-// 5. Calcolo rischio diabete (ADA Risk Score) - Versione con debug ultra-dettagliato
-function calculateDiabetesRisk() {
+  // 5. Calcolo rischio diabete (ADA Risk Score) - Versione con debug ultra-dettagliato
+  function calculateDiabetesRisk() {
     console.log('🔄 Inizio calcolo ADA Diabetes Risk...');
-    
+
     let score = 0;
     let factors = [];
-    
+
     const eta = parseInt(userData.eta);
     const bmi = parseFloat(dashboardData.bmi.value);
-    
+
     console.log('📋 Valori base ADA Risk:', {
-        eta: eta,
-        bmi: bmi,
-        peso: userData.peso,
-        altezza: userData.altezza
+      eta: eta,
+      bmi: bmi,
+      peso: userData.peso,
+      altezza: userData.altezza
     });
-    
+
     // 1. FATTORE ETÀ
     console.log('🎂 === CONTROLLO ETÀ ===');
     console.log('Età utente:', eta);
-    
+
     if (eta >= 40 && eta < 50) {
-        score += 1;
-        factors.push('Età 40-49');
-        console.log('✅ Età 40-49: +1 punto');
+      score += 1;
+      factors.push('Età 40-49');
+      console.log('✅ Età 40-49: +1 punto');
     } else if (eta >= 50 && eta < 60) {
-        score += 2;
-        factors.push('Età 50-59');
-        console.log('✅ Età 50-59: +2 punti');
+      score += 2;
+      factors.push('Età 50-59');
+      console.log('✅ Età 50-59: +2 punti');
     } else if (eta >= 60) {
-        score += 3;
-        factors.push('Età ≥60');
-        console.log('✅ Età ≥60: +3 punti');
+      score += 3;
+      factors.push('Età ≥60');
+      console.log('✅ Età ≥60: +3 punti');
     } else {
-        console.log('❌ Età <40: 0 punti');
+      console.log('❌ Età <40: 0 punti');
     }
     console.log('Punteggio dopo età:', score);
-    
+
     // 2. FATTORE BMI
     console.log('⚖️ === CONTROLLO BMI ===');
     console.log('BMI calcolato:', bmi);
-    
+
     if (!isNaN(bmi)) {
-        if (bmi >= 25 && bmi < 30) {
-            score += 1;
-            factors.push('Sovrappeso');
-            console.log('✅ BMI 25-30 (Sovrappeso): +1 punto');
-        } else if (bmi >= 30 && bmi < 40) {
-            score += 2;
-            factors.push('Obesità');
-            console.log('✅ BMI 30-40 (Obesità): +2 punti');
-        } else if (bmi >= 40) {
-            score += 3;
-            factors.push('Obesità grave');
-            console.log('✅ BMI ≥40 (Obesità grave): +3 punti');
-        } else {
-            console.log('❌ BMI normale (<25): 0 punti');
-        }
+      if (bmi >= 25 && bmi < 30) {
+        score += 1;
+        factors.push('Sovrappeso');
+        console.log('✅ BMI 25-30 (Sovrappeso): +1 punto');
+      } else if (bmi >= 30 && bmi < 40) {
+        score += 2;
+        factors.push('Obesità');
+        console.log('✅ BMI 30-40 (Obesità): +2 punti');
+      } else if (bmi >= 40) {
+        score += 3;
+        factors.push('Obesità grave');
+        console.log('✅ BMI ≥40 (Obesità grave): +3 punti');
+      } else {
+        console.log('❌ BMI normale (<25): 0 punti');
+      }
     } else {
-        console.log('⚠️ BMI non calcolabile');
+      console.log('⚠️ BMI non calcolabile');
     }
     console.log('Punteggio dopo BMI:', score);
-    
+
     // 3. FAMILIARITÀ DIABETE
     console.log('👨‍👩‍👧‍👦 === CONTROLLO FAMILIARITÀ ===');
     const famRaw = userData.familiari_diabete;
     console.log('Familiarità diabete (raw):', famRaw, 'Tipo:', typeof famRaw);
-    
+
     if (famRaw) {
-        const rispostaFam = String(famRaw).toLowerCase()
-            .normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-        
-        console.log('Familiarità diabete (processed):', rispostaFam);
-        
-        const hasFamilyHistory = rispostaFam && (
-            rispostaFam.includes("si") ||
-            rispostaFam.includes("yes") ||
-            rispostaFam === "true" ||
-            rispostaFam === "ok" ||
-            rispostaFam === "y" ||
-            rispostaFam === "1"
-        );
-        
-        if (hasFamilyHistory) {
-            score += 1;
-            factors.push("Familiarità diabete");
-            console.log('✅ Familiarità diabete: +1 punto');
-        } else {
-            console.log('❌ Nessuna familiarità diabete: 0 punti');
-        }
+      const rispostaFam = String(famRaw).toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+
+      console.log('Familiarità diabete (processed):', rispostaFam);
+
+      const hasFamilyHistory = rispostaFam && (
+        rispostaFam.includes("si") ||
+        rispostaFam.includes("yes") ||
+        rispostaFam === "true" ||
+        rispostaFam === "ok" ||
+        rispostaFam === "y" ||
+        rispostaFam === "1"
+      );
+
+      if (hasFamilyHistory) {
+        score += 1;
+        factors.push("Familiarità diabete");
+        console.log('✅ Familiarità diabete: +1 punto');
+      } else {
+        console.log('❌ Nessuna familiarità diabete: 0 punti');
+      }
     } else {
-        console.log('❌ Campo familiarità vuoto: 0 punti');
+      console.log('❌ Campo familiarità vuoto: 0 punti');
     }
     console.log('Punteggio dopo familiarità:', score);
 
@@ -1304,36 +1304,36 @@ function calculateDiabetesRisk() {
     console.log('🩺 === CONTROLLO IPERTENSIONE ===');
     const pressioneAltaRaw = userData.pressione_alta;
     const sistolica = parseFloat(userData.pressione_sistolica);
-    
+
     console.log('Pressione alta (campo):', pressioneAltaRaw, 'Tipo:', typeof pressioneAltaRaw);
     console.log('Pressione sistolica:', sistolica, 'Tipo:', typeof sistolica);
-    
+
     let hasHypertension = false;
-    
+
     // Controllo campo pressione_alta
     if (pressioneAltaRaw) {
-        const rispostaIpertensione = String(pressioneAltaRaw).toLowerCase()
-            .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        console.log('Pressione alta (processed):', rispostaIpertensione);
-        
-        if (['si', 'sì', 'yes', 'true', 'ok', 'y', '1'].includes(rispostaIpertensione)) {
-            hasHypertension = true;
-            console.log('✅ Ipertensione da campo "pressione_alta": SÌ');
-        }
+      const rispostaIpertensione = String(pressioneAltaRaw).toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      console.log('Pressione alta (processed):', rispostaIpertensione);
+
+      if (['si', 'sì', 'yes', 'true', 'ok', 'y', '1'].includes(rispostaIpertensione)) {
+        hasHypertension = true;
+        console.log('✅ Ipertensione da campo "pressione_alta": SÌ');
+      }
     }
-    
+
     // Controllo valore numerico pressione
     if (!hasHypertension && !isNaN(sistolica) && sistolica >= 140) {
-        hasHypertension = true;
-        console.log('✅ Ipertensione da valore sistolica ≥140: SÌ');
+      hasHypertension = true;
+      console.log('✅ Ipertensione da valore sistolica ≥140: SÌ');
     }
-    
+
     if (hasHypertension) {
-        score += 1;
-        factors.push('Ipertensione');
-        console.log('✅ Ipertensione: +1 punto');
+      score += 1;
+      factors.push('Ipertensione');
+      console.log('✅ Ipertensione: +1 punto');
     } else {
-        console.log('❌ Nessuna ipertensione: 0 punti');
+      console.log('❌ Nessuna ipertensione: 0 punti');
     }
     console.log('Punteggio dopo ipertensione:', score);
 
@@ -1341,427 +1341,427 @@ function calculateDiabetesRisk() {
     console.log('🏃‍♂️ === CONTROLLO ATTIVITÀ FISICA ===');
     const attivitaRaw = userData.attivita_fisica;
     const durataRaw = userData.durata_attivita;
-    
+
     console.log('Attività fisica (campo):', attivitaRaw, 'Tipo:', typeof attivitaRaw);
     console.log('Durata attività:', durataRaw, 'Tipo:', typeof durataRaw);
-    
+
     let insufficientActivity = false;
-    
+
     if (attivitaRaw && String(attivitaRaw).toLowerCase().includes('no')) {
+      insufficientActivity = true;
+      console.log('✅ Sedentario (attività_fisica = no)');
+    } else {
+      // Controlla durata se fa attività
+      const durata = parseInt(durataRaw || '0');
+      console.log('Durata attività fisica:', durata, 'minuti/settimana');
+
+      if (durata < 150) {
         insufficientActivity = true;
-        console.log('✅ Sedentario (attività_fisica = no)');
-    } else {
-        // Controlla durata se fa attività
-        const durata = parseInt(durataRaw || '0');
-        console.log('Durata attività fisica:', durata, 'minuti/settimana');
-        
-        if (durata < 150) {
-            insufficientActivity = true;
-            console.log('✅ Attività fisica insufficiente (<150 min/settimana)');
-        } else {
-            console.log('❌ Attività fisica adeguata (≥150 min/settimana)');
-        }
+        console.log('✅ Attività fisica insufficiente (<150 min/settimana)');
+      } else {
+        console.log('❌ Attività fisica adeguata (≥150 min/settimana)');
+      }
     }
-    
+
     if (insufficientActivity) {
-        score += 1;
-        const reason = attivitaRaw && String(attivitaRaw).toLowerCase().includes('no') ? 
-                      'Sedentarietà' : 'Attività fisica insufficiente';
-        factors.push(reason);
-        console.log('✅ Attività fisica insufficiente: +1 punto');
+      score += 1;
+      const reason = attivitaRaw && String(attivitaRaw).toLowerCase().includes('no') ?
+      'Sedentarietà' : 'Attività fisica insufficiente';
+      factors.push(reason);
+      console.log('✅ Attività fisica insufficiente: +1 punto');
     } else {
-        console.log('❌ Attività fisica adeguata: 0 punti');
+      console.log('❌ Attività fisica adeguata: 0 punti');
     }
     console.log('Punteggio dopo attività fisica:', score);
-    
+
     // RISULTATO FINALE
     const riskLevel = score >= 5 ? 'Alto' : score >= 3 ? 'Moderato' : 'Basso';
-    
+
     console.log('🎯 === RISULTATO FINALE ADA ===');
     console.log('Punteggio totale:', score, '/ 8');
     console.log('Fattori di rischio:', factors);
     console.log('Livello di rischio:', riskLevel);
-    
-    dashboardData.diabetesRisk = {
-        score: score,
-        maxScore: 8,
-        factors: factors,
-        risk: riskLevel
-    };
-    
-    console.log('✅ ADA Diabetes Risk calcolato:', dashboardData.diabetesRisk);
-}
 
-// 6. Calcolo SCORE2-Diabete
-function calculateScore2Diabetes() {
+    dashboardData.diabetesRisk = {
+      score: score,
+      maxScore: 8,
+      factors: factors,
+      risk: riskLevel
+    };
+
+    console.log('✅ ADA Diabetes Risk calcolato:', dashboardData.diabetesRisk);
+  }
+
+  // 6. Calcolo SCORE2-Diabete
+  function calculateScore2Diabetes() {
     const hba1c = parseFloat(userData.hba1c);
     const glicemia = parseFloat(userData.glicemia_valore);
     const sistolica = parseFloat(userData.pressione_sistolica);
     const eta = parseInt(userData.eta);
 
     if (!isNaN(hba1c) || !isNaN(glicemia) || !isNaN(sistolica)) {
-        // Formula semplificata per SCORE2-Diabete
-        let riskScore = 0;
-        
-        // Contributo HbA1c
-        if (!isNaN(hba1c)) {
-            if (hba1c >= 9) riskScore += 4;
-            else if (hba1c >= 8) riskScore += 3;
-            else if (hba1c >= 7) riskScore += 2;
-            else if (hba1c >= 6.5) riskScore += 1;
-        }
-        
-        // Contributo glicemia a digiuno
-        if (!isNaN(glicemia)) {
-            if (glicemia >= 200) riskScore += 3;
-            else if (glicemia >= 140) riskScore += 2;
-            else if (glicemia >= 110) riskScore += 1;
-        }
-        
-        // Contributo pressione sistolica
-        if (!isNaN(sistolica)) {
-            if (sistolica >= 180) riskScore += 3;
-            else if (sistolica >= 160) riskScore += 2;
-            else if (sistolica >= 140) riskScore += 1;
-        }
-        
-        // Contributo età
-        if (!isNaN(eta)) {
-            if (eta >= 70) riskScore += 2;
-            else if (eta >= 60) riskScore += 1;
-        }
-        
-        // Converti in percentuale (max 15%, scala da 0 a 15)
-        const riskPercent = Math.min(riskScore * 1.2, 15);
-        
-        let category = 'success';
-        let risk = 'Basso';
-        
-        if (riskPercent >= 10) {
-            category = 'danger';
-            risk = 'Alto';
-        } else if (riskPercent >= 5) {
-            category = 'warning';
-            risk = 'Moderato';
-        }
+      // Formula semplificata per SCORE2-Diabete
+      let riskScore = 0;
 
-        dashboardData.score2Diabetes = {
-            value: riskPercent.toFixed(1),
-            hba1c: hba1c || 0,
-            glicemia: glicemia || 0,
-            sistolica: sistolica || 0,
-            risk: risk,
-            category: category
-        };
+      // Contributo HbA1c
+      if (!isNaN(hba1c)) {
+        if (hba1c >= 9) riskScore += 4;
+        else if (hba1c >= 8) riskScore += 3;
+        else if (hba1c >= 7) riskScore += 2;
+        else if (hba1c >= 6.5) riskScore += 1;
+      }
+
+      // Contributo glicemia a digiuno
+      if (!isNaN(glicemia)) {
+        if (glicemia >= 200) riskScore += 3;
+        else if (glicemia >= 140) riskScore += 2;
+        else if (glicemia >= 110) riskScore += 1;
+      }
+
+      // Contributo pressione sistolica
+      if (!isNaN(sistolica)) {
+        if (sistolica >= 180) riskScore += 3;
+        else if (sistolica >= 160) riskScore += 2;
+        else if (sistolica >= 140) riskScore += 1;
+      }
+
+      // Contributo età
+      if (!isNaN(eta)) {
+        if (eta >= 70) riskScore += 2;
+        else if (eta >= 60) riskScore += 1;
+      }
+
+      // Converti in percentuale (max 15%, scala da 0 a 15)
+      const riskPercent = Math.min(riskScore * 1.2, 15);
+
+      let category = 'success';
+      let risk = 'Basso';
+
+      if (riskPercent >= 10) {
+        category = 'danger';
+        risk = 'Alto';
+      } else if (riskPercent >= 5) {
+        category = 'warning';
+        risk = 'Moderato';
+      }
+
+      dashboardData.score2Diabetes = {
+        value: riskPercent.toFixed(1),
+        hba1c: hba1c || 0,
+        glicemia: glicemia || 0,
+        sistolica: sistolica || 0,
+        risk: risk,
+        category: category
+      };
     }
-}
+  }
 
-// 7. Calcolo FIB4
-function calculateFIB4() {
+  // 7. Calcolo FIB4
+  function calculateFIB4() {
     const age = parseInt(userData.eta);
     const ast = parseFloat(userData.ast);
     const alt = parseFloat(userData.alt);
     const plt = parseFloat(userData.piastrine);
 
     if (!isNaN(age) && !isNaN(ast) && !isNaN(alt) && !isNaN(plt) && alt !== 0 && plt !== 0) {
-        // Formula FIB4: (Age × AST) / (Platelets × √ALT)
-        const fib4 = (age * ast) / (plt * Math.sqrt(alt));
-        const fib4Rounded = fib4.toFixed(2);
-        
-        let risk = 'Basso rischio';
-        let category = 'success';
+      // Formula FIB4: (Age × AST) / (Platelets × √ALT)
+      const fib4 = (age * ast) / (plt * Math.sqrt(alt));
+      const fib4Rounded = fib4.toFixed(2);
 
-        if (fib4 >= 3.25) {
-            risk = 'Alto rischio';
-            category = 'danger';
-        } else if (fib4 >= 1.45) {
-            risk = 'Rischio intermedio';
-            category = 'warning';
-        }
+      let risk = 'Basso rischio';
+      let category = 'success';
 
-        dashboardData.fib4 = {
-            value: fib4Rounded,
-            ast: ast,
-            alt: alt,
-            plt: plt,
-            risk: risk,
-            category: category
-        };
+      if (fib4 >= 3.25) {
+        risk = 'Alto rischio';
+        category = 'danger';
+      } else if (fib4 >= 1.45) {
+        risk = 'Rischio intermedio';
+        category = 'warning';
+      }
+
+      dashboardData.fib4 = {
+        value: fib4Rounded,
+        ast: ast,
+        alt: alt,
+        plt: plt,
+        risk: risk,
+        category: category
+      };
     }
-}
+  }
 
-// 8. Calcolo FNI (Functional Nutritional Index)
-function calculateFNI() {
+  // 8. Calcolo FNI (Functional Nutritional Index)
+  function calculateFNI() {
     const albumina = parseFloat(userData.albumina);
     const linfociti = parseFloat(userData.linfociti);
 
     if (!isNaN(albumina) && !isNaN(linfociti)) {
-        // Formula FNI: (10 × albumina) + (0.005 × linfociti)
-        const fni = (10 * albumina) + (0.005 * linfociti);
-        const fniRounded = fni.toFixed(1);
-        
-        let status = 'Normale';
-        let category = 'success';
+      // Formula FNI: (10 × albumina) + (0.005 × linfociti)
+      const fni = (10 * albumina) + (0.005 * linfociti);
+      const fniRounded = fni.toFixed(1);
 
-        if (fni < 35) {
-            status = 'Malnutrizione severa';
-            category = 'danger';
-        } else if (fni < 45) {
-            status = 'Malnutrizione lieve';
-            category = 'warning';
-        }
+      let status = 'Normale';
+      let category = 'success';
 
-        dashboardData.fni = {
-            value: fniRounded,
-            albumina: albumina,
-            linfociti: linfociti,
-            status: status,
-            category: category
-        };
+      if (fni < 35) {
+        status = 'Malnutrizione severa';
+        category = 'danger';
+      } else if (fni < 45) {
+        status = 'Malnutrizione lieve';
+        category = 'warning';
+      }
+
+      dashboardData.fni = {
+        value: fniRounded,
+        albumina: albumina,
+        linfociti: linfociti,
+        status: status,
+        category: category
+      };
     }
-}
+  }
 
-// 9. Genera raccomandazioni personalizzate
-function generateRecommendations() {
+  // 9. Genera raccomandazioni personalizzate
+  function generateRecommendations() {
     dashboardData.recommendations = [];
-    
+
     if (dashboardData.bmi.status === 'warning' || dashboardData.bmi.status === 'danger') {
-        dashboardData.recommendations.push({
-            title: 'Controllo del peso',
-            description: 'Raggiungere un BMI tra 18.5 e 25 attraverso dieta equilibrata',
-            priority: 'high'
-        });
+      dashboardData.recommendations.push({
+        title: 'Controllo del peso',
+        description: 'Raggiungere un BMI tra 18.5 e 25 attraverso dieta equilibrata',
+        priority: 'high'
+      });
     }
-    
+
     if (parseFloat(dashboardData.score2.value) >= 5) {
-        dashboardData.recommendations.push({
-            title: 'Ridurre rischio cardiovascolare',
-            description: 'Controllo pressione, colesterolo e cessazione fumo',
-            priority: 'high'
-        });
+      dashboardData.recommendations.push({
+        title: 'Ridurre rischio cardiovascolare',
+        description: 'Controllo pressione, colesterolo e cessazione fumo',
+        priority: 'high'
+      });
     }
-    
+
     if (dashboardData.predimed.value < 10) {
-        dashboardData.recommendations.push({
-            title: 'Migliorare alimentazione',
-            description: 'Aumentare aderenza alla dieta mediterranea',
-            priority: 'medium'
-        });
+      dashboardData.recommendations.push({
+        title: 'Migliorare alimentazione',
+        description: 'Aumentare aderenza alla dieta mediterranea',
+        priority: 'medium'
+      });
     }
-    
+
     if (userData.attivita_fisica?.toLowerCase() === 'no') {
-        dashboardData.recommendations.push({
-            title: 'Aumentare attività fisica',
-            description: 'Raggiungere almeno 150 minuti di attività moderata a settimana',
-            priority: 'high'
-        });
+      dashboardData.recommendations.push({
+        title: 'Aumentare attività fisica',
+        description: 'Raggiungere almeno 150 minuti di attività moderata a settimana',
+        priority: 'high'
+      });
     }
-    
+
     if (userData.insonnia?.toLowerCase() === 'sì' || parseInt(userData.stress) > 7) {
-        dashboardData.recommendations.push({
-            title: 'Migliorare qualità del sonno',
-            description: 'Creare routine serale e gestire lo stress',
-            priority: 'medium'
-        });
+      dashboardData.recommendations.push({
+        title: 'Migliorare qualità del sonno',
+        description: 'Creare routine serale e gestire lo stress',
+        priority: 'medium'
+      });
     }
 
     // Raccomandazioni basate sui nuovi score
     if (dashboardData.fib4.category === 'danger') {
-        dashboardData.recommendations.push({
-            title: 'Valutazione epatica',
-            description: 'Consultare uno specialista per approfondimenti sulla funzionalità epatica',
-            priority: 'high'
-        });
+      dashboardData.recommendations.push({
+        title: 'Valutazione epatica',
+        description: 'Consultare uno specialista per approfondimenti sulla funzionalità epatica',
+        priority: 'high'
+      });
     }
 
     if (dashboardData.fni.category === 'danger' || dashboardData.fni.category === 'warning') {
-        dashboardData.recommendations.push({
-            title: 'Migliorare stato nutrizionale',
-            description: 'Consultare un nutrizionista per ottimizzare l\'apporto proteico',
-            priority: 'high'
-        });
+      dashboardData.recommendations.push({
+        title: 'Migliorare stato nutrizionale',
+        description: 'Consultare un nutrizionista per ottimizzare l\'apporto proteico',
+        priority: 'high'
+      });
     }
 
     if (dashboardData.score2Diabetes.category === 'danger') {
-        dashboardData.recommendations.push({
-            title: 'Controllo glicemico urgente',
-            description: 'Controllo diabetologico per ottimizzazione terapia',
-            priority: 'high'
-        });
+      dashboardData.recommendations.push({
+        title: 'Controllo glicemico urgente',
+        description: 'Controllo diabetologico per ottimizzazione terapia',
+        priority: 'high'
+      });
     }
-}
+  }
 
-// 10. Determina screening necessari
-function determineScreenings() {
+  // 10. Determina screening necessari
+  function determineScreenings() {
     dashboardData.screenings = [];
     const eta = parseInt(userData.eta);
     const sesso = userData.sesso?.toLowerCase();
-    
+
     dashboardData.screenings.push({
-        name: 'Controllo pressione arteriosa',
-        frequency: 'Annuale',
-        status: 'pending',
-        dueIn: '2 mesi'
+      name: 'Controllo pressione arteriosa',
+      frequency: 'Annuale',
+      status: 'pending',
+      dueIn: '2 mesi'
     });
-    
+
     dashboardData.screenings.push({
-        name: 'Esami del sangue completi',
-        frequency: 'Annuale',
-        status: 'overdue',
-        dueIn: 'Scaduto'
+      name: 'Esami del sangue completi',
+      frequency: 'Annuale',
+      status: 'overdue',
+      dueIn: 'Scaduto'
     });
-    
+
     if (eta >= 50) {
-        dashboardData.screenings.push({
-            name: 'Screening colon-retto',
-            frequency: 'Ogni 2 anni',
-            status: 'completed',
-            dueIn: '2024'
-        });
+      dashboardData.screenings.push({
+        name: 'Screening colon-retto',
+        frequency: 'Ogni 2 anni',
+        status: 'completed',
+        dueIn: '2024'
+      });
     }
-    
+
     if (eta >= 45 || dashboardData.diabetesRisk.risk !== 'Basso') {
-        dashboardData.screenings.push({
-            name: 'Screening diabete',
-            frequency: 'Ogni 3 anni',
-            status: 'pending',
-            dueIn: '6 mesi'
-        });
+      dashboardData.screenings.push({
+        name: 'Screening diabete',
+        frequency: 'Ogni 3 anni',
+        status: 'pending',
+        dueIn: '6 mesi'
+      });
     }
-    
+
     if ((sesso === 'femmina' || sesso === 'donna') && eta >= 40) {
-        dashboardData.screenings.push({
-            name: 'Mammografia',
-            frequency: 'Ogni 2 anni',
-            status: 'pending',
-            dueIn: '3 mesi'
-        });
+      dashboardData.screenings.push({
+        name: 'Mammografia',
+        frequency: 'Ogni 2 anni',
+        status: 'pending',
+        dueIn: '3 mesi'
+      });
     }
 
     // Screening basati sui nuovi score
     if (dashboardData.fib4.category === 'warning' || dashboardData.fib4.category === 'danger') {
-        dashboardData.screenings.push({
-            name: 'Ecografia epatica',
-            frequency: 'Secondo necessità',
-            status: 'pending',
-            dueIn: '1 mese'
-        });
+      dashboardData.screenings.push({
+        name: 'Ecografia epatica',
+        frequency: 'Secondo necessità',
+        status: 'pending',
+        dueIn: '1 mese'
+      });
     }
-}
+  }
 
-// 11. Analizza stile di vita
-function analyzeLifestyle() {
+  // 11. Analizza stile di vita
+  function analyzeLifestyle() {
     const stress = parseInt(userData.stress) || 5;
     const hasInsomnia = userData.insonnia?.toLowerCase() === 'sì';
     const hasDepression = userData.depressione?.toLowerCase() === 'sì';
-    
-    dashboardData.lifestyle = {
-        stress: {
-            level: stress,
-            category: stress <= 3 ? 'Basso' : stress <= 7 ? 'Medio' : 'Alto',
-            percentage: (stress / 10) * 100
-        },
-        sleep: {
-            quality: hasInsomnia ? 'Insufficiente' : 'Buona',
-            percentage: hasInsomnia ? 30 : 80,
-            issues: userData.tipo_insonnia || ''
-        },
-        mood: {
-            status: hasDepression ? 'Da monitorare' : 'Buono',
-            percentage: hasDepression ? 40 : 75
-        }
-    };
-}
 
-// 12. Calcola fabbisogno nutrizionale
-function calculateNutritionalNeeds() {
+    dashboardData.lifestyle = {
+      stress: {
+        level: stress,
+        category: stress <= 3 ? 'Basso' : stress <= 7 ? 'Medio' : 'Alto',
+        percentage: (stress / 10) * 100
+      },
+      sleep: {
+        quality: hasInsomnia ? 'Insufficiente' : 'Buona',
+        percentage: hasInsomnia ? 30 : 80,
+        issues: userData.tipo_insonnia || ''
+      },
+      mood: {
+        status: hasDepression ? 'Da monitorare' : 'Buono',
+        percentage: hasDepression ? 40 : 75
+      }
+    };
+  }
+
+  // 12. Calcola fabbisogno nutrizionale
+  function calculateNutritionalNeeds() {
     const peso = parseFloat(userData.peso);
     const altezza = parseFloat(userData.altezza);
     const eta = parseInt(userData.eta);
     const sesso = userData.sesso?.toLowerCase();
     const attivita = userData.tipo_lavoro || 'sedentario';
-    
+
     let bmr;
     if (sesso === 'maschio' || sesso === 'uomo') {
-        bmr = (10 * peso) + (6.25 * altezza) - (5 * eta) + 5;
+      bmr = (10 * peso) + (6.25 * altezza) - (5 * eta) + 5;
     } else {
-        bmr = (10 * peso) + (6.25 * altezza) - (5 * eta) - 161;
+      bmr = (10 * peso) + (6.25 * altezza) - (5 * eta) - 161;
     }
-    
+
     const activityFactors = {
-        'sedentario': 1.2,
-        'leggermente attivo': 1.375,
-        'moderatamente attivo': 1.55,
-        'molto attivo': 1.725,
-        'estremamente attivo': 1.9
+      'sedentario': 1.2,
+      'leggermente attivo': 1.375,
+      'moderatamente attivo': 1.55,
+      'molto attivo': 1.725,
+      'estremamente attivo': 1.9
     };
-    
+
     const tdee = bmr * (activityFactors[attivita] || 1.2);
     const targetCalories = dashboardData.bmi.value > 25 ? tdee - 300 : tdee;
-    
-    dashboardData.nutrition = {
-        bmr: Math.round(bmr),
-        tdee: Math.round(tdee),
-        target: Math.round(targetCalories),
-        objective: dashboardData.bmi.value > 25 ? 'Dimagrimento moderato' : 'Mantenimento',
-        activityLevel: attivita,
-        macros: {
-            protein: { percentage: 25, grams: Math.round(targetCalories * 0.25 / 4) },
-            carbs: { percentage: 45, grams: Math.round(targetCalories * 0.45 / 4) },
-            fats: { percentage: 30, grams: Math.round(targetCalories * 0.30 / 9) }
-        }
-    };
-}
 
-// 13. Valuta attività fisica
-function evaluatePhysicalActivity() {
+    dashboardData.nutrition = {
+      bmr: Math.round(bmr),
+      tdee: Math.round(tdee),
+      target: Math.round(targetCalories),
+      objective: dashboardData.bmi.value > 25 ? 'Dimagrimento moderato' : 'Mantenimento',
+      activityLevel: attivita,
+      macros: {
+        protein: { percentage: 25, grams: Math.round(targetCalories * 0.25 / 4) },
+        carbs: { percentage: 45, grams: Math.round(targetCalories * 0.45 / 4) },
+        fats: { percentage: 30, grams: Math.round(targetCalories * 0.30 / 9) }
+      }
+    };
+  }
+
+  // 13. Valuta attività fisica
+  function evaluatePhysicalActivity() {
     const frequency = userData.frequenza_attivita_fisica || '0 volte/settimana';
     const type = userData.tipo_attivita || '';
     const duration = parseInt(userData.durata_attivita) || 0;
     const weeklyMinutes = duration;
-    
-    dashboardData.activity = {
-        current: {
-            frequency: frequency,
-            type: type,
-            duration: duration + ' minuti',
-            intensity: 'Moderata',
-            weeklyMinutes: weeklyMinutes
-        },
-        target: {
-            aerobic: 150,
-            strength: 2
-        },
-        compliance: {
-            percentage: Math.min((weeklyMinutes / 150) * 100, 100),
-            status: weeklyMinutes >= 150 ? 'Adeguata' : 'Insufficiente'
-        },
-        suggestions: []
-    };
-    
-    if (weeklyMinutes < 150) {
-        dashboardData.activity.suggestions.push({
-            type: 'Obiettivo principale',
-            text: 'Aumentare l\'attività aerobica a 150 min/settimana'
-        });
-    }
-    
-    if (!type.includes('forza') && !type.includes('rafforzamento')) {
-        dashboardData.activity.suggestions.push({
-            type: 'Tipo di allenamento',
-            text: 'Aggiungere esercizi di forza 2 volte/settimana'
-        });
-    }
-}
 
-// Aggiorna tutti gli elementi della dashboard
-function updateDashboard() {
+    dashboardData.activity = {
+      current: {
+        frequency: frequency,
+        type: type,
+        duration: duration + ' minuti',
+        intensity: 'Moderata',
+        weeklyMinutes: weeklyMinutes
+      },
+      target: {
+        aerobic: 150,
+        strength: 2
+      },
+      compliance: {
+        percentage: Math.min((weeklyMinutes / 150) * 100, 100),
+        status: weeklyMinutes >= 150 ? 'Adeguata' : 'Insufficiente'
+      },
+      suggestions: []
+    };
+
+    if (weeklyMinutes < 150) {
+      dashboardData.activity.suggestions.push({
+        type: 'Obiettivo principale',
+        text: 'Aumentare l\'attività aerobica a 150 min/settimana'
+      });
+    }
+
+    if (!type.includes('forza') && !type.includes('rafforzamento')) {
+      dashboardData.activity.suggestions.push({
+        type: 'Tipo di allenamento',
+        text: 'Aggiungere esercizi di forza 2 volte/settimana'
+      });
+    }
+  }
+
+  // Aggiorna tutti gli elementi della dashboard
+  function updateDashboard() {
     console.log('🔄 Inizio aggiornamento dashboard...');
     console.log('📊 Dati da visualizzare:', {
-        score2: dashboardData.score2,
-        diabetesRisk: dashboardData.diabetesRisk
+      score2: dashboardData.score2,
+      diabetesRisk: dashboardData.diabetesRisk
     });
-    
+
     updateHealthSummary();
     updateMetabolicProfile();
     updateRiskTab();
@@ -1771,742 +1771,742 @@ function updateDashboard() {
     updateActivityTab();
     updateRecommendations();
     updateNewScoreBanners();
-    
-    console.log('✅ Dashboard aggiornata');
-}
 
-// Funzioni di aggiornamento UI
-function updateHealthSummary() {
+    console.log('✅ Dashboard aggiornata');
+  }
+
+  // Funzioni di aggiornamento UI
+  function updateHealthSummary() {
     console.log('🔄 Aggiornamento riepilogo salute...');
     console.log('📊 Dati per riepilogo:', {
-        bmi: dashboardData.bmi,
-        score2: dashboardData.score2,
-        predimed: dashboardData.predimed
+      bmi: dashboardData.bmi,
+      score2: dashboardData.score2,
+      predimed: dashboardData.predimed
     });
-    
+
     // BMI - Usa ID specifici
     const bmiIndicator = document.getElementById('bmi-indicator');
     const bmiBadge = document.getElementById('bmi-badge');
     const bmiCategory = document.getElementById('bmi-category');
-    
+
     if (bmiIndicator) {
-        bmiIndicator.textContent = dashboardData.bmi.value;
-        bmiIndicator.className = `score-indicator score-${dashboardData.bmi.status === 'success' ? 'medium' : dashboardData.bmi.status === 'warning' ? 'low' : 'high'}`;
-        console.log('✅ BMI indicator aggiornato:', dashboardData.bmi.value);
+      bmiIndicator.textContent = dashboardData.bmi.value;
+      bmiIndicator.className = `score-indicator score-${dashboardData.bmi.status === 'success' ? 'medium' : dashboardData.bmi.status === 'warning' ? 'low' : 'high'}`;
+      console.log('✅ BMI indicator aggiornato:', dashboardData.bmi.value);
     } else {
-        console.warn('⚠️ BMI indicator non trovato');
+      console.warn('⚠️ BMI indicator non trovato');
     }
-    
+
     if (bmiBadge) {
-        bmiBadge.textContent = dashboardData.bmi.category;
-        bmiBadge.className = `badge badge-${dashboardData.bmi.status}`;
-        console.log('✅ BMI badge aggiornato:', dashboardData.bmi.category);
+      bmiBadge.textContent = dashboardData.bmi.category;
+      bmiBadge.className = `badge badge-${dashboardData.bmi.status}`;
+      console.log('✅ BMI badge aggiornato:', dashboardData.bmi.category);
     }
-    
+
     if (bmiCategory) {
-        bmiCategory.textContent = dashboardData.bmi.category;
-        console.log('✅ BMI categoria aggiornata:', dashboardData.bmi.category);
+      bmiCategory.textContent = dashboardData.bmi.category;
+      console.log('✅ BMI categoria aggiornata:', dashboardData.bmi.category);
     }
-    
+
     // SCORE2 - Usa ID specifici
     const score2Indicator = document.getElementById('score2-indicator');
     const score2Badge = document.getElementById('score2-badge');
     const score2Category = document.getElementById('score2-category');
-    
+
     if (score2Indicator) {
-        score2Indicator.textContent = dashboardData.score2.value + '%';
-        score2Indicator.className = `score-indicator score-${dashboardData.score2.category === 'success' ? 'medium' : dashboardData.score2.category === 'warning' ? 'low' : 'high'}`;
-        console.log('✅ SCORE2 indicator aggiornato:', dashboardData.score2.value + '%');
+      score2Indicator.textContent = dashboardData.score2.value + '%';
+      score2Indicator.className = `score-indicator score-${dashboardData.score2.category === 'success' ? 'medium' : dashboardData.score2.category === 'warning' ? 'low' : 'high'}`;
+      console.log('✅ SCORE2 indicator aggiornato:', dashboardData.score2.value + '%');
     } else {
-        console.warn('⚠️ SCORE2 indicator non trovato');
+      console.warn('⚠️ SCORE2 indicator non trovato');
     }
-    
+
     if (score2Badge) {
-        score2Badge.textContent = dashboardData.score2.risk;
-        score2Badge.className = `badge badge-${dashboardData.score2.category === 'success' ? 'success' : dashboardData.score2.category === 'warning' ? 'warning' : 'danger'}`;
-        console.log('✅ SCORE2 badge aggiornato:', dashboardData.score2.risk);
+      score2Badge.textContent = dashboardData.score2.risk;
+      score2Badge.className = `badge badge-${dashboardData.score2.category === 'success' ? 'success' : dashboardData.score2.category === 'warning' ? 'warning' : 'danger'}`;
+      console.log('✅ SCORE2 badge aggiornato:', dashboardData.score2.risk);
     } else {
-        console.warn('⚠️ SCORE2 badge non trovato');
+      console.warn('⚠️ SCORE2 badge non trovato');
     }
-    
+
     if (score2Category) {
-        score2Category.textContent = dashboardData.score2.risk;
-        console.log('✅ SCORE2 categoria aggiornata:', dashboardData.score2.risk);
+      score2Category.textContent = dashboardData.score2.risk;
+      console.log('✅ SCORE2 categoria aggiornata:', dashboardData.score2.risk);
     } else {
-        console.warn('⚠️ SCORE2 categoria non trovata');
+      console.warn('⚠️ SCORE2 categoria non trovata');
     }
-    
+
     // PREDIMED - Usa ID specifici
     const predimedIndicator = document.getElementById('predimed-indicator');
-    const predimedBadge = document.getElementById('predimed-badge');  
+    const predimedBadge = document.getElementById('predimed-badge');
     const predimedCategory = document.getElementById('predimed-category');
-    
-    if (predimedIndicator) {
-        predimedIndicator.textContent = dashboardData.predimed.value;
-        predimedIndicator.className = `score-indicator score-${dashboardData.predimed.status === 'success' ? 'medium' : dashboardData.predimed.status === 'warning' ? 'low' : 'high'}`;
-        console.log('✅ PREDIMED indicator aggiornato:', dashboardData.predimed.value);
-    } else {
-        console.warn('⚠️ PREDIMED indicator non trovato');
-    }
-    
-    if (predimedBadge) {
-        predimedBadge.textContent = dashboardData.predimed.status === 'success' ? 'Buona' : dashboardData.predimed.status === 'warning' ? 'Migliorabile' : 'Scarsa';
-        predimedBadge.className = `badge badge-${dashboardData.predimed.status}`;
-        console.log('✅ PREDIMED badge aggiornato');
-    } else {
-        console.warn('⚠️ PREDIMED badge non trovato');
-    }
-    
-    if (predimedCategory) {
-        predimedCategory.textContent = dashboardData.predimed.adherence;
-        console.log('✅ PREDIMED categoria aggiornata:', dashboardData.predimed.adherence);
-    } else {
-        console.warn('⚠️ PREDIMED categoria non trovata');
-    }
-    
-    console.log('✅ Riepilogo salute aggiornato');
-}
 
-function updateMetabolicProfile() {
+    if (predimedIndicator) {
+      predimedIndicator.textContent = dashboardData.predimed.value;
+      predimedIndicator.className = `score-indicator score-${dashboardData.predimed.status === 'success' ? 'medium' : dashboardData.predimed.status === 'warning' ? 'low' : 'high'}`;
+      console.log('✅ PREDIMED indicator aggiornato:', dashboardData.predimed.value);
+    } else {
+      console.warn('⚠️ PREDIMED indicator non trovato');
+    }
+
+    if (predimedBadge) {
+      predimedBadge.textContent = dashboardData.predimed.status === 'success' ? 'Buona' : dashboardData.predimed.status === 'warning' ? 'Migliorabile' : 'Scarsa';
+      predimedBadge.className = `badge badge-${dashboardData.predimed.status}`;
+      console.log('✅ PREDIMED badge aggiornato');
+    } else {
+      console.warn('⚠️ PREDIMED badge non trovato');
+    }
+
+    if (predimedCategory) {
+      predimedCategory.textContent = dashboardData.predimed.adherence;
+      console.log('✅ PREDIMED categoria aggiornata:', dashboardData.predimed.adherence);
+    } else {
+      console.warn('⚠️ PREDIMED categoria non trovata');
+    }
+
+    console.log('✅ Riepilogo salute aggiornato');
+  }
+
+  function updateMetabolicProfile() {
     const metabolicSection = document.querySelector('.card .space-y-3');
     if (!metabolicSection) return;
-    
+
     const badge = metabolicSection.querySelector('.badge');
     badge.textContent = dashboardData.metabolicSyndrome.present ? 'Presente' : 'Assente';
     badge.className = `badge badge-${dashboardData.metabolicSyndrome.present ? 'danger' : 'success'}`;
-    
+
     const progressBar = metabolicSection.querySelector('.bg-red-500');
     const percentage = (dashboardData.metabolicSyndrome.criteria / 5) * 100;
     progressBar.style.width = percentage + '%';
     progressBar.className = `h-2.5 rounded-full ${dashboardData.metabolicSyndrome.present ? 'bg-red-500' : 'bg-yellow-500'}`;
-    
-    metabolicSection.querySelector('.text-xs').textContent = 
-        `${dashboardData.metabolicSyndrome.criteria} criteri soddisfatti su 5`;
-    
+
+    metabolicSection.querySelector('.text-xs').textContent =
+    `${dashboardData.metabolicSyndrome.criteria} criteri soddisfatti su 5`;
+
     const factorsContainer = metabolicSection.querySelector('.flex.flex-wrap.gap-2');
     factorsContainer.innerHTML = dashboardData.metabolicSyndrome.factors
-        .map(factor => `<div class="badge badge-danger">${factor}</div>`)
-        .join('');
-}
+    .map(factor => `<div class="badge badge-danger">${factor}</div>`)
+    .join('');
+  }
 
-function updateRiskTab() {
+  function updateRiskTab() {
     console.log('🔄 Aggiornamento tab rischi...');
     console.log('📊 SCORE2 per grafico:', dashboardData.score2);
     console.log('📊 Diabetes Risk per grafico:', dashboardData.diabetesRisk);
-    
+
     // Aggiorna grafico rischio cardiovascolare - USA FORMULA DI SCORE2-DIABETE
     const cvRisk = document.querySelector('#tab-rischi .progress-ring__circle.ring-cv');
     if (cvRisk) {
-        const percentage = parseFloat(dashboardData.score2.value);
-        console.log('🎯 === CORREZIONE GRAFICO CV ===');
-        console.log('Percentuale CV:', percentage + '%');
-        
-        // USA LA STESSA FORMULA CHE FUNZIONA IN SCORE2-DIABETE
-        const circumference = 314.16;
-        const offset = circumference - (percentage / 100 * circumference);
-        
-        cvRisk.style.strokeDashoffset = offset;
-        console.log('✅ CV - Circumference:', circumference, 'Offset:', offset, 'per', percentage + '%');
-        console.log('🔍 Per 9% dovrebbe essere circa', circumference * 0.91, '- Applicato:', offset);
-        
-        // Cambia colore in base al rischio
-        const strokeColor = dashboardData.score2.category === 'danger' ? '#EA4335' : 
-                           dashboardData.score2.category === 'warning' ? '#FBBC05' : '#34A853';
-        cvRisk.setAttribute('stroke', strokeColor);
-        console.log('🎨 Colore grafico CV:', strokeColor, 'per categoria:', dashboardData.score2.category);
+      const percentage = parseFloat(dashboardData.score2.value);
+      console.log('🎯 === CORREZIONE GRAFICO CV ===');
+      console.log('Percentuale CV:', percentage + '%');
+
+      // USA LA STESSA FORMULA CHE FUNZIONA IN SCORE2-DIABETE
+      const circumference = 314.16;
+      const offset = circumference - (percentage / 100 * circumference);
+
+      cvRisk.style.strokeDashoffset = offset;
+      console.log('✅ CV - Circumference:', circumference, 'Offset:', offset, 'per', percentage + '%');
+      console.log('🔍 Per 9% dovrebbe essere circa', circumference * 0.91, '- Applicato:', offset);
+
+      // Cambia colore in base al rischio
+      const strokeColor = dashboardData.score2.category === 'danger' ? '#EA4335' :
+      dashboardData.score2.category === 'warning' ? '#FBBC05' : '#34A853';
+      cvRisk.setAttribute('stroke', strokeColor);
+      console.log('🎨 Colore grafico CV:', strokeColor, 'per categoria:', dashboardData.score2.category);
     } else {
-        console.warn('⚠️ Elemento grafico CV non trovato');
+      console.warn('⚠️ Elemento grafico CV non trovato');
     }
-    
+
     // Aggiorna testo CV usando ID specifico
     const cvText = document.getElementById('cv-risk-text');
     if (cvText) {
-        cvText.textContent = dashboardData.score2.value + '%';
-        console.log('📝 Testo CV aggiornato:', cvText.textContent);
+      cvText.textContent = dashboardData.score2.value + '%';
+      console.log('📝 Testo CV aggiornato:', cvText.textContent);
     } else {
-        console.warn('⚠️ Elemento testo CV non trovato');
+      console.warn('⚠️ Elemento testo CV non trovato');
     }
-    
+
     // Aggiorna dettagli CV usando ID specifici
     const cvAge = document.getElementById('cv-age');
     const cvPressure = document.getElementById('cv-pressure');
     const cvCholesterol = document.getElementById('cv-cholesterol');
     const cvSmoking = document.getElementById('cv-smoking');
-    
+
     if (cvAge) {
-        cvAge.textContent = `${userData.eta || '--'} anni`;
-        console.log('📝 Età CV aggiornata:', userData.eta);
+      cvAge.textContent = `${userData.eta || '--'} anni`;
+      console.log('📝 Età CV aggiornata:', userData.eta);
     }
-    
+
     if (cvPressure) {
-        cvPressure.textContent = `${userData.pressione_sistolica || '--'}/${userData.pressione_diastolica || '--'} mmHg`;
-        console.log('📝 Pressione CV aggiornata:', userData.pressione_sistolica, userData.pressione_diastolica);
+      cvPressure.textContent = `${userData.pressione_sistolica || '--'}/${userData.pressione_diastolica || '--'} mmHg`;
+      console.log('📝 Pressione CV aggiornata:', userData.pressione_sistolica, userData.pressione_diastolica);
     }
-    
+
     if (cvCholesterol) {
-        cvCholesterol.textContent = `HDL ${userData.colesterolo_hdl_valore || '--'} mg/dL`;
-        console.log('📝 Colesterolo CV aggiornato:', userData.colesterolo_hdl_valore);
+      cvCholesterol.textContent = `HDL ${userData.colesterolo_hdl_valore || '--'} mg/dL`;
+      console.log('📝 Colesterolo CV aggiornato:', userData.colesterolo_hdl_valore);
     }
-    
+
     if (cvSmoking) {
-        cvSmoking.textContent = userData.fumatore || 'No';
-        console.log('📝 Fumo CV aggiornato:', userData.fumatore);
+      cvSmoking.textContent = userData.fumatore || 'No';
+      console.log('📝 Fumo CV aggiornato:', userData.fumatore);
     }
     // Aggiorna grafico rischio diabete (ADA)
-const diabetesCircle = document.querySelector('#tab-rischi .progress-ring__circle.ring-ada');
-const diabetesText = document.getElementById('diabetes-risk-text');
+    const diabetesCircle = document.querySelector('#tab-rischi .progress-ring__circle.ring-ada');
+    const diabetesText = document.getElementById('diabetes-risk-text');
 
-if (diabetesCircle && diabetesText) {
-    const score = dashboardData.diabetesRisk.score;
-    const maxScore = dashboardData.diabetesRisk.maxScore;
+    if (diabetesCircle && diabetesText) {
+      const score = dashboardData.diabetesRisk.score;
+      const maxScore = dashboardData.diabetesRisk.maxScore;
 
-    const percentage = (score / maxScore) * 100;
-    const circumference = 314.16;
-    const offset = circumference - (percentage / 100 * circumference);
+      const percentage = (score / maxScore) * 100;
+      const circumference = 314.16;
+      const offset = circumference - (percentage / 100 * circumference);
 
-    diabetesCircle.style.strokeDashoffset = offset;
+      diabetesCircle.style.strokeDashoffset = offset;
 
-    const strokeColor = dashboardData.diabetesRisk.risk === 'Alto' ? '#EA4335' :
-                        dashboardData.diabetesRisk.risk === 'Moderato' ? '#FBBC05' : '#34A853';
+      const strokeColor = dashboardData.diabetesRisk.risk === 'Alto' ? '#EA4335' :
+      dashboardData.diabetesRisk.risk === 'Moderato' ? '#FBBC05' : '#34A853';
 
-    diabetesCircle.setAttribute('stroke', strokeColor);
-    diabetesText.textContent = `${score}/${maxScore}`;
+      diabetesCircle.setAttribute('stroke', strokeColor);
+      diabetesText.textContent = `${score}/${maxScore}`;
 
-    console.log('✅ ADA Risk grafico aggiornato:', { score, maxScore, percentage, offset });
-} else {
-    console.warn('⚠️ Elemento ADA Risk ring o testo non trovato');
-}
+      console.log('✅ ADA Risk grafico aggiornato:', { score, maxScore, percentage, offset });
+    } else {
+      console.warn('⚠️ Elemento ADA Risk ring o testo non trovato');
+    }
 
 
-    
+
 
     // Aggiorna dettagli rischio diabete
     const glicemiaEl = document.getElementById('glicemia-valore');
     if (glicemiaEl) {
-        const glicemia = parseFloat(userData.glicemia_valore || 0);
-        glicemiaEl.textContent = `${glicemia} mg/dL`;
-        console.log('📝 Glicemia aggiornata:', glicemia);
+      const glicemia = parseFloat(userData.glicemia_valore || 0);
+      glicemiaEl.textContent = `${glicemia} mg/dL`;
+      console.log('📝 Glicemia aggiornata:', glicemia);
     }
 
     const famDiabeteEl = document.getElementById('familiarita-diabete');
     if (famDiabeteEl) {
-        const rispostaGrezza = String(userData.familiari_diabete || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        const risposta = ['si', 'sì', 'yes', 'y', 'true', 'ok'].includes(rispostaGrezza) ? 'Sì' : 'No';
-        famDiabeteEl.textContent = risposta;
-        console.log('📝 Familiarità diabete aggiornata:', risposta, '(raw:', userData.familiari_diabete, ')');
+      const rispostaGrezza = String(userData.familiari_diabete || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const risposta = ['si', 'sì', 'yes', 'y', 'true', 'ok'].includes(rispostaGrezza) ? 'Sì' : 'No';
+      famDiabeteEl.textContent = risposta;
+      console.log('📝 Familiarità diabete aggiornata:', risposta, '(raw:', userData.familiari_diabete, ')');
     }
 
     const ipertensioneEl = document.getElementById('ipertensione');
     if (ipertensioneEl) {
-        const pressioneAlta = String(userData.pressione_alta || '').toLowerCase() === 'sì' ||
-                              parseFloat(userData.pressione_sistolica) >= 140;
-        ipertensioneEl.textContent = pressioneAlta ? 'Sì' : 'No';
-        console.log('📝 Ipertensione aggiornata:', pressioneAlta);
+      const pressioneAlta = String(userData.pressione_alta || '').toLowerCase() === 'sì' ||
+      parseFloat(userData.pressione_sistolica) >= 140;
+      ipertensioneEl.textContent = pressioneAlta ? 'Sì' : 'No';
+      console.log('📝 Ipertensione aggiornata:', pressioneAlta);
     }
 
     const attivitaFisicaEl = document.getElementById('attivita-fisica');
     if (attivitaFisicaEl) {
-        const minutiSettimanali = parseInt(userData.durata_attivita) || 0;
-        attivitaFisicaEl.textContent = minutiSettimanali >= 150 ? 'Adeguata' : 'Insufficiente';
-        console.log('📝 Attività fisica aggiornata:', minutiSettimanali, 'min/settimana');
+      const minutiSettimanali = parseInt(userData.durata_attivita) || 0;
+      attivitaFisicaEl.textContent = minutiSettimanali >= 150 ? 'Adeguata' : 'Insufficiente';
+      console.log('📝 Attività fisica aggiornata:', minutiSettimanali, 'min/settimana');
     }
-    
-    console.log('✅ Tab rischi aggiornato');
-}
 
-function updateNewScoreBanners() {
+    console.log('✅ Tab rischi aggiornato');
+  }
+
+  function updateNewScoreBanners() {
     console.log('🔄 === AGGIORNAMENTO GRAFICI NUOVI SCORE ===');
-    
+
     // SCORE2-Diabete (questo funziona già bene)
     if (dashboardData.score2Diabetes?.value > 0) {
-        const circle = document.querySelector('#score2d-banner .progress-ring__circle');
-        const text = document.getElementById('score2d-banner-text');
-        const hba1cEl = document.getElementById('score2d-banner-hba1c');
-        const glicemiaEl = document.getElementById('score2d-banner-glucose');
-        const sbpEl = document.getElementById('score2d-banner-sbp');
+      const circle = document.querySelector('#score2d-banner .progress-ring__circle');
+      const text = document.getElementById('score2d-banner-text');
+      const hba1cEl = document.getElementById('score2d-banner-hba1c');
+      const glicemiaEl = document.getElementById('score2d-banner-glucose');
+      const sbpEl = document.getElementById('score2d-banner-sbp');
 
-        if (circle && text) {
-            const percentage = parseFloat(dashboardData.score2Diabetes.value);
-            console.log('📊 SCORE2-Diabete:', percentage + '%');
-            
-            // Usa la stessa logica che funziona
-            const circumference = 314.16;
-            const offset = circumference - (percentage / 100 * circumference);
-            circle.style.strokeDashoffset = offset;
-            
-            const strokeColor = dashboardData.score2Diabetes.category === 'danger' ? '#EA4335' : 
-                               dashboardData.score2Diabetes.category === 'warning' ? '#FBBC05' : '#34A853';
-            circle.setAttribute('stroke', strokeColor);
-            
-            text.textContent = `${dashboardData.score2Diabetes.value}%`;
-            console.log('✅ SCORE2-Diabete aggiornato: ' + percentage + '% con offset ' + offset);
-        }
+      if (circle && text) {
+        const percentage = parseFloat(dashboardData.score2Diabetes.value);
+        console.log('📊 SCORE2-Diabete:', percentage + '%');
 
-        if (hba1cEl) hba1cEl.textContent = `${dashboardData.score2Diabetes.hba1c || '--'} %`;
-        if (glicemiaEl) glicemiaEl.textContent = `${dashboardData.score2Diabetes.glicemia || '--'} mg/dL`;
-        if (sbpEl) sbpEl.textContent = `${dashboardData.score2Diabetes.sistolica || '--'} mmHg`;
+        // Usa la stessa logica che funziona
+        const circumference = 314.16;
+        const offset = circumference - (percentage / 100 * circumference);
+        circle.style.strokeDashoffset = offset;
+
+        const strokeColor = dashboardData.score2Diabetes.category === 'danger' ? '#EA4335' :
+        dashboardData.score2Diabetes.category === 'warning' ? '#FBBC05' : '#34A853';
+        circle.setAttribute('stroke', strokeColor);
+
+        text.textContent = `${dashboardData.score2Diabetes.value}%`;
+        console.log('✅ SCORE2-Diabete aggiornato: ' + percentage + '% con offset ' + offset);
+      }
+
+      if (hba1cEl) hba1cEl.textContent = `${dashboardData.score2Diabetes.hba1c || '--'} %`;
+      if (glicemiaEl) glicemiaEl.textContent = `${dashboardData.score2Diabetes.glicemia || '--'} mg/dL`;
+      if (sbpEl) sbpEl.textContent = `${dashboardData.score2Diabetes.sistolica || '--'} mmHg`;
     }
 
     // FIB4 - CORREZIONE GRAFICO
     if (dashboardData.fib4?.value > 0) {
-        console.log('📊 FIB4 - Valore:', dashboardData.fib4.value, 'Categoria:', dashboardData.fib4.category);
-        
-        const scoreEl = document.getElementById('fib4-banner-score');
-        const astEl = document.getElementById('fib4-banner-ast');
-        const altEl = document.getElementById('fib4-banner-alt');
-        const pltEl = document.getElementById('fib4-banner-plt');
+      console.log('📊 FIB4 - Valore:', dashboardData.fib4.value, 'Categoria:', dashboardData.fib4.category);
 
-        if (scoreEl) {
-            scoreEl.textContent = dashboardData.fib4.value;
-            scoreEl.className = `score-indicator-2 text-2xl score-${dashboardData.fib4.category === 'success' ? 'medium' : dashboardData.fib4.category === 'warning' ? 'low' : 'high'}`;
-            console.log('✅ FIB4 score indicator aggiornato:', dashboardData.fib4.value);
-        }
+      const scoreEl = document.getElementById('fib4-banner-score');
+      const astEl = document.getElementById('fib4-banner-ast');
+      const altEl = document.getElementById('fib4-banner-alt');
+      const pltEl = document.getElementById('fib4-banner-plt');
 
-        if (astEl) astEl.textContent = `${dashboardData.fib4.ast || '--'} U/L`;
-        if (altEl) altEl.textContent = `${dashboardData.fib4.alt || '--'} U/L`;
-        if (pltEl) pltEl.textContent = `${dashboardData.fib4.plt || '--'} x10⁹/L`;
-        
-        console.log('✅ FIB4 non ha grafico circolare - usa solo indicator');
+      if (scoreEl) {
+        scoreEl.textContent = dashboardData.fib4.value;
+        scoreEl.className = `score-indicator-2 text-2xl score-${dashboardData.fib4.category === 'success' ? 'medium' : dashboardData.fib4.category === 'warning' ? 'low' : 'high'}`;
+        console.log('✅ FIB4 score indicator aggiornato:', dashboardData.fib4.value);
+      }
+
+      if (astEl) astEl.textContent = `${dashboardData.fib4.ast || '--'} U/L`;
+      if (altEl) altEl.textContent = `${dashboardData.fib4.alt || '--'} U/L`;
+      if (pltEl) pltEl.textContent = `${dashboardData.fib4.plt || '--'} x10⁹/L`;
+
+      console.log('✅ FIB4 non ha grafico circolare - usa solo indicator');
     }
 
-    // FNI - CORREZIONE GRAFICO  
+    // FNI - CORREZIONE GRAFICO
     if (dashboardData.fni?.value > 0) {
-        console.log('📊 FNI - Valore:', dashboardData.fni.value, 'Categoria:', dashboardData.fni.category);
-        
-        const scoreEl = document.getElementById('fni-banner-score');
-        const albuminaEl = document.getElementById('fni-banner-albumina');
-        const linfocitiEl = document.getElementById('fni-banner-linfociti');
+      console.log('📊 FNI - Valore:', dashboardData.fni.value, 'Categoria:', dashboardData.fni.category);
 
-        if (scoreEl) {
-            scoreEl.textContent = dashboardData.fni.value;
-            scoreEl.className = `score-indicator-2 text-2xl score-${dashboardData.fni.category === 'success' ? 'medium' : dashboardData.fni.category === 'warning' ? 'low' : 'high'}`;
-            console.log('✅ FNI score indicator aggiornato:', dashboardData.fni.value);
-        }
+      const scoreEl = document.getElementById('fni-banner-score');
+      const albuminaEl = document.getElementById('fni-banner-albumina');
+      const linfocitiEl = document.getElementById('fni-banner-linfociti');
 
-        if (albuminaEl) albuminaEl.textContent = `${dashboardData.fni.albumina || '--'} g/dL`;
-        if (linfocitiEl) linfocitiEl.textContent = `${dashboardData.fni.linfociti || '--'} /mm³`;
-        
-        console.log('✅ FNI non ha grafico circolare - usa solo indicator');
+      if (scoreEl) {
+        scoreEl.textContent = dashboardData.fni.value;
+        scoreEl.className = `score-indicator-2 text-2xl score-${dashboardData.fni.category === 'success' ? 'medium' : dashboardData.fni.category === 'warning' ? 'low' : 'high'}`;
+        console.log('✅ FNI score indicator aggiornato:', dashboardData.fni.value);
+      }
+
+      if (albuminaEl) albuminaEl.textContent = `${dashboardData.fni.albumina || '--'} g/dL`;
+      if (linfocitiEl) linfocitiEl.textContent = `${dashboardData.fni.linfociti || '--'} /mm³`;
+
+      console.log('✅ FNI non ha grafico circolare - usa solo indicator');
     }
-    
-    console.log('✅ Tutti i nuovi score aggiornati');
-}
 
-function updateScreeningTab() {
+    console.log('✅ Tutti i nuovi score aggiornati');
+  }
+
+  function updateScreeningTab() {
     const container = document.querySelector('#tab-screening .space-y-3');
     if (!container) return;
-    
-    container.innerHTML = dashboardData.screenings.map(screening => {
-        const borderColor = screening.status === 'completed' ? 'border-green-500' : 
-                          screening.status === 'pending' ? 'border-yellow-500' : 'border-red-500';
-        const badgeClass = screening.status === 'completed' ? 'badge-success' : 
-                         screening.status === 'pending' ? 'badge-warning' : 'badge-danger';
-        const badgeText = screening.status === 'completed' ? 'Completo' : 
-                        screening.status === 'pending' ? 'In scadenza' : 'Scaduto';
-        
-        return `
-            <div class="flex items-center p-2 rounded border-l-4 ${borderColor}">
-                <div class="flex-1">
-                    <h4 class="font-medium">${screening.name}</h4>
-                    <p class="text-sm text-gray-600">Raccomandato ${screening.frequency}</p>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <span class="badge ${badgeClass}">${badgeText}</span>
-                    <span class="text-xs text-gray-500">${screening.dueIn}</span>
-                </div>
-            </div>
-        `;
-    }).join('');
-}
 
-function updateLifestyleTab() {
+    container.innerHTML = dashboardData.screenings.map(screening => {
+      const borderColor = screening.status === 'completed' ? 'border-green-500' :
+      screening.status === 'pending' ? 'border-yellow-500' : 'border-red-500';
+      const badgeClass = screening.status === 'completed' ? 'badge-success' :
+      screening.status === 'pending' ? 'badge-warning' : 'badge-danger';
+      const badgeText = screening.status === 'completed' ? 'Completo' :
+      screening.status === 'pending' ? 'In scadenza' : 'Scaduto';
+
+      return `
+      <div class="flex items-center p-2 rounded border-l-4 ${borderColor}">
+      <div class="flex-1">
+      <h4 class="font-medium">${screening.name}</h4>
+      <p class="text-sm text-gray-600">Raccomandato ${screening.frequency}</p>
+      </div>
+      <div class="flex items-center space-x-2">
+      <span class="badge ${badgeClass}">${badgeText}</span>
+      <span class="text-xs text-gray-500">${screening.dueIn}</span>
+      </div>
+      </div>
+      `;
+    }).join('');
+  }
+
+  function updateLifestyleTab() {
     if (predimedChart) {
-        const predimedData = [
-            userData.predimed_1 === 'sì' ? 1 : 0,
-            userData.predimed_2 === 'sì' ? 1 : 0,
-            userData.predimed_3 === 'sì' ? 1 : 0,
-            userData.predimed_4 === 'sì' ? 1 : 0,
-            userData.predimed_5 === 'sì' ? 1 : 0,
-            userData.predimed_6 === 'sì' ? 1 : 0,
-            userData.predimed_7 === 'sì' ? 1 : 0
-        ];
-        
-        predimedChart.data.datasets[0].data = predimedData;
-        predimedChart.update();
+      const predimedData = [
+        userData.predimed_1 === 'sì' ? 1 : 0,
+        userData.predimed_2 === 'sì' ? 1 : 0,
+        userData.predimed_3 === 'sì' ? 1 : 0,
+        userData.predimed_4 === 'sì' ? 1 : 0,
+        userData.predimed_5 === 'sì' ? 1 : 0,
+        userData.predimed_6 === 'sì' ? 1 : 0,
+        userData.predimed_7 === 'sì' ? 1 : 0
+      ];
+
+      predimedChart.data.datasets[0].data = predimedData;
+      predimedChart.update();
     }
-    
+
     const predimedScoreEl = document.getElementById('predimed-score');
     const predimedAdherenceEl = document.getElementById('predimed-adherence');
 
     if (predimedScoreEl) {
-        predimedScoreEl.innerHTML = `Punteggio attuale: <span class="font-medium">${dashboardData.predimed.value}/14</span>`;
+      predimedScoreEl.innerHTML = `Punteggio attuale: <span class="font-medium">${dashboardData.predimed.value}/14</span>`;
     }
 
     if (predimedAdherenceEl) {
-        predimedAdherenceEl.innerHTML = `Aderenza alla dieta mediterranea: <span class="font-medium">${dashboardData.predimed.adherence}</span>`;
+      predimedAdherenceEl.innerHTML = `Aderenza alla dieta mediterranea: <span class="font-medium">${dashboardData.predimed.adherence}</span>`;
     }
-    
+
     const stressBar = document.querySelector('#tab-stile-vita .bg-yellow-500');
     if (stressBar) {
-        stressBar.style.width = dashboardData.lifestyle.stress.percentage + '%';
-        stressBar.className = `h-2 rounded-full ${dashboardData.lifestyle.stress.percentage > 70 ? 'bg-red-500' : dashboardData.lifestyle.stress.percentage > 40 ? 'bg-yellow-500' : 'bg-green-500'}`;
+      stressBar.style.width = dashboardData.lifestyle.stress.percentage + '%';
+      stressBar.className = `h-2 rounded-full ${dashboardData.lifestyle.stress.percentage > 70 ? 'bg-red-500' : dashboardData.lifestyle.stress.percentage > 40 ? 'bg-yellow-500' : 'bg-green-500'}`;
     }
-    
+
     const sleepBar = document.querySelector('#tab-stile-vita .bg-red-500');
     if (sleepBar) {
-        sleepBar.style.width = dashboardData.lifestyle.sleep.percentage + '%';
-        sleepBar.className = `h-2 rounded-full ${dashboardData.lifestyle.sleep.percentage < 40 ? 'bg-red-500' : dashboardData.lifestyle.sleep.percentage < 70 ? 'bg-yellow-500' : 'bg-green-500'}`;
+      sleepBar.style.width = dashboardData.lifestyle.sleep.percentage + '%';
+      sleepBar.className = `h-2 rounded-full ${dashboardData.lifestyle.sleep.percentage < 40 ? 'bg-red-500' : dashboardData.lifestyle.sleep.percentage < 70 ? 'bg-yellow-500' : 'bg-green-500'}`;
     }
-    
+
     const moodBar = document.querySelector('#tab-stile-vita .bg-green-500');
     if (moodBar) {
-        moodBar.style.width = dashboardData.lifestyle.mood.percentage + '%';
+      moodBar.style.width = dashboardData.lifestyle.mood.percentage + '%';
     }
-}
+  }
 
-function updateNutritionTab() {
+  function updateNutritionTab() {
     const nutritionDetails = document.querySelector('#tab-nutritional .space-y-3');
     if (nutritionDetails) {
-        nutritionDetails.innerHTML = `
-            <div class="flex justify-between">
-                <span class="text-sm text-gray-600">BMR</span>
-                <span class="font-medium">${dashboardData.nutrition.bmr} kcal</span>
-            </div>
-            <div class="flex justify-between">
-                <span class="text-sm text-gray-600">TDEE</span>
-                <span class="font-medium">${dashboardData.nutrition.tdee} kcal</span>
-            </div>
-            <div class="flex justify-between">
-                <span class="text-sm text-gray-600">Obiettivo</span>
-                <span class="font-medium">${dashboardData.nutrition.objective}</span>
-            </div>
-            <div class="flex justify-between">
-                <span class="text-sm text-gray-600">Calorie suggerite</span>
-                <span class="font-medium text-blue-600">${dashboardData.nutrition.target} kcal</span>
-            </div>
-            <div class="flex justify-between">
-                <span class="text-sm text-gray-600">Attività fisica</span>
-                <span class="font-medium">${dashboardData.nutrition.activityLevel}</span>
-            </div>
-        `;
+      nutritionDetails.innerHTML = `
+      <div class="flex justify-between">
+      <span class="text-sm text-gray-600">BMR</span>
+      <span class="font-medium">${dashboardData.nutrition.bmr} kcal</span>
+      </div>
+      <div class="flex justify-between">
+      <span class="text-sm text-gray-600">TDEE</span>
+      <span class="font-medium">${dashboardData.nutrition.tdee} kcal</span>
+      </div>
+      <div class="flex justify-between">
+      <span class="text-sm text-gray-600">Obiettivo</span>
+      <span class="font-medium">${dashboardData.nutrition.objective}</span>
+      </div>
+      <div class="flex justify-between">
+      <span class="text-sm text-gray-600">Calorie suggerite</span>
+      <span class="font-medium text-blue-600">${dashboardData.nutrition.target} kcal</span>
+      </div>
+      <div class="flex justify-between">
+      <span class="text-sm text-gray-600">Attività fisica</span>
+      <span class="font-medium">${dashboardData.nutrition.activityLevel}</span>
+      </div>
+      `;
     }
-    
+
     if (macroChart) {
-        macroChart.data.datasets[0].data = [
-            dashboardData.nutrition.macros.protein.percentage,
-            dashboardData.nutrition.macros.carbs.percentage,
-            dashboardData.nutrition.macros.fats.percentage
-        ];
-        macroChart.update();
+      macroChart.data.datasets[0].data = [
+        dashboardData.nutrition.macros.protein.percentage,
+        dashboardData.nutrition.macros.carbs.percentage,
+        dashboardData.nutrition.macros.fats.percentage
+      ];
+      macroChart.update();
     }
-    
+
     const macroDetails = document.querySelector('#tab-nutritional .grid.grid-cols-3');
     if (macroDetails) {
-        macroDetails.innerHTML = `
-            <div class="p-2 rounded-lg">
-                <div class="text-sm font-medium">Proteine</div>
-                <div class="text-lg font-bold text-green-600">${dashboardData.nutrition.macros.protein.percentage}%</div>
-                <div class="text-xs text-gray-500">${dashboardData.nutrition.macros.protein.grams}g</div>
-            </div>
-            <div class="p-2 rounded-lg">
-                <div class="text-sm font-medium">Carboidrati</div>
-                <div class="text-lg font-bold text-blue-600">${dashboardData.nutrition.macros.carbs.percentage}%</div>
-                <div class="text-xs text-gray-500">${dashboardData.nutrition.macros.carbs.grams}g</div>
-            </div>
-            <div class="p-2 rounded-lg">
-                <div class="text-sm font-medium">Grassi</div>
-                <div class="text-lg font-bold text-yellow-600">${dashboardData.nutrition.macros.fats.percentage}%</div>
-                <div class="text-xs text-gray-500">${dashboardData.nutrition.macros.fats.grams}g</div>
-            </div>
-        `;
+      macroDetails.innerHTML = `
+      <div class="p-2 rounded-lg">
+      <div class="text-sm font-medium">Proteine</div>
+      <div class="text-lg font-bold text-green-600">${dashboardData.nutrition.macros.protein.percentage}%</div>
+      <div class="text-xs text-gray-500">${dashboardData.nutrition.macros.protein.grams}g</div>
+      </div>
+      <div class="p-2 rounded-lg">
+      <div class="text-sm font-medium">Carboidrati</div>
+      <div class="text-lg font-bold text-blue-600">${dashboardData.nutrition.macros.carbs.percentage}%</div>
+      <div class="text-xs text-gray-500">${dashboardData.nutrition.macros.carbs.grams}g</div>
+      </div>
+      <div class="p-2 rounded-lg">
+      <div class="text-sm font-medium">Grassi</div>
+      <div class="text-lg font-bold text-yellow-600">${dashboardData.nutrition.macros.fats.percentage}%</div>
+      <div class="text-xs text-gray-500">${dashboardData.nutrition.macros.fats.grams}g</div>
+      </div>
+      `;
     }
-}
+  }
 
-function updateActivityTab() {
+  function updateActivityTab() {
     const activityDetails = document.querySelector('#tab-attivita .space-y-3');
     if (activityDetails) {
-        activityDetails.innerHTML = `
-            <div class="flex justify-between">
-                <span class="text-sm text-gray-600">Frequenza</span>
-                <span class="font-medium">${dashboardData.activity.current.frequency}</span>
-            </div>
-            <div class="flex justify-between">
-                <span class="text-sm text-gray-600">Tipo</span>
-                <span class="font-medium">${dashboardData.activity.current.type || 'Non specificato'}</span>
-            </div>
-            <div class="flex justify-between">
-                <span class="text-sm text-gray-600">Durata</span>
-                <span class="font-medium">${dashboardData.activity.current.duration}</span>
-            </div>
-            <div class="flex justify-between">
-                <span class="text-sm text-gray-600">Intensità</span>
-                <span class="font-medium text-yellow-600">${dashboardData.activity.current.intensity}</span>
-            </div>
-            <div class="flex justify-between">
-                <span class="text-sm text-gray-600">Minuti/settimana</span>
-                <span class="font-medium ${dashboardData.activity.compliance.status === 'Adeguata' ? 'text-green-600' : 'text-red-600'}">${dashboardData.activity.current.weeklyMinutes} (${dashboardData.activity.compliance.status})</span>
-            </div>
-        `;
+      activityDetails.innerHTML = `
+      <div class="flex justify-between">
+      <span class="text-sm text-gray-600">Frequenza</span>
+      <span class="font-medium">${dashboardData.activity.current.frequency}</span>
+      </div>
+      <div class="flex justify-between">
+      <span class="text-sm text-gray-600">Tipo</span>
+      <span class="font-medium">${dashboardData.activity.current.type || 'Non specificato'}</span>
+      </div>
+      <div class="flex justify-between">
+      <span class="text-sm text-gray-600">Durata</span>
+      <span class="font-medium">${dashboardData.activity.current.duration}</span>
+      </div>
+      <div class="flex justify-between">
+      <span class="text-sm text-gray-600">Intensità</span>
+      <span class="font-medium text-yellow-600">${dashboardData.activity.current.intensity}</span>
+      </div>
+      <div class="flex justify-between">
+      <span class="text-sm text-gray-600">Minuti/settimana</span>
+      <span class="font-medium ${dashboardData.activity.compliance.status === 'Adeguata' ? 'text-green-600' : 'text-red-600'}">${dashboardData.activity.current.weeklyMinutes} (${dashboardData.activity.compliance.status})</span>
+      </div>
+      `;
     }
-    
+
     const suggestionsContainer = document.querySelectorAll('#tab-attivita .space-y-3')[1];
     if (suggestionsContainer) {
-        suggestionsContainer.innerHTML = dashboardData.activity.suggestions.map(suggestion => `
-            <div class="p-3 rounded-lg border-l-4 border-blue-500">
-                <h4 class="font-medium">${suggestion.type}</h4>
-                <p class="text-sm text-gray-600">${suggestion.text}</p>
-            </div>
+      suggestionsContainer.innerHTML = dashboardData.activity.suggestions.map(suggestion => `
+        <div class="p-3 rounded-lg border-l-4 border-blue-500">
+        <h4 class="font-medium">${suggestion.type}</h4>
+        <p class="text-sm text-gray-600">${suggestion.text}</p>
+        </div>
         `).join('') || `
-            <div class="p-3 rounded-lg border-l-4 border-green-500">
-                <h4 class="font-medium">Ottimo lavoro!</h4>
-                <p class="text-sm text-gray-600">Stai già raggiungendo gli obiettivi di attività fisica raccomandati</p>
-            </div>
+        <div class="p-3 rounded-lg border-l-4 border-green-500">
+        <h4 class="font-medium">Ottimo lavoro!</h4>
+        <p class="text-sm text-gray-600">Stai già raggiungendo gli obiettivi di attività fisica raccomandati</p>
+        </div>
         `;
+      }
     }
-}
 
-function updateRecommendations() {
-    const container = document.querySelector('.recommendation-card').parentElement;
-    if (!container) return;
-    
-    container.innerHTML = dashboardData.recommendations
-        .slice(0, 3)
-        .map(rec => `
-            <div class="recommendation-card p-3 bg-gray-50">
-                <h3 class="font-medium">${rec.title}</h3>
-                <p class="text-sm text-gray-600">${rec.description}</p>
-            </div>
+    function updateRecommendations() {
+      const container = document.querySelector('.recommendation-card').parentElement;
+      if (!container) return;
+
+      container.innerHTML = dashboardData.recommendations
+      .slice(0, 3)
+      .map(rec => `
+        <div class="recommendation-card p-3 bg-gray-50">
+        <h3 class="font-medium">${rec.title}</h3>
+        <p class="text-sm text-gray-600">${rec.description}</p>
+        </div>
         `).join('');
-}
+      }
 
-// Inizializza i grafici
-function initializeCharts() {
-    // PREDIMED Chart
-    const predimedCtx = document.getElementById('predimed-chart').getContext('2d');
+      // Inizializza i grafici
+      function initializeCharts() {
+        // PREDIMED Chart
+        const predimedCtx = document.getElementById('predimed-chart').getContext('2d');
 
-    if (predimedChart) {
-        predimedChart.destroy();
-    }
+        if (predimedChart) {
+          predimedChart.destroy();
+        }
 
-    predimedChart = new Chart(predimedCtx, {
-        type: 'radar',
-        data: {
+        predimedChart = new Chart(predimedCtx, {
+          type: 'radar',
+          data: {
             labels: ['Olio oliva', 'Verdura', 'Frutta', 'Cereali', 'Legumi', 'Pesce', 'Vino'],
             datasets: [{
-                label: 'Punteggio attuale',
-                data: [0, 0, 0, 0, 0, 0, 0],
-                backgroundColor: 'rgba(66, 133, 244, 0.2)',
-                borderColor: '#4285F4',
-                borderWidth: 2,
-                pointBackgroundColor: '#4285F4'
+              label: 'Punteggio attuale',
+              data: [0, 0, 0, 0, 0, 0, 0],
+              backgroundColor: 'rgba(66, 133, 244, 0.2)',
+              borderColor: '#4285F4',
+              borderWidth: 2,
+              pointBackgroundColor: '#4285F4'
             }, {
-                label: 'Obiettivo',
-                data: [1, 1, 1, 1, 1, 1, 1],
-                backgroundColor: 'rgba(52, 168, 83, 0.1)',
-                borderColor: '#34A853',
-                borderWidth: 1,
-                borderDash: [5, 5],
-                pointBackgroundColor: '#34A853'
+              label: 'Obiettivo',
+              data: [1, 1, 1, 1, 1, 1, 1],
+              backgroundColor: 'rgba(52, 168, 83, 0.1)',
+              borderColor: '#34A853',
+              borderWidth: 1,
+              borderDash: [5, 5],
+              pointBackgroundColor: '#34A853'
             }]
-        },
-        options: {
+          },
+          options: {
             scale: {
-                ticks: {
-                    beginAtZero: true,
-                    max: 1,
-                    stepSize: 1
-                }
+              ticks: {
+                beginAtZero: true,
+                max: 1,
+                stepSize: 1
+              }
             }
+          }
+        });
+
+        // Macronutrienti Chart
+        const macroCtx = document.getElementById('macro-chart').getContext('2d');
+
+        if (macroChart) {
+          macroChart.destroy();
         }
-    });
 
-    // Macronutrienti Chart
-    const macroCtx = document.getElementById('macro-chart').getContext('2d');
-
-    if (macroChart) {
-        macroChart.destroy();
-    }
-
-    macroChart = new Chart(macroCtx, {
-        type: 'doughnut',
-        data: {
+        macroChart = new Chart(macroCtx, {
+          type: 'doughnut',
+          data: {
             labels: ['Proteine', 'Carboidrati', 'Grassi'],
             datasets: [{
-                data: [25, 45, 30],
-                backgroundColor: ['#34A853', '#4285F4', '#FBBC05'],
-                borderWidth: 0
+              data: [25, 45, 30],
+              backgroundColor: ['#34A853', '#4285F4', '#FBBC05'],
+              borderWidth: 0
             }]
-        },
-        options: {
+          },
+          options: {
             cutout: '70%',
             plugins: {
-                legend: {
-                    display: false
-                }
+              legend: {
+                display: false
+              }
             }
-        }
-    });
-}
+          }
+        });
+      }
 
-// Setup delle tabs
-function setupTabs() {
-    document.querySelectorAll('.tab-button').forEach(button => {
-        button.addEventListener('click', () => {
+      // Setup delle tabs
+      function setupTabs() {
+        document.querySelectorAll('.tab-button').forEach(button => {
+          button.addEventListener('click', () => {
             const tabId = button.getAttribute('data-tab');
 
             document.querySelectorAll('.tab-button').forEach(btn => {
-                btn.classList.remove('active');
+              btn.classList.remove('active');
             });
             document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.remove('active');
+              content.classList.remove('active');
             });
 
             button.classList.add('active');
             document.getElementById(tabId).classList.add('active');
 
             if (tabId === 'tab-stile-vita' && predimedChart) {
-                predimedChart.update();
+              predimedChart.update();
             }
             if (tabId === 'tab-nutritional' && macroChart) {
-                macroChart.update();
+              macroChart.update();
             }
+          });
         });
-    });
-}
+      }
 
-// Setup export button
-function setupExportButton() {
-    const exportButton = document.querySelector('button:has(i.fas.fa-file-pdf)');
-    if (exportButton) {
-        exportButton.addEventListener('click', exportDashboardPDF);
-    }
-}
+      // Setup export button
+      function setupExportButton() {
+        const exportButton = document.querySelector('button:has(i.fas.fa-file-pdf)');
+        if (exportButton) {
+          exportButton.addEventListener('click', exportDashboardPDF);
+        }
+      }
 
-// Funzione per esportare PDF
-async function exportDashboardPDF() {
-    const exportButton = document.querySelector('button:has(i.fas.fa-file-pdf)');
-    const originalButtonText = exportButton.innerHTML;
-    
-    exportButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Esportazione...';
-    exportButton.disabled = true;
+      // Funzione per esportare PDF
+      async function exportDashboardPDF() {
+        const exportButton = document.querySelector('button:has(i.fas.fa-file-pdf)');
+        const originalButtonText = exportButton.innerHTML;
 
-    const currentActiveTab = document.querySelector('.tab-content.active');
-    const allTabs = document.querySelectorAll('.tab-content');
-    allTabs.forEach(tab => tab.classList.add('active'));
+        exportButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Esportazione...';
+        exportButton.disabled = true;
 
-    if (predimedChart) predimedChart.update();
-    if (macroChart) macroChart.update();
+        const currentActiveTab = document.querySelector('.tab-content.active');
+        const allTabs = document.querySelectorAll('.tab-content');
+        allTabs.forEach(tab => tab.classList.add('active'));
 
-    setTimeout(() => {
-        const dashboardContent = document.querySelector('main');
-        
-        const options = {
+        if (predimedChart) predimedChart.update();
+        if (macroChart) macroChart.update();
+
+        setTimeout(() => {
+          const dashboardContent = document.querySelector('main');
+
+          const options = {
             margin: 10,
             filename: `Dashboard_HealthAI_${userData.email}_${new Date().toLocaleDateString('it-IT')}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: {
-                scale: 1,
-                useCORS: true,
-                logging: false,
-                allowTaint: true,
-                foreignObjectRendering: false
+              scale: 1,
+              useCORS: true,
+              logging: false,
+              allowTaint: true,
+              foreignObjectRendering: false
             },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
+          };
 
-        html2pdf().from(dashboardContent).set(options).save()
-            .then(() => {
-                allTabs.forEach(tab => tab.classList.remove('active'));
-                if (currentActiveTab) currentActiveTab.classList.add('active');
-                
-                exportButton.innerHTML = originalButtonText;
-                exportButton.disabled = false;
-                
-                showNotification('PDF esportato con successo!', 'success');
-            })
-            .catch(error => {
-                console.error('Errore export PDF:', error);
-                
-                allTabs.forEach(tab => tab.classList.remove('active'));
-                if (currentActiveTab) currentActiveTab.classList.add('active');
-                
-                exportButton.innerHTML = originalButtonText;
-                exportButton.disabled = false;
-                
-                showNotification('Errore durante l\'esportazione', 'error');
-            });
-    }, 500);
-}
+          html2pdf().from(dashboardContent).set(options).save()
+          .then(() => {
+            allTabs.forEach(tab => tab.classList.remove('active'));
+            if (currentActiveTab) currentActiveTab.classList.add('active');
 
-// Funzione per mostrare notifiche
-function showNotification(message, type) {
-    const notification = document.createElement('div');
-    notification.className = `fixed top-4 right-4 px-6 py-3 rounded-md shadow-lg z-50 ${
-        type === 'success' ? 'bg-green-500' : 'bg-red-500'
-    } text-white`;
-    notification.innerHTML = `
-        <div class="flex items-center">
-            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} mr-2"></i>
-            <span>${message}</span>
-        </div>
-    `;
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.style.opacity = '0';
-        notification.style.transition = 'opacity 0.5s ease';
-        setTimeout(() => {
-            document.body.removeChild(notification);
+            exportButton.innerHTML = originalButtonText;
+            exportButton.disabled = false;
+
+            showNotification('PDF esportato con successo!', 'success');
+          })
+          .catch(error => {
+            console.error('Errore export PDF:', error);
+
+            allTabs.forEach(tab => tab.classList.remove('active'));
+            if (currentActiveTab) currentActiveTab.classList.add('active');
+
+            exportButton.innerHTML = originalButtonText;
+            exportButton.disabled = false;
+
+            showNotification('Errore durante l\'esportazione', 'error');
+          });
         }, 500);
-    }, 3000);
-}
+      }
 
-// Auto-refresh ogni 5 minuti
-setInterval(async () => {
-    const { data: sessionData } = await supabaseClient.auth.getSession();
-    if (sessionData.session) {
-        await loadUserData(sessionData.session.user.email);
-        calculateAllScores();
-        updateDashboard();
-    }
-}, 300000);
+      // Funzione per mostrare notifiche
+      function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 px-6 py-3 rounded-md shadow-lg z-50 ${
+          type === 'success' ? 'bg-green-500' : 'bg-red-500'
+        } text-white`;
+        notification.innerHTML = `
+        <div class="flex items-center">
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} mr-2"></i>
+        <span>${message}</span>
+        </div>
+        `;
 
-// Gestione logout
-document.getElementById('logout-btn')?.addEventListener('click', async () => {
-    await supabaseClient.auth.signOut();
-    window.location.href = 'login.html';
-});
+        document.body.appendChild(notification);
 
-// Gestione temi
-document.addEventListener('DOMContentLoaded', function () {
-    const themeToggle = document.getElementById('theme-toggle');
+        setTimeout(() => {
+          notification.style.opacity = '0';
+          notification.style.transition = 'opacity 0.5s ease';
+          setTimeout(() => {
+            document.body.removeChild(notification);
+          }, 500);
+        }, 3000);
+      }
 
-    function applyTheme(theme) {
-        const html = document.documentElement;
-        html.setAttribute('data-theme', theme);
+      // Auto-refresh ogni 5 minuti
+      setInterval(async () => {
+        const { data: sessionData } = await supabaseClient.auth.getSession();
+        if (sessionData.session) {
+          await loadUserData(sessionData.session.user.email);
+          calculateAllScores();
+          updateDashboard();
+        }
+      }, 300000);
+
+      // Gestione logout
+      document.getElementById('logout-btn')?.addEventListener('click', async () => {
+        await supabaseClient.auth.signOut();
+        window.location.href = 'login.html';
+      });
+
+      // Gestione temi
+      document.addEventListener('DOMContentLoaded', function () {
+        const themeToggle = document.getElementById('theme-toggle');
+
+        function applyTheme(theme) {
+          const html = document.documentElement;
+          html.setAttribute('data-theme', theme);
+
+          if (themeToggle) {
+            themeToggle.textContent = (theme === 'dark') ? '☀️' : '🌙';
+          }
+        }
 
         if (themeToggle) {
-            themeToggle.textContent = (theme === 'dark') ? '☀️' : '🌙';
-        }
-    }
-
-    if (themeToggle) {
-        themeToggle.addEventListener('click', function () {
+          themeToggle.addEventListener('click', function () {
             const currentTheme = document.documentElement.getAttribute('data-theme');
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
 
             applyTheme(newTheme);
             window.parent.postMessage({ type: 'theme', theme: newTheme }, '*');
-        });
-    }
-
-    window.addEventListener('message', function (event) {
-        if (event.data && event.data.type === 'theme') {
-            applyTheme(event.data.theme);
+          });
         }
-    });
-});
-    </script>
-</body>
-</html>
+
+        window.addEventListener('message', function (event) {
+          if (event.data && event.data.type === 'theme') {
+            applyTheme(event.data.theme);
+          }
+        });
+      });
+      </script>
+      </body>
+      </html>

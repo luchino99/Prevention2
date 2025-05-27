@@ -1,452 +1,452 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profilo Utente</title>
-    <!-- Supabase JS Client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Marked for Markdown rendering -->
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <!-- HTML2PDF for PDF export -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
-   <style>
-        :root {
-            --primary-color: #4a6fa5;
-            --primary-light: #5a7fb5;
-            --primary-dark: #3a5f95;
-            --accent-color: #54c0a0;
-            --text-color: #333333;
-            --text-light: #777777;
-            --background-color: #f9f9fb;
-            --card-color: #ffffff;
-            --border-color: #e0e0e6;
-            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            --bot-message-bg: #eef4ff;
-            --user-message-bg: #54c0a0;
-            --user-message-text: white;
-            --font-family: 'Segoe UI', 'Roboto', sans-serif;
-            --radius: 20px;
-            --animation-speed: 0.3s;
-            --primary-blue: #4285F4;
-            --primary-light-blue: #E8F0FE;
-            --light-gray: #F8F9FA;
-            --text-dark: #202124;
-            --text-medium: #5F6368;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profilo Utente</title>
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Marked for Markdown rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- HTML2PDF for PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+  <style>
+  :root {
+    --primary-color: #4a6fa5;
+    --primary-light: #5a7fb5;
+    --primary-dark: #3a5f95;
+    --accent-color: #54c0a0;
+    --text-color: #333333;
+    --text-light: #777777;
+    --background-color: #f9f9fb;
+    --card-color: #ffffff;
+    --border-color: #e0e0e6;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --bot-message-bg: #eef4ff;
+    --user-message-bg: #54c0a0;
+    --user-message-text: white;
+    --font-family: 'Segoe UI', 'Roboto', sans-serif;
+    --radius: 20px;
+    --animation-speed: 0.3s;
+    --primary-blue: #4285F4;
+    --primary-light-blue: #E8F0FE;
+    --light-gray: #F8F9FA;
+    --text-dark: #202124;
+    --text-medium: #5F6368;
 
-            /* Nuove variabili per supportare meglio il tema */
-            --card-bg: #ffffff;
-            --secondary-bg: #f8f9fa;
-            --highlight-bg: #e8f0fe;
-            --success-bg: #E6F4EA;
-            --success-color: #34A853;
-            --warning-bg: #FEF7E0;
-            --warning-color: #FBBC05;
-            --danger-bg: #FCE8E6;
-            --danger-color: #EA4335;
-            --header-bg: #ffffff;
-            --footer-bg: #202124;
-            --footer-text: #ffffff;
-            --score-low-bg: #FBBC05;
-            --score-medium-bg: #34A853;
-            --score-high-bg: #EA4335;
-            --badge-text: #ffffff;
-            --progress-bg: #e0e0e6;
-            --border-highlight: #4285F4;
-            --border-success: #34A853;
-            --border-warning: #FBBC05;
-            --border-danger: #EA4335;
-            --button-primary-bg: #4285F4;
-            --button-primary-text: #ffffff;
-            --button-hover-bg: #357ae8;
-            --icon-color: #4285F4;
-            --link-color: #4285F4;
-            --link-hover: #357ae8;
-            --tab-active-bg: #4285F4;
-            --tab-active-text: #ffffff;
-            --tab-inactive-bg: transparent;
-            --tab-inactive-text: #5F6368;
-            --gradient-primary: linear-gradient(135deg, #4285F4, #34A853);
-            --gradient-secondary: linear-gradient(135deg, #4285F4, #5B8DEF);
-            --chart-text-color: #333333;
-            --footer-bg: var(--card-color);
-            --animation-speed: 0.3s;
+    /* Nuove variabili per supportare meglio il tema */
+    --card-bg: #ffffff;
+    --secondary-bg: #f8f9fa;
+    --highlight-bg: #e8f0fe;
+    --success-bg: #E6F4EA;
+    --success-color: #34A853;
+    --warning-bg: #FEF7E0;
+    --warning-color: #FBBC05;
+    --danger-bg: #FCE8E6;
+    --danger-color: #EA4335;
+    --header-bg: #ffffff;
+    --footer-bg: #202124;
+    --footer-text: #ffffff;
+    --score-low-bg: #FBBC05;
+    --score-medium-bg: #34A853;
+    --score-high-bg: #EA4335;
+    --badge-text: #ffffff;
+    --progress-bg: #e0e0e6;
+    --border-highlight: #4285F4;
+    --border-success: #34A853;
+    --border-warning: #FBBC05;
+    --border-danger: #EA4335;
+    --button-primary-bg: #4285F4;
+    --button-primary-text: #ffffff;
+    --button-hover-bg: #357ae8;
+    --icon-color: #4285F4;
+    --link-color: #4285F4;
+    --link-hover: #357ae8;
+    --tab-active-bg: #4285F4;
+    --tab-active-text: #ffffff;
+    --tab-inactive-bg: transparent;
+    --tab-inactive-text: #5F6368;
+    --gradient-primary: linear-gradient(135deg, #4285F4, #34A853);
+    --gradient-secondary: linear-gradient(135deg, #4285F4, #5B8DEF);
+    --chart-text-color: #333333;
+    --footer-bg: var(--card-color);
+    --animation-speed: 0.3s;
 
-            /* Aggiunte per i pannelli accordion */
-            --accordion-header-bg: var(--highlight-bg);
-            --accordion-header-hover: var(--primary-light-blue);
-            --accordion-border: var(--border-color);
-            --accordion-body-bg: var(--card-bg);
-            --input-border: var(--border-color);
-            --input-focus: var(--primary-blue);
-            --input-bg: var(--card-bg);
-        }
+    /* Aggiunte per i pannelli accordion */
+    --accordion-header-bg: var(--highlight-bg);
+    --accordion-header-hover: var(--primary-light-blue);
+    --accordion-border: var(--border-color);
+    --accordion-body-bg: var(--card-bg);
+    --input-border: var(--border-color);
+    --input-focus: var(--primary-blue);
+    --input-bg: var(--card-bg);
+  }
 
-        [data-theme="dark"] {
-            --primary-color: #5a7fb5;
-            --primary-light: #6a8fc5;
-            --primary-dark: #4a6fa5;
-            --accent-color: #64d0b0;
-            --text-color: #e0e0e0;
-            --text-light: #a0a0a0;
-            --background-color: #1a1a20;
-            --card-color: #27272f;
-            --border-color: #3a3a45;
-            --shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            --bot-message-bg: #2a3548;
-            --user-message-bg: #446655;
-            --user-message-text: #e0e0e0;
-            --text-dark: #e0e0e0;
-            --text-medium: #a0a0a0;
+  [data-theme="dark"] {
+    --primary-color: #5a7fb5;
+    --primary-light: #6a8fc5;
+    --primary-dark: #4a6fa5;
+    --accent-color: #64d0b0;
+    --text-color: #e0e0e0;
+    --text-light: #a0a0a0;
+    --background-color: #1a1a20;
+    --card-color: #27272f;
+    --border-color: #3a3a45;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    --bot-message-bg: #2a3548;
+    --user-message-bg: #446655;
+    --user-message-text: #e0e0e0;
+    --text-dark: #e0e0e0;
+    --text-medium: #a0a0a0;
 
-            /* Nuove variabili per tema scuro */
-            --card-bg: #27272f;
-            --secondary-bg: #1f1f27;
-            --highlight-bg: #2a3548;
-            --success-bg: #1e3a2e;
-            --success-color: #4eca6f;
-            --warning-bg: #3d3520;
-            --warning-color: #ffce44;
-            --danger-bg: #3d2a27;
-            --danger-color: #ff7169;
-            --header-bg: #27272f;
-            --footer-bg: #1a1a20;
-            --footer-text: #a0a0a0;
-            --score-low-bg: #ffce44;
-            --score-medium-bg: #4eca6f;
-            --score-high-bg: #ff7169;
-            --badge-text: #1a1a20;
-            --progress-bg: #3a3a45;
-            --border-highlight: #5a7fb5;
-            --border-success: #4eca6f;
-            --border-warning: #ffce44;
-            --border-danger: #ff7169;
-            --button-primary-bg: #5a7fb5;
-            --button-primary-text: #e0e0e0;
-            --button-hover-bg: #6a8fc5;
-            --icon-color: #5a7fb5;
-            --link-color: #6a8fc5;
-            --link-hover: #7a9fd5;
-            --tab-active-bg: #5a7fb5;
-            --tab-active-text: #e0e0e0;
-            --tab-inactive-bg: transparent;
-            --tab-inactive-text: #a0a0a0;
-            --gradient-primary: linear-gradient(135deg, #5a7fb5, #4eca6f);
-            --gradient-secondary: linear-gradient(135deg, #5a7fb5, #6a8fc5);
-            --chart-text-color: #ffffff;
-            --footer-bg: var(--card-color);
+    /* Nuove variabili per tema scuro */
+    --card-bg: #27272f;
+    --secondary-bg: #1f1f27;
+    --highlight-bg: #2a3548;
+    --success-bg: #1e3a2e;
+    --success-color: #4eca6f;
+    --warning-bg: #3d3520;
+    --warning-color: #ffce44;
+    --danger-bg: #3d2a27;
+    --danger-color: #ff7169;
+    --header-bg: #27272f;
+    --footer-bg: #1a1a20;
+    --footer-text: #a0a0a0;
+    --score-low-bg: #ffce44;
+    --score-medium-bg: #4eca6f;
+    --score-high-bg: #ff7169;
+    --badge-text: #1a1a20;
+    --progress-bg: #3a3a45;
+    --border-highlight: #5a7fb5;
+    --border-success: #4eca6f;
+    --border-warning: #ffce44;
+    --border-danger: #ff7169;
+    --button-primary-bg: #5a7fb5;
+    --button-primary-text: #e0e0e0;
+    --button-hover-bg: #6a8fc5;
+    --icon-color: #5a7fb5;
+    --link-color: #6a8fc5;
+    --link-hover: #7a9fd5;
+    --tab-active-bg: #5a7fb5;
+    --tab-active-text: #e0e0e0;
+    --tab-inactive-bg: transparent;
+    --tab-inactive-text: #a0a0a0;
+    --gradient-primary: linear-gradient(135deg, #5a7fb5, #4eca6f);
+    --gradient-secondary: linear-gradient(135deg, #5a7fb5, #6a8fc5);
+    --chart-text-color: #ffffff;
+    --footer-bg: var(--card-color);
 
-            /* Aggiunte per i pannelli accordion in tema scuro */
-            --accordion-header-bg: #2d3748;
-            --accordion-header-hover: #3a4a63;
-            --accordion-border: #3a3a45;
-            --accordion-body-bg: var(--card-bg);
-            --input-border: #3a3a45;
-            --input-focus: #5a7fb5;
-            --input-bg: #1f1f27;
-        }
+    /* Aggiunte per i pannelli accordion in tema scuro */
+    --accordion-header-bg: #2d3748;
+    --accordion-header-hover: #3a4a63;
+    --accordion-border: #3a3a45;
+    --accordion-body-bg: var(--card-bg);
+    --input-border: #3a3a45;
+    --input-focus: #5a7fb5;
+    --input-bg: #1f1f27;
+  }
 
-        body {
-            font-family: 'Roboto', sans-serif;
-            background-color: var(--background-color);
-            color: var(--text-color);
-            transition: background-color var(--animation-speed);
-        }
+  body {
+    font-family: 'Roboto', sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    transition: background-color var(--animation-speed);
+  }
 
-        /* Aggiungi questa regola al tuo CSS */
-        *, *::before, *::after {
-            transition: background-color var(--animation-speed), box-shadow var(--animation-speed);
-        }
+  /* Aggiungi questa regola al tuo CSS */
+  *, *::before, *::after {
+    transition: background-color var(--animation-speed), box-shadow var(--animation-speed);
+  }
 
-        .card, .badge, .score-indicator, .tab-button, .recommendation-card,
-        ., .bg-gray-50, .bg-blue-50, .bg-gray-200, .bg-blue-100,
-        .border-l-4, svg circle, svg text, .progress-ring__circle {
-            transition: all var(--animation-speed);
-        }
+  .card, .badge, .score-indicator, .tab-button, .recommendation-card,
+  ., .bg-gray-50, .bg-blue-50, .bg-gray-200, .bg-blue-100,
+  .border-l-4, svg circle, svg text, .progress-ring__circle {
+    transition: all var(--animation-speed);
+  }
 
-        .card {
-            border-radius: 12px;
-            background-color: var(--card-bg);
-            box-shadow: 0 2px 10px var(--border-color);
-            transition: transform var(--animation-speed), box-shadow var(--animation-speed), border-color var(--animation-speed);
-        }
+  .card {
+    border-radius: 12px;
+    background-color: var(--card-bg);
+    box-shadow: 0 2px 10px var(--border-color);
+    transition: transform var(--animation-speed), box-shadow var(--animation-speed), border-color var(--animation-speed);
+  }
 
-        .primary-gradient {
-            background: var(--gradient-primary);
-        }
+  .primary-gradient {
+    background: var(--gradient-primary);
+  }
 
-        .secondary-gradient {
-            background: var(--gradient-secondary);
-        }
+  .secondary-gradient {
+    background: var(--gradient-secondary);
+  }
 
-        .score-indicator {
-            width: 64px;
-            height: 64px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 20px;
-        }
+  .score-indicator {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 20px;
+  }
 
-        .score-low {
-            background-color: var(--score-low-bg);
-            color: var(--badge-text);
-        }
+  .score-low {
+    background-color: var(--score-low-bg);
+    color: var(--badge-text);
+  }
 
-        .score-medium {
-            background-color: var(--score-medium-bg);
-            color: var(--badge-text);
-        }
+  .score-medium {
+    background-color: var(--score-medium-bg);
+    color: var(--badge-text);
+  }
 
-        .score-high {
-            background-color: var(--score-high-bg);
-            color: var(--badge-text);
-        }
+  .score-high {
+    background-color: var(--score-high-bg);
+    color: var(--badge-text);
+  }
 
-        .tab-button {
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 500;
-            color: var(--tab-inactive-text);
-            background-color: var(--tab-inactive-bg);
-            transition: background-color var(--animation-speed);
-        }
+  .tab-button {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--tab-inactive-text);
+    background-color: var(--tab-inactive-bg);
+    transition: background-color var(--animation-speed);
+  }
 
-        .tab-button.active {
-            background-color: var(--tab-active-bg);
-            color: var(--tab-active-text);
-        }
+  .tab-button.active {
+    background-color: var(--tab-active-bg);
+    color: var(--tab-active-text);
+  }
 
-        .tab-content {
-            display: none;
-        }
+  .tab-content {
+    display: none;
+  }
 
-        .tab-content.active {
-            display: block;
-        }
+  .tab-content.active {
+    display: block;
+  }
 
-        /* Personalizzazioni per grafici e indicatori */
-        .progress-ring {
-            transform: rotate(-90deg);
-            transform-origin: 50% 50%;
-        }
+  /* Personalizzazioni per grafici e indicatori */
+  .progress-ring {
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+  }
 
-        .progress-ring__circle {
-            stroke-dasharray: 314.16;
-            transition: stroke-dashoffset var(--animation-speed);
-        }
+  .progress-ring__circle {
+    stroke-dasharray: 314.16;
+    transition: stroke-dashoffset var(--animation-speed);
+  }
 
-        .badge {
-            border-radius: 16px;
-            padding: 0.25rem 0.75rem;
-            font-size: 0.75rem;
-            font-weight: 500;
-        }
+  .badge {
+    border-radius: 16px;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
 
-        .badge-success {
-            background-color: var(--success-bg);
-            color: var(--success-color);
-        }
+  .badge-success {
+    background-color: var(--success-bg);
+    color: var(--success-color);
+  }
 
-        .badge-warning {
-            background-color: var(--warning-bg);
-            color: var(--warning-color);
-        }
+  .badge-warning {
+    background-color: var(--warning-bg);
+    color: var(--warning-color);
+  }
 
-        .badge-danger {
-            background-color: var(--danger-bg);
-            color: var(--danger-color);
-        }
+  .badge-danger {
+    background-color: var(--danger-bg);
+    color: var(--danger-color);
+  }
 
-        .recommendation-card {
-            border-left: 3px solid var(--border-highlight);
-        }
+  .recommendation-card {
+    border-left: 3px solid var(--border-highlight);
+  }
 
-        .theme-toggle {
-            background: none;
-            border: none;
-            color: var(--text-color);
-            font-size: 20px;
-            cursor: pointer;
-            outline: none;
-            transition: transform var(--animation-speed);
-        }
+  .theme-toggle {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-size: 20px;
+    cursor: pointer;
+    outline: none;
+    transition: transform var(--animation-speed);
+  }
 
-        .theme-toggle:hover {
-            transform: scale(1.1);
-        }
+  .theme-toggle:hover {
+    transform: scale(1.1);
+  }
 
-        .bg-gray-50, .bg-blue-50 {
-            background-color: var(--secondary-bg) !important;
-        }
+  .bg-gray-50, .bg-blue-50 {
+    background-color: var(--secondary-bg) !important;
+  }
 
-        .text-gray-600, .text-gray-500 {
-            color: var(--text-light) !important;
-        }
+  .text-gray-600, .text-gray-500 {
+    color: var(--text-light) !important;
+  }
 
-        .text-blue-500, .text-blue-600 {
-            color: var(--link-color) !important;
-        }
+  .text-blue-500, .text-blue-600 {
+    color: var(--link-color) !important;
+  }
 
-        .text-yellow-600 {
-            color: var(--warning-color) !important;
-        }
+  .text-yellow-600 {
+    color: var(--warning-color) !important;
+  }
 
-        .text-red-600, .text-red-500 {
-            color: var(--danger-color) !important;
-        }
+  .text-red-600, .text-red-500 {
+    color: var(--danger-color) !important;
+  }
 
-        .text-green-600, .text-green-500 {
-            color: var(--success-color) !important;
-        }
+  .text-green-600, .text-green-500 {
+    color: var(--success-color) !important;
+  }
 
-        .bg-gray-200 {
-            background-color: var(--progress-bg) !important;
-        }
+  .bg-gray-200 {
+    background-color: var(--progress-bg) !important;
+  }
 
-        .bg-red-500 {
-            background-color: var(--danger-color) !important;
-        }
+  .bg-red-500 {
+    background-color: var(--danger-color) !important;
+  }
 
-        .bg-green-500 {
-            background-color: var(--success-color) !important;
-        }
+  .bg-green-500 {
+    background-color: var(--success-color) !important;
+  }
 
-        .bg-yellow-500 {
-            background-color: var(--warning-color) !important;
-        }
+  .bg-yellow-500 {
+    background-color: var(--warning-color) !important;
+  }
 
-        .bg-blue-500 {
-            background-color: var(--button-primary-bg) !important;
-        }
+  .bg-blue-500 {
+    background-color: var(--button-primary-bg) !important;
+  }
 
-        .bg-blue-100 {
-            background-color: var(--highlight-bg) !important;
-        }
+  .bg-blue-100 {
+    background-color: var(--highlight-bg) !important;
+  }
 
-        .hover\:bg-blue-600:hover {
-            background-color: var(--button-hover-bg) !important;
-        }
+  .hover\:bg-blue-600:hover {
+    background-color: var(--button-hover-bg) !important;
+  }
 
-        .hover\:bg-blue-50:hover {
-            background-color: var(--secondary-bg) !important;
-        }
+  .hover\:bg-blue-50:hover {
+    background-color: var(--secondary-bg) !important;
+  }
 
-        .hover\:text-blue-700:hover, .hover\:text-white:hover {
-            color: var(--link-hover) !important;
-        }
+  .hover\:text-blue-700:hover, .hover\:text-white:hover {
+    color: var(--link-hover) !important;
+  }
 
-        .border-l-4.border-green-500 {
-            border-left-color: var(--border-success) !important;
-        }
+  .border-l-4.border-green-500 {
+    border-left-color: var(--border-success) !important;
+  }
 
-        .border-l-4.border-yellow-500 {
-            border-left-color: var(--border-warning) !important;
-        }
+  .border-l-4.border-yellow-500 {
+    border-left-color: var(--border-warning) !important;
+  }
 
-        .border-l-4.border-red-500 {
-            border-left-color: var(--border-danger) !important;
-        }
+  .border-l-4.border-red-500 {
+    border-left-color: var(--border-danger) !important;
+  }
 
-        .border-l-4.border-blue-500 {
-            border-left-color: var(--border-highlight) !important;
-        }
+  .border-l-4.border-blue-500 {
+    border-left-color: var(--border-highlight) !important;
+  }
 
-        /* Footer specifico */
-        .bg-gray-800 {
-            background-color: var(--footer-bg) !important;
-        }
+  /* Footer specifico */
+  .bg-gray-800 {
+    background-color: var(--footer-bg) !important;
+  }
 
-        .text-gray-300 {
-            color: var(--footer-text) !important;
-        }
+  .text-gray-300 {
+    color: var(--footer-text) !important;
+  }
 
-        /* Stile per gli input e le form */
-        input, select, textarea {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid var(--input-border);
-            border-radius: 8px;
-            background-color: var(--input-bg);
-            color: var(--text-color);
-            font-size: 14px;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
+  /* Stile per gli input e le form */
+  input, select, textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--input-border);
+    border-radius: 8px;
+    background-color: var(--input-bg);
+    color: var(--text-color);
+    font-size: 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
 
-        input:focus, select:focus, textarea:focus {
-            border-color: var(--primary-blue);
-            box-shadow: 0 0 0 3px var(--input-focus);
-            outline: none;
-        }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px var(--input-focus);
+    outline: none;
+  }
 
-        input:disabled {
-            background-color: var(--secondary-bg);
-            cursor: not-allowed;
-            opacity: 0.7;
-        }
+  input:disabled {
+    background-color: var(--secondary-bg);
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
 
-        /* Stile per le sezioni accordion */
-        .accordion-section {
-            border: 1px solid var(--accordion-border);
-            margin-bottom: 16px;
-            border-radius: 12px;
-            overflow: hidden;
-            transition: box-shadow 0.3s ease;
-            background-color: var(--card-bg);
-        }
+  /* Stile per le sezioni accordion */
+  .accordion-section {
+    border: 1px solid var(--accordion-border);
+    margin-bottom: 16px;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: box-shadow 0.3s ease;
+    background-color: var(--card-bg);
+  }
 
-        .accordion-section:hover {
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        }
+  .accordion-section:hover {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  }
 
-        .accordion-header {
-            padding: 14px 18px;
-            font-weight: 600;
-            cursor: pointer;
-            background-color: var(--accordion-header-bg);
-            color: var(--text-color);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            transition: background-color 0.2s;
-        }
+  .accordion-header {
+    padding: 14px 18px;
+    font-weight: 600;
+    cursor: pointer;
+    background-color: var(--accordion-header-bg);
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: background-color 0.2s;
+  }
 
-        .accordion-header:hover {
-            background-color: var(--accordion-header-hover);
-        }
+  .accordion-header:hover {
+    background-color: var(--accordion-header-hover);
+  }
 
-        .accordion-body {
-            padding: 0;
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.4s ease, padding 0.4s ease;
-        }
+  .accordion-body {
+    padding: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease, padding 0.4s ease;
+  }
 
-        .accordion-content {
-            padding: 18px;
-        }
+  .accordion-content {
+    padding: 18px;
+  }
 
-        .accordion-section.active .accordion-body {
-            max-height: 800px;
-            padding: 18px;
-        }
+  .accordion-section.active .accordion-body {
+    max-height: 800px;
+    padding: 18px;
+  }
 
-        .accordion-icon {
-            transition: transform 0.3s ease;
-        }
+  .accordion-icon {
+    transition: transform 0.3s ease;
+  }
 
-        .accordion-section.active .accordion-icon {
-            transform: rotate(180deg);
-        }
+  .accordion-section.active .accordion-icon {
+    transform: rotate(180deg);
+  }
 
-        /* NUOVO STILE PER IL PULSANTE FISSO GALLEGGIANTE */
-.save-btn-floating {
+  /* NUOVO STILE PER IL PULSANTE FISSO GALLEGGIANTE */
+  .save-btn-floating {
     position:fixed;
     left: 50%;
     transform: translateX(-50%);
@@ -466,714 +466,709 @@
     box-shadow: 0 8px 20px rgba(66, 133, 244, 0.3);
     transition: all 0.3s ease;
     z-index: 1;
-}
+  }
 
-.save-btn-floating:hover {
+  .save-btn-floating:hover {
     box-shadow: 0 12px 30px rgba(66, 133, 244, 0.4);
     background: linear-gradient(135deg, var(--button-hover-bg), #64d0b0);
-}
+  }
 
-        .save-btn-floating:active {
-            transform: translateY(-1px);
-        }
+  .save-btn-floating:active {
+    transform: translateY(-1px);
+  }
 
-        .save-btn-floating i {
-            margin-right: 8px;
-            font-size: 18px;
-        }
+  .save-btn-floating i {
+    margin-right: 8px;
+    font-size: 18px;
+  }
 
 
 
-        /* Responsive per mobile */
-        @media (max-width: 768px) {
-            .save-btn-floating {
-                bottom: 15px;
-                right: 15px;
-                padding: 14px 20px;
-                font-size: 14px;
-                min-width: 140px;
-            }
-        }
+  /* Responsive per mobile */
+  @media (max-width: 768px) {
+    .save-btn-floating {
+      bottom: 15px;
+      right: 15px;
+      padding: 14px 20px;
+      font-size: 14px;
+      min-width: 140px;
+    }
+  }
 
-        /* Form grid layout */
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-        }
+  /* Form grid layout */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
 
-        @media (max-width: 768px) {
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-        }
+  @media (max-width: 768px) {
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+  }
 
-        .form-group {
-            margin-bottom: 12px;
-        }
+  .form-group {
+    margin-bottom: 12px;
+  }
 
-        .form-label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: 500;
-            color: var(--text-light);
-            font-size: 14px;
-        }
+  .form-label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+    color: var(--text-light);
+    font-size: 14px;
+  }
 
-        /* Avatar section */
-        .avatar-section {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-bottom: 24px;
-        }
+  /* Avatar section */
+  .avatar-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 24px;
+  }
 
-        .avatar {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            background-color: var(--primary-light);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 48px;
-            font-weight: bold;
-            margin-bottom: 16px;
-            overflow: hidden;
-            position: relative;
-        }
+  .avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background-color: var(--primary-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 48px;
+    font-weight: bold;
+    margin-bottom: 16px;
+    overflow: hidden;
+    position: relative;
+  }
 
-        .avatar-initials {
-            text-transform: uppercase;
-        }
+  .avatar-initials {
+    text-transform: uppercase;
+  }
 
-        .avatar-upload {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background-color: rgba(0, 0, 0, 0.5);
-            color: white;
-            padding: 4px;
-            text-align: center;
-            font-size: 12px;
-            cursor: pointer;
-        }
+  .avatar-upload {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    padding: 4px;
+    text-align: center;
+    font-size: 12px;
+    cursor: pointer;
+  }
 
-        /* Form box */
-        .form-box {
-            background-color: var(--card-bg);
-            border-radius: 12px;
-            box-shadow: 0 2px 10px var(--border-color);
-            padding: 24px;
-            margin-bottom: 24px;
-        }
+  /* Form box */
+  .form-box {
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: 0 2px 10px var(--border-color);
+    padding: 24px;
+    margin-bottom: 24px;
+  }
 
-        .form-box h3 {
-            margin-top: 0;
-            margin-bottom: 16px;
-            font-size: 18px;
-            font-weight: 600;
-        }
-    </style>
+  .form-box h3 {
+    margin-top: 0;
+    margin-bottom: 16px;
+    font-size: 18px;
+    font-weight: 600;
+  }
+  </style>
 </head>
 <body>
   <!-- Header -->
   <header class="shadow-sm mb-4 sticky top-0 z-10 chat-header" style="background-color: var(--card-color); color: var(--text-color); border-bottom: 1px solid var(--border-color);">
-      <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-          <div class="flex items-center">
-              <svg class="h-6 w-6 text-blue-500 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
-              </svg>
-              <h1 class="text-xl font-bold">Profilo utente</h1>
-          </div>
-          <div class="flex items-center space-x-4">
-              <button style="visibility: hidden" id="export-btn" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-full flex items-center text-sm">
-                  <i class="fas fa-file-pdf mr-2"></i>
-                  Esporta report
-              </button>
-              <button style="visibility: hidden" id="refresh-btn" class="text-blue-500 hover:text-blue-700">
-                  <i class="fas fa-sync-alt"></i>
-              </button>
-          </div>
-          <div class="flex items-center space-x-4">
-            <button id="theme-toggle" class="text-blue-500 text-xl hover:text-blue-700">🌙</button>
-          </div>
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+      <div class="flex items-center">
+        <svg class="h-6 w-6 text-blue-500 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+        </svg>
+        <h1 class="text-xl font-bold">Profilo utente</h1>
       </div>
+      <div class="flex items-center space-x-4">
+        <button style="visibility: hidden" id="export-btn" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-full flex items-center text-sm">
+          <i class="fas fa-file-pdf mr-2"></i>
+          Esporta report
+        </button>
+        <button style="visibility: hidden" id="refresh-btn" class="text-blue-500 hover:text-blue-700">
+          <i class="fas fa-sync-alt"></i>
+        </button>
+      </div>
+      <div class="flex items-center space-x-4">
+        <button id="theme-toggle" class="text-blue-500 text-xl hover:text-blue-700">🌙</button>
+      </div>
+    </div>
   </header>
 
-    <!-- Main Content -->
-    <main class="container mx-auto px-4 pb-24">
-        <div id="user-data">Caricamento profilo...</div>
-        <button id="btn-salva-profilo" class="save-btn-floating">
-    <i class="fas fa-save"></i> Salva modifiche
-</button>
-    </main>
+  <!-- Main Content -->
+  <main class="container mx-auto px-4 pb-24">
+    <div id="user-data">Caricamento profilo...</div>
+    <button id="btn-salva-profilo" class="save-btn-floating">
+      <i class="fas fa-save"></i> Salva modifiche
+    </button>
+  </main>
 
 
 
-    <!-- Footer -->
-    <footer class="py-4 mt-8" style="border-top: 1px solid var(--border-color); background-color: var(--card-color); color: var(--text-color); transition: border-color var(--animation-speed);">
-        <div class="container mx-auto px-4 text-center text-sm">
-            <p>&copy; 2025 HealthAI - Sistema di monitoraggio della salute</p>
-            <div class="mt-2">
-                <a href="#" class="mx-2" style="color: var(--text-light); hover:color: var(--text-color);">Privacy</a>
-                <a href="#" class="mx-2" style="color: var(--text-light); hover:color: var(--text-color);">Termini di servizio</a>
-                <a href="#" class="mx-2" style="color: var(--text-light); hover:color: var(--text-color);">Contatti</a>
-            </div>
-        </div>
-    </footer>
+  <!-- Footer -->
+  <footer class="py-4 mt-8" style="border-top: 1px solid var(--border-color); background-color: var(--card-color); color: var(--text-color); transition: border-color var(--animation-speed);">
+    <div class="container mx-auto px-4 text-center text-sm">
+      <p>&copy; 2025 HealthAI - Sistema di monitoraggio della salute</p>
+      <div class="mt-2">
+        <a href="#" class="mx-2" style="color: var(--text-light); hover:color: var(--text-color);">Privacy</a>
+        <a href="#" class="mx-2" style="color: var(--text-light); hover:color: var(--text-color);">Termini di servizio</a>
+        <a href="#" class="mx-2" style="color: var(--text-light); hover:color: var(--text-color);">Contatti</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+  // Configuration constants from chatbot-logic.js
+  const supabaseUrl = 'https://lwuhdgrkaoyvejmzfbtx.supabase.co';
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3dWhkZ3JrYW95dmVqbXpmYnR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2NzU1MDcsImV4cCI6MjA2MTI1MTUwN30.1c5iH4PYW-HeigfXkPSgnVK3t02Gv3krSeo7dDSqqsk';
+  const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+  // Load user profile data on page load
+  document.addEventListener("DOMContentLoaded", async () => {
+    try {
+      // Check if user is logged in
+      const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
+
+      if (sessionError || !sessionData.session) {
+        document.getElementById("user-data").innerHTML =
+        "<p>Errore: Utente non autenticato. <a href='login.html'>Accedi</a> per visualizzare il profilo.</p>";
+        return;
+      }
+
+      const emailUtente = sessionData.session.user.email;
+
+      // Retrieve user data
+      const { data, error } = await supabaseClient
+      .from('anagrafica_utenti')
+      .select('*')
+      .eq('email', emailUtente)
+      .single();
+
+      if (error) {
+        document.getElementById("user-data").innerHTML =
+        `<p>Errore nel caricamento dei dati: ${error.message}</p>`;
+        return;
+      }
+
+      if (!data) {
+        document.getElementById("user-data").innerHTML =
+        "<p>Nessun dato trovato per questo utente.</p>";
+        return;
+      }
+
+      // Display user data
+      displayUserProfile(data);
+      // Gestione upload immagine
+      const uploadInput = document.getElementById("upload-immagine");
+      uploadInput.addEventListener("change", async function () {
+        const file = this.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64String = reader.result;
+
+          // Aggiorna preview
+          const avatarDiv = document.getElementById("avatar-preview");
+          avatarDiv.innerHTML = `<img src="${base64String}" alt="Avatar" class="w-full h-full object-cover rounded-full" />
+          <label class="avatar-upload" for="upload-immagine">
+          <i class="fas fa-camera"></i>
+          </label>
+          <input type="file" id="upload-immagine" accept="image/*" style="display: none;" />`;
+
+          // Memorizza l’immagine temporaneamente per il salvataggio
+          window.__immagine_base64 = base64String;
+        };
+        reader.readAsDataURL(file);
+      });
 
 
-    <script>
-        // Configuration constants from chatbot-logic.js
-        const supabaseUrl = 'https://lwuhdgrkaoyvejmzfbtx.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3dWhkZ3JrYW95dmVqbXpmYnR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2NzU1MDcsImV4cCI6MjA2MTI1MTUwN30.1c5iH4PYW-HeigfXkPSgnVK3t02Gv3krSeo7dDSqqsk';
-        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
-
-        // Load user profile data on page load
-        document.addEventListener("DOMContentLoaded", async () => {
-            try {
-                // Check if user is logged in
-                const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
-
-                if (sessionError || !sessionData.session) {
-                    document.getElementById("user-data").innerHTML =
-                        "<p>Errore: Utente non autenticato. <a href='login.html'>Accedi</a> per visualizzare il profilo.</p>";
-                    return;
-                }
-
-                const emailUtente = sessionData.session.user.email;
-
-                // Retrieve user data
-                const { data, error } = await supabaseClient
-                    .from('anagrafica_utenti')
-                    .select('*')
-                    .eq('email', emailUtente)
-                    .single();
-
-                if (error) {
-                    document.getElementById("user-data").innerHTML =
-                        `<p>Errore nel caricamento dei dati: ${error.message}</p>`;
-                    return;
-                }
-
-                if (!data) {
-                    document.getElementById("user-data").innerHTML =
-                        "<p>Nessun dato trovato per questo utente.</p>";
-                    return;
-                }
-
-                // Display user data
-                displayUserProfile(data);
-              // Gestione upload immagine
-const uploadInput = document.getElementById("upload-immagine");
-uploadInput.addEventListener("change", async function () {
-    const file = this.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-        const base64String = reader.result;
-
-        // Aggiorna preview
-        const avatarDiv = document.getElementById("avatar-preview");
-        avatarDiv.innerHTML = `<img src="${base64String}" alt="Avatar" class="w-full h-full object-cover rounded-full" />
-            <label class="avatar-upload" for="upload-immagine">
-                <i class="fas fa-camera"></i>
-            </label>
-            <input type="file" id="upload-immagine" accept="image/*" style="display: none;" />`;
-
-        // Memorizza l’immagine temporaneamente per il salvataggio
-        window.__immagine_base64 = base64String;
-    };
-    reader.readAsDataURL(file);
-});
-
-
-            } catch (error) {
-                document.getElementById("user-data").innerHTML =
-                    `<p>Errore imprevisto: ${error.message}</p>`;
-            }
-        });
-
-        function displayUserProfile(userData) {
-            const container = document.getElementById("user-data");
-
-            // Basic user info section
-            let html = `
-            <div class="flex flex-col max-w-4xl mx-auto">
-                <!-- Avatar e informazioni principali -->
-                <div class="form-box mb-6">
-                    <div class="avatar-section">
-<div class="avatar" id="avatar-preview">
-    ${
-        userData.immagine
-            ? `<img src="${userData.immagine}" alt="Avatar" class="w-full h-full object-cover rounded-full" />`
-            : `<span class="avatar-initials">${(userData.nome?.charAt(0) || '') + (userData.cognome?.charAt(0) || '')}</span>`
-    }
-    <label class="avatar-upload" for="upload-immagine">
-        <i class="fas fa-camera"></i>
-    </label>
-    <input type="file" id="upload-immagine" accept="image/*" style="display: none;" />
-</div>
-<h2 class="text-xl font-semibold">${userData.nome || ''} ${userData.cognome || ''}</h2>
-<p class="text-sm text-gray-500">ID: ${userData.id || ''}</p>
-                    </div>
-
-                    <h3 class="text-lg font-semibold mb-4">Informazioni personali</h3>
-
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label class="form-label">Email</label>
-                            <input type="email" id="profilo-email" disabled value=${userData.email || ''}>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Età</label>
-                            <input type="number" id="profilo-eta" value=${userData.eta || ''} />
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Sesso</label>
-                            <input type="text" id="profilo-sesso" value=${userData.sesso || ''} />
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Tipo di lavoro</label>
-                            <input type="text" id="profilo-tipo_lavoro" value=${userData.tipo_lavoro || ''} />
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Altezza (cm)</label>
-                            <input type="number" id="profilo-altezza" value=${userData.altezza ? userData.altezza + ' cm' : ''} />
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Peso (kg)</label>
-                            <input type="number" id="profilo-peso" value=${userData.peso ? userData.peso + ' kg' : ''} />
-                        </div>
-                    </div>
-                </div>
-
-                               <!-- Storia clinica -->
-                <div class="form-box mb-6">
-                    <h3 class="text-lg font-semibold mb-4">Storia clinica</h3>
-
-                    <div class="form-group mb-4">
-                        <label class="form-label">Patologie esistenti</label>
-                        <textarea id="profilo-patologie" rows="2" placeholder="Inserisci le patologie esistenti">${userData.patologie || ''}</textarea>
-                    </div>
-
-                    <div class="form-group mb-4">
-                        <label class="form-label">Farmaci assunti</label>
-                        <textarea id="profilo-farmaci_dettaglio" rows="2" placeholder="Inserisci i farmaci che stai assumendo">${userData.farmaci_dettaglio || ''}</textarea>
-                    </div>
-
-                    <div class="form-group mb-4">
-                        <label class="form-label">Intolleranze</label>
-                        <textarea id="profilo-intolleranze" rows="2" placeholder="Inserisci le tue intolleranze">${userData.intolleranze || ''}</textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Alimenti esclusi</label>
-                        <textarea id="profilo-alimenti_esclusi" rows="2" placeholder="Inserisci gli alimenti che non consumi">${userData.alimenti_esclusi || ''}</textarea>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Trigliceridi (mg/dL)</label>
-                        <input type="number" id="profilo-trigliceridi" value="${userData.trigliceridi || ''}" />
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Il tuo giro vita è maggiore di 102 cm (uomo) o 88 cm (donna)?</label>
-                        <select id="profilo-vita">
-                            <option value="">-- Seleziona --</option>
-                            <option value="sì">Sì</option>
-                            <option value="no">No</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Nuova sezione per esami di laboratorio -->
-                <div class="form-box mb-6">
-                    <h3 class="text-lg font-semibold mb-4">Esami di laboratorio</h3>
-
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label class="form-label">AST/GOT (U/L)</label>
-                            <input type="number" id="profilo-ast" value="${userData.ast || ''}" placeholder="Transaminasi AST" />
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">ALT/GPT (U/L)</label>
-                            <input type="number" id="profilo-alt" value="${userData.alt || ''}" placeholder="Transaminasi ALT" />
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Piastrine (x10^9/L)</label>
-                            <input type="number" id="profilo-piastrine" value="${userData.piastrine || ''}" placeholder="Conta piastrinica" />
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Albumina (g/dL)</label>
-                            <input type="number" step="0.1" id="profilo-albumina" value="${userData.albumina || ''}" placeholder="Albumina sierica" />
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Linfociti (per mm³)</label>
-                            <input type="number" id="profilo-linfociti" value="${userData.linfociti || ''}" placeholder="Conta linfocitaria" />
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">HbA1c (%)</label>
-                            <input type="number" step="0.1" id="profilo-hba1c" value="${userData.hba1c || ''}" placeholder="Emoglobina glicata" />
-                        </div>
-                    </div>
-                </div>
-                
-
-
-
-                <!-- Preferenze -->
-                <div class="form-box mb-6">
-                    <h3 class="text-lg font-semibold mb-4">Preferenze e obiettivi</h3>
-
-                    <div class="form-group">
-                        <label class="form-label">Preferenze salute</label>
-                        <textarea id="profilo-preferenze" rows="3" placeholder="Inserisci i tuoi obiettivi di salute e preferenze">${userData.preferenze || ''}</textarea>
-                    </div>
-                </div>
-
-                <!-- Sezioni di Valutazione -->
-                <div class="accordion-section mb-4">
-                    <div class="accordion-header">
-                        <div class="flex items-center">
-                            <span class="mr-2">❤️</span>
-                            <span>SCORE2 – Rischio Cardiovascolare</span>
-                        </div>
-                        <i class="fas fa-chevron-down accordion-icon"></i>
-                    </div>
-                    <div class="accordion-body">
-                        <div class="accordion-content">
-                            <div class="form-grid">
-                                <div class="form-group">
-                                    <label class="form-label">Pressione sistolica (mmHg)</label>
-                                    <input type="number" id="profilo-pressione_sistolica" value=${userData.pressione_sistolica ? userData.pressione_sistolica + ' mmHg' : ''}/>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Pressione diastolica (mmHg)</label>
-                                    <input type="number" id="profilo-pressione_diastolica" value=${userData.pressione_diastolica ? userData.pressione_diastolica + ' mmHg' : ''} />
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Colesterolo totale (mg/dL)</label>
-                                    <input type="number" id="profilo-colesterolo_totale" value=${userData.colesterolo_totale ? userData.colesterolo_totale + ' mg/dL' : ''}/>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Colesterolo HDL (mg/dL)</label>
-                                    <input type="number" id="profilo-colesterolo_hdl_valore" value=${userData.colesterolo_hdl_valore ? userData.colesterolo_hdl_valore + ' mg/dL' : ''}/>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Colesterolo LDL (mg/dL)</label>
-                                    <input type="number" id="profilo-colesterolo_ldl_valore" value=${userData.colesterolo_ldl_valore ? userData.colesterolo_ldl_valore + ' mg/dL' : ''}/>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Fumatore</label>
-                                    <input type="text" id="profilo-fumatore" value=${userData.fumatore || ''}>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Diabete di tipo 2 diagnosticato</label>
-                                    <input type="text" id="profilo-diabete" value=${userData.diabete || ''}>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="accordion-section mb-4">
-                    <div class="accordion-header">
-                        <div class="flex items-center">
-                            <span class="mr-2">🍬</span>
-                            <span>ADA – Rischio Diabete</span>
-                        </div>
-                        <i class="fas fa-chevron-down accordion-icon"></i>
-                    </div>
-                    <div class="accordion-body">
-                        <div class="accordion-content">
-                            <div class="form-grid">
-                                <div class="form-group">
-                                    <label class="form-label">Glicemia a digiuno (mg/dL)</label>
-                                    <input type="number" id="profilo-glicemia_valore" value=${userData.glicemia_valore ? userData.glicemia_valore + ' mg/dL' : ''}/>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Quanti minuti di attività fisica pratichi a settimana?</label>
-                                    <input type="number" id="profilo-durata_attivita" value=${userData.durata_attivita || ''}>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Hai la pressione alta?</label>
-                                    <input type="text" id="profilo-pressione_alta" value=${userData.pressione_alta || ''}>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Hai familiari con diabete di tipo 2?</label>
-                                    <input type="text" id="profilo-familiari_diabete" value=${userData.familiari_diabete || ''}>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="accordion-section mb-4">
-                    <div class="accordion-header">
-                        <div class="flex items-center">
-                            <span class="mr-2">🦴</span>
-                            <span>FRAX – Osteoporosi / Fratture</span>
-                        </div>
-                        <i class="fas fa-chevron-down accordion-icon"></i>
-                    </div>
-                    <div class="accordion-body">
-                        <div class="accordion-content">
-                            <div class="form-grid">
-                                <div class="form-group">
-                                    <label class="form-label">Hai avuto fratture da fragilità?</label>
-                                    <input type="text" id="profilo-frattura" value=${userData.frattura || ''}>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Genitore con frattura dell'anca?</label>
-                                    <input type="text" id="profilo-famiglia_frattura_anca" value=${userData.famiglia_frattura_anca || ''}>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Assumi corticosteroidi da > 3 mesi?</label>
-                                    <input type="text" id="profilo-corticosteroidi" value=${userData.corticosteroidi || ''}>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Quante unità alcoliche consumi al giorno?</label>
-                                    <input type="text" id="profilo-alcol_eccessivo" value=${userData.alcol_eccessivo || ''}>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Artrite reumatoide diagnosticata?</label>
-                                    <input type="text" id="profilo-artrite" value=${userData.artrite || ''}>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="accordion-section mb-4">
-                    <div class="accordion-header">
-                        <div class="flex items-center">
-                            <span class="mr-2">👵</span>
-                            <span>FRAIL / SARC-F – Fragilità</span>
-                        </div>
-                        <i class="fas fa-chevron-down accordion-icon"></i>
-                    </div>
-                    <div class="accordion-body">
-                        <div class="accordion-content">
-                            <div class="form-grid">
-                                <div class="form-group">
-                                    <label class="form-label">Ti senti stanco/a spesso?</label>
-                                    <input type="text" id="profilo-stanchezza" value=${userData.stanchezza || ''}>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Riesci a camminare 100 metri?</label>
-                                    <input type="text" id="profilo-camminata" value=${userData.camminata || ''}>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Riesci a sollevare 4.5 kg?</label>
-                                    <input type="text" id="profilo-sollevamento" value=${userData.sollevamento || ''}>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Difficoltà ad alzarti da una sedia?</label>
-                                    <input type="text" id="profilo-sedia" value=${userData.sedia || ''}>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Hai avuto 2 o più cadute in un anno?</label>
-                                    <input type="text" id="profilo-cadute" value=${userData.cadute || ''}>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!--
-                <input type="text" id="profilo-origine_etnica" value=${userData.origine_etnica || ''}>
-                <input type="text" id="profilo-interventi_dettaglio" value=${userData.interventi_dettaglio || ''}>
-                <input type="text" id="profilo-unita_alcoliche" value=${userData.unita_alcoliche || ''}>
-                <input type="text" id="profilo-over_camminata" value=${userData.over_camminata || ''}>
-                <input type="text" id="profilo-over_cadute" value=${userData.over_cadute || ''}>
-                <input type="text" id="profilo-over_sollevamento" value=${userData.over_sollevamento || ''}>
-                <input type="text" id="profilo-over_sedia" value=${userData.over_sedia || ''}>
-                <input type="text" id="profilo-over_stanchezza" value=${userData.over_stanchezza || ''}>
-                <input type="text" id="profilo-interventi" value=${userData.interventi || ''}>
-                <input type="text" id="profilo-farmaci" value=${userData.farmaci || ''}>
-                <input type="text" id="profilo-depressione" value=${userData.depressione || ''}>
-                <input type="text" id="profilo-vita" value=${userData.vita || ''}>
-                <input type="text" id="profilo-glicemia" value=${userData.glicemia || ''}>
-                <input type="text" id="profilo-pressione_valore" value=${userData.pressione_valore || ''}>
-                <input type="text" id="profilo-sede_tumore" value=${userData.sede_tumore || ''}>
-                <input type="text" id="profilo-tipo_insonnia" value=${userData.tipo_insonnia || ''}>
-                <input type="text" id="profilo-familiarita_tumori" value=${userData.familiarita_tumori || ''}>
-                -->
-                `;
-
-            container.innerHTML = html;
-          
-const vitaSelect = document.getElementById("profilo-vita");
-if (vitaSelect && userData.vita) {
-    vitaSelect.value = userData.vita.toLowerCase();
-}
-            // 🔄 Inizializza gli accordion DOPO aver inserito l'HTML
-            initializeAccordions();
-
-        }
-    </script>
-
-    <script>
-        // Gestione temi (da mantenere in tutte le pagine)
-        document.addEventListener('DOMContentLoaded', function () {
-            const themeToggle = document.getElementById('theme-toggle');
-
-            function applyTheme(theme) {
-                const html = document.documentElement;
-                html.setAttribute('data-theme', theme);
-
-                if (themeToggle) {
-                    themeToggle.textContent = (theme === 'dark') ? '☀️' : '🌙';
-                }
-            }
-
-            // Listener per il toggle manuale
-            if (themeToggle) {
-                themeToggle.addEventListener('click', function () {
-                    const currentTheme = document.documentElement.getAttribute('data-theme');
-                    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-
-                    applyTheme(newTheme);
-
-                    // Comunica al parent il nuovo tema
-                    window.parent.postMessage({ type: 'theme', theme: newTheme }, '*');
-                });
-            }
-
-            // Listener per ricevere tema dal parent
-            window.addEventListener('message', function (event) {
-                if (event.data && event.data.type === 'theme') {
-                    applyTheme(event.data.theme);
-                }
-            });
-        });
-
-        function initializeAccordions() {
-            const accordionHeaders = document.querySelectorAll('.accordion-header');
-
-            accordionHeaders.forEach(header => {
-                header.addEventListener('click', function () {
-                    const section = this.parentElement;
-                    section.classList.toggle('active');
-                });
-            });
-        }
-
-    </script>
-    <script type="module">
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-
-const supabase = createClient(
-  'https://lwuhdgrkaoyvejmzfbtx.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3dWhkZ3JrYW95dmVqbXpmYnR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2NzU1MDcsImV4cCI6MjA2MTI1MTUwN30.1c5iH4PYW-HeigfXkPSgnVK3t02Gv3krSeo7dDSqqsk'
-);
-
-document.getElementById("btn-salva-profilo").addEventListener("click", async () => {
-  const session = await supabase.auth.getSession();
-  if (!session.data?.session?.user?.email) {
-    alert("❌ Utente non autenticato.");
-    return;
-  }
-
-  const email = session.data.session.user.email;
-
-  // 🔎 Raccoglie TUTTI i valori dal DOM inclusi i NUOVI CAMPI
-  const updatedData = {
-    email,
-    immagine: (typeof window.__immagine_base64 !== "undefined")
-  ? window.__immagine_base64
-  : document.querySelector("#avatar-preview img")?.src || null,
-    // Dati anagrafici base
-    eta: document.getElementById("profilo-eta")?.value,
-    sesso: document.getElementById("profilo-sesso")?.value,
-    tipo_lavoro: document.getElementById("profilo-tipo_lavoro")?.value,
-    altezza: parseFloat(document.getElementById("profilo-altezza")?.value),
-    peso: parseFloat(document.getElementById("profilo-peso")?.value),
-    
-    // Storia clinica
-    patologie: document.getElementById("profilo-patologie")?.value,
-    farmaci_dettaglio: document.getElementById("profilo-farmaci_dettaglio")?.value,
-    intolleranze: document.getElementById("profilo-intolleranze")?.value,
-    alimenti_esclusi: document.getElementById("profilo-alimenti_esclusi")?.value,
-    preferenze: document.getElementById("profilo-preferenze")?.value,
-    
-    // Parametri ematici standard
-    colesterolo_totale: parseFloat(document.getElementById("profilo-colesterolo_totale")?.value),
-    colesterolo_hdl_valore: parseFloat(document.getElementById("profilo-colesterolo_hdl_valore")?.value),
-    colesterolo_ldl_valore: parseFloat(document.getElementById("profilo-colesterolo_ldl_valore")?.value),
-    trigliceridi: parseFloat(document.getElementById("profilo-trigliceridi")?.value),
-    
-    // Parametri cardiovascolari
-    pressione_sistolica: parseFloat(document.getElementById("profilo-pressione_sistolica")?.value),
-    pressione_diastolica: parseFloat(document.getElementById("profilo-pressione_diastolica")?.value),
-    pressione_alta: document.getElementById("profilo-pressione_alta")?.value,
-    
-    // Parametri glicemici
-    glicemia_valore: parseFloat(document.getElementById("profilo-glicemia_valore")?.value),
-    diabete: document.getElementById("profilo-diabete")?.value,
-    familiari_diabete: document.getElementById("profilo-familiari_diabete")?.value,
-    
-    // 🆕 NUOVI PARAMETRI PER GLI SCORE
-    // HbA1c per SCORE2-Diabete
-    hba1c: parseFloat(document.getElementById("profilo-hba1c")?.value),
-    
-    // Transaminasi e piastrine per FIB4
-    ast: parseInt(document.getElementById("profilo-ast")?.value),
-    alt: parseInt(document.getElementById("profilo-alt")?.value),
-    piastrine: parseInt(document.getElementById("profilo-piastrine")?.value),
-    
-    // Albumina e linfociti per FNI
-    albumina: parseFloat(document.getElementById("profilo-albumina")?.value),
-    linfociti: parseInt(document.getElementById("profilo-linfociti")?.value),
-    
-    // Altri parametri esistenti
-    durata_attivita: parseInt(document.getElementById("profilo-durata_attivita")?.value),
-    fumatore: document.getElementById("profilo-fumatore")?.value,
-    frattura: document.getElementById("profilo-frattura")?.value,
-    famiglia_frattura_anca: document.getElementById("profilo-famiglia_frattura_anca")?.value,
-    corticosteroidi: document.getElementById("profilo-corticosteroidi")?.value,
-    alcol_eccessivo: document.getElementById("profilo-alcol_eccessivo")?.value,
-    artrite: document.getElementById("profilo-artrite")?.value,
-    vita: document.getElementById("profilo-vita")?.value,
-    stanchezza: document.getElementById("profilo-stanchezza")?.value,
-    camminata: document.getElementById("profilo-camminata")?.value,
-    sollevamento: document.getElementById("profilo-sollevamento")?.value,
-    sedia: document.getElementById("profilo-sedia")?.value,
-    cadute: document.getElementById("profilo-cadute")?.value
-  };
-
-  // 🧹 Pulisci i valori NaN sostituendoli con null
-  Object.keys(updatedData).forEach(key => {
-    if (typeof updatedData[key] === 'number' && isNaN(updatedData[key])) {
-      updatedData[key] = null;
+    } catch (error) {
+      document.getElementById("user-data").innerHTML =
+      `<p>Errore imprevisto: ${error.message}</p>`;
     }
   });
 
-  // ✅ Salvataggio con Supabase (upsert: aggiorna se esiste, inserisce se no)
-  try {
-    const { error } = await supabase
+  function displayUserProfile(userData) {
+    const container = document.getElementById("user-data");
+
+    // Basic user info section
+    let html = `
+    <div class="flex flex-col max-w-4xl mx-auto">
+      <!-- Avatar e informazioni principali -->
+      <div class="form-box mb-6">
+        <div class="avatar-section">
+          <div class="avatar" id="avatar-preview">
+            ${
+              userData.immagine
+              ? `<img src="${userData.immagine}" alt="Avatar" class="w-full h-full object-cover rounded-full" />`
+              : `<span class="avatar-initials">${(userData.nome?.charAt(0) || '') + (userData.cognome?.charAt(0) || '')}</span>`
+            }
+            <label class="avatar-upload" for="upload-immagine">
+              <i class="fas fa-camera"></i>
+            </label>
+            <input type="file" id="upload-immagine" accept="image/*" style="display: none;" />
+          </div>
+          <h2 class="text-xl font-semibold">${userData.nome || ''} ${userData.cognome || ''}</h2>
+          <p class="text-sm text-gray-500">ID: ${userData.id || ''}</p>
+        </div>
+
+        <h3 class="text-lg font-semibold mb-4">Informazioni personali</h3>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" id="profilo-email" disabled value=${userData.email || ''}>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Età</label>
+            <input type="number" id="profilo-eta" value=${userData.eta || ''} />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Sesso</label>
+            <input type="text" id="profilo-sesso" value=${userData.sesso || ''} />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tipo di lavoro</label>
+            <input type="text" id="profilo-tipo_lavoro" value=${userData.tipo_lavoro || ''} />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Altezza (cm)</label>
+            <input type="number" id="profilo-altezza" value=${userData.altezza ? userData.altezza + ' cm' : ''} />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Peso (kg)</label>
+            <input type="number" id="profilo-peso" value=${userData.peso ? userData.peso + ' kg' : ''} />
+          </div>
+        </div>
+      </div>
+
+      <!-- Storia clinica -->
+      <div class="form-box mb-6">
+        <h3 class="text-lg font-semibold mb-4">Storia clinica</h3>
+
+        <div class="form-group mb-4">
+          <label class="form-label">Patologie esistenti</label>
+          <textarea id="profilo-patologie" rows="2" placeholder="Inserisci le patologie esistenti">${userData.patologie || ''}</textarea>
+        </div>
+
+        <div class="form-group mb-4">
+          <label class="form-label">Farmaci assunti</label>
+          <textarea id="profilo-farmaci_dettaglio" rows="2" placeholder="Inserisci i farmaci che stai assumendo">${userData.farmaci_dettaglio || ''}</textarea>
+        </div>
+
+        <div class="form-group mb-4">
+          <label class="form-label">Intolleranze</label>
+          <textarea id="profilo-intolleranze" rows="2" placeholder="Inserisci le tue intolleranze">${userData.intolleranze || ''}</textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Alimenti esclusi</label>
+          <textarea id="profilo-alimenti_esclusi" rows="2" placeholder="Inserisci gli alimenti che non consumi">${userData.alimenti_esclusi || ''}</textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Trigliceridi (mg/dL)</label>
+          <input type="number" id="profilo-trigliceridi" value="${userData.trigliceridi || ''}" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Il tuo giro vita è maggiore di 102 cm (uomo) o 88 cm (donna)?</label>
+          <select id="profilo-vita">
+            <option value="">-- Seleziona --</option>
+            <option value="sì">Sì</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Nuova sezione per esami di laboratorio -->
+      <div class="form-box mb-6">
+        <h3 class="text-lg font-semibold mb-4">Esami di laboratorio</h3>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">AST/GOT (U/L)</label>
+            <input type="number" id="profilo-ast" value="${userData.ast || ''}" placeholder="Transaminasi AST" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">ALT/GPT (U/L)</label>
+            <input type="number" id="profilo-alt" value="${userData.alt || ''}" placeholder="Transaminasi ALT" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Piastrine (x10^9/L)</label>
+            <input type="number" id="profilo-piastrine" value="${userData.piastrine || ''}" placeholder="Conta piastrinica" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Albumina (g/dL)</label>
+            <input type="number" step="0.1" id="profilo-albumina" value="${userData.albumina || ''}" placeholder="Albumina sierica" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Linfociti (per mm³)</label>
+            <input type="number" id="profilo-linfociti" value="${userData.linfociti || ''}" placeholder="Conta linfocitaria" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">HbA1c (%)</label>
+            <input type="number" step="0.1" id="profilo-hba1c" value="${userData.hba1c || ''}" placeholder="Emoglobina glicata" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Preferenze -->
+      <div class="form-box mb-6">
+        <h3 class="text-lg font-semibold mb-4">Preferenze e obiettivi</h3>
+
+        <div class="form-group">
+          <label class="form-label">Preferenze salute</label>
+          <textarea id="profilo-preferenze" rows="3" placeholder="Inserisci i tuoi obiettivi di salute e preferenze">${userData.preferenze || ''}</textarea>
+        </div>
+      </div>
+
+      <!-- Sezioni di Valutazione -->
+      <div class="accordion-section mb-4">
+        <div class="accordion-header">
+          <div class="flex items-center">
+            <span class="mr-2">❤️</span>
+            <span>SCORE2 – Rischio Cardiovascolare</span>
+          </div>
+          <i class="fas fa-chevron-down accordion-icon"></i>
+        </div>
+        <div class="accordion-body">
+          <div class="accordion-content">
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">Pressione sistolica (mmHg)</label>
+                <input type="number" id="profilo-pressione_sistolica" value=${userData.pressione_sistolica ? userData.pressione_sistolica + ' mmHg' : ''}/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Pressione diastolica (mmHg)</label>
+                <input type="number" id="profilo-pressione_diastolica" value=${userData.pressione_diastolica ? userData.pressione_diastolica + ' mmHg' : ''} />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Colesterolo totale (mg/dL)</label>
+                <input type="number" id="profilo-colesterolo_totale" value=${userData.colesterolo_totale ? userData.colesterolo_totale + ' mg/dL' : ''}/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Colesterolo HDL (mg/dL)</label>
+                <input type="number" id="profilo-colesterolo_hdl_valore" value=${userData.colesterolo_hdl_valore ? userData.colesterolo_hdl_valore + ' mg/dL' : ''}/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Colesterolo LDL (mg/dL)</label>
+                <input type="number" id="profilo-colesterolo_ldl_valore" value=${userData.colesterolo_ldl_valore ? userData.colesterolo_ldl_valore + ' mg/dL' : ''}/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Fumatore</label>
+                <input type="text" id="profilo-fumatore" value=${userData.fumatore || ''}>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Diabete di tipo 2 diagnosticato</label>
+                <input type="text" id="profilo-diabete" value=${userData.diabete || ''}>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-section mb-4">
+        <div class="accordion-header">
+          <div class="flex items-center">
+            <span class="mr-2">🍬</span>
+            <span>ADA – Rischio Diabete</span>
+          </div>
+          <i class="fas fa-chevron-down accordion-icon"></i>
+        </div>
+        <div class="accordion-body">
+          <div class="accordion-content">
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">Glicemia a digiuno (mg/dL)</label>
+                <input type="number" id="profilo-glicemia_valore" value=${userData.glicemia_valore ? userData.glicemia_valore + ' mg/dL' : ''}/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Quanti minuti di attività fisica pratichi a settimana?</label>
+                <input type="number" id="profilo-durata_attivita" value=${userData.durata_attivita || ''}>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Hai la pressione alta?</label>
+                <input type="text" id="profilo-pressione_alta" value=${userData.pressione_alta || ''}>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Hai familiari con diabete di tipo 2?</label>
+                <input type="text" id="profilo-familiari_diabete" value=${userData.familiari_diabete || ''}>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-section mb-4">
+        <div class="accordion-header">
+          <div class="flex items-center">
+            <span class="mr-2">🦴</span>
+            <span>FRAX – Osteoporosi / Fratture</span>
+          </div>
+          <i class="fas fa-chevron-down accordion-icon"></i>
+        </div>
+        <div class="accordion-body">
+          <div class="accordion-content">
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">Hai avuto fratture da fragilità?</label>
+                <input type="text" id="profilo-frattura" value=${userData.frattura || ''}>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Genitore con frattura dell'anca?</label>
+                <input type="text" id="profilo-famiglia_frattura_anca" value=${userData.famiglia_frattura_anca || ''}>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Assumi corticosteroidi da > 3 mesi?</label>
+                <input type="text" id="profilo-corticosteroidi" value=${userData.corticosteroidi || ''}>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Quante unità alcoliche consumi al giorno?</label>
+                <input type="text" id="profilo-alcol_eccessivo" value=${userData.alcol_eccessivo || ''}>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Artrite reumatoide diagnosticata?</label>
+                <input type="text" id="profilo-artrite" value=${userData.artrite || ''}>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-section mb-4">
+        <div class="accordion-header">
+          <div class="flex items-center">
+            <span class="mr-2">👵</span>
+            <span>FRAIL / SARC-F – Fragilità</span>
+          </div>
+          <i class="fas fa-chevron-down accordion-icon"></i>
+        </div>
+        <div class="accordion-body">
+          <div class="accordion-content">
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">Ti senti stanco/a spesso?</label>
+                <input type="text" id="profilo-stanchezza" value=${userData.stanchezza || ''}>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Riesci a camminare 100 metri?</label>
+                <input type="text" id="profilo-camminata" value=${userData.camminata || ''}>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Riesci a sollevare 4.5 kg?</label>
+                <input type="text" id="profilo-sollevamento" value=${userData.sollevamento || ''}>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Difficoltà ad alzarti da una sedia?</label>
+                <input type="text" id="profilo-sedia" value=${userData.sedia || ''}>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Hai avuto 2 o più cadute in un anno?</label>
+                <input type="text" id="profilo-cadute" value=${userData.cadute || ''}>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!--
+      <input type="text" id="profilo-origine_etnica" value=${userData.origine_etnica || ''}>
+      <input type="text" id="profilo-interventi_dettaglio" value=${userData.interventi_dettaglio || ''}>
+      <input type="text" id="profilo-unita_alcoliche" value=${userData.unita_alcoliche || ''}>
+      <input type="text" id="profilo-over_camminata" value=${userData.over_camminata || ''}>
+      <input type="text" id="profilo-over_cadute" value=${userData.over_cadute || ''}>
+      <input type="text" id="profilo-over_sollevamento" value=${userData.over_sollevamento || ''}>
+      <input type="text" id="profilo-over_sedia" value=${userData.over_sedia || ''}>
+      <input type="text" id="profilo-over_stanchezza" value=${userData.over_stanchezza || ''}>
+      <input type="text" id="profilo-interventi" value=${userData.interventi || ''}>
+      <input type="text" id="profilo-farmaci" value=${userData.farmaci || ''}>
+      <input type="text" id="profilo-depressione" value=${userData.depressione || ''}>
+      <input type="text" id="profilo-vita" value=${userData.vita || ''}>
+      <input type="text" id="profilo-glicemia" value=${userData.glicemia || ''}>
+      <input type="text" id="profilo-pressione_valore" value=${userData.pressione_valore || ''}>
+      <input type="text" id="profilo-sede_tumore" value=${userData.sede_tumore || ''}>
+      <input type="text" id="profilo-tipo_insonnia" value=${userData.tipo_insonnia || ''}>
+      <input type="text" id="profilo-familiarita_tumori" value=${userData.familiarita_tumori || ''}>
+      -->
+    `;
+
+    container.innerHTML = html;
+
+    const vitaSelect = document.getElementById("profilo-vita");
+    if (vitaSelect && userData.vita) {
+      vitaSelect.value = userData.vita.toLowerCase();
+    }
+    // 🔄 Inizializza gli accordion DOPO aver inserito l'HTML
+    initializeAccordions();
+
+  }
+  </script>
+
+  <script>
+  // Gestione temi (da mantenere in tutte le pagine)
+  document.addEventListener('DOMContentLoaded', function () {
+    const themeToggle = document.getElementById('theme-toggle');
+
+    function applyTheme(theme) {
+      const html = document.documentElement;
+      html.setAttribute('data-theme', theme);
+
+      if (themeToggle) {
+        themeToggle.textContent = (theme === 'dark') ? '☀️' : '🌙';
+      }
+    }
+
+    // Listener per il toggle manuale
+    if (themeToggle) {
+      themeToggle.addEventListener('click', function () {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+        applyTheme(newTheme);
+
+        // Comunica al parent il nuovo tema
+        window.parent.postMessage({ type: 'theme', theme: newTheme }, '*');
+      });
+    }
+
+    // Listener per ricevere tema dal parent
+    window.addEventListener('message', function (event) {
+      if (event.data && event.data.type === 'theme') {
+        applyTheme(event.data.theme);
+      }
+    });
+  });
+
+  function initializeAccordions() {
+    const accordionHeaders = document.querySelectorAll('.accordion-header');
+
+    accordionHeaders.forEach(header => {
+      header.addEventListener('click', function () {
+        const section = this.parentElement;
+        section.classList.toggle('active');
+      });
+    });
+  }
+
+  </script>
+  <script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+  const supabase = createClient(
+    'https://lwuhdgrkaoyvejmzfbtx.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3dWhkZ3JrYW95dmVqbXpmYnR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2NzU1MDcsImV4cCI6MjA2MTI1MTUwN30.1c5iH4PYW-HeigfXkPSgnVK3t02Gv3krSeo7dDSqqsk'
+  );
+
+  document.getElementById("btn-salva-profilo").addEventListener("click", async () => {
+    const session = await supabase.auth.getSession();
+    if (!session.data?.session?.user?.email) {
+      alert("❌ Utente non autenticato.");
+      return;
+    }
+
+    const email = session.data.session.user.email;
+
+    // 🔎 Raccoglie TUTTI i valori dal DOM inclusi i NUOVI CAMPI
+    const updatedData = {
+      email,
+      immagine: (typeof window.__immagine_base64 !== "undefined")
+      ? window.__immagine_base64
+      : document.querySelector("#avatar-preview img")?.src || null,
+      // Dati anagrafici base
+      eta: document.getElementById("profilo-eta")?.value,
+      sesso: document.getElementById("profilo-sesso")?.value,
+      tipo_lavoro: document.getElementById("profilo-tipo_lavoro")?.value,
+      altezza: parseFloat(document.getElementById("profilo-altezza")?.value),
+      peso: parseFloat(document.getElementById("profilo-peso")?.value),
+
+      // Storia clinica
+      patologie: document.getElementById("profilo-patologie")?.value,
+      farmaci_dettaglio: document.getElementById("profilo-farmaci_dettaglio")?.value,
+      intolleranze: document.getElementById("profilo-intolleranze")?.value,
+      alimenti_esclusi: document.getElementById("profilo-alimenti_esclusi")?.value,
+      preferenze: document.getElementById("profilo-preferenze")?.value,
+
+      // Parametri ematici standard
+      colesterolo_totale: parseFloat(document.getElementById("profilo-colesterolo_totale")?.value),
+      colesterolo_hdl_valore: parseFloat(document.getElementById("profilo-colesterolo_hdl_valore")?.value),
+      colesterolo_ldl_valore: parseFloat(document.getElementById("profilo-colesterolo_ldl_valore")?.value),
+      trigliceridi: parseFloat(document.getElementById("profilo-trigliceridi")?.value),
+
+      // Parametri cardiovascolari
+      pressione_sistolica: parseFloat(document.getElementById("profilo-pressione_sistolica")?.value),
+      pressione_diastolica: parseFloat(document.getElementById("profilo-pressione_diastolica")?.value),
+      pressione_alta: document.getElementById("profilo-pressione_alta")?.value,
+
+      // Parametri glicemici
+      glicemia_valore: parseFloat(document.getElementById("profilo-glicemia_valore")?.value),
+      diabete: document.getElementById("profilo-diabete")?.value,
+      familiari_diabete: document.getElementById("profilo-familiari_diabete")?.value,
+
+      // 🆕 NUOVI PARAMETRI PER GLI SCORE
+      // HbA1c per SCORE2-Diabete
+      hba1c: parseFloat(document.getElementById("profilo-hba1c")?.value),
+
+      // Transaminasi e piastrine per FIB4
+      ast: parseInt(document.getElementById("profilo-ast")?.value),
+      alt: parseInt(document.getElementById("profilo-alt")?.value),
+      piastrine: parseInt(document.getElementById("profilo-piastrine")?.value),
+
+      // Albumina e linfociti per FNI
+      albumina: parseFloat(document.getElementById("profilo-albumina")?.value),
+      linfociti: parseInt(document.getElementById("profilo-linfociti")?.value),
+
+      // Altri parametri esistenti
+      durata_attivita: parseInt(document.getElementById("profilo-durata_attivita")?.value),
+      fumatore: document.getElementById("profilo-fumatore")?.value,
+      frattura: document.getElementById("profilo-frattura")?.value,
+      famiglia_frattura_anca: document.getElementById("profilo-famiglia_frattura_anca")?.value,
+      corticosteroidi: document.getElementById("profilo-corticosteroidi")?.value,
+      alcol_eccessivo: document.getElementById("profilo-alcol_eccessivo")?.value,
+      artrite: document.getElementById("profilo-artrite")?.value,
+      vita: document.getElementById("profilo-vita")?.value,
+      stanchezza: document.getElementById("profilo-stanchezza")?.value,
+      camminata: document.getElementById("profilo-camminata")?.value,
+      sollevamento: document.getElementById("profilo-sollevamento")?.value,
+      sedia: document.getElementById("profilo-sedia")?.value,
+      cadute: document.getElementById("profilo-cadute")?.value
+    };
+
+    // 🧹 Pulisci i valori NaN sostituendoli con null
+    Object.keys(updatedData).forEach(key => {
+      if (typeof updatedData[key] === 'number' && isNaN(updatedData[key])) {
+        updatedData[key] = null;
+      }
+    });
+
+    // ✅ Salvataggio con Supabase (upsert: aggiorna se esiste, inserisce se no)
+    try {
+      const { error } = await supabase
       .from("anagrafica_utenti")
       .upsert([updatedData], { onConflict: ['email'] });
 
-    if (error) {
-      console.error("❌ Errore durante il salvataggio:", error);
-      alert("❌ Errore durante il salvataggio: " + error.message);
-    } else {
-      console.log("✅ Profilo salvato con successo, inclusi nuovi parametri clinici!");
-      alert("✅ Dati salvati con successo!");
-      
-      // Opzionale: ricarica la pagina per mostrare i dati aggiornati
-      // window.location.reload();
+      if (error) {
+        console.error("❌ Errore durante il salvataggio:", error);
+        alert("❌ Errore durante il salvataggio: " + error.message);
+      } else {
+        console.log("✅ Profilo salvato con successo, inclusi nuovi parametri clinici!");
+        alert("✅ Dati salvati con successo!");
+
+        // Opzionale: ricarica la pagina per mostrare i dati aggiornati
+        // window.location.reload();
+      }
+    } catch (err) {
+      console.error("❌ Errore imprevisto:", err);
+      alert("❌ Errore imprevisto durante il salvataggio");
     }
-  } catch (err) {
-    console.error("❌ Errore imprevisto:", err);
-    alert("❌ Errore imprevisto durante il salvataggio");
-  }
-});
-</script>
-</body>
-</html>
+  });
+  </script>
+  </body>
+  </html>
