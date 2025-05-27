@@ -1804,10 +1804,13 @@ function calculateScore2Diabetes() {
     const bmiIndicator = document.getElementById('bmi-indicator');
     const bmiBadge = document.getElementById('bmi-badge');
     const bmiCategory = document.getElementById('bmi-category');
-    const colesteroloTotaleEl = document.getElementById("colesterolo-totale-indicatore");
-if (colesteroloTotaleEl) {
-  colesteroloTotaleEl.textContent = (userData.colesterolo_totale || "--") + " mg/dL";
+    const cvColesterolo = document.getElementById("cv-colesterolo");
+if (cvColesterolo) {
+  const totale = userData.colesterolo_totale || '--';
+  const hdl = userData.colesterolo_hdl_valore || '--';
+  cvColesterolo.innerHTML = `Colesterolo Totale: ${totale} mg/dL<br>Colesterolo HDL: ${hdl} mg/dL`;
 }
+
 
 
     if (bmiIndicator) {
