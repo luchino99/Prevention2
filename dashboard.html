@@ -1017,6 +1017,11 @@
     calculateNutritionalNeeds();
     evaluatePhysicalActivity();
 
+    console.log("🧪 Verifica colesterolo nel momento del calcolo:", {
+  totale: userData.colesterolo_totale,
+  hdl: userData.colesterolo_hdl_valore
+});
+
     console.log('🎯 Risultati finali degli score:', {
       bmi: dashboardData.bmi,
       score2: dashboardData.score2,
