@@ -864,7 +864,12 @@
     </div>
     <div class="form-group">
     <label class="form-label">Diabete di tipo 2 diagnosticato</label>
-    <input type="text" id="profilo-diabete" value=${userData.diabete || ''}>
+    <select id="profilo-diabete">
+  <option value="">-- Seleziona --</option>
+  <option value="sì" ${userData.diabete === "sì" ? "selected" : ""}>Sì</option>
+  <option value="no" ${userData.diabete === "no" ? "selected" : ""}>No</option>
+</select>
+
     </div>
     </div>
     </div>
