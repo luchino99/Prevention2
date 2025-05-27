@@ -1065,6 +1065,11 @@
   const hdl = parseFloat(userData.colesterolo_hdl_valore);
   const fumatore = (userData.fumatore || "").toLowerCase() === "sì";
 
+
+  console.log("🛠️ Controllo colesterolo grezzi:", {
+  totale: userData.colesterolo_totale,
+  hdl: userData.colesterolo_hdl_valore
+});
   console.log("🎯 SCORE2 INPUT DEBUG:", {
   eta: userData.eta,
   sesso: userData.sesso,
