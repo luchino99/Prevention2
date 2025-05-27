@@ -11,7 +11,6 @@ const domandeBase = [
   { key: "altezza", testo: "Quanto sei alto/a in cm?" },
   { key: "peso", testo: "Quanto pesi in kg?" },
   { key: "vita", testo: "La misura del tuo giro vita è maggiore di 88 cm (se sei donna) o maggiore di 102 cm (se sei uomo)?" },
-  { key: "circonferenza_vita", testo: "Qual è la misura esatta della tua circonferenza vita in cm?" },
   { key: "glicemia", testo: "La tua glicemia è inferiore a 100 mg/dL?" },
   { key: "glicemia_valore", testo: "Sai a quanto corrisponde il valore della tua glicemia a digiuno?" },
   { key: "hba1c", testo: "Conosci il valore della tua emoglobina glicata (HbA1c)? (in %)" },
@@ -27,18 +26,6 @@ const domandeBase = [
   { key: "piastrine", testo: "Conosci il valore delle tue piastrine? (x10^9/L o x1000/mm³)" },
   { key: "albumina", testo: "Conosci il valore della tua albumina sierica? (g/dL)" },
   { key: "linfociti", testo: "Conosci il numero dei tuoi linfociti? (per mm³)" },
-  
-  // 🆕 NUOVE DOMANDE PER SCORE2-DIABETES
-  { key: "creatinina", testo: "Conosci il valore della tua creatinina sierica? (mg/dL) - Necessaria per calcolare la funzione renale" },
-  
-  // 🆕 NUOVE DOMANDE PER FATTY LIVER INDEX
-  { key: "ggt", testo: "Conosci il valore della tua gamma-glutamiltransferasi (GGT)? (U/L)" },
-  
-  // 🆕 NUOVE DOMANDE PER FRAX
-  { key: "dexa_tscore", testo: "Hai mai fatto una densitometria ossea (DEXA)? Se sì, indica il T-score del collo femorale" },
-  { key: "cause_secondarie_osteoporosi", testo: "Hai una delle seguenti condizioni: diabete tipo 1, ipertiroidismo non trattato, ipogonadismo, menopausa precoce (<45 anni), malassorbimento cronico, malattie epatiche croniche? (sì/no)" },
-  
-  { key: "trigliceridi", testo: "Qual è il valore dei tuoi trigliceridi (mg/dL)?" },
   { key: "malattie_croniche", testo: "Hai malattie croniche diagnosticate (es. diabete, ipertensione)?" },
   { key: "farmaci", testo: "Assumi farmaci?" },
   { key: "farmaci_dettaglio", testo: "Se assumi farmaci, elencali nella casella di testo sottostante.", condizione: "farmaci" },
@@ -54,9 +41,8 @@ const domandeBase = [
   { key: "frequenza_attivita_fisica", testo: "Con quale frequenza svogli questa attività" , condizione: "attivita_fisica" },
   { key: "tipo_attivita", testo: "Che tipo di attività fisica svolgi? (aerobica, rafforzamento muscolare, rafforzamento osseo e stretching)" , condizione: "attivita_fisica" },
   { key: "durata_attivita", testo: "Quanto dura ogni allenamento? (in minuti)" , condizione: "attivita_fisica" },
-  
-  // Domande PREDIMED (mantenute)
   { key: "predimed_1", testo: "Usi l'olio extravergine di oliva come condimento principale (es. per cucinare, condire insalate)?" },
+  { key: "trigliceridi", testo: "Qual è il valore dei tuoi trigliceridi (mg/dL)?" },
   { key: "predimed_2", testo: "Ne usi più di 4 cucchiai al giorno?" },
   { key: "predimed_3", testo: "Mangi almeno 2 porzioni di verdura al giorno? (1 porzione = 200g circa)" },
   { key: "predimed_4", testo: "Mangi almeno 3 porzioni di frutta al giorno? (1 porzione = 1 frutto medio o 100g circa)" },
@@ -70,15 +56,14 @@ const domandeBase = [
   { key: "predimed_12", testo: "Mangi frutta secca almeno 3 volte a settimana?" },
   { key: "predimed_13", testo: "Usi soffritti con pomodoro, cipolla, aglio e olio d'oliva almeno 2 volte a settimana?" },
   { key: "predimed_14", testo: "Pensi che la tua alimentazione sia vicina alla dieta mediterranea?" },
-  
   { key: "stanchezza", testo: "In genere ti senti stanco/a?" },
   { key: "depressione", testo: "Hai mai avuto episodi di depressione?" },
   { key: "insonnia", testo: "Hai difficoltà a dormire?" },
   { key: "tipo_insonnia", testo: "Se hai difficoltà a dormire, descrivi la difficoltà (es. fatica ad addormentarti, risvegli notturni...)" },
   { key: "stress", testo: "Livello percepito di stress (da 1 = niente stress a 10 = stress molto elevato)" },
   { key: "preferenze", testo: "C'è qualcosa di specifico sulla tua salute che ti interessa approfondire? (es: alimentazione, cuore, sonno, stress, screening oncologici, attività fisica, benessere mentale)" }
-];
 
+];
 
 const domandeOver65 = [
   { key: "over_stanchezza", testo: "Ti senti stanco/a frequentemente?" },
@@ -150,7 +135,7 @@ let ultimaRispostaBot = "";
   
   
 const aliasCondivisi = {
-  // Dati esistenti
+  // ... mantieni tutti gli alias esistenti ...
   eta: ["eta"],
   sesso: ["sesso"],
   altezza: ["altezza"],
@@ -182,20 +167,13 @@ const aliasCondivisi = {
   sollevamento: ["sollevamento", "over_sollevamento"],
   sedia: ["sedia", "over_sedia"],
   cadute: ["cadute", "over_cadute"],
-  
-  // 🆕 NUOVI ALIAS PER GLI SCORE
+  // 🆕 Aggiungi alias per i nuovi campi se necessario
   ast: ["ast"],
   alt: ["alt"],
   piastrine: ["piastrine"],
   albumina: ["albumina"],
   linfociti: ["linfociti"],
-  hba1c: ["hba1c"],
-  creatinina: ["creatinina"],
-  ggt: ["ggt"],
-  dexa_tscore: ["dexa_tscore"],
-  cause_secondarie_osteoporosi: ["cause_secondarie_osteoporosi"],
-  circonferenza_vita: ["circonferenza_vita"],
-  trigliceridi: ["trigliceridi"]
+  hba1c: ["hba1c"]
 };
   function haRispostaCondivisa(domandaKey) {
   for (const [profiloKey, domandeKeys] of Object.entries(aliasCondivisi)) {
@@ -677,80 +655,76 @@ recuperaAnagraficaDalDatabase(emailUtente).then((dati) => {
 
   
 async function salvaAnagraficaNelDatabase(dati) {
-    try {
-        if (!dati.email) {
-            console.warn("⚠️ Email non presente, salto il salvataggio anagrafica.");
-            return;
-        }
-
-        // Lista completa dei campi inclusi i nuovi
-        const campiValidi = [
-            "email", "eta", "sesso", "altezza", "peso",
-            "origine_etnica", "vita", "glicemia", "glicemia_valore",
-            "colesterolo_totale", "colesterolo_hdl_valore", "trigliceridi", "colesterolo_ldl_valore",
-            "colesterolo_ldl", "pressione_sistolica", "pressione_diastolica",
-            "pressione", "pressione_valore", "pressione_alta",
-            "attivita_fisica", "tipo_lavoro", "patologie",
-            "farmaci", "farmaci_dettaglio", "interventi", "interventi_dettaglio",
-            "fumatore", "diabete", "unita_alcoliche", "alcol_eccessivo",
-            "familiari_diabete", "frattura", "famiglia_frattura_anca",
-            "corticosteroidi", "artrite", "stanchezza", "over_stanchezza",
-            "camminata", "over_camminata", "sollevamento", "over_sollevamento",
-            "sedia", "over_sedia", "cadute", "over_cadute",
-            "intolleranze", "alimenti_esclusi", "preferenze",
-            "malattie_croniche", "familiarita_tumori", "sede_tumore",
-            "predimed_1", "predimed_2", "predimed_3", "predimed_4",
-            "predimed_5", "predimed_6", "predimed_7", "predimed_8",
-            "predimed_9", "predimed_10", "predimed_11", "predimed_12",
-            "predimed_13", "predimed_14", "depressione", "insonnia",
-            "tipo_insonnia", "stress", "frequenza_attivita_fisica", "durata_attivita", "tipo_attivita",
-            
-            // 🆕 NUOVI CAMPI PER GLI SCORE
-            "hba1c", "ast", "alt", "piastrine", "albumina", "linfociti",
-            "creatinina", "ggt", "dexa_tscore", "cause_secondarie_osteoporosi", 
-            "circonferenza_vita",
-            
-            // Altri campi esistenti
-            "n_sigarette", "alcol", "eta_menarca", "eta_menopausa", 
-            "contraccettivi", "gravidanza", "familiarita_seno", 
-            "screening_seno", "papsmear", "over_peso", "over_malattie", 
-            "over_scale", "over_debolezza"
-        ];
-
-        // Filtra i soli campi validi prima di salvarli
-        const payload = {};
-        for (const chiave of campiValidi) {
-            if (chiave in dati) {
-                // Converti i valori numerici correttamente
-                if (['ast', 'alt', 'piastrine', 'linfociti', 'circonferenza_vita'].includes(chiave)) {
-                    // Questi sono interi
-                    const valore = parseInt(dati[chiave]);
-                    payload[chiave] = isNaN(valore) ? null : valore;
-                } else if (['hba1c', 'albumina', 'creatinina', 'ggt', 'dexa_tscore'].includes(chiave)) {
-                    // Questi sono decimali
-                    const valore = parseFloat(dati[chiave]);
-                    payload[chiave] = isNaN(valore) ? null : valore;
-                } else {
-                    // Altri campi mantengono il valore originale
-                    payload[chiave] = dati[chiave];
-                }
-            }
-        }
-
-        // Salva nel DB
-        const { data, error } = await supabaseClient
-            .from("anagrafica_utenti")
-            .upsert([payload], { onConflict: "email" });
-
-        if (error) {
-            console.error("❌ Errore API salvataggio:", error);
-        } else {
-            console.log("✅ Dati anagrafici completi salvati (inclusi nuovi campi per SCORE2-Diabetes, FRAX, FLI):", data);
-        }
-    } catch (error) {
-        console.error("❌ Errore di rete salvataggio:", error);
+  try {
+    if (!dati.email) {
+      console.warn("⚠️ Email non presente, salto il salvataggio anagrafica.");
+      return;
     }
+
+    // ✅ Elenco COMPLETO dei campi validi inclusi i NUOVI
+    const campiValidi = [
+      "email", "eta", "sesso", "altezza", "peso",
+      "origine_etnica", "vita", "glicemia", "glicemia_valore",
+      "colesterolo_totale", "colesterolo_hdl_valore", "trigliceridi", "colesterolo_ldl_valore",
+      "colesterolo_ldl", "pressione_sistolica", "pressione_diastolica",
+      "pressione", "pressione_valore", "pressione_alta",
+      "attivita_fisica", "tipo_lavoro", "patologie",
+      "farmaci", "farmaci_dettaglio", "interventi", "interventi_dettaglio",
+      "fumatore", "diabete", "unita_alcoliche", "alcol_eccessivo",
+      "familiari_diabete", "frattura", "famiglia_frattura_anca",
+      "corticosteroidi", "artrite", "stanchezza", "over_stanchezza",
+      "camminata", "over_camminata", "sollevamento", "over_sollevamento",
+      "sedia", "over_sedia", "cadute", "over_cadute",
+      "intolleranze", "alimenti_esclusi", "preferenze",
+      "malattie_croniche", "familiarita_tumori", "sede_tumore",
+      "predimed_1", "predimed_2", "predimed_3", "predimed_4",
+      "predimed_5", "predimed_6", "predimed_7", "predimed_8",
+      "predimed_9", "predimed_10", "predimed_11", "predimed_12",
+      "predimed_13", "predimed_14", "depressione", "insonnia",
+      "tipo_insonnia", "stress", "frequenza_attivita_fisica", "durata_attivita", "tipo_attivita",
+      // 🆕 NUOVI CAMPI AGGIUNTI
+      "hba1c", "ast", "alt", "piastrine", "albumina", "linfociti",
+      "n_sigarette", "alcol", "eta_menarca", "eta_menopausa", 
+      "contraccettivi", "gravidanza", "familiarita_seno", 
+      "screening_seno", "papsmear", "over_peso", "over_malattie", 
+      "over_scale", "over_debolezza"
+    ];
+
+    // ✅ Filtra i soli campi validi prima di salvarli
+    const payload = {};
+    for (const chiave of campiValidi) {
+      if (chiave in dati) {
+        // Converti i valori numerici correttamente
+        if (['ast', 'alt', 'piastrine', 'linfociti'].includes(chiave)) {
+          // Questi sono interi
+          const valore = parseInt(dati[chiave]);
+          payload[chiave] = isNaN(valore) ? null : valore;
+        } else if (['hba1c', 'albumina'].includes(chiave)) {
+          // Questi sono decimali
+          const valore = parseFloat(dati[chiave]);
+          payload[chiave] = isNaN(valore) ? null : valore;
+        } else {
+          // Altri campi mantengono il valore originale
+          payload[chiave] = dati[chiave];
+        }
+      }
+    }
+
+    // 🔄 Salva nel DB
+    const { data, error } = await supabaseClient
+      .from("anagrafica_utenti")
+      .upsert([payload], { onConflict: "email" });
+
+    if (error) {
+      console.error("❌ Errore API salvataggio:", error);
+    } else {
+      console.log("✅ Dati anagrafici completi salvati (inclusi nuovi campi):", data);
+    }
+  } catch (error) {
+    console.error("❌ Errore di rete salvataggio:", error);
+  }
 }
+
 
 
 async function salvaCompilazioneNelDatabase(risposte, modalita) {
