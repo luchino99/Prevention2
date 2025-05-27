@@ -677,76 +677,80 @@ recuperaAnagraficaDalDatabase(emailUtente).then((dati) => {
 
   
 async function salvaAnagraficaNelDatabase(dati) {
-  try {
-    if (!dati.email) {
-      console.warn("⚠️ Email non presente, salto il salvataggio anagrafica.");
-      return;
-    }
-
-    // ✅ Elenco COMPLETO dei campi validi inclusi i NUOVI
-    const campiValidi = [
-      "email", "eta", "sesso", "altezza", "peso",
-      "origine_etnica", "vita", "glicemia", "glicemia_valore",
-      "colesterolo_totale", "colesterolo_hdl_valore", "trigliceridi", "colesterolo_ldl_valore",
-      "colesterolo_ldl", "pressione_sistolica", "pressione_diastolica",
-      "pressione", "pressione_valore", "pressione_alta",
-      "attivita_fisica", "tipo_lavoro", "patologie",
-      "farmaci", "farmaci_dettaglio", "interventi", "interventi_dettaglio",
-      "fumatore", "diabete", "unita_alcoliche", "alcol_eccessivo",
-      "familiari_diabete", "frattura", "famiglia_frattura_anca",
-      "corticosteroidi", "artrite", "stanchezza", "over_stanchezza",
-      "camminata", "over_camminata", "sollevamento", "over_sollevamento",
-      "sedia", "over_sedia", "cadute", "over_cadute",
-      "intolleranze", "alimenti_esclusi", "preferenze",
-      "malattie_croniche", "familiarita_tumori", "sede_tumore",
-      "predimed_1", "predimed_2", "predimed_3", "predimed_4",
-      "predimed_5", "predimed_6", "predimed_7", "predimed_8",
-      "predimed_9", "predimed_10", "predimed_11", "predimed_12",
-      "predimed_13", "predimed_14", "depressione", "insonnia",
-      "tipo_insonnia", "stress", "frequenza_attivita_fisica", "durata_attivita", "tipo_attivita",
-      // 🆕 NUOVI CAMPI AGGIUNTI
-      "hba1c", "ast", "alt", "piastrine", "albumina", "linfociti",
-      "n_sigarette", "alcol", "eta_menarca", "eta_menopausa", 
-      "contraccettivi", "gravidanza", "familiarita_seno", 
-      "screening_seno", "papsmear", "over_peso", "over_malattie", 
-      "over_scale", "over_debolezza"
-    ];
-
-    // ✅ Filtra i soli campi validi prima di salvarli
-    const payload = {};
-    for (const chiave of campiValidi) {
-      if (chiave in dati) {
-        // Converti i valori numerici correttamente
-        if (['ast', 'alt', 'piastrine', 'linfociti'].includes(chiave)) {
-          // Questi sono interi
-          const valore = parseInt(dati[chiave]);
-          payload[chiave] = isNaN(valore) ? null : valore;
-        } else if (['hba1c', 'albumina'].includes(chiave)) {
-          // Questi sono decimali
-          const valore = parseFloat(dati[chiave]);
-          payload[chiave] = isNaN(valore) ? null : valore;
-        } else {
-          // Altri campi mantengono il valore originale
-          payload[chiave] = dati[chiave];
+    try {
+        if (!dati.email) {
+            console.warn("⚠️ Email non presente, salto il salvataggio anagrafica.");
+            return;
         }
-      }
-    }
 
-    // 🔄 Salva nel DB
-    const { data, error } = await supabaseClient
-      .from("anagrafica_utenti")
-      .upsert([payload], { onConflict: "email" });
+        // Lista completa dei campi inclusi i nuovi
+        const campiValidi = [
+            "email", "eta", "sesso", "altezza", "peso",
+            "origine_etnica", "vita", "glicemia", "glicemia_valore",
+            "colesterolo_totale", "colesterolo_hdl_valore", "trigliceridi", "colesterolo_ldl_valore",
+            "colesterolo_ldl", "pressione_sistolica", "pressione_diastolica",
+            "pressione", "pressione_valore", "pressione_alta",
+            "attivita_fisica", "tipo_lavoro", "patologie",
+            "farmaci", "farmaci_dettaglio", "interventi", "interventi_dettaglio",
+            "fumatore", "diabete", "unita_alcoliche", "alcol_eccessivo",
+            "familiari_diabete", "frattura", "famiglia_frattura_anca",
+            "corticosteroidi", "artrite", "stanchezza", "over_stanchezza",
+            "camminata", "over_camminata", "sollevamento", "over_sollevamento",
+            "sedia", "over_sedia", "cadute", "over_cadute",
+            "intolleranze", "alimenti_esclusi", "preferenze",
+            "malattie_croniche", "familiarita_tumori", "sede_tumore",
+            "predimed_1", "predimed_2", "predimed_3", "predimed_4",
+            "predimed_5", "predimed_6", "predimed_7", "predimed_8",
+            "predimed_9", "predimed_10", "predimed_11", "predimed_12",
+            "predimed_13", "predimed_14", "depressione", "insonnia",
+            "tipo_insonnia", "stress", "frequenza_attivita_fisica", "durata_attivita", "tipo_attivita",
+            
+            // 🆕 NUOVI CAMPI PER GLI SCORE
+            "hba1c", "ast", "alt", "piastrine", "albumina", "linfociti",
+            "creatinina", "ggt", "dexa_tscore", "cause_secondarie_osteoporosi", 
+            "circonferenza_vita",
+            
+            // Altri campi esistenti
+            "n_sigarette", "alcol", "eta_menarca", "eta_menopausa", 
+            "contraccettivi", "gravidanza", "familiarita_seno", 
+            "screening_seno", "papsmear", "over_peso", "over_malattie", 
+            "over_scale", "over_debolezza"
+        ];
 
-    if (error) {
-      console.error("❌ Errore API salvataggio:", error);
-    } else {
-      console.log("✅ Dati anagrafici completi salvati (inclusi nuovi campi):", data);
+        // Filtra i soli campi validi prima di salvarli
+        const payload = {};
+        for (const chiave of campiValidi) {
+            if (chiave in dati) {
+                // Converti i valori numerici correttamente
+                if (['ast', 'alt', 'piastrine', 'linfociti', 'circonferenza_vita'].includes(chiave)) {
+                    // Questi sono interi
+                    const valore = parseInt(dati[chiave]);
+                    payload[chiave] = isNaN(valore) ? null : valore;
+                } else if (['hba1c', 'albumina', 'creatinina', 'ggt', 'dexa_tscore'].includes(chiave)) {
+                    // Questi sono decimali
+                    const valore = parseFloat(dati[chiave]);
+                    payload[chiave] = isNaN(valore) ? null : valore;
+                } else {
+                    // Altri campi mantengono il valore originale
+                    payload[chiave] = dati[chiave];
+                }
+            }
+        }
+
+        // Salva nel DB
+        const { data, error } = await supabaseClient
+            .from("anagrafica_utenti")
+            .upsert([payload], { onConflict: "email" });
+
+        if (error) {
+            console.error("❌ Errore API salvataggio:", error);
+        } else {
+            console.log("✅ Dati anagrafici completi salvati (inclusi nuovi campi per SCORE2-Diabetes, FRAX, FLI):", data);
+        }
+    } catch (error) {
+        console.error("❌ Errore di rete salvataggio:", error);
     }
-  } catch (error) {
-    console.error("❌ Errore di rete salvataggio:", error);
-  }
 }
-
 
 
 async function salvaCompilazioneNelDatabase(risposte, modalita) {
