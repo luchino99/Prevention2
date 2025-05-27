@@ -390,6 +390,9 @@
         };
 
         function calculateSCORE2Diabetes(data) {
+            // Debug: stampa i dati ricevuti
+            console.log('Dati ricevuti per il calcolo:', data);
+            
             const coef = coefficients[data.gender];
             
             // Trasformazioni delle variabili
@@ -427,6 +430,20 @@
 
             // Calibrazione regionale
             const scale = scales[data.gender][data.riskRegion];
+            
+            // Controllo di sicurezza per verificare che la scala esista
+            if (!scale || !scale.scale1 || !scale.scale2) {
+                console.error('Scale non trovate per:', data.gender, data.riskRegion);
+                console.log('Scale disponibili:', scales);
+                throw new Error('Errore nella calibrazione regionale. Verificare i parametri.');
+            }
+            
+            // Controllo che tenYearRisk sia valido per il logaritmo
+            if (tenYearRisk <= 0 || tenYearRisk >= 1) {
+                console.error('TenYearRisk non valido:', tenYearRisk);
+                throw new Error('Errore nel calcolo del rischio base.');
+            }
+            
             const calibratedRisk = (1 - Math.exp(-Math.exp(scale.scale1 + scale.scale2 * Math.log(-Math.log(1 - tenYearRisk))))) * 100;
 
             return Math.max(0, Math.min(100, calibratedRisk));
