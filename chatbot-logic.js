@@ -687,7 +687,10 @@ async function salvaAnagraficaNelDatabase(dati) {
       "n_sigarette", "alcol", "eta_menarca", "eta_menopausa", 
       "contraccettivi", "gravidanza", "familiarita_seno", 
       "screening_seno", "papsmear", "over_peso", "over_malattie", 
-      "over_scale", "over_debolezza"
+      "over_scale", "over_debolezza", "obiettivo", "esperienza", "frequenza", "durata",
+"luogo", "attrezzatura", "cardio", "focus",
+"infortuni", "pushups", "squats", "plank", "step_test"
+
     ];
 
     // ✅ Filtra i soli campi validi prima di salvarli
