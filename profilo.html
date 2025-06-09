@@ -1197,6 +1197,28 @@
 
     container.innerHTML = html;
 
+    // Carica i valori PREDIMED
+for (let i = 1; i <= 14; i++) {
+  const el = document.getElementById(`profilo-predimed_${i}`);
+  if (el && userData[`predimed_${i}`]) {
+    el.value = userData[`predimed_${i}`];
+  }
+}
+
+// Carica i valori Attività Fisica Personalizzata
+const customFields = [
+  "obiettivo", "esperienza", "frequenza", "durata", "luogo", "attrezzatura",
+  "cardio", "focus", "infortuni", "pushups", "squats", "plank", "step_test"
+];
+
+customFields.forEach(field => {
+  const el = document.getElementById(`profilo-${field}`);
+  if (el && userData[field] !== undefined) {
+    el.value = userData[field];
+  }
+});
+
+
     const vitaSelect = document.getElementById("profilo-vita");
     if (vitaSelect && userData.vita) {
       vitaSelect.value = userData.vita.toLowerCase();
@@ -1316,6 +1338,38 @@
         glicemia_valore: parseFloat(document.getElementById("profilo-glicemia_valore")?.value),
         diabete: document.getElementById("profilo-diabete")?.value,
         familiari_diabete: document.getElementById("profilo-familiari_diabete")?.value,
+
+        // Predimed 1-14
+predimed_1: document.getElementById("profilo-predimed_1")?.value,
+predimed_2: document.getElementById("profilo-predimed_2")?.value,
+predimed_3: document.getElementById("profilo-predimed_3")?.value,
+predimed_4: document.getElementById("profilo-predimed_4")?.value,
+predimed_5: document.getElementById("profilo-predimed_5")?.value,
+predimed_6: document.getElementById("profilo-predimed_6")?.value,
+predimed_7: document.getElementById("profilo-predimed_7")?.value,
+predimed_8: document.getElementById("profilo-predimed_8")?.value,
+predimed_9: document.getElementById("profilo-predimed_9")?.value,
+predimed_10: document.getElementById("profilo-predimed_10")?.value,
+predimed_11: document.getElementById("profilo-predimed_11")?.value,
+predimed_12: document.getElementById("profilo-predimed_12")?.value,
+predimed_13: document.getElementById("profilo-predimed_13")?.value,
+predimed_14: document.getElementById("profilo-predimed_14")?.value,
+
+// Attività fisica personalizzata
+obiettivo: document.getElementById("profilo-obiettivo")?.value,
+esperienza: document.getElementById("profilo-esperienza")?.value,
+frequenza: document.getElementById("profilo-frequenza")?.value,
+durata: document.getElementById("profilo-durata")?.value,
+luogo: document.getElementById("profilo-luogo")?.value,
+attrezzatura: document.getElementById("profilo-attrezzatura")?.value,
+cardio: document.getElementById("profilo-cardio")?.value,
+focus: document.getElementById("profilo-focus")?.value,
+infortuni: document.getElementById("profilo-infortuni")?.value,
+pushups: parseInt(document.getElementById("profilo-pushups")?.value),
+squats: parseInt(document.getElementById("profilo-squats")?.value),
+plank: document.getElementById("profilo-plank")?.value,
+step_test: document.getElementById("profilo-step_test")?.value,
+
 
         // 🆕 NUOVI PARAMETRI PER GLI SCORE
         // HbA1c per SCORE2-Diabete
