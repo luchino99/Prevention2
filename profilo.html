@@ -1200,9 +1200,12 @@
     // Carica i valori PREDIMED
 for (let i = 1; i <= 14; i++) {
   const el = document.getElementById(`profilo-predimed_${i}`);
-  if (el && userData[`predimed_${i}`]) {
-    el.value = userData[`predimed_${i}`];
-  }
+if (el && userData[`predimed_${i}`] !== undefined && userData[`predimed_${i}`] !== null) {
+  const risposta = userData[`predimed_${i}`].toString().trim().toLowerCase();
+  if (["sì", "si"].includes(risposta)) el.value = "sì";
+  else if (risposta === "no") el.value = "no";
+}
+
 }
 
 // Carica i valori Attività Fisica Personalizzata
