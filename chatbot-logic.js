@@ -121,7 +121,7 @@ const domandePianoAlimentare = [
   { key: "patologie", testo: "Hai patologie croniche? (diabete/ipertensione/altre)" },
   { key: "pushups", testo: "Quanti piegamenti consecutivi riesci a fare?" },
   { key: "squats", testo: "Quanti squat a corpo libero completi senza pausa?" },
-  { key: "plank", testo: "Quanto tempo mantieni la posizione plank?" },
+  { key: "plank", testo: "Quanto tempo mantieni la posizione plank? (secondi) " },
   { key: "step_test", testo: "Dopo 3 minuti di step, misura il battito cardiaco (opzionale)" }
 ];
   
