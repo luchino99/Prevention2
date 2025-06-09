@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calcolatore FRAIL Scale</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .form-container {
+            padding: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 30px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .question-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .frail-letter {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+
+        .question-title {
+            flex: 1;
+        }
+
+        .question-title h3 {
+            color: #2c3e50;
+            font-size: 1.2em;
+            margin-bottom: 5px;
+        }
+
+        .question-title .category {
+            color: #667eea;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .question-text {
+            font-size: 1.1em;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 12px 20px;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            border: 2px solid #e0e6ed;
+            background: white;
+            min-width: 100px;
+            justify-content: center;
+        }
+
+        .radio-option:hover {
+            background: #f0f4ff;
+            border-color: #667eea;
+        }
+
+        .radio-option input[type="radio"] {
+            width: auto;
+            margin: 0;
+        }
+
+        .radio-option.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .radio-option.selected.positive {
+            background: #28a745;
+            border-color: #28a745;
+        }
+
+        .radio-option.selected.negative {
+            background: #dc3545;
+            border-color: #dc3545;
+        }
+
+        .calculate-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .calculate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 25px;
+            background: linear-gradient(135deg, #a8edea, #fed6e3);
+            border-radius: 15px;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+
+        .result.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .result h3 {
+            color: #2c3e50;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+        }
+
+        .risk-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .risk-category {
+            font-size: 1.2em;
+            font-weight: 600;
+            padding: 8px 20px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .risk-robust { background: #d4edda; color: #155724; }
+        .risk-prefrail { background: #fff3cd; color: #856404; }
+        .risk-frail { background: #f8d7da; color: #721c24; }
+
+        .score-breakdown {
+            margin-top: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: left;
+        }
+
+        .score-breakdown h4 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .score-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+
+        .score-item.point {
+            background: #fee;
+            border-left: 3px solid #dc3545;
+        }
+
+        .score-item.no-point {
+            background: #f0fff0;
+            border-left: 3px solid #28a745;
+        }
+
+        .score-item:last-child {
+            border-bottom: none;
+            font-weight: bold;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px solid #667eea;
+            background: #e3f2fd;
+        }
+
+        .info-section {
+            background: #f8f9fa;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-section h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .info-section p {
+            color: #5a6c7d;
+            line-height: 1.6;
+        }
+
+        .info-section ul {
+            margin-top: 10px;
+            margin-left: 20px;
+        }
+
+        .info-section li {
+            margin-bottom: 5px;
+            color: #5a6c7d;
+        }
+
+        .acronym-explanation {
+            background: #e8f4fd;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #bee5eb;
+        }
+
+        .acronym-explanation h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .acronym-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .acronym-letter {
+            width: 30px;
+            height: 30px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 10px;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .form-container {
+                padding: 20px;
+            }
+
+            .radio-group {
+                flex-direction: column;
+            }
+
+            .radio-option {
+                width: 100%;
+            }
+
+            .question-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .frail-letter {
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 FRAIL Scale Calculator</h1>
+            <p>Scala di valutazione della fragilità nell'anziano</p>
+        </div>
+        
+        <div class="form-container">
+            <div class="acronym-explanation">
+                <h4>📝 FRAIL - Significato dell'acronimo</h4>
+                <div class="acronym-item">
+                    <div class="acronym-letter">F</div>
+                    <span><strong>Fatigue</strong> - Affaticamento</span>
+                </div>
+                <div class="acronym-item">
+                    <div class="acronym-letter">R</div>
+                    <span><strong>Resistance</strong> - Resistenza (forza)</span>
+                </div>
+                <div class="acronym-item">
+                    <div class="acronym-letter">A</div>
+                    <span><strong>Ambulation</strong> - Deambulazione</span>
+                </div>
+                <div class="acronym-item">
+                    <div class="acronym-letter">I</div>
+                    <span><strong>Illnesses</strong> - Malattie</span>
+                </div>
+                <div class="acronym-item">
+                    <div class="acronym-letter">L</div>
+                    <span><strong>Loss of weight</strong> - Perdita di peso</span>
+                </div>
+            </div>
+
+            <form id="frailForm">
+                <!-- Fatigue -->
+                <div class="form-group">
+                    <div class="question-header">
+                        <div class="frail-letter">F</div>
+                        <div class="question-title">
+                            <h3>Affaticamento</h3>
+                            <div class="category">Fatigue</div>
+                        </div>
+                    </div>
+                    <div class="question-text">Ti senti stanco/a spesso?</div>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" id="fatigue_no" name="fatigue" value="no" required>
+                            <label for="fatigue_no">No</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="fatigue_yes" name="fatigue" value="yes" required>
+                            <label for="fatigue_yes">Sì</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resistance -->
+                <div class="form-group">
+                    <div class="question-header">
+                        <div class="frail-letter">R</div>
+                        <div class="question-title">
+                            <h3>Resistenza</h3>
+                            <div class="category">Resistance</div>
+                        </div>
+                    </div>
+                    <div class="question-text">Hai difficoltà a salire 10 scalini senza fermarti?</div>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" id="resistance_no" name="resistance" value="no" required>
+                            <label for="resistance_no">No</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="resistance_yes" name="resistance" value="yes" required>
+                            <label for="resistance_yes">Sì</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ambulation -->
+                <div class="form-group">
+                    <div class="question-header">
+                        <div class="frail-letter">A</div>
+                        <div class="question-title">
+                            <h3>Deambulazione</h3>
+                            <div class="category">Ambulation</div>
+                        </div>
+                    </div>
+                    <div class="question-text">Hai difficoltà a camminare 100 metri?</div>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" id="ambulation_no" name="ambulation" value="no" required>
+                            <label for="ambulation_no">No</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="ambulation_yes" name="ambulation" value="yes" required>
+                            <label for="ambulation_yes">Sì</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Illnesses -->
+                <div class="form-group">
+                    <div class="question-header">
+                        <div class="frail-letter">I</div>
+                        <div class="question-title">
+                            <h3>Malattie</h3>
+                            <div class="category">Illnesses</div>
+                        </div>
+                    </div>
+                    <div class="question-text">Hai 5 o più malattie croniche?</div>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" id="illnesses_no" name="illnesses" value="no" required>
+                            <label for="illnesses_no">No</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="illnesses_yes" name="illnesses" value="yes" required>
+                            <label for="illnesses_yes">Sì</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loss -->
+                <div class="form-group">
+                    <div class="question-header">
+                        <div class="frail-letter">L</div>
+                        <div class="question-title">
+                            <h3>Perdita di peso</h3>
+                            <div class="category">Loss of weight</div>
+                        </div>
+                    </div>
+                    <div class="question-text">Hai perso più di 5 kg (non intenzionalmente) nell'ultimo anno?</div>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" id="loss_no" name="loss" value="no" required>
+                            <label for="loss_no">No</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="loss_yes" name="loss" value="yes" required>
+                            <label for="loss_yes">Sì</label>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="calculate-btn">🧮 Calcola Punteggio FRAIL</button>
+            </form>
+
+            <div id="result" class="result">
+                <h3>Risultato della valutazione</h3>
+                <div class="risk-value" id="riskValue">-- punti</div>
+                <div class="risk-category" id="riskCategory">--</div>
+                
+                <div class="score-breakdown" id="scoreBreakdown">
+                    <h4>Dettaglio punteggio:</h4>
+                    <div id="scoreDetails"></div>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <h4>🎯 Interpretazione del Punteggio FRAIL</h4>
+                <ul>
+                    <li><strong>0 punti:</strong> Robusto (non fragile) - Stato funzionale ottimale</li>
+                    <li><strong>1-2 punti:</strong> Pre-fragile (a rischio) - Stato intermedio che richiede monitoraggio</li>
+                    <li><strong>3-5 punti:</strong> Fragile - Condizione che richiede interventi preventivi e supporto</li>
+                </ul>
+                <p style="margin-top: 15px;">
+                    La FRAIL Scale è uno strumento di screening rapido e validato per identificare la fragilità 
+                    negli anziani. Un punteggio elevato suggerisce la necessità di una valutazione geriatrica 
+                    completa e interventi mirati per prevenire eventi avversi.
+                </p>
+            </div>
+
+            <div class="info-section">
+                <h4>📊 Validazione e Utilizzo Clinico</h4>
+                <p>
+                    La FRAIL Scale è stata validata in numerosi studi e mostra:
+                </p>
+                <ul>
+                    <li>Buona correlazione con altri strumenti di valutazione della fragilità</li>
+                    <li>Capacità predittiva per ospedalizzazioni e mortalità</li>
+                    <li>Facilità di utilizzo in ambito clinico e domiciliare</li>
+                    <li>Applicabilità in diverse popolazioni di anziani</li>
+                </ul>
+                <p style="margin-top: 10px;">
+                    <strong>Nota:</strong> Questo strumento è destinato a scopi di screening. 
+                    Una valutazione completa dovrebbe sempre essere effettuata da un medico specialista.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Stile per radio button selezionati
+        function updateRadioStyles() {
+            document.querySelectorAll('.radio-option').forEach(option => {
+                const radio = option.querySelector('input[type="radio"]');
+                option.classList.remove('selected', 'positive', 'negative');
+                
+                if (radio.checked) {
+                    option.classList.add('selected');
+                    if (radio.value === 'no') {
+                        option.classList.add('positive');
+                    } else {
+                        option.classList.add('negative');
+                    }
+                }
+            });
+        }
+
+        document.querySelectorAll('input[type="radio"]').forEach(radio => {
+            radio.addEventListener('change', updateRadioStyles);
+        });
+
+        function calculateFRAIL(data) {
+            let totalScore = 0;
+            let breakdown = [];
+
+            const questions = [
+                { key: 'fatigue', label: 'F - Affaticamento (Ti senti stanco/a spesso?)' },
+                { key: 'resistance', label: 'R - Resistenza (Difficoltà a salire 10 scalini?)' },
+                { key: 'ambulation', label: 'A - Deambulazione (Difficoltà a camminare 100m?)' },
+                { key: 'illnesses', label: 'I - Malattie (5 o più malattie croniche?)' },
+                { key: 'loss', label: 'L - Perdita peso (>5kg non intenzionale?)' }
+            ];
+
+            questions.forEach(question => {
+                const answer = data[question.key];
+                const points = answer === 'yes' ? 1 : 0;
+                totalScore += points;
+                
+                breakdown.push({
+                    question: question.label,
+                    answer: answer === 'yes' ? 'Sì' : 'No',
+                    points: points,
+                    hasPoint: points === 1
+                });
+            });
+
+            return { totalScore, breakdown };
+        }
+
+        function getRiskCategory(score) {
+            if (score === 0) {
+                return { 
+                    category: 'Robusto (Non Fragile)', 
+                    class: 'risk-robust', 
+                    description: 'Stato funzionale ottimale'
+                };
+            } else if (score <= 2) {
+                return { 
+                    category: 'Pre-fragile (A Rischio)', 
+                    class: 'risk-prefrail', 
+                    description: 'Stato intermedio che richiede monitoraggio'
+                };
+            } else {
+                return { 
+                    category: 'Fragile', 
+                    class: 'risk-frail', 
+                    description: 'Condizione che richiede interventi preventivi'
+                };
+            }
+        }
+
+        document.getElementById('frailForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const data = {
+                fatigue: document.querySelector('input[name="fatigue"]:checked')?.value,
+                resistance: document.querySelector('input[name="resistance"]:checked')?.value,
+                ambulation: document.querySelector('input[name="ambulation"]:checked')?.value,
+                illnesses: document.querySelector('input[name="illnesses"]:checked')?.value,
+                loss: document.querySelector('input[name="loss"]:checked')?.value
+            };
+
+            // Validazione
+            if (!data.fatigue || !data.resistance || !data.ambulation || !data.illnesses || !data.loss) {
+                alert('Per favore, rispondi a tutte le domande.');
+                return;
+            }
+
+            try {
+                const result = calculateFRAIL(data);
+                const riskInfo = getRiskCategory(result.totalScore);
+                
+                // Mostra risultato principale
+                document.getElementById('riskValue').textContent = result.totalScore + ' / 5 punti';
+                document.getElementById('riskCategory').textContent = riskInfo.category;
+                document.getElementById('riskCategory').className = 'risk-category ' + riskInfo.class;
+                
+                // Mostra breakdown del punteggio
+                const scoreDetails = document.getElementById('scoreDetails');
+                scoreDetails.innerHTML = '';
+                
+                result.breakdown.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = `score-item ${item.hasPoint ? 'point' : 'no-point'}`;
+                    div.innerHTML = `
+                        <span>${item.question}</span>
+                        <div>
+                            <span style="margin-right: 10px;">${item.answer}</span>
+                            <span style="font-weight: bold;">${item.points} pt</span>
+                        </div>
+                    `;
+                    scoreDetails.appendChild(div);
+                });
+                
+                // Totale
+                const totalDiv = document.createElement('div');
+                totalDiv.className = 'score-item';
+                totalDiv.innerHTML = `
+                    <span><strong>PUNTEGGIO TOTALE</strong></span>
+                    <span><strong>${result.totalScore} / 5 punti</strong></span>
+                `;
+                scoreDetails.appendChild(totalDiv);
+                
+                // Interpretazione
+                const interpDiv = document.createElement('div');
+                interpDiv.innerHTML = `
+                    <div style="margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: center;">
+                        <strong>Interpretazione: ${riskInfo.description}</strong>
+                    </div>
+                `;
+                scoreDetails.appendChild(interpDiv);
+                
+                const resultDiv = document.getElementById('result');
+                resultDiv.classList.add('show');
+                resultDiv.scrollIntoView({ behavior: 'smooth' });
+                
+            } catch (error) {
+                alert('Errore nel calcolo. Riprova.');
+                console.error('Errore di calcolo:', error);
+            }
+        });
+
+        // Inizializza gli stili
+        updateRadioStyles();
+    </script>
+</body>
+</html>
