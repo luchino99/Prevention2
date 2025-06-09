@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calcolatore ADA Diabetes Risk Score</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .form-container {
+            padding: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .form-col {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+
+        input[type="number"], select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e6ed;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        input[type="number"]:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 10px 15px;
+            border-radius: 10px;
+            transition: background 0.3s ease;
+            border: 2px solid #e0e6ed;
+            background: #f8f9fa;
+        }
+
+        .radio-option:hover {
+            background: #f0f4ff;
+            border-color: #667eea;
+        }
+
+        .radio-option input[type="radio"] {
+            width: auto;
+            margin: 0;
+        }
+
+        .radio-option.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .calculate-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .calculate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 25px;
+            background: linear-gradient(135deg, #a8edea, #fed6e3);
+            border-radius: 15px;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+
+        .result.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .result h3 {
+            color: #2c3e50;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+        }
+
+        .risk-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .risk-category {
+            font-size: 1.2em;
+            font-weight: 600;
+            padding: 8px 20px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .risk-low { background: #d4edda; color: #155724; }
+        .risk-moderate { background: #fff3cd; color: #856404; }
+        .risk-high { background: #f8d7da; color: #721c24; }
+
+        .points-breakdown {
+            margin-top: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: left;
+        }
+
+        .points-breakdown h4 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .points-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .points-item:last-child {
+            border-bottom: none;
+            font-weight: bold;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 2px solid #667eea;
+        }
+
+        .info-section {
+            background: #f8f9fa;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-section h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .info-section p {
+            color: #5a6c7d;
+            line-height: 1.6;
+        }
+
+        .bmi-display {
+            margin-top: 10px;
+            padding: 10px;
+            background: #e3f2fd;
+            border-radius: 5px;
+            color: #1976d2;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .form-container {
+                padding: 20px;
+            }
+
+            .radio-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🩺 ADA Diabetes Risk Calculator</h1>
+            <p>Calcolatore del rischio di sviluppare diabete tipo 2 secondo l'American Diabetes Association</p>
+        </div>
+        
+        <div class="form-container">
+            <form id="adaForm">
+                <div class="form-group">
+                    <label for="age">Età (anni):</label>
+                    <input type="number" id="age" min="18" max="120" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Sesso:</label>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" id="female" name="gender" value="female" required>
+                            <label for="female">Femmina</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="male" name="gender" value="male" required>
+                            <label for="male">Maschio</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group" id="gestationalGroup" style="display: none;">
+                    <label>Diabete gestazionale precedente:</label>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" id="gestational_no" name="gestational" value="no">
+                            <label for="gestational_no">No</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="gestational_yes" name="gestational" value="yes">
+                            <label for="gestational_yes">Sì</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Parenti di primo grado con diabete:</label>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" id="family_no" name="family_history" value="no" required>
+                            <label for="family_no">No</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="family_yes" name="family_history" value="yes" required>
+                            <label for="family_yes">Sì</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Ipertensione (storia di ipertensione, farmaci antipertensivi, o PA ≥140/90):</label>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" id="hypertension_no" name="hypertension" value="no" required>
+                            <label for="hypertension_no">No</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="hypertension_yes" name="hypertension" value="yes" required>
+                            <label for="hypertension_yes">Sì</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Fisicamente attivo (attività fisica regolare):</label>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" id="active_yes" name="physical_activity" value="yes" required>
+                            <label for="active_yes">Sì</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="active_no" name="physical_activity" value="no" required>
+                            <label for="active_no">No</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label for="height">Altezza (cm):</label>
+                            <input type="number" id="height" min="100" max="250" step="0.1" required>
+                        </div>
+                        <div class="form-col">
+                            <label for="weight">Peso (kg):</label>
+                            <input type="number" id="weight" min="30" max="300" step="0.1" required>
+                        </div>
+                    </div>
+                    <div class="bmi-display" id="bmiDisplay" style="display: none;">
+                        BMI: <span id="bmiValue">--</span> kg/m²
+                    </div>
+                </div>
+
+                <button type="submit" class="calculate-btn">🧮 Calcola Rischio ADA Diabetes</button>
+            </form>
+
+            <div id="result" class="result">
+                <h3>Risultato del calcolo</h3>
+                <div class="risk-value" id="riskValue">-- punti</div>
+                <div class="risk-category" id="riskCategory">--</div>
+                
+                <div class="points-breakdown" id="pointsBreakdown">
+                    <h4>Dettaglio punteggio:</h4>
+                    <div id="pointsDetails"></div>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <h4>ℹ️ Interpretazione del Punteggio ADA</h4>
+                <p>
+                    <strong>≥5 punti:</strong> Alto rischio di sviluppare diabete tipo 2. Si raccomanda uno screening con test della glicemia.<br>
+                    <strong>3-4 punti:</strong> Rischio moderato. Considerare modifiche dello stile di vita e monitoraggio.<br>
+                    <strong>0-2 punti:</strong> Basso rischio attuale. Mantenere uno stile di vita sano.
+                </p>
+                <p style="margin-top: 10px;">
+                    Questo strumento è basato sulle linee guida dell'American Diabetes Association ed è destinato 
+                    solo a scopi informativi. Consultare sempre un medico per una valutazione completa.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Gestione visualizzazione domanda diabete gestazionale
+        document.querySelectorAll('input[name="gender"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const gestationalGroup = document.getElementById('gestationalGroup');
+                if (this.value === 'female') {
+                    gestationalGroup.style.display = 'block';
+                } else {
+                    gestationalGroup.style.display = 'none';
+                    // Reset gestational diabetes selection
+                    document.querySelectorAll('input[name="gestational"]').forEach(r => r.checked = false);
+                }
+                updateRadioStyles();
+            });
+        });
+
+        // Calcolo BMI in tempo reale
+        function calculateBMI() {
+            const height = parseFloat(document.getElementById('height').value);
+            const weight = parseFloat(document.getElementById('weight').value);
+            
+            if (height && weight) {
+                const bmi = weight / Math.pow(height / 100, 2);
+                document.getElementById('bmiValue').textContent = bmi.toFixed(1);
+                document.getElementById('bmiDisplay').style.display = 'block';
+                return bmi;
+            } else {
+                document.getElementById('bmiDisplay').style.display = 'none';
+                return null;
+            }
+        }
+
+        document.getElementById('height').addEventListener('input', calculateBMI);
+        document.getElementById('weight').addEventListener('input', calculateBMI);
+
+        // Stile per radio button selezionati
+        function updateRadioStyles() {
+            document.querySelectorAll('.radio-option').forEach(option => {
+                const radio = option.querySelector('input[type="radio"]');
+                if (radio.checked) {
+                    option.classList.add('selected');
+                } else {
+                    option.classList.remove('selected');
+                }
+            });
+        }
+
+        document.querySelectorAll('input[type="radio"]').forEach(radio => {
+            radio.addEventListener('change', updateRadioStyles);
+        });
+
+        function calculateADAScore(data) {
+            let totalPoints = 0;
+            let breakdown = [];
+
+            // Età
+            let agePoints = 0;
+            if (data.age >= 60) {
+                agePoints = 3;
+            } else if (data.age >= 50) {
+                agePoints = 2;
+            } else if (data.age >= 40) {
+                agePoints = 1;
+            }
+            totalPoints += agePoints;
+            breakdown.push({ factor: 'Età', points: agePoints });
+
+            // Sesso
+            let genderPoints = 0;
+            if (data.gender === 'male') {
+                genderPoints = 1;
+            }
+            totalPoints += genderPoints;
+            breakdown.push({ factor: 'Sesso (maschio)', points: genderPoints });
+
+            // Diabete gestazionale (solo per donne)
+            let gestationalPoints = 0;
+            if (data.gender === 'female' && data.gestational === 'yes') {
+                gestationalPoints = 1;
+            }
+            if (data.gender === 'female') {
+                totalPoints += gestationalPoints;
+                breakdown.push({ factor: 'Diabete gestazionale precedente', points: gestationalPoints });
+            }
+
+            // Storia familiare
+            let familyPoints = 0;
+            if (data.family_history === 'yes') {
+                familyPoints = 1;
+            }
+            totalPoints += familyPoints;
+            breakdown.push({ factor: 'Parenti con diabete', points: familyPoints });
+
+            // Ipertensione
+            let hypertensionPoints = 0;
+            if (data.hypertension === 'yes') {
+                hypertensionPoints = 1;
+            }
+            totalPoints += hypertensionPoints;
+            breakdown.push({ factor: 'Ipertensione', points: hypertensionPoints });
+
+            // Attività fisica
+            let activityPoints = 0;
+            if (data.physical_activity === 'no') {
+                activityPoints = 1;
+            }
+            totalPoints += activityPoints;
+            breakdown.push({ factor: 'Inattività fisica', points: activityPoints });
+
+            // BMI
+            let bmiPoints = 0;
+            const bmi = data.weight / Math.pow(data.height / 100, 2);
+            if (bmi >= 40) {
+                bmiPoints = 3;
+            } else if (bmi >= 30) {
+                bmiPoints = 2;
+            } else if (bmi >= 25) {
+                bmiPoints = 1;
+            }
+            totalPoints += bmiPoints;
+            breakdown.push({ factor: `BMI (${bmi.toFixed(1)} kg/m²)`, points: bmiPoints });
+
+            return { totalPoints, breakdown };
+        }
+
+        function getRiskCategory(points) {
+            if (points >= 5) {
+                return { category: 'Alto Rischio', class: 'risk-high', description: 'Si raccomanda screening glicemico' };
+            } else if (points >= 3) {
+                return { category: 'Rischio Moderato', class: 'risk-moderate', description: 'Considerare modifiche dello stile di vita' };
+            } else {
+                return { category: 'Basso Rischio', class: 'risk-low', description: 'Mantenere stile di vita sano' };
+            }
+        }
+
+        document.getElementById('adaForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const data = {
+                age: parseInt(document.getElementById('age').value),
+                gender: document.querySelector('input[name="gender"]:checked')?.value,
+                gestational: document.querySelector('input[name="gestational"]:checked')?.value || 'no',
+                family_history: document.querySelector('input[name="family_history"]:checked')?.value,
+                hypertension: document.querySelector('input[name="hypertension"]:checked')?.value,
+                physical_activity: document.querySelector('input[name="physical_activity"]:checked')?.value,
+                height: parseFloat(document.getElementById('height').value),
+                weight: parseFloat(document.getElementById('weight').value)
+            };
+
+            // Validazione
+            if (!data.gender || !data.family_history || !data.hypertension || !data.physical_activity) {
+                alert('Per favore, completa tutti i campi obbligatori.');
+                return;
+            }
+
+            try {
+                const result = calculateADAScore(data);
+                const riskInfo = getRiskCategory(result.totalPoints);
+                
+                // Mostra risultato principale
+                document.getElementById('riskValue').textContent = result.totalPoints + ' punti';
+                document.getElementById('riskCategory').textContent = riskInfo.category;
+                document.getElementById('riskCategory').className = 'risk-category ' + riskInfo.class;
+                
+                // Mostra breakdown dei punti
+                const pointsDetails = document.getElementById('pointsDetails');
+                pointsDetails.innerHTML = '';
+                
+                result.breakdown.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'points-item';
+                    div.innerHTML = `
+                        <span>${item.factor}</span>
+                        <span>+${item.points} punti</span>
+                    `;
+                    pointsDetails.appendChild(div);
+                });
+                
+                // Totale
+                const totalDiv = document.createElement('div');
+                totalDiv.className = 'points-item';
+                totalDiv.innerHTML = `
+                    <span><strong>TOTALE</strong></span>
+                    <span><strong>${result.totalPoints} punti</strong></span>
+                `;
+                pointsDetails.appendChild(totalDiv);
+                
+                const resultDiv = document.getElementById('result');
+                resultDiv.classList.add('show');
+                resultDiv.scrollIntoView({ behavior: 'smooth' });
+                
+            } catch (error) {
+                alert('Errore nel calcolo. Verificare i dati inseriti.');
+                console.error('Errore di calcolo:', error);
+            }
+        });
+
+        // Inizializza gli stili
+        updateRadioStyles();
+    </script>
+</body>
+</html>
