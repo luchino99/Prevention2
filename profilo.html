@@ -1216,8 +1216,18 @@ const customFields = [
 
 customFields.forEach(field => {
   const el = document.getElementById(`profilo-${field}`);
-  if (el && userData[field] !== undefined) {
-    el.value = userData[field];
+  const val = userData[field];
+
+  if (el && val !== undefined && val !== null) {
+    // Normalizza "sì", "si", "Si" ecc. per i campi booleani
+    const risposta = val.toString().trim().toLowerCase();
+    if (["sì", "si"].includes(risposta)) {
+      el.value = "sì";
+    } else if (risposta === "no") {
+      el.value = "no";
+    } else {
+      el.value = val;
+    }
   }
 });
 
