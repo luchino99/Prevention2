@@ -401,9 +401,15 @@ if (step >= 0 && val) {
   }
 
   // Se la chiave non è condivisa, salvala normalmente
-  if (!chiaveSalvata) {
-    risposte[currentKey] = val;
-  }
+if (!chiaveSalvata) {
+  // Normalizza "sì"/"si" → "sì" e "no" → "no"
+  let risposta = val.trim().toLowerCase();
+  if (["sì", "si"].includes(risposta)) risposta = "sì";
+  else if (risposta === "no") risposta = "no";
+
+  risposte[currentKey] = risposta;
+}
+
 
   // Salvataggio condizionale se abbiamo i dati principali
   if (
