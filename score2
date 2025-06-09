@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calcolatore SCORE2 Cardiovascolare</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .form-container {
+            padding: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .form-col {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+
+        input[type="number"], select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e6ed;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        input[type="number"]:focus, select:focus {
+            outline: none;
+            border-color: #e74c3c;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 8px;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 10px 15px;
+            border-radius: 10px;
+            transition: background 0.3s ease;
+        }
+
+        .radio-option:hover {
+            background: #ffe8e8;
+        }
+
+        .radio-option input[type="radio"] {
+            width: auto;
+            margin: 0;
+        }
+
+        .calculate-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .calculate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(231, 76, 60, 0.3);
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 25px;
+            background: linear-gradient(135deg, #ffcccc, #ffe0e0);
+            border-radius: 15px;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+
+        .result.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .result h3 {
+            color: #2c3e50;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+        }
+
+        .risk-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .risk-category {
+            font-size: 1.2em;
+            font-weight: 600;
+            padding: 8px 20px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .risk-low { background: #d4edda; color: #155724; }
+        .risk-moderate { background: #fff3cd; color: #856404; }
+        .risk-high { background: #f8d7da; color: #721c24; }
+        .risk-very-high { background: #d1ecf1; color: #0c5460; }
+
+        .info-section {
+            background: #f8f9fa;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #e74c3c;
+        }
+
+        .info-section h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .info-section p {
+            color: #5a6c7d;
+            line-height: 1.6;
+        }
+
+        .unit-note {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        .debug-info {
+            background: #f0f0f0;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 10px;
+            font-size: 0.9em;
+            display: none;
+        }
+
+        .debug-info.show {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .form-container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>❤️ SCORE2 Calculator</h1>
+            <p>Calcolatore del rischio cardiovascolare a 10 anni</p>
+        </div>
+        
+        <div class="form-container">
+            <form id="score2Form">
+                <div class="form-group">
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label for="age">Età (anni):</label>
+                            <input type="number" id="age" min="40" max="79" required placeholder="es. 55">
+                        </div>
+                        <div class="form-col">
+                            <label>Sesso:</label>
+                            <div class="radio-group">
+                                <div class="radio-option">
+                                    <input type="radio" id="male" name="gender" value="male" required>
+                                    <label for="male">Maschio</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="female" name="gender" value="female" required>
+                                    <label for="female">Femmina</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label>Fumatore attuale:</label>
+                            <div class="radio-group">
+                                <div class="radio-option">
+                                    <input type="radio" id="smoker_yes" name="smoking" value="1" required>
+                                    <label for="smoker_yes">Sì</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="smoker_no" name="smoking" value="0" required>
+                                    <label for="smoker_no">No</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <label for="sbp">Pressione sistolica (mmHg):</label>
+                            <input type="number" id="sbp" min="80" max="200" required placeholder="es. 140">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label for="tchol">Colesterolo totale (mg/dL):</label>
+                            <input type="number" id="tchol" min="100" max="400" required placeholder="es. 200">
+                            <div class="unit-note">Inserisci il valore in mg/dL</div>
+                        </div>
+                        <div class="form-col">
+                            <label for="hdl">Colesterolo HDL (mg/dL):</label>
+                            <input type="number" id="hdl" min="20" max="100" required placeholder="es. 50">
+                            <div class="unit-note">Inserisci il valore in mg/dL</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label for="riskRegion">Regione di rischio cardiovascolare:</label>
+                            <select id="riskRegion" required>
+                                <option value="">Seleziona regione</option>
+                                <option value="low">Basso rischio (es. Francia, Spagna, Svizzera)</option>
+                                <option value="moderate" selected>Rischio moderato (es. Italia, Germania, UK)</option>
+                                <option value="high">Alto rischio (es. Polonia, Ungheria)</option>
+                                <option value="very_high">Rischio molto alto (es. Russia, Ucraina)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="calculate-btn">🧮 Calcola Rischio SCORE2</button>
+            </form>
+
+            <div id="result" class="result">
+                <h3>Risultato del calcolo</h3>
+                <div class="risk-value" id="riskValue">--</div>
+                <div class="risk-category" id="riskCategory">--</div>
+                <div id="riskInterpretation" style="margin-top: 15px; font-size: 1em; color: #5a6c7d;"></div>
+            </div>
+
+            <div id="debugInfo" class="debug-info">
+                <h4>Informazioni di debug:</h4>
+                <div id="debugContent"></div>
+            </div>
+
+            <div class="info-section">
+                <h4>ℹ️ Informazioni sul SCORE2</h4>
+                <p>
+                    Il SCORE2 è il nuovo algoritmo sviluppato dalla European Society of Cardiology (ESC) per stimare 
+                    il rischio di malattie cardiovascolari fatali e non-fatali a 10 anni. È valido per persone 
+                    di età compresa tra 40 e 69 anni senza malattia cardiovascolare nota o diabete. 
+                    Per persone di 70 anni o più, utilizzare SCORE2-OP.
+                </p>
+                <p style="margin-top: 10px;">
+                    <strong>Nota:</strong> L'Italia è generalmente classificata come paese a rischio moderato, 
+                    ma verificare sempre con le linee guida locali più recenti.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Coefficienti del modello SCORE2
+        const coefficients = {
+            male: {
+                age: 0.3742,
+                smoking: 0.6012,
+                sbp: 0.2777,
+                tchol: 0.1458,
+                hdl: -0.2698,
+                smoking_age: -0.0755,
+                sbp_age: -0.0255,
+                tchol_age: -0.0281,
+                hdl_age: 0.0426,
+                baseline_survival: 0.9605
+            },
+            female: {
+                age: 0.4648,
+                smoking: 0.7744,
+                sbp: 0.3131,
+                tchol: 0.1002,
+                hdl: -0.2606,
+                smoking_age: -0.1088,
+                sbp_age: -0.0277,
+                tchol_age: -0.0226,
+                hdl_age: 0.0613,
+                baseline_survival: 0.9776
+            }
+        };
+
+        // Scale per calibrazione regionale
+        const scales = {
+            male: {
+                low: { scale1: -0.5699, scale2: 0.7476 },
+                moderate: { scale1: -0.1565, scale2: 0.8009 },
+                high: { scale1: 0.3207, scale2: 0.9360 },
+                very_high: { scale1: 0.5836, scale2: 0.8294 }
+            },
+            female: {
+                low: { scale1: -0.7380, scale2: 0.7019 },
+                moderate: { scale1: -0.3143, scale2: 0.7701 },
+                high: { scale1: 0.5710, scale2: 0.9369 },
+                very_high: { scale1: 0.9412, scale2: 0.8329 }
+            }
+        };
+
+        // Funzione di conversione da mg/dL a mmol/L
+        function mgDlToMmolL(mgDl) {
+            return mgDl / 38.67;
+        }
+
+        function calculateSCORE2(data) {
+            console.log('Dati ricevuti per il calcolo:', data);
+            
+            // Conversione dei valori di colesterolo da mg/dL a mmol/L
+            const tcholMmolL = mgDlToMmolL(data.tchol);
+            const hdlMmolL = mgDlToMmolL(data.hdl);
+            
+            console.log('Conversioni colesterolo:');
+            console.log(`Colesterolo totale: ${data.tchol} mg/dL = ${tcholMmolL.toFixed(2)} mmol/L`);
+            console.log(`HDL: ${data.hdl} mg/dL = ${hdlMmolL.toFixed(2)} mmol/L`);
+            
+            const coef = coefficients[data.gender];
+            
+            // Trasformazioni delle variabili
+            const cage = (data.age - 60) / 5;
+            const csbp = (data.sbp - 120) / 20;
+            const ctchol = tcholMmolL - 6;  // Usa il valore convertito
+            const chdl = (hdlMmolL - 1.3) / 0.5;  // Usa il valore convertito
+
+            console.log('Variabili trasformate:');
+            console.log(`cage: ${cage.toFixed(3)}`);
+            console.log(`csbp: ${csbp.toFixed(3)}`);
+            console.log(`ctchol: ${ctchol.toFixed(3)}`);
+            console.log(`chdl: ${chdl.toFixed(3)}`);
+
+            // Calcolo X (somma dei prodotti beta * variabili trasformate)
+            let x = 0;
+            x += coef.age * cage;
+            x += coef.smoking * data.smoking;
+            x += coef.sbp * csbp;
+            x += coef.tchol * ctchol;
+            x += coef.hdl * chdl;
+            x += coef.smoking_age * data.smoking * cage;
+            x += coef.sbp_age * csbp * cage;
+            x += coef.tchol_age * ctchol * cage;
+            x += coef.hdl_age * chdl * cage;
+
+            console.log('X calcolato:', x.toFixed(4));
+
+            // Calcolo rischio a 10 anni non calibrato
+            const tenYearRisk = 1 - Math.pow(coef.baseline_survival, Math.exp(x));
+            console.log('Rischio a 10 anni non calibrato:', (tenYearRisk * 100).toFixed(2) + '%');
+
+            // Calibrazione regionale
+            const scale = scales[data.gender][data.riskRegion];
+            
+            if (!scale || !scale.scale1 || !scale.scale2) {
+                console.error('Scale non trovate per:', data.gender, data.riskRegion);
+                throw new Error('Errore nella calibrazione regionale.');
+            }
+            
+            if (tenYearRisk <= 0 || tenYearRisk >= 1) {
+                console.error('TenYearRisk non valido:', tenYearRisk);
+                throw new Error('Errore nel calcolo del rischio.');
+            }
+            
+            // Formula di calibrazione
+            const calibratedRisk = (1 - Math.exp(-Math.exp(scale.scale1 + scale.scale2 * Math.log(-Math.log(1 - tenYearRisk))))) * 100;
+            console.log('Rischio calibrato:', calibratedRisk.toFixed(2) + '%');
+
+            // Mostra informazioni di debug
+            const debugContent = document.getElementById('debugContent');
+            debugContent.innerHTML = `
+                <p><strong>Conversioni:</strong><br>
+                Colesterolo totale: ${data.tchol} mg/dL = ${tcholMmolL.toFixed(2)} mmol/L<br>
+                HDL: ${data.hdl} mg/dL = ${hdlMmolL.toFixed(2)} mmol/L</p>
+                <p><strong>Variabili trasformate:</strong><br>
+                cage: ${cage.toFixed(3)}<br>
+                csbp: ${csbp.toFixed(3)}<br>
+                ctchol: ${ctchol.toFixed(3)}<br>
+                chdl: ${chdl.toFixed(3)}</p>
+                <p><strong>Risultati:</strong><br>
+                X: ${x.toFixed(4)}<br>
+                Rischio non calibrato: ${(tenYearRisk * 100).toFixed(2)}%<br>
+                Rischio calibrato: ${calibratedRisk.toFixed(2)}%</p>
+            `;
+
+            return Math.max(0, Math.min(100, calibratedRisk));
+        }
+
+        function getRiskCategory(risk) {
+            if (risk < 2.5) return { 
+                category: 'Basso', 
+                class: 'risk-low',
+                interpretation: 'Rischio basso. Mantenere uno stile di vita sano.'
+            };
+            if (risk < 7.5) return { 
+                category: 'Moderato', 
+                class: 'risk-moderate',
+                interpretation: 'Rischio moderato. Considerare modifiche dello stile di vita.'
+            };
+            if (risk < 10) return { 
+                category: 'Alto', 
+                class: 'risk-high',
+                interpretation: 'Rischio alto. Consultare il medico per valutare interventi preventivi.'
+            };
+            return { 
+                category: 'Molto Alto', 
+                class: 'risk-very-high',
+                interpretation: 'Rischio molto alto. È fortemente consigliata una valutazione medica urgente.'
+            };
+        }
+
+        document.getElementById('score2Form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const data = {
+                age: parseInt(document.getElementById('age').value),
+                gender: document.querySelector('input[name="gender"]:checked').value,
+                smoking: parseInt(document.querySelector('input[name="smoking"]:checked').value),
+                sbp: parseInt(document.getElementById('sbp').value),
+                tchol: parseFloat(document.getElementById('tchol').value),  // In mg/dL
+                hdl: parseFloat(document.getElementById('hdl').value),      // In mg/dL
+                riskRegion: document.getElementById('riskRegion').value
+            };
+
+            // Validazioni
+            if (!data.gender || data.smoking === null || !data.riskRegion) {
+                alert('Per favore, completa tutti i campi obbligatori.');
+                return;
+            }
+            
+            if (data.age < 40 || data.age > 79) {
+                alert('SCORE2 è valido solo per età tra 40 e 79 anni. Per età ≥70 anni, considera SCORE2-OP.');
+                return;
+            }
+
+            // Validazione dei valori di colesterolo in mg/dL
+            if (data.tchol < 100 || data.tchol > 400) {
+                alert('Il colesterolo totale deve essere tra 100 e 400 mg/dL.');
+                return;
+            }
+
+            if (data.hdl < 20 || data.hdl > 100) {
+                alert('Il colesterolo HDL deve essere tra 20 e 100 mg/dL.');
+                return;
+            }
+
+            try {
+                const risk = calculateSCORE2(data);
+                const riskInfo = getRiskCategory(risk);
+                
+                document.getElementById('riskValue').textContent = risk.toFixed(1) + '%';
+                document.getElementById('riskCategory').textContent = 'Rischio ' + riskInfo.category;
+                document.getElementById('riskCategory').className = 'risk-category ' + riskInfo.class;
+                document.getElementById('riskInterpretation').textContent = riskInfo.interpretation;
+                
+                const resultDiv = document.getElementById('result');
+                resultDiv.classList.add('show');
+                
+                // Mostra debug info se desiderato (decommentare la riga seguente)
+                // document.getElementById('debugInfo').classList.add('show');
+                
+                resultDiv.scrollIntoView({ behavior: 'smooth' });
+                
+            } catch (error) {
+                alert('Errore nel calcolo. Verificare i dati inseriti.');
+                console.error('Errore di calcolo:', error);
+            }
+        });
+
+        // Precompila con valori di esempio per test (rimuovere in produzione)
+        function fillExampleData() {
+            document.getElementById('age').value = 55;
+            document.querySelector('#male').checked = true;
+            document.querySelector('#smoker_no').checked = true;
+            document.getElementById('sbp').value = 140;
+            document.getElementById('tchol').value = 200;
+            document.getElementById('hdl').value = 50;
+            document.getElementById('riskRegion').value = 'moderate';
+        }
+
+        // Aggiungi event listener per debug (doppio click sul titolo per riempire dati di esempio)
+        document.querySelector('.header h1').addEventListener('dblclick', fillExampleData);
+    </script>
+</body>
+</html>
