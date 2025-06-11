@@ -95,15 +95,12 @@ const domandeBase = [
 ];
 
 const domandeOver65 = [
-  { key: "over_stanchezza", testo: "Ti senti stanco/a frequentemente?" },
-  { key: "over_scale", testo: "Riesci a salire una rampa di scale?" },
-  { key: "over_camminata", testo: "Riesci a camminare un isolato (circa 100 metri)?" },
-  { key: "over_malattie", testo: "Hai più di 5 malattie croniche?" },
-  { key: "over_peso", testo: "Hai perso più di 5 kg nell’ultimo anno senza volerlo?" },
-  { key: "over_sollevamento", testo: "Hai difficoltà a sollevare oggetti pesanti (>4.5 kg)?" },
-  { key: "over_sedia", testo: "Hai problemi ad alzarti da una sedia?" },
-  { key: "over_cadute", testo: "Hai cadute frequenti?" },
-  { key: "over_debolezza", testo: "Ti senti debole?" }
+  { key: "stanchezza", testo: "Ti senti stanco/a frequentemente?" },
+  { key: "camminata", testo: "Riesci a camminare un isolato (circa 100 metri)?" },
+  { key: "malattie_croniche", testo: "Hai più di 5 malattie croniche?" },
+  { key: "perdita_peso", testo: "Hai perso più di 5 kg nell’ultimo anno senza volerlo?" },
+  { key: "sedia", testo: "Hai problemi ad alzarti da una sedia?" },
+  
 ];
 
 const domandeFemminili = [
