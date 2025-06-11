@@ -23,10 +23,39 @@ const domandeBase = [
   { key: "pressione_diastolica", testo: "Qual è la tua pressione diastolica (minima) in mmHg?" },
   { key: "ast", testo: "Conosci il valore delle tue transaminasi AST (GOT)? (U/L)" },
   { key: "alt", testo: "Conosci il valore delle tue transaminasi ALT (GPT)? (U/L)" },
+  {
+  key: "ggt",
+  testo: "Sai qual è il tuo valore di Gamma‑GT (U/L)?",
+  tipo: "numero"
+}
+{
+  key: "regione_rischio_cv",
+  testo: "Sai in quale categoria di rischio cardiovascolare ti trovi?",
+  tipo: "scelta",
+  opzioni: ["basso", "moderato", "alto", "molto alto"]
+}
+
   { key: "piastrine", testo: "Conosci il valore delle tue piastrine? (x10^9/L o x1000/mm³)" },
   { key: "albumina", testo: "Conosci il valore della tua albumina sierica? (g/dL)" },
+{
+  key: "egfr",
+  testo: "Conosci il tuo valore di eGFR (ml/min/1.73 m²)?",
+  tipo: "numero"
+}
+  {
+    key: "diabete",
+    testo: "Ti è stato diagnosticato il diabete di tipo 2?",
+    tipo: "scelta",
+    opzioni: ["sì", "no"]
+  },
+  {
+    key: "eta_diagnosi_diabete",
+    testo: "A che età ti è stato diagnosticato il diabete?",
+    tipo: "numero",
+    condizione: "diabete"
+  },
   { key: "linfociti", testo: "Conosci il numero dei tuoi linfociti? (per mm³)" },
-  { key: "malattie_croniche", testo: "Hai malattie croniche diagnosticate (es. diabete, ipertensione)?" },
+  { key: "malattie_croniche", testo: "Hai malattie croniche diagnosticate (es. ipertensione)?" },
   { key: "farmaci", testo: "Assumi farmaci?" },
   { key: "farmaci_dettaglio", testo: "Se assumi farmaci, elencali nella casella di testo sottostante.", condizione: "farmaci" },
   { key: "interventi", testo: "Hai subito interventi chirurgici rilevanti?" },
