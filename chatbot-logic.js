@@ -27,7 +27,7 @@ const domandeBase = [
   key: "ggt",
   testo: "Sai qual è il tuo valore di Gamma‑GT (U/L)?",
   tipo: "numero"
-}
+},
 {
   key: "regione_rischio_cv",
   testo: "Sai in quale categoria di rischio cardiovascolare ti trovi?",
