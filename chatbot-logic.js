@@ -16,7 +16,7 @@ const domandeBase = [
   { key: "hba1c", testo: "Conosci il valore della tua emoglobina glicata (HbA1c)? (in %)" },
   { key: "colesterolo_totale", testo: "Qual è il valore del tuo colesterolo totale (mg/dL)?" },
   { key: "colesterolo_ldl", testo: "Il tuo colesterolo LDL supera il valore di 70 mg/dL?" },
-  { key: "colesterolo_hdl", testo: "Il tuo colesterolo HDL è inferiore a 50 mg/dL (se sei donna) o inferiore a 40 mg/dL (se sei uomo)?" },
+  
   { key: "colesterolo_hdl_valore", testo: "Qual è il valore del tuo colesterolo HDL (se lo conosci)?" },
   { key: "pressione", testo: "La tua pressione arteriosa media è inferiore a 130/85 mmHg?" },
   { key: "pressione_sistolica", testo: "Qual è la tua pressione sistolica (massima) in mmHg?" },
