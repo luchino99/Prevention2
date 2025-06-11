@@ -1193,7 +1193,7 @@
     <div class="accordion-header">
     <div class="flex items-center">
     <span class="mr-2">👵</span>
-    <span>FRAIL / SARC-F – Fragilità</span>
+    <span>FRAIL scale</span>
     </div>
     <i class="fas fa-chevron-down accordion-icon"></i>
     </div>
@@ -1209,16 +1209,16 @@
     <input type="text" id="profilo-camminata" value=${userData.camminata || ''}>
     </div>
     <div class="form-group">
-    <label class="form-label">Riesci a sollevare 4.5 kg?</label>
-    <input type="text" id="profilo-sollevamento" value=${userData.sollevamento || ''}>
+    <label class="form-label">Hai perso più di 5 kg involontariamente nell'ultimo anno?</label>
+    <input type="text" id="profilo-sollevamento" value=${userData.perdita_peso || ''}>
     </div>
     <div class="form-group">
     <label class="form-label">Difficoltà ad alzarti da una sedia?</label>
     <input type="text" id="profilo-sedia" value=${userData.sedia || ''}>
     </div>
     <div class="form-group">
-    <label class="form-label">Hai avuto 2 o più cadute in un anno?</label>
-    <input type="text" id="profilo-cadute" value=${userData.cadute || ''}>
+    <label class="form-label">Hai più di 5 malattie croniche diagnosticate?</label>
+    <input type="text" id="profilo-cadute" value=${userData.malattie_croniche || ''}>
     </div>
     </div>
     </div>
