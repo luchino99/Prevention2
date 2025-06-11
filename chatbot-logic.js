@@ -703,44 +703,42 @@ async function salvaAnagraficaNelDatabase(dati) {
     }
 
     // ✅ Elenco COMPLETO dei campi validi inclusi i NUOVI
-    const campiValidi = [
-      "email", "eta", "sesso", "altezza", "peso",
-      "origine_etnica", "vita", "glicemia", "glicemia_valore",
-      "colesterolo_totale", "colesterolo_hdl_valore", "trigliceridi", "colesterolo_ldl_valore",
-      "colesterolo_ldl", "pressione_sistolica", "pressione_diastolica",
-      "pressione", "pressione_valore", "pressione_alta",
-      "attivita_fisica", "tipo_lavoro", "patologie",
-      "farmaci", "farmaci_dettaglio", "interventi", "interventi_dettaglio",
-      "fumatore", "diabete", "unita_alcoliche", "alcol_eccessivo",
-      "familiari_diabete", "frattura", "famiglia_frattura_anca",
-      "corticosteroidi", "artrite", "stanchezza", "over_stanchezza",
-      "camminata", "over_camminata", "sollevamento", "over_sollevamento",
-      "sedia", "over_sedia", "cadute", "over_cadute",
-      "intolleranze", "alimenti_esclusi", "preferenze",
-      "malattie_croniche", "familiarita_tumori", "sede_tumore",
-      "predimed_1", "predimed_2", "predimed_3", "predimed_4",
-      "predimed_5", "predimed_6", "predimed_7", "predimed_8",
-      "predimed_9", "predimed_10", "predimed_11", "predimed_12",
-      "predimed_13", "predimed_14", "depressione", "insonnia",
-      "tipo_insonnia", "stress", "frequenza_attivita_fisica", "durata_attivita", "tipo_attivita",
-      // 🆕 NUOVI CAMPI AGGIUNTI
-      "hba1c", "ast", "alt", "piastrine", "albumina", "linfociti",
-      "n_sigarette", "alcol", "eta_menarca", "eta_menopausa", 
-      "contraccettivi", "gravidanza", "familiarita_seno", 
-      "screening_seno", "papsmear", "over_peso", "over_malattie", 
-      "over_scale", "over_debolezza", "obiettivo", "esperienza", "frequenza", "durata",
-"luogo", "attrezzatura", "cardio", "focus",
-"infortuni", "pushups", "squats",   "ggt",
-  "egfr",
-  "eta_diagnosi_diabete",
-  "regione_rischio_cv",
-"plank", "step_test",   "stanchezza",
+const campiValidi = [
+  "email", "eta", "sesso", "altezza", "peso",
+  "origine_etnica", "vita", "glicemia", "glicemia_valore",
+  "colesterolo_totale", "colesterolo_hdl_valore", "trigliceridi", "colesterolo_ldl_valore",
+  "colesterolo_ldl", "pressione_sistolica", "pressione_diastolica",
+  "pressione", "pressione_valore", "pressione_alta",
+  "attivita_fisica", "tipo_lavoro", "patologie",
+  "farmaci", "farmaci_dettaglio", "interventi", "interventi_dettaglio",
+  "fumatore", "diabete", "unita_alcoliche", "alcol_eccessivo",
+  "familiari_diabete", "frattura", "famiglia_frattura_anca",
+  "corticosteroidi", "artrite",
+  "sollevamento", "cadute",
+  "intolleranze", "alimenti_esclusi", "preferenze",
+  "familiarita_tumori", "sede_tumore",
+  "predimed_1", "predimed_2", "predimed_3", "predimed_4",
+  "predimed_5", "predimed_6", "predimed_7", "predimed_8",
+  "predimed_9", "predimed_10", "predimed_11", "predimed_12",
+  "predimed_13", "predimed_14", "depressione", "insonnia",
+  "tipo_insonnia", "stress", "frequenza_attivita_fisica", "durata_attivita", "tipo_attivita",
+  "hba1c", "ast", "alt", "piastrine", "albumina", "linfociti",
+  "n_sigarette", "alcol", "eta_menarca", "eta_menopausa", 
+  "contraccettivi", "gravidanza", "familiarita_seno", 
+  "screening_seno", "papsmear",
+  "ggt", "egfr", "eta_diagnosi_diabete", "regione_rischio_cv",
+  "plank", "step_test",
+  "over_scale", "obiettivo", "esperienza", "frequenza", "durata",
+  "luogo", "attrezzatura", "cardio", "focus", "infortuni", "pushups", "squats",
+
+  // ✅ Campi FRAIL (una sola volta)
+  "stanchezza",
   "camminata",
   "sedia",
   "malattie_croniche",
   "perdita_peso"
+];
 
-    ];
 
     // ✅ Filtra i soli campi validi prima di salvarli
     const payload = {};
