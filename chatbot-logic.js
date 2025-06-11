@@ -201,17 +201,14 @@ const aliasCondivisi = {
   linfociti: ["linfociti"],
   hba1c: ["hba1c"]
 };
-  function haRispostaCondivisa(domandaKey) {
+  
+function haRispostaCondivisa(domandaKey) {
   for (const [profiloKey, domandeKeys] of Object.entries(aliasCondivisi)) {
-  if (domandeKeys.includes(currentKey)) {
-    risposte[profiloKey] = val;
-    chiaveSalvata = true;
-
-    // ✅ SALVATAGGIO QUI per alias
-    await salvaAnagraficaNelDatabase(risposte);
-
-    break;
+    if (domandeKeys.includes(domandaKey) && risposte[profiloKey]) {
+      return true;
+    }
   }
+  return false;
 }
 
 
@@ -423,13 +420,17 @@ if (step >= 0 && val) {
 
   // 🔁 Salva la risposta su tutte le chiavi condivise
   let chiaveSalvata = false;
-  for (const [profiloKey, domandeKeys] of Object.entries(aliasCondivisi)) {
-    if (domandeKeys.includes(currentKey)) {
-      risposte[profiloKey] = val;
-      chiaveSalvata = true;
-      break;
-    }
+for (const [profiloKey, domandeKeys] of Object.entries(aliasCondivisi)) {
+  if (domandeKeys.includes(currentKey)) {
+    risposte[profiloKey] = val;
+    chiaveSalvata = true;
+
+    // ✅ SALVA anche le risposte con alias (come stanchezza, camminata, ecc.)
+    await salvaAnagraficaNelDatabase(risposte);
+
+    break;
   }
+}
 
   // Se la chiave non è condivisa, salvala normalmente
 if (!chiaveSalvata) {
