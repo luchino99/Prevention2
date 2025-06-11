@@ -25,7 +25,7 @@ const domandeBase = [
   { key: "alt", testo: "Conosci il valore delle tue transaminasi ALT (GPT)? (U/L)" },
   {
   key: "ggt",
-  testo: "Sai qual è il tuo valore di Gamma‑GT (U/L)?",
+  testo: "Qual è il tuo valore di Gamma‑GT (U/L), se  noto?",
   tipo: "numero"
 },
 {
@@ -39,7 +39,7 @@ const domandeBase = [
   { key: "albumina", testo: "Conosci il valore della tua albumina sierica? (g/dL)" },
 {
   key: "egfr",
-  testo: "Conosci il tuo valore di eGFR (ml/min/1.73 m²)?",
+  testo: "Qual'è il tuo valore di eGFR (ml/min/1.73 m²), se noto?",
   tipo: "numero"
 },
   {
@@ -431,13 +431,22 @@ if (step >= 0 && val) {
 
   // Se la chiave non è condivisa, salvala normalmente
 if (!chiaveSalvata) {
-  // Normalizza "sì"/"si" → "sì" e "no" → "no"
   let risposta = val.trim().toLowerCase();
+
   if (["sì", "si"].includes(risposta)) risposta = "sì";
   else if (risposta === "no") risposta = "no";
 
+  // 🧠 Normalizza regione_rischio_cv
+  if (currentKey === "regione_rischio_cv") {
+    if (risposta.includes("molto")) risposta = "very_high";
+    else if (risposta.includes("alto")) risposta = "high";
+    else if (risposta.includes("moderato")) risposta = "moderate";
+    else if (risposta.includes("basso")) risposta = "low";
+  }
+
   risposte[currentKey] = risposta;
 }
+
 
 
   // Salvataggio condizionale se abbiamo i dati principali
