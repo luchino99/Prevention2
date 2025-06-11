@@ -33,7 +33,7 @@ const domandeBase = [
   testo: "Sai in quale categoria di rischio cardiovascolare ti trovi?",
   tipo: "scelta",
   opzioni: ["basso", "moderato", "alto", "molto alto"]
-}
+},
 
   { key: "piastrine", testo: "Conosci il valore delle tue piastrine? (x10^9/L o x1000/mm³)" },
   { key: "albumina", testo: "Conosci il valore della tua albumina sierica? (g/dL)" },
