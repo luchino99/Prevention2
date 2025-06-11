@@ -724,7 +724,11 @@ async function salvaAnagraficaNelDatabase(dati) {
       "screening_seno", "papsmear", "over_peso", "over_malattie", 
       "over_scale", "over_debolezza", "obiettivo", "esperienza", "frequenza", "durata",
 "luogo", "attrezzatura", "cardio", "focus",
-"infortuni", "pushups", "squats", "plank", "step_test"
+"infortuni", "pushups", "squats",   "ggt",
+  "egfr",
+  "eta_diagnosi_diabete",
+  "regione_rischio_cv",
+"plank", "step_test"
 
     ];
 
