@@ -738,7 +738,7 @@ const campiValidi = [
   "plank", "step_test",
   "over_scale", "obiettivo", "esperienza", "frequenza", "durata",
   "luogo", "attrezzatura", "cardio", "focus", "infortuni", "pushups", "squats",
-  "stanchezza", "camminata", "sedia", "sollevamento", "cadute"
+  "stanchezza", "camminata", "sedia", "sollevamento", "cadute", "perdita_peso", "malattie_croniche"
 ];
 
 
