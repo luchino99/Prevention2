@@ -767,6 +767,25 @@
     <textarea id="profilo-intolleranze" rows="2" placeholder="Inserisci le tue intolleranze">${userData.intolleranze || ''}</textarea>
     </div>
 
+    <!-- Età diagnosi diabete -->
+<div class="form-group">
+  <label class="form-label">Età alla diagnosi di diabete (se nota)</label>
+  <input type="number" id="profilo-eta_diagnosi_diabete" value="${userData.eta_diagnosi_diabete || ''}" placeholder="Età diagnosi">
+</div>
+
+<!-- Regione rischio cardiovascolare -->
+<div class="form-group">
+  <label class="form-label">Regione di rischio cardiovascolare</label>
+  <select id="profilo-regione_rischio_cv">
+    <option value="">-- Seleziona --</option>
+    <option value="low" ${userData.regione_rischio_cv === 'low' ? 'selected' : ''}>Basso</option>
+    <option value="moderate" ${userData.regione_rischio_cv === 'moderate' ? 'selected' : ''}>Moderato</option>
+    <option value="high" ${userData.regione_rischio_cv === 'high' ? 'selected' : ''}>Alto</option>
+    <option value="very_high" ${userData.regione_rischio_cv === 'very_high' ? 'selected' : ''}>Molto alto</option>
+  </select>
+</div>
+
+
     <div class="form-group">
     <label class="form-label">Alimenti esclusi</label>
     <textarea id="profilo-alimenti_esclusi" rows="2" placeholder="Inserisci gli alimenti che non consumi">${userData.alimenti_esclusi || ''}</textarea>
@@ -807,6 +826,18 @@
     <label class="form-label">Albumina (g/dL)</label>
     <input type="number" step="0.1" id="profilo-albumina" value="${userData.albumina || ''}" placeholder="Albumina sierica" />
     </div>
+    <!-- Gamma-GT (per FLI) -->
+<div class="form-group">
+  <label class="form-label">Gamma‑GT (U/L)</label>
+  <input type="number" step="0.1" id="profilo-ggt" value="${userData.ggt || ''}" placeholder="Gamma‑GT">
+</div>
+
+<!-- eGFR (per SCORE2‑Diabete) -->
+<div class="form-group">
+  <label class="form-label">eGFR (mL/min/1.73 m²)</label>
+  <input type="number" id="profilo-egfr" value="${userData.egfr || ''}" placeholder="eGFR">
+</div>
+
     <div class="form-group">
     <label class="form-label">Linfociti (per mm³)</label>
     <input type="number" id="profilo-linfociti" value="${userData.linfociti || ''}" placeholder="Conta linfocitaria" />
@@ -1430,6 +1461,11 @@ step_test: document.getElementById("profilo-step_test")?.value,
         sollevamento: document.getElementById("profilo-sollevamento")?.value,
         sedia: document.getElementById("profilo-sedia")?.value,
         cadute: document.getElementById("profilo-cadute")?.value
+        ggt: parseFloat(document.getElementById('profilo-ggt').value) || null,
+egfr: parseFloat(document.getElementById('profilo-egfr').value) || null,
+eta_diagnosi_diabete: parseInt(document.getElementById('profilo-eta_diagnosi_diabete').value) || null,
+regione_rischio_cv: document.getElementById('profilo-regione_rischio_cv').value || null,
+
       };
 
       // 🧹 Pulisci i valori NaN sostituendoli con null
