@@ -738,13 +738,7 @@ const campiValidi = [
   "plank", "step_test",
   "over_scale", "obiettivo", "esperienza", "frequenza", "durata",
   "luogo", "attrezzatura", "cardio", "focus", "infortuni", "pushups", "squats",
-
-  // ✅ Campi FRAIL (una sola volta)
-  "stanchezza",
-  "camminata",
-  "sedia",
-  "malattie_croniche",
-  "perdita_peso"
+  "stanchezza", "camminata", "sedia", "sollevamento", "cadute"
 ];
 
 
