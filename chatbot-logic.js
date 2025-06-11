@@ -203,12 +203,17 @@ const aliasCondivisi = {
 };
   function haRispostaCondivisa(domandaKey) {
   for (const [profiloKey, domandeKeys] of Object.entries(aliasCondivisi)) {
-    if (domandeKeys.includes(domandaKey) && risposte[profiloKey]) {
-      return true;
-    }
+  if (domandeKeys.includes(currentKey)) {
+    risposte[profiloKey] = val;
+    chiaveSalvata = true;
+
+    // ✅ SALVATAGGIO QUI per alias
+    await salvaAnagraficaNelDatabase(risposte);
+
+    break;
   }
-  return false;
 }
+
 
 
 let step = -1;
@@ -442,6 +447,8 @@ if (!chiaveSalvata) {
   }
 
   risposte[currentKey] = risposta;
+  await salvaAnagraficaNelDatabase(risposte);
+
 }
 
 
