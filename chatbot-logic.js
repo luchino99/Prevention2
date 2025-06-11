@@ -734,7 +734,11 @@ async function salvaAnagraficaNelDatabase(dati) {
   "egfr",
   "eta_diagnosi_diabete",
   "regione_rischio_cv",
-"plank", "step_test"
+"plank", "step_test",   "stanchezza",
+  "camminata",
+  "sedia",
+  "malattie_croniche",
+  "perdita_peso"
 
     ];
 
