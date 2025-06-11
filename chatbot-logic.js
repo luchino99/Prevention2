@@ -41,7 +41,7 @@ const domandeBase = [
   key: "egfr",
   testo: "Conosci il tuo valore di eGFR (ml/min/1.73 m²)?",
   tipo: "numero"
-}
+},
   {
     key: "diabete",
     testo: "Ti è stato diagnosticato il diabete di tipo 2?",
