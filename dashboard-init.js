@@ -70,9 +70,13 @@ async function calculateAllScores() {
 
   // 1. Score di base già presenti nella dashboard
   calculateBMI();
-  calculatePREDIMED();
+  calculateSCORE2();
+  calculatePREDIMED(); // ← Questo è fondamentale!
   checkMetabolicSyndrome();
+  calculateDiabetesRisk();
+  calculateScore2Diabetes();
   calculateFIB4();
+  calculateFNI();
   generateRecommendations();
   determineScreenings();
   analyzeLifestyle();
