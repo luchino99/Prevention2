@@ -26,6 +26,21 @@ import {
   calculateSCORE2Diabetes,
   calculateFRAIL
 } from './score-utils.js';
+
+
+
+function getScoreCategory(risk) {
+  const normalized = (risk || '').toLowerCase();
+
+  if (['basso', 'low', 'normale'].includes(normalized)) return 'success';
+  if (['moderato', 'media', 'intermedio'].includes(normalized)) return 'warning';
+  if (['alto', 'molto alto', 'severo', 'elevato'].includes(normalized)) return 'danger';
+
+  return 'warning'; // fallback neutro
+}
+
+
+
 async function calculateAllScores() {
   console.log("🧠 Avvio calcolo di tutti gli score clinici...");
 
