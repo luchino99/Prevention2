@@ -5,7 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard - HealthAI</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.6/dist/umd/supabase.min.js"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <script type="module">
+  import {
+    calculateADARisk,
+    calculateFLI,
+    calculateSCORE2,
+    calculateSCORE2Diabetes,
+    calculateFRAIL
+  } from './score-utils.js';
+</script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -993,43 +1002,86 @@
     }
   }
 
-  // Calcola tutti gli score clinici - Versione con debug
-  function calculateAllScores() {
-    console.log('🚀 Inizio calcolo di tutti gli score...');
-    console.log('📊 Dati disponibili:', Object.keys(userData));
 
-    // Inizializza i dati di default
-    dashboardData.score2 = { value: '0.0', risk: 'Non calcolato', category: 'warning' };
-    dashboardData.diabetesRisk = { score: 0, maxScore: 8, factors: [], risk: 'Non calcolato' };
 
-    calculateBMI();
-    calculateSCORE2();
-    calculatePREDIMED();
-    checkMetabolicSyndrome();
-    calculateDiabetesRisk();
-    calculateScore2Diabetes();
-    calculateFIB4();
-    calculateFNI();
-    generateRecommendations();
-    determineScreenings();
-    analyzeLifestyle();
-    calculateNutritionalNeeds();
-    evaluatePhysicalActivity();
 
-    console.log('🎯 Risultati finali degli score:', {
-      bmi: dashboardData.bmi,
-      score2: dashboardData.score2,
-      diabetesRisk: dashboardData.diabetesRisk,
-      score2Diabetes: dashboardData.score2Diabetes,
-      fib4: dashboardData.fib4,
-      fni: dashboardData.fni
-    });
 
-    // Debug specifico per i valori che non si vedono
-    console.log('🔢 SCORE2 - Valore specifico:', dashboardData.score2.value, 'Rischio:', dashboardData.score2.risk);
-    console.log('🔢 ADA Risk - Score specifico:', dashboardData.diabetesRisk.score, '/', dashboardData.diabetesRisk.maxScore, 'Rischio:', dashboardData.diabetesRisk.risk);
-    console.log('🔢 Nuovi score - SCORE2D:', dashboardData.score2Diabetes?.value, 'FIB4:', dashboardData.fib4?.value, 'FNI:', dashboardData.fni?.value);
+async function calculateAllScores() {
+  console.log("🧠 Avvio calcolo di tutti gli score clinici...");
+
+  // 1. Score di base già presenti nella dashboard
+  calculateBMI();
+  calculatePREDIMED();
+  checkMetabolicSyndrome();
+  calculateFIB4();
+  generateRecommendations();
+  determineScreenings();
+  analyzeLifestyle();
+  calculateNutritionalNeeds();
+  evaluatePhysicalActivity();
+
+  // 2. ADA Risk Score
+  const ada = calculateADARisk(userData);
+  dashboardData.diabetesRisk = {
+    score: ada.score,
+    bmi: ada.bmi,
+    risk: ada.riskCategory,
+    category: getScoreCategory(ada.riskCategory)
+  };
+
+  // 3. FLI (Fatty Liver Index)
+  const fli = calculateFLI(userData);
+  dashboardData.fni = {
+    value: parseFloat(fli.fli.toFixed(1)),
+    category: fli.category,
+    status: getScoreCategory(fli.category)
+  };
+
+  // 4. SCORE2 (rischio cardiovascolare a 10 anni)
+  const score2 = calculateSCORE2(userData);
+  dashboardData.score2 = {
+    value: score2.value,
+    risk: score2.risk,
+    category: getScoreCategory(score2.risk)
+  };
+
+  // 5. SCORE2-Diabetes (se utente è diabetico o valori disponibili)
+  const score2d = calculateSCORE2Diabetes(userData);
+  dashboardData.score2Diabetes = {
+    value: score2d.value,
+    risk: score2d.risk,
+    category: getScoreCategory(score2d.risk),
+    hba1c: userData.hba1c || '--',
+    glicemia: userData.glicemia_valore || '--',
+    sistolica: userData.pressione_sistolica || '--'
+  };
+
+  // 6. FRAIL (valutazione geriatrica semplificata per >65 anni)
+  if (parseInt(userData.eta) > 65) {
+    const frail = calculateFRAIL(userData);
+    dashboardData.frail = {
+      score: frail.score,
+      status: frail.status
+    };
   }
+
+  // 🧪 Debug log finale
+  console.log("✅ Score calcolati con successo:", dashboardData);
+  console.log('🔢 SCORE2:', dashboardData.score2.value, '→', dashboardData.score2.risk);
+  console.log('🔢 ADA Risk:', dashboardData.diabetesRisk.score, '/8 →', dashboardData.diabetesRisk.risk);
+  console.log('🔢 SCORE2-Diabetes:', dashboardData.score2Diabetes.value, '→', dashboardData.score2Diabetes.risk);
+  console.log('🔢 FLI:', dashboardData.fni.value, '→', dashboardData.fni.category);
+}
+
+
+    function getScoreCategory(riskLabel) {
+  const label = String(riskLabel || '').toLowerCase();
+  if (['basso', 'normale', 'robusto'].includes(label)) return 'success';
+  if (['moderato', 'media', 'pre-frail', 'probabile'].includes(label)) return 'warning';
+  if (['alto', 'molto alto', 'alta probabilità', 'frail'].includes(label)) return 'danger';
+  return 'warning'; // fallback neutro
+}
+
 
   // 1. Calcolo BMI
   function calculateBMI() {
