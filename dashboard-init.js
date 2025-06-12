@@ -473,22 +473,27 @@ function calculatePREDIMED() {
 }
 
 
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', async function() {
   try {
     const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
-
-    if (sessionError || !sessionData?.session?.user?.email) {
-      console.error('⚠️ Sessione non valida:', sessionError);
+    if (sessionError || !sessionData.session) {
       window.location.href = 'login.html';
       return;
     }
 
-    const email = sessionData.session.user.email;
-    await loadUserData(email);
-    await calculateAllScores();
+    const emailUtente = sessionData.session.user.email;
+
+    await loadUserData(emailUtente);
+    calculateAllScores();
     updateDashboard();
-  } catch (err) {
-    console.error("Errore durante l'inizializzazione:", err);
+
+    initializeCharts();
+    setupTabs();
+    setupExportButton();
+
+  } catch (error) {
+    console.error('Errore inizializzazione dashboard:', error);
   }
 });
+
 
