@@ -745,6 +745,9 @@
     <label class="form-label">Peso (kg)</label>
     <input type="number" id="profilo-peso" value=${userData.peso ? userData.peso + ' kg' : ''} />
     </div>
+    <label>Circonferenza vita (cm)</label>
+<input type="number" id="profilo-circonferenza_vita" />
+
     </div>
     </div>
 
@@ -1457,6 +1460,8 @@ step_test: document.getElementById("profilo-step_test")?.value,
         artrite: document.getElementById("profilo-artrite")?.value,
         vita: document.getElementById("profilo-vita")?.value,
         stanchezza: document.getElementById("profilo-stanchezza")?.value,
+                circonferenza_vita: parseFloat(document.getElementById("profilo-circonferenza_vita")?.value),
+
         camminata: document.getElementById("profilo-camminata")?.value,
         sollevamento: document.getElementById("profilo-sollevamento")?.value,
         sedia: document.getElementById("profilo-sedia")?.value,
