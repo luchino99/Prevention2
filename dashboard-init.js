@@ -132,7 +132,7 @@ async function calculateAllScores() {
   console.log('🔢 FLI:', dashboardData.fni.value, '→', dashboardData.fni.category);
 }
 
-async function loadUserData(email) {
+export async function loadUserData(email) {
   try {
     const { data, error } = await supabaseClient
       .from('anagrafica_utenti')
