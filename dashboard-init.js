@@ -132,6 +132,61 @@ async function calculateAllScores() {
   console.log('🔢 FLI:', dashboardData.fni.value, '→', dashboardData.fni.category);
 }
 
+export function updateDashboard() {
+  console.log("🔄 Inizio aggiornamento dashboard...");
+  console.log("📊 Dati da visualizzare:", dashboardData);
+
+  // === RIEPILOGO SALUTE ===
+
+  // BMI
+  document.getElementById("bmi-indicator").textContent = dashboardData.bmi.value || '--';
+  document.getElementById("bmi-badge").textContent = dashboardData.bmi.category || '--';
+  document.getElementById("bmi-category").textContent = dashboardData.bmi.category || '--';
+
+  // SCORE2
+  document.getElementById("score2-indicator").textContent = `${dashboardData.score2.value || 0}%`;
+  document.getElementById("score2-badge").textContent = dashboardData.score2.risk || '--';
+  document.getElementById("score2-category").textContent = dashboardData.score2.risk || '--';
+
+  // PREDIMED
+  document.getElementById("predimed-indicator").textContent = dashboardData.predimed.value || '--';
+  document.getElementById("predimed-badge").textContent = dashboardData.predimed.adherence || '--';
+  document.getElementById("predimed-category").textContent = dashboardData.predimed.adherence || '--';
+
+  // === RISCHI DETTAGLIATI ===
+
+  // SCORE2-Diabetes
+  const score2d = dashboardData.score2Diabetes;
+  const score2dValue = parseFloat(score2d.value || 0);
+  const offset = 314.16 * (1 - score2dValue / 100);
+  document.querySelector(".ring-cv").style.strokeDashoffset = offset;
+  document.getElementById("score2d-banner-text").textContent = `${score2dValue}%`;
+  document.getElementById("score2d-banner-hba1c").textContent = `${score2d.hba1c || '--'} %`;
+  document.getElementById("score2d-banner-glucose").textContent = `${score2d.glicemia || '--'} mg/dL`;
+  document.getElementById("score2d-banner-sbp").textContent = `${score2d.sistolica || '--'} mmHg`;
+
+  // ADA Diabetes Risk
+  const ada = dashboardData.diabetesRisk;
+  const adaPerc = ada.score / ada.maxScore;
+  document.querySelector(".ring-ada").style.strokeDashoffset = 314.16 * (1 - adaPerc);
+  document.getElementById("diabetes-risk-text").textContent = `${ada.score}/${ada.maxScore}`;
+  document.getElementById("glicemia-valore").textContent = `${dashboardData.score2Diabetes.glicemia || '--'} mg/dL`;
+  document.getElementById("familiarita-diabete").textContent = userData.familiari_diabete || '--';
+  document.getElementById("ipertensione").textContent = userData.pressione_alta || '--';
+  document.getElementById("attivita-fisica").textContent = `${userData.durata_attivita || 0} min/settimana`;
+
+  // CV Tab
+  document.getElementById("cv-risk-text").textContent = `${score2dValue}%`;
+  document.getElementById("cv-age").textContent = `${userData.eta || '--'} anni`;
+  document.getElementById("cv-pressure").textContent = `${userData.pressione_sistolica || '--'} mmHg`;
+  document.getElementById("cv-cholesterol").textContent = `${userData.colesterolo_totale || '--'} mg/dL`;
+  document.getElementById("cv-smoking").textContent = userData.fumatore || '--';
+
+  console.log("✅ Dashboard aggiornata");
+}
+
+
+
 export async function loadUserData(email) {
   try {
     const { data, error } = await supabaseClient
