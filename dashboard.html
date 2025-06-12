@@ -2039,11 +2039,19 @@
       predimedAdherenceEl.innerHTML = `Aderenza alla dieta mediterranea: <span class="font-medium">${dashboardData.predimed.adherence}</span>`;
     }
 
-    const stressBar = document.querySelector('#tab-stile-vita .bg-yellow-500');
-    if (stressBar) {
-      stressBar.style.width = dashboardData.lifestyle.stress.percentage + '%';
-      stressBar.className = `h-2 rounded-full ${dashboardData.lifestyle.stress.percentage > 70 ? 'bg-red-500' : dashboardData.lifestyle.stress.percentage > 40 ? 'bg-yellow-500' : 'bg-green-500'}`;
-    }
+const stressBar = document.querySelector('#tab-stile-vita .bg-yellow-500');
+if (stressBar && dashboardData.lifestyle?.stress?.percentage !== undefined) {
+  const perc = dashboardData.lifestyle.stress.percentage;
+  stressBar.style.width = perc + '%';
+  stressBar.className = `h-2 rounded-full ${
+    perc > 70 ? 'bg-red-500' :
+    perc > 40 ? 'bg-yellow-500' :
+    'bg-green-500'
+  }`;
+} else {
+  console.warn('⚠️ Dato stress non disponibile o incompleto');
+}
+
 
     const sleepBar = document.querySelector('#tab-stile-vita .bg-red-500');
     if (sleepBar) {
