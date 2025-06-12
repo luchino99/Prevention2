@@ -29,16 +29,16 @@ import {
 
 
 
-function getScoreCategory(risk) {
-  const normalized = (risk || '').toLowerCase();
 
-  if (['basso', 'low', 'normale'].includes(normalized)) return 'success';
-  if (['moderato', 'media', 'intermedio'].includes(normalized)) return 'warning';
-  if (['alto', 'molto alto', 'severo', 'elevato'].includes(normalized)) return 'danger';
+function getScoreCategory(riskLabel) {
+  const label = (riskLabel || '').toLowerCase();
+
+  if (['basso', 'low', 'normale', 'robusto'].includes(label)) return 'success';
+  if (['moderato', 'media', 'pre-frail', 'intermedio', 'probabile'].includes(label)) return 'warning';
+  if (['alto', 'molto alto', 'frail', 'alta probabilità', 'severo'].includes(label)) return 'danger';
 
   return 'warning'; // fallback neutro
 }
-
 
 
 async function calculateAllScores() {
