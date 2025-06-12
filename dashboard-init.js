@@ -300,3 +300,12 @@ function evaluatePhysicalActivity() {
   }
 }
 
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    await loadUserData();            // <-- devi avere già questa funzione altrove o dichiararla
+    await calculateAllScores();
+    updateDashboard();
+  } catch (err) {
+    console.error("Errore durante l'inizializzazione:", err);
+  }
+});
