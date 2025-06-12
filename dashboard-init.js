@@ -446,6 +446,33 @@ function evaluatePhysicalActivity() {
   }
 }
 
+function calculatePREDIMED() {
+  let score = 0;
+
+  for (let i = 1; i <= 14; i++) {
+    const value = String(userData[`predimed_${i}`] || '').toLowerCase();
+    if (['sì', 'si', '1', 'true'].includes(value)) {
+      score++;
+    }
+  }
+
+  dashboardData.predimed.value = score;
+
+  if (score >= 10) {
+    dashboardData.predimed.adherence = 'Alta aderenza';
+    dashboardData.predimed.status = 'success';
+  } else if (score >= 6) {
+    dashboardData.predimed.adherence = 'Media aderenza';
+    dashboardData.predimed.status = 'warning';
+  } else {
+    dashboardData.predimed.adherence = 'Bassa aderenza';
+    dashboardData.predimed.status = 'danger';
+  }
+
+  console.log('✅ PREDIMED calcolato:', dashboardData.predimed);
+}
+
+
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
