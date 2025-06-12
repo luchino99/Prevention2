@@ -304,15 +304,15 @@ function determineScreenings() {
   }
 }
 function analyzeLifestyle() {
-  const stress = parseInt(userData.stress) || 5;
-  const hasInsomnia = userData.insonnia?.toLowerCase() === 'sì';
-  const hasDepression = userData.depressione?.toLowerCase() === 'sì';
+  const stress = isNaN(parseInt(userData.stress)) ? 5 : parseInt(userData.stress);
+  const hasInsomnia = userData.insonnia?.toLowerCase?.() === 'sì';
+  const hasDepression = userData.depressione?.toLowerCase?.() === 'sì';
 
   dashboardData.lifestyle = {
     stress: {
       level: stress,
       category: stress <= 3 ? 'Basso' : stress <= 7 ? 'Medio' : 'Alto',
-      percentage: (stress / 10) * 100
+      percentage: Math.round((stress / 10) * 100)
     },
     sleep: {
       quality: hasInsomnia ? 'Insufficiente' : 'Buona',
@@ -325,6 +325,8 @@ function analyzeLifestyle() {
     }
   };
 }
+
+
 function evaluatePhysicalActivity() {
   const frequency = userData.frequenza_attivita_fisica || '0 volte/settimana';
   const type = userData.tipo_attivita || '';
