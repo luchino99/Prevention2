@@ -13,7 +13,9 @@ export function calculateADARisk(userData) {
   if (gender === "femmina" && userData.gestational?.toLowerCase() === "sì") score += 1;
 
   if (userData.familiari_diabete?.toLowerCase() === "sì") score += 1;
-  if (userData.pressione_alta?.toLowerCase() === "sì") score += 1;
+  const sistolica = parseFloat(userData.pressione_sistolica);
+if (!isNaN(sistolica) && sistolica >= 135) score += 1;
+
 
   const minuti = parseInt(userData.minuti_attivita || 0);
   const attivo = minuti >= 150;
