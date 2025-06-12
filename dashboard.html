@@ -931,9 +931,9 @@
       const emailUtente = sessionData.session.user.email;
 
       // Carica dati dal database
-      await loadUserData(emailUtente);
-      calculateAllScores();
-      updateDashboard();
+      
+      
+      
       initializeCharts();
       setupTabs();
       setupExportButton();
@@ -944,97 +944,7 @@
   });
 
   // Funzione per caricare i dati utente
-  async function loadUserData(email) {
-    try {
-      const { data, error } = await supabaseClient
-      .from('anagrafica_utenti')
-      .select('*')
-      .eq('email', email)
-      .single();
-
-      if (error) {
-        console.error('Errore Supabase:', error);
-        throw error;
-      }
-
-      userData = data || {};
-      console.log('🔍 Dati utente caricati:', userData);
-
-      // Debug: verifica campi specifici per SCORE2 e ADA Risk
-      console.log('📊 Campi SCORE2:', {
-        eta: userData.eta,
-        sesso: userData.sesso,
-        pressione_sistolica: userData.pressione_sistolica,
-        colesterolo_totale: userData.colesterolo_totale,
-        colesterolo_hdl_valore: userData.colesterolo_hdl_valore,
-        fumatore: userData.fumatore
-      });
-
-      console.log('📊 Campi ADA Risk:', {
-        familiari_diabete: userData.familiari_diabete,
-        pressione_alta: userData.pressione_alta,
-        attivita_fisica: userData.attivita_fisica,
-        durata_attivita: userData.durata_attivita,
-        glicemia_valore: userData.glicemia_valore
-      });
-
-    } catch (error) {
-      console.error('❌ Errore caricamento dati:', error);
-      // Aggiungi dati di fallback per il debug
-      userData = {
-        email: email,
-        // Aggiungi valori di test per verificare se il problema è nel caricamento dati
-        eta: 55,
-        sesso: 'maschio',
-        pressione_sistolica: 145,
-        pressione_diastolica: 85,
-        colesterolo_totale: 200,
-        colesterolo_hdl_valore: 45,
-        fumatore: 'no'
-      };
-      console.log('🔧 Usando dati di fallback per debug:', userData);
-    }
-  }
-
-
-
-
-
-
-
-    function getScoreCategory(riskLabel) {
-  const label = String(riskLabel || '').toLowerCase();
-  if (['basso', 'normale', 'robusto'].includes(label)) return 'success';
-  if (['moderato', 'media', 'pre-frail', 'probabile'].includes(label)) return 'warning';
-  if (['alto', 'molto alto', 'alta probabilità', 'frail'].includes(label)) return 'danger';
-  return 'warning'; // fallback neutro
-}
-
-
-  // 1. Calcolo BMI
-  function calculateBMI() {
-    const peso = parseFloat(userData.peso);
-    const altezza = parseFloat(userData.altezza) / 100;
-
-    if (peso && altezza) {
-      const bmi = peso / (altezza * altezza);
-      dashboardData.bmi.value = bmi.toFixed(1);
-
-      if (bmi < 18.5) {
-        dashboardData.bmi.category = 'Sottopeso';
-        dashboardData.bmi.status = 'warning';
-      } else if (bmi < 25) {
-        dashboardData.bmi.category = 'Normopeso';
-        dashboardData.bmi.status = 'success';
-      } else if (bmi < 30) {
-        dashboardData.bmi.category = 'Sovrappeso';
-        dashboardData.bmi.status = 'warning';
-      } else {
-        dashboardData.bmi.category = 'Obesità';
-        dashboardData.bmi.status = 'danger';
-      }
-    }
-  }
+ 
 
   // 2. Calcolo SCORE2 - Versione migliorata con debug
   function calculateSCORE2() {
