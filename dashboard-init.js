@@ -93,6 +93,56 @@ async function calculateAllScores() {
   console.log('🔢 FLI:', dashboardData.fni.value, '→', dashboardData.fni.category);
 }
 
+async function loadUserData(email) {
+  try {
+    const { data, error } = await supabaseClient
+      .from('anagrafica_utenti')
+      .select('*')
+      .eq('email', email)
+      .single();
+
+    if (error || !data) {
+      console.error('❌ Errore Supabase nel recupero dati utente:', error);
+      throw error;
+    }
+
+    userData = data;
+    console.log('🔍 Dati utente caricati correttamente:', userData);
+  } catch (err) {
+    console.warn('⚠️ Errore durante il recupero dati, uso dati di fallback.');
+    userData = {
+      nome: 'Debug User',
+      eta: 55,
+      sesso: 'maschio',
+      peso: 75,
+      altezza: 175,
+      pressione_sistolica: 140,
+      pressione_diastolica: 85,
+      colesterolo_totale: 180,
+      colesterolo_hdl_valore: 45,
+      trigliceridi: 160,
+      glicemia_valore: 110,
+      hba1c: 6.8,
+      diabete: 'sì',
+      pressione_alta: 'sì',
+      fumatore: 'no',
+      familiari_diabete: 'no',
+      attivita_fisica: 'si',
+      durata_attivita: 60,
+      tipo_lavoro: 'moderatamente attivo',
+      ast: 40,
+      alt: 35,
+      piastrine: 210,
+      albumina: 4.1,
+      linfociti: 1900,
+      stress: 6,
+      insonnia: 'no',
+      depressione: 'no'
+    };
+  }
+}
+
+
 function calculateBMI() {
   const peso = parseFloat(userData.peso);
   const altezza = parseFloat(userData.altezza) / 100;
@@ -302,10 +352,20 @@ function evaluatePhysicalActivity() {
 
 document.addEventListener('DOMContentLoaded', async () => {
   try {
-    await loadUserData();            // <-- devi avere già questa funzione altrove o dichiararla
+    const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
+
+    if (sessionError || !sessionData?.session?.user?.email) {
+      console.error('⚠️ Sessione non valida:', sessionError);
+      window.location.href = 'login.html';
+      return;
+    }
+
+    const email = sessionData.session.user.email;
+    await loadUserData(email);
     await calculateAllScores();
     updateDashboard();
   } catch (err) {
     console.error("Errore durante l'inizializzazione:", err);
   }
 });
+
