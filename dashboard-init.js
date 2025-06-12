@@ -41,6 +41,30 @@ function getScoreCategory(riskLabel) {
 }
 
 
+function updateLifestyleTab() {
+  const lifestyle = dashboardData.lifestyle || {};
+  const stress = lifestyle.stress || {};
+  const sleep = lifestyle.sleep || {};
+  const mood = lifestyle.mood || {};
+
+  if (stress.percentage !== undefined) {
+    document.querySelector("#stressBar").style.width = stress.percentage + "%";
+    document.querySelector("#stressLevel").textContent = stress.category;
+  }
+
+  if (sleep.percentage !== undefined) {
+    document.querySelector("#sleepBar").style.width = sleep.percentage + "%";
+    document.querySelector("#sleepQuality").textContent = sleep.quality;
+  }
+
+  if (mood.percentage !== undefined) {
+    document.querySelector("#moodBar").style.width = mood.percentage + "%";
+    document.querySelector("#moodStatus").textContent = mood.status;
+  }
+}
+
+
+
 async function calculateAllScores() {
   console.log("🧠 Avvio calcolo di tutti gli score clinici...");
 
