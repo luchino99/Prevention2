@@ -1004,8 +1004,6 @@
 
     calculateBMI();
     calculateSCORE2();
-    mgDlToMmolL();
-    getRiskCategory();
     calculatePREDIMED();
     checkMetabolicSyndrome();
     calculateDiabetesRisk();
@@ -1059,215 +1057,84 @@
   }
 
   // 2. Calcolo SCORE2 - Versione migliorata con debug
-    // Coefficienti del modello SCORE2
-        const coefficients = {
-            male: {
-                age: 0.3742,
-                smoking: 0.6012,
-                sbp: 0.2777,
-                tchol: 0.1458,
-                hdl: -0.2698,
-                smoking_age: -0.0755,
-                sbp_age: -0.0255,
-                tchol_age: -0.0281,
-                hdl_age: 0.0426,
-                baseline_survival: 0.9605
-            },
-            female: {
-                age: 0.4648,
-                smoking: 0.7744,
-                sbp: 0.3131,
-                tchol: 0.1002,
-                hdl: -0.2606,
-                smoking_age: -0.1088,
-                sbp_age: -0.0277,
-                tchol_age: -0.0226,
-                hdl_age: 0.0613,
-                baseline_survival: 0.9776
-            }
-        };
+  function calculateSCORE2() {
+    console.log('🔄 Inizio calcolo SCORE2...');
 
-        // Scale per calibrazione regionale
-        const scales = {
-            male: {
-                low: { scale1: -0.5699, scale2: 0.7476 },
-                moderate: { scale1: -0.1565, scale2: 0.8009 },
-                high: { scale1: 0.3207, scale2: 0.9360 },
-                very_high: { scale1: 0.5836, scale2: 0.8294 }
-            },
-            female: {
-                low: { scale1: -0.7380, scale2: 0.7019 },
-                moderate: { scale1: -0.3143, scale2: 0.7701 },
-                high: { scale1: 0.5710, scale2: 0.9369 },
-                very_high: { scale1: 0.9412, scale2: 0.8329 }
-            }
-        };
+    const eta = parseInt(userData.eta);
+    const sesso = userData.sesso?.toLowerCase();
+    const sistolica = parseFloat(userData.pressione_sistolica);
+    const colTotale = parseFloat(userData.colesterolo_totale);
+    const hdl = parseFloat(userData.colesterolo_hdl_valore);
+    const fumatore = userData.fumatore?.toLowerCase() === 'sì';
 
-        // Funzione di conversione da mg/dL a mmol/L
-        function mgDlToMmolL(mgDl) {
-            return mgDl / 38.67;
-        }
+    console.log('📋 Valori SCORE2 estratti:', {
+      eta, sesso, sistolica, colTotale, hdl, fumatore
+    });
 
-        function calculateSCORE2(data) {
-            console.log('Dati ricevuti per il calcolo:', data);
-            
-            // Conversione dei valori di colesterolo da mg/dL a mmol/L
-            const tcholMmolL = mgDlToMmolL(data.tchol);
-            const hdlMmolL = mgDlToMmolL(data.hdl);
-            
-            console.log('Conversioni colesterolo:');
-            console.log(`Colesterolo totale: ${data.tchol} mg/dL = ${tcholMmolL.toFixed(2)} mmol/L`);
-            console.log(`HDL: ${data.hdl} mg/dL = ${hdlMmolL.toFixed(2)} mmol/L`);
-            
-            const coef = coefficients[data.gender];
-            
-            // Trasformazioni delle variabili
-            const cage = (data.age - 60) / 5;
-            const csbp = (data.sbp - 120) / 20;
-            const ctchol = tcholMmolL - 6;  // Usa il valore convertito
-            const chdl = (hdlMmolL - 1.3) / 0.5;  // Usa il valore convertito
+    // Verifica che tutti i valori necessari siano presenti
+    if (!eta || isNaN(eta)) {
+      console.warn('⚠️ Età mancante o non valida:', userData.eta);
+      dashboardData.score2 = { value: '0.0', risk: 'Dati insufficienti', category: 'warning' };
+      return;
+    }
 
-            console.log('Variabili trasformate:');
-            console.log(`cage: ${cage.toFixed(3)}`);
-            console.log(`csbp: ${csbp.toFixed(3)}`);
-            console.log(`ctchol: ${ctchol.toFixed(3)}`);
-            console.log(`chdl: ${chdl.toFixed(3)}`);
+    if (!sistolica || isNaN(sistolica)) {
+      console.warn('⚠️ Pressione sistolica mancante o non valida:', userData.pressione_sistolica);
+      dashboardData.score2 = { value: '0.0', risk: 'Dati insufficienti', category: 'warning' };
+      return;
+    }
 
-            // Calcolo X (somma dei prodotti beta * variabili trasformate)
-            let x = 0;
-            x += coef.age * cage;
-            x += coef.smoking * data.smoking;
-            x += coef.sbp * csbp;
-            x += coef.tchol * ctchol;
-            x += coef.hdl * chdl;
-            x += coef.smoking_age * data.smoking * cage;
-            x += coef.sbp_age * csbp * cage;
-            x += coef.tchol_age * ctchol * cage;
-            x += coef.hdl_age * chdl * cage;
+    if (!colTotale || isNaN(colTotale) || !hdl || isNaN(hdl)) {
+      console.warn('⚠️ Valori colesterolo mancanti:', { colTotale, hdl });
+      dashboardData.score2 = { value: '0.0', risk: 'Dati insufficienti', category: 'warning' };
+      return;
+    }
 
-            console.log('X calcolato:', x.toFixed(4));
+    let score = 0;
 
-            // Calcolo rischio a 10 anni non calibrato
-            const tenYearRisk = 1 - Math.pow(coef.baseline_survival, Math.exp(x));
-            console.log('Rischio a 10 anni non calibrato:', (tenYearRisk * 100).toFixed(2) + '%');
+    // Fattore età
+    if (eta >= 40 && eta < 50) score += 0;
+    else if (eta >= 50 && eta < 60) score += 3;
+    else if (eta >= 60 && eta < 70) score += 6;
+    else if (eta >= 70) score += 9;
 
-            // Calibrazione regionale
-            const scale = scales[data.gender][data.riskRegion];
-            
-            if (!scale || !scale.scale1 || !scale.scale2) {
-                console.error('Scale non trovate per:', data.gender, data.riskRegion);
-                throw new Error('Errore nella calibrazione regionale.');
-            }
-            
-            if (tenYearRisk <= 0 || tenYearRisk >= 1) {
-                console.error('TenYearRisk non valido:', tenYearRisk);
-                throw new Error('Errore nel calcolo del rischio.');
-            }
-            
-            // Formula di calibrazione
-            const calibratedRisk = (1 - Math.exp(-Math.exp(scale.scale1 + scale.scale2 * Math.log(-Math.log(1 - tenYearRisk))))) * 100;
-            console.log('Rischio calibrato:', calibratedRisk.toFixed(2) + '%');
+    // Fattore pressione
+    if (sistolica >= 140) score += 2;
+    if (sistolica >= 160) score += 3;
+    if (sistolica >= 180) score += 4;
 
-            // Mostra informazioni di debug
-            const debugContent = document.getElementById('debugContent');
-            debugContent.innerHTML = `
-                <p><strong>Conversioni:</strong><br>
-                Colesterolo totale: ${data.tchol} mg/dL = ${tcholMmolL.toFixed(2)} mmol/L<br>
-                HDL: ${data.hdl} mg/dL = ${hdlMmolL.toFixed(2)} mmol/L</p>
-                <p><strong>Variabili trasformate:</strong><br>
-                cage: ${cage.toFixed(3)}<br>
-                csbp: ${csbp.toFixed(3)}<br>
-                ctchol: ${ctchol.toFixed(3)}<br>
-                chdl: ${chdl.toFixed(3)}</p>
-                <p><strong>Risultati:</strong><br>
-                X: ${x.toFixed(4)}<br>
-                Rischio non calibrato: ${(tenYearRisk * 100).toFixed(2)}%<br>
-                Rischio calibrato: ${calibratedRisk.toFixed(2)}%</p>
-            `;
+    // Fattore colesterolo
+    const nonHDL = colTotale - hdl;
+    if (nonHDL >= 190) score += 1;
+    if (nonHDL >= 220) score += 2;
+    if (nonHDL >= 280) score += 3;
 
-            return Math.max(0, Math.min(100, calibratedRisk));
-        }
+    // Fattore fumo
+    if (fumatore) score += 4;
 
-        function getRiskCategory(risk) {
-            if (risk < 2.5) return { 
-                category: 'Basso', 
-                class: 'risk-low',
-                interpretation: 'Rischio basso. Mantenere uno stile di vita sano.'
-            };
-            if (risk < 7.5) return { 
-                category: 'Moderato', 
-                class: 'risk-moderate',
-                interpretation: 'Rischio moderato. Considerare modifiche dello stile di vita.'
-            };
-            if (risk < 10) return { 
-                category: 'Alto', 
-                class: 'risk-high',
-                interpretation: 'Rischio alto. Consultare il medico per valutare interventi preventivi.'
-            };
-            return { 
-                category: 'Molto Alto', 
-                class: 'risk-very-high',
-                interpretation: 'Rischio molto alto. È fortemente consigliata una valutazione medica urgente.'
-            };
-        }
+    // Converti in percentuale di rischio
+    const riskPercent = Math.min(score * 0.5, 20);
 
-        document.getElementById('score2Form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const data = {
-                age: parseInt(document.getElementById('age').value),
-                gender: document.querySelector('input[name="gender"]:checked').value,
-                smoking: parseInt(document.querySelector('input[name="smoking"]:checked').value),
-                sbp: parseInt(document.getElementById('sbp').value),
-                tchol: parseFloat(document.getElementById('tchol').value),  // In mg/dL
-                hdl: parseFloat(document.getElementById('hdl').value),      // In mg/dL
-                riskRegion: document.getElementById('riskRegion').value
-            };
+    console.log('🧮 Calcolo SCORE2 completato:', { score, riskPercent });
 
-            // Validazioni
-            if (!data.gender || data.smoking === null || !data.riskRegion) {
-                alert('Per favore, completa tutti i campi obbligatori.');
-                return;
-            }
-            
-            if (data.age < 40 || data.age > 79) {
-                alert('SCORE2 è valido solo per età tra 40 e 79 anni. Per età ≥70 anni, considera SCORE2-OP.');
-                return;
-            }
+    dashboardData.score2.value = riskPercent.toFixed(1);
 
-            // Validazione dei valori di colesterolo in mg/dL
-            if (data.tchol < 100 || data.tchol > 400) {
-                alert('Il colesterolo totale deve essere tra 100 e 400 mg/dL.');
-                return;
-            }
+    if (riskPercent < 1) {
+      dashboardData.score2.risk = 'Basso';
+      dashboardData.score2.category = 'success';
+    } else if (riskPercent < 5) {
+      dashboardData.score2.risk = 'Moderato';
+      dashboardData.score2.category = 'warning';
+    } else if (riskPercent < 10) {
+      dashboardData.score2.risk = 'Alto';
+      dashboardData.score2.category = 'danger';
+    } else {
+      dashboardData.score2.risk = 'Molto alto';
+      dashboardData.score2.category = 'danger';
+    }
 
-            if (data.hdl < 20 || data.hdl > 100) {
-                alert('Il colesterolo HDL deve essere tra 20 e 100 mg/dL.');
-                return;
-            }
-
-            try {
-                const risk = calculateSCORE2(data);
-                const riskInfo = getRiskCategory(risk);
-                
-                document.getElementById('riskValue').textContent = risk.toFixed(1) + '%';
-                document.getElementById('riskCategory').textContent = 'Rischio ' + riskInfo.category;
-                document.getElementById('riskCategory').className = 'risk-category ' + riskInfo.class;
-                document.getElementById('riskInterpretation').textContent = riskInfo.interpretation;
-                
-                const resultDiv = document.getElementById('result');
-                resultDiv.classList.add('show');
-                
-                // Mostra debug info se desiderato (decommentare la riga seguente)
-                // document.getElementById('debugInfo').classList.add('show');
-                
-                resultDiv.scrollIntoView({ behavior: 'smooth' });
-                
-            } catch (error) {
-                alert('Errore nel calcolo. Verificare i dati inseriti.');
-                console.error('Errore di calcolo:', error);
-            }
-        });
+    console.log('✅ SCORE2 calcolato:', dashboardData.score2);
+  }
 
   // 3. Calcolo PREDIMED
   function calculatePREDIMED() {
