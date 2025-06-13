@@ -5,10 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard - HealthAI</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.6/dist/umd/supabase.min.js"></script>
-<script type="module" src="./dashboard-init.js"></script>
-
-
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -143,7 +140,7 @@
   }
 
   .card, .badge, .score-indicator, .score-indicator-2 .tab-button, .recommendation-card,
- .bg-gray-50, .bg-blue-50, .bg-gray-200, .bg-blue-100,
+  ., .bg-gray-50, .bg-blue-50, .bg-gray-200, .bg-blue-100,
   .border-l-4, svg circle, svg text, .progress-ring__circle {
     transition: all var(--animation-speed);
   }
@@ -931,9 +928,9 @@
       const emailUtente = sessionData.session.user.email;
 
       // Carica dati dal database
-      
-      
-      
+      await loadUserData(emailUtente);
+      calculateAllScores();
+      updateDashboard();
       initializeCharts();
       setupTabs();
       setupExportButton();
@@ -944,7 +941,120 @@
   });
 
   // Funzione per caricare i dati utente
- 
+  async function loadUserData(email) {
+    try {
+      const { data, error } = await supabaseClient
+      .from('anagrafica_utenti')
+      .select('*')
+      .eq('email', email)
+      .single();
+
+      if (error) {
+        console.error('Errore Supabase:', error);
+        throw error;
+      }
+
+      userData = data || {};
+      console.log('🔍 Dati utente caricati:', userData);
+
+      // Debug: verifica campi specifici per SCORE2 e ADA Risk
+      console.log('📊 Campi SCORE2:', {
+        eta: userData.eta,
+        sesso: userData.sesso,
+        pressione_sistolica: userData.pressione_sistolica,
+        colesterolo_totale: userData.colesterolo_totale,
+        colesterolo_hdl_valore: userData.colesterolo_hdl_valore,
+        fumatore: userData.fumatore
+      });
+
+      console.log('📊 Campi ADA Risk:', {
+        familiari_diabete: userData.familiari_diabete,
+        pressione_alta: userData.pressione_alta,
+        attivita_fisica: userData.attivita_fisica,
+        durata_attivita: userData.durata_attivita,
+        glicemia_valore: userData.glicemia_valore
+      });
+
+    } catch (error) {
+      console.error('❌ Errore caricamento dati:', error);
+      // Aggiungi dati di fallback per il debug
+      userData = {
+        email: email,
+        // Aggiungi valori di test per verificare se il problema è nel caricamento dati
+        eta: 55,
+        sesso: 'maschio',
+        pressione_sistolica: 145,
+        pressione_diastolica: 85,
+        colesterolo_totale: 200,
+        colesterolo_hdl_valore: 45,
+        fumatore: 'no'
+      };
+      console.log('🔧 Usando dati di fallback per debug:', userData);
+    }
+  }
+
+  // Calcola tutti gli score clinici - Versione con debug
+  function calculateAllScores() {
+    console.log('🚀 Inizio calcolo di tutti gli score...');
+    console.log('📊 Dati disponibili:', Object.keys(userData));
+
+    // Inizializza i dati di default
+    dashboardData.score2 = { value: '0.0', risk: 'Non calcolato', category: 'warning' };
+    dashboardData.diabetesRisk = { score: 0, maxScore: 8, factors: [], risk: 'Non calcolato' };
+
+    calculateBMI();
+    calculateSCORE2();
+    calculatePREDIMED();
+    checkMetabolicSyndrome();
+    calculateDiabetesRisk();
+    calculateScore2Diabetes();
+    calculateFIB4();
+    calculateFNI();
+    generateRecommendations();
+    determineScreenings();
+    analyzeLifestyle();
+    calculateNutritionalNeeds();
+    evaluatePhysicalActivity();
+
+    console.log('🎯 Risultati finali degli score:', {
+      bmi: dashboardData.bmi,
+      score2: dashboardData.score2,
+      diabetesRisk: dashboardData.diabetesRisk,
+      score2Diabetes: dashboardData.score2Diabetes,
+      fib4: dashboardData.fib4,
+      fni: dashboardData.fni
+    });
+
+    // Debug specifico per i valori che non si vedono
+    console.log('🔢 SCORE2 - Valore specifico:', dashboardData.score2.value, 'Rischio:', dashboardData.score2.risk);
+    console.log('🔢 ADA Risk - Score specifico:', dashboardData.diabetesRisk.score, '/', dashboardData.diabetesRisk.maxScore, 'Rischio:', dashboardData.diabetesRisk.risk);
+    console.log('🔢 Nuovi score - SCORE2D:', dashboardData.score2Diabetes?.value, 'FIB4:', dashboardData.fib4?.value, 'FNI:', dashboardData.fni?.value);
+  }
+
+  // 1. Calcolo BMI
+  function calculateBMI() {
+    const peso = parseFloat(userData.peso);
+    const altezza = parseFloat(userData.altezza) / 100;
+
+    if (peso && altezza) {
+      const bmi = peso / (altezza * altezza);
+      dashboardData.bmi.value = bmi.toFixed(1);
+
+      if (bmi < 18.5) {
+        dashboardData.bmi.category = 'Sottopeso';
+        dashboardData.bmi.status = 'warning';
+      } else if (bmi < 25) {
+        dashboardData.bmi.category = 'Normopeso';
+        dashboardData.bmi.status = 'success';
+      } else if (bmi < 30) {
+        dashboardData.bmi.category = 'Sovrappeso';
+        dashboardData.bmi.status = 'warning';
+      } else {
+        dashboardData.bmi.category = 'Obesità';
+        dashboardData.bmi.status = 'danger';
+      }
+    }
+  }
 
   // 2. Calcolo SCORE2 - Versione migliorata con debug
   function calculateSCORE2() {
@@ -2039,19 +2149,11 @@
       predimedAdherenceEl.innerHTML = `Aderenza alla dieta mediterranea: <span class="font-medium">${dashboardData.predimed.adherence}</span>`;
     }
 
-const stressBar = document.querySelector('#tab-stile-vita .bg-yellow-500');
-if (stressBar && dashboardData.lifestyle?.stress?.percentage !== undefined) {
-  const perc = dashboardData.lifestyle.stress.percentage;
-  stressBar.style.width = perc + '%';
-  stressBar.className = `h-2 rounded-full ${
-    perc > 70 ? 'bg-red-500' :
-    perc > 40 ? 'bg-yellow-500' :
-    'bg-green-500'
-  }`;
-} else {
-  console.warn('⚠️ Dato stress non disponibile o incompleto');
-}
-
+    const stressBar = document.querySelector('#tab-stile-vita .bg-yellow-500');
+    if (stressBar) {
+      stressBar.style.width = dashboardData.lifestyle.stress.percentage + '%';
+      stressBar.className = `h-2 rounded-full ${dashboardData.lifestyle.stress.percentage > 70 ? 'bg-red-500' : dashboardData.lifestyle.stress.percentage > 40 ? 'bg-yellow-500' : 'bg-green-500'}`;
+    }
 
     const sleepBar = document.querySelector('#tab-stile-vita .bg-red-500');
     if (sleepBar) {
