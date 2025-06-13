@@ -194,6 +194,13 @@
             line-height: 1.6;
         }
 
+        .unit-info {
+            font-size: 0.9em;
+            color: #666;
+            font-style: italic;
+            margin-top: 4px;
+        }
+
         @media (max-width: 768px) {
             .form-row {
                 flex-direction: column;
@@ -265,12 +272,14 @@
                 <div class="form-group">
                     <div class="form-row">
                         <div class="form-col">
-                            <label for="tchol">Colesterolo totale (mmol/L):</label>
-                            <input type="number" id="tchol" step="0.1" min="2" max="12" required>
+                            <label for="tchol">Colesterolo totale (mg/dL):</label>
+                            <input type="number" id="tchol" min="100" max="500" required>
+                            <div class="unit-info">Valori normali: 120-200 mg/dL</div>
                         </div>
                         <div class="form-col">
-                            <label for="hdl">Colesterolo HDL (mmol/L):</label>
-                            <input type="number" id="hdl" step="0.1" min="0.5" max="3" required>
+                            <label for="hdl">Colesterolo HDL (mg/dL):</label>
+                            <input type="number" id="hdl" min="20" max="120" required>
+                            <div class="unit-info">Valori normali: >40 mg/dL (M), >50 mg/dL (F)</div>
                         </div>
                     </div>
                 </div>
@@ -282,8 +291,9 @@
                             <input type="number" id="agediab" min="10" max="80" required>
                         </div>
                         <div class="form-col">
-                            <label for="hba1c">HbA1c (mmol/mol):</label>
-                            <input type="number" id="hba1c" min="20" max="150" required>
+                            <label for="hba1c">HbA1c (%):</label>
+                            <input type="number" id="hba1c" step="0.1" min="4.0" max="15.0" required>
+                            <div class="unit-info">Valori normali: 4.0-6.0% (non diabetici)</div>
                         </div>
                     </div>
                 </div>
@@ -293,6 +303,7 @@
                         <div class="form-col">
                             <label for="egfr">eGFR (mL/min/1.73m²):</label>
                             <input type="number" id="egfr" min="15" max="150" required>
+                            <div class="unit-info">Valori normali: >90 mL/min/1.73m²</div>
                         </div>
                         <div class="form-col">
                             <label for="riskRegion">Regione di rischio:</label>
@@ -324,12 +335,29 @@
                     inclusi età, sesso, abitudine al fumo, pressione sanguigna, profilo lipidico, controllo glicemico 
                     e funzione renale. I risultati devono essere interpretati nel contesto clinico appropriato.
                 </p>
+                <p style="margin-top: 10px;">
+                    <strong>Nota:</strong> I valori di colesterolo e HbA1c sono richiesti nelle unità di misura 
+                    più comuni utilizzate nei referti di laboratorio italiani (mg/dL per il colesterolo, % per HbA1c).
+                </p>
             </div>
         </div>
     </div>
 
     <script>
-        // Coefficienti del modello SCORE2-Diabetes
+        // Funzioni di conversione delle unità di misura
+        function convertCholesterolToMmol(mgdl) {
+            // Conversione da mg/dL a mmol/L
+            // Fattore di conversione: 1 mmol/L = 38.67 mg/dL
+            return mgdl / 38.67;
+        }
+
+        function convertHbA1cToMmol(percentage) {
+            // Conversione da % a mmol/mol
+            // Formula: mmol/mol = (% - 2.15) × 10.929
+            return (percentage - 2.15) * 10.929;
+        }
+
+        // Coefficienti del modello SCORE2-Diabetes (invariati)
         const coefficients = {
             male: {
                 age: 0.5368,
@@ -373,7 +401,7 @@
             }
         };
 
-        // Scale per calibrazione regionale
+        // Scale per calibrazione regionale (invariate)
         const scales = {
             male: {
                 low: { scale1: -0.5699, scale2: 0.7476 },
@@ -393,15 +421,26 @@
             // Debug: stampa i dati ricevuti
             console.log('Dati ricevuti per il calcolo:', data);
             
+            // Conversione delle unità di misura
+            const tcolMmol = convertCholesterolToMmol(data.tchol);
+            const hdlMmol = convertCholesterolToMmol(data.hdl);
+            const hba1cMmol = convertHbA1cToMmol(data.hba1c);
+            
+            console.log('Conversioni:', {
+                'Colesterolo totale': `${data.tchol} mg/dL → ${tcolMmol.toFixed(2)} mmol/L`,
+                'HDL': `${data.hdl} mg/dL → ${hdlMmol.toFixed(2)} mmol/L`,
+                'HbA1c': `${data.hba1c}% → ${hba1cMmol.toFixed(1)} mmol/mol`
+            });
+            
             const coef = coefficients[data.gender];
             
-            // Trasformazioni delle variabili
+            // Trasformazioni delle variabili (usando i valori convertiti)
             const cage = (data.age - 60) / 5;
             const csbp = (data.sbp - 120) / 20;
-            const ctchol = data.tchol - 6;
-            const chdl = (data.hdl - 1.3) / 0.5;
+            const ctchol = tcolMmol - 6;
+            const chdl = (hdlMmol - 1.3) / 0.5;
             const cagediab = (data.agediab - 50) / 5;
-            const ca1c = (data.hba1c - 31) / 9.34;
+            const ca1c = (hba1cMmol - 31) / 9.34;
             const cegfr = (Math.log(data.egfr) - 4.5) / 0.15;
             const cegfr2 = cegfr * cegfr;
 
@@ -464,10 +503,10 @@
                 gender: document.querySelector('input[name="gender"]:checked').value,
                 smoking: parseInt(document.querySelector('input[name="smoking"]:checked').value),
                 sbp: parseInt(document.getElementById('sbp').value),
-                tchol: parseFloat(document.getElementById('tchol').value),
-                hdl: parseFloat(document.getElementById('hdl').value),
+                tchol: parseFloat(document.getElementById('tchol').value), // mg/dL
+                hdl: parseFloat(document.getElementById('hdl').value), // mg/dL
                 agediab: parseInt(document.getElementById('agediab').value),
-                hba1c: parseInt(document.getElementById('hba1c').value),
+                hba1c: parseFloat(document.getElementById('hba1c').value), // %
                 egfr: parseInt(document.getElementById('egfr').value),
                 riskRegion: document.getElementById('riskRegion').value
             };
@@ -480,6 +519,22 @@
             
             if (data.agediab > data.age) {
                 alert('L\'età alla diagnosi di diabete non può essere superiore all\'età attuale.');
+                return;
+            }
+
+            // Validazioni specifiche per le nuove unità di misura
+            if (data.tchol < 50 || data.tchol > 600) {
+                alert('Il valore del colesterolo totale deve essere compreso tra 50 e 600 mg/dL.');
+                return;
+            }
+
+            if (data.hdl < 10 || data.hdl > 150) {
+                alert('Il valore del colesterolo HDL deve essere compreso tra 10 e 150 mg/dL.');
+                return;
+            }
+
+            if (data.hba1c < 3.0 || data.hba1c > 20.0) {
+                alert('Il valore di HbA1c deve essere compreso tra 3.0% e 20.0%.');
                 return;
             }
 
