@@ -200,7 +200,8 @@ const aliasCondivisi = {
   piastrine: ["piastrine"],
   albumina: ["albumina"],
   linfociti: ["linfociti"],
-  hba1c: ["hba1c"]
+  hba1c: ["hba1c"],
+  circonferenza_vita: ["circonferenza_vita"]
 };
   
 function haRispostaCondivisa(domandaKey) {
