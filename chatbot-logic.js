@@ -11,6 +11,7 @@ const domandeBase = [
   { key: "altezza", testo: "Quanto sei alto/a in cm?" },
   { key: "peso", testo: "Quanto pesi in kg?" },
   { key: "vita", testo: "La misura del tuo giro vita è maggiore di 88 cm (se sei donna) o maggiore di 102 cm (se sei uomo)?" },
+  { key: "circonferenza_vita", testo: "A quanto corrisponde la tua circonferenza vita in centimetri?", tipo: "numero" },
   { key: "glicemia", testo: "La tua glicemia è inferiore a 100 mg/dL?" },
   { key: "glicemia_valore", testo: "Sai a quanto corrisponde il valore della tua glicemia a digiuno?" },
   { key: "hba1c", testo: "Conosci il valore della tua emoglobina glicata (HbA1c)? (in %)" },
