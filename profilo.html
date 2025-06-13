@@ -1284,7 +1284,6 @@ customFields.forEach(field => {
   }
 });
 
-
     const vitaSelect = document.getElementById("profilo-vita");
     if (vitaSelect && userData.vita) {
       vitaSelect.value = userData.vita.toLowerCase();
@@ -1293,6 +1292,13 @@ customFields.forEach(field => {
     initializeAccordions();
 
   }
+
+      const inputCirconferenzaVita = document.getElementById("profilo-circonferenza_vita");
+if (inputCirconferenzaVita && userData.circonferenza_vita !== undefined && userData.circonferenza_vita !== null) {
+  inputCirconferenzaVita.value = userData.circonferenza_vita;
+}
+
+  
 </script>
 
 <script>
