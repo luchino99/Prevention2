@@ -684,13 +684,24 @@
   const supabase = createClient('https://lwuhdgrkaoyvejmzfbtx.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3dWhkZ3JrYW95dmVqbXpmYnR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2NzU1MDcsImV4cCI6MjA2MTI1MTUwN30.1c5iH4PYW-HeigfXkPSgnVK3t02Gv3krSeo7dDSqqsk');
 
   document.addEventListener("DOMContentLoaded", async () => {
-    const userId = localStorage.getItem("user_id");
+const userId = localStorage.getItem("user_id");
 
-    const { data: profile } = await supabase
-      .from('anagrafica_utenti')
-      .select('stanchezza, camminata, malattie_croniche, sedia, perdita_peso')
-      .eq('id', userId)
-      .single();
+if (!userId) {
+  console.error("❌ user_id non trovato in localStorage. Verifica che l'utente sia autenticato.");
+  return;
+}
+
+const { data: profile, error } = await supabase
+  .from('anagrafica_utenti')
+  .select('stanchezza, camminata, malattie_croniche, sedia, perdita_peso')
+  .eq('id', userId)
+  .single();
+
+if (error) {
+  console.error("❌ Errore nel recupero dei dati utente:", error.message);
+  return;
+}
+
 
     if (!profile) return;
 
@@ -724,16 +735,25 @@
     document.getElementById("riskCategory").textContent = category;
     document.getElementById("result").classList.add("show");
 
-    const userId = localStorage.getItem("user_id");
+const userId = localStorage.getItem("user_id");
 
-    // SALVATAGGIO IN anagrafica_utenti
-    await supabase
-      .from("anagrafica_utenti")
-      .update({
-        frail_score: score,
-        frail_category: category
-      })
-      .eq("id", userId);
+if (!userId) {
+  console.error("❌ user_id non trovato nel localStorage. Salvataggio del risultato annullato.");
+  return;
+}
+
+const { error } = await supabase
+  .from("anagrafica_utenti")
+  .update({
+    frail_score: score,
+    frail_category: category
+  })
+  .eq("id", userId);
+
+if (error) {
+  console.error("❌ Errore nel salvataggio del punteggio FRAIL:", error.message);
+}
+
   });
 </script>
 
