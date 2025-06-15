@@ -201,6 +201,8 @@ const aliasCondivisi = {
   albumina: ["albumina"],
   linfociti: ["linfociti"],
   hba1c: ["hba1c"],
+    perdita_peso: ["perdita_peso"],
+  malattie_croniche: ["malattie_croniche"],
   circonferenza_vita: ["circonferenza_vita"]
 };
   
