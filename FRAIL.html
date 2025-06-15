@@ -740,14 +740,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("riskCategory").textContent = category;
     document.getElementById("result").classList.add("show");
 
+const parsedScore = parseInt(score); // assicurati che sia numero
+const parsedCategory = String(category).trim().toLowerCase(); // normalizza
+
 const { data, error: updateError } = await supabase
   .from("anagrafica_utenti")
   .update({
-    frail_score: score,
-    frail_category: category
+    frail_score: parsedScore,
+    frail_category: parsedCategory
   })
   .eq("email", email)
-  .select(); // 👈 OBBLIGATORIO per sapere se aggiorna
+  .select();
 
 if (updateError) {
   console.error("❌ Errore nel salvataggio del punteggio FRAIL:", updateError.message);
