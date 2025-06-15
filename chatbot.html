@@ -549,12 +549,13 @@
 <!-- CORREGGERE LINEA IN BASSO (QUANDO SI AVVIA CHAT) -->
 <div class="chat-container">
   <div style="flex: 1; height: 100%; border: none; overflow: hidden;">
-    <iframe
-    src="chat.html"
-    style="width: 100%; height: 100%; border: none;"
-    title="Chat HealthAI"
-    loading="lazy">
-  </iframe>
+<iframe
+  id="main-frame"
+  src="chat.html"
+  style="width: 100%; height: 100%; border: none;"
+  title="Chat HealthAI"
+  loading="lazy">
+</iframe>
 </div>
 </div>
 </div>
@@ -573,81 +574,18 @@ window.addEventListener('message', function(event) {
 });
 </script>
 
-<script>
-// Configuration constants from chatbot-logic.js
-const supabaseUrl = 'https://lwuhdgrkaoyvejmzfbtx.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3dWhkZ3JrYW95dmVqbXpmYnR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2NzU1MDcsImV4cCI6MjA2MTI1MTUwN30.1c5iH4PYW-HeigfXkPSgnVK3t02Gv3krSeo7dDSqqsk';
-const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
-
-document.addEventListener('DOMContentLoaded', function () {
-  const menuItems = document.querySelectorAll('.menu-item');
-  const iframe = document.querySelector('iframe');
-
-  const pageMap = {
-    'Chat': 'chat.html',
-    'Dashboard': 'dashboard.html',
-    'Profilo': 'profilo.html',
-    'Test precedenti': 'previous_test.html',
-    'Impostazioni': 'settings.html'
-  };
-
-  menuItems.forEach(item => {
-    item.addEventListener('click', function (e) {
-      e.preventDefault();
-
-      // Rimuove la classe "active" da tutti i menu
-      menuItems.forEach(i => i.classList.remove('active'));
-
-      // Aggiunge la classe "active" all'elemento cliccato
-      this.classList.add('active');
-
-      // Trova il nome della pagina nel testo del menu
-      const label = this.querySelector('.menu-text')?.textContent?.trim();
-
-      if (label && pageMap[label]) {
-        const currentTheme = document.documentElement.getAttribute('data-theme');
-
-        // Nascondi l'iframe con fade-out
-        iframe.classList.add('hidden');
-
-        // Cambia la sorgente dell’iframe
-        iframe.src = pageMap[label];
-
-        iframe.onload = function () {
-          // Invia il tema alla nuova pagina
-          iframe.contentWindow.postMessage({
-            type: 'theme',
-            theme: currentTheme
-          }, '*');
-
-          // Ritardo per applicare il tema prima di mostrare visivamente l’iframe
-          setTimeout(() => {
-            iframe.classList.remove('hidden');
-          }, 100); // puoi regolare a 200–300ms per maggiore "sicurezza" visiva
-        };
-      }
-
-
-    });
-  });
-
-});
-
-// Add logout functionality
-document.getElementById("logout-btn").addEventListener("click", async () => {
-  await supabaseClient.auth.signOut();
-  window.location.href = "login.html";
-});
-
-</script>
   <script type="module">
   import { calcolaEFissaFrail } from './frail-score.js';
 
-  const supabase = window.supabaseClient;
+  const supabaseUrl = 'https://lwuhdgrkaoyvejmzfbtx.supabase.co';
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3dWhkZ3JrYW95dmVqbXpmYnR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2NzU1MDcsImV4cCI6MjA2MTI1MTUwN30.1c5iH4PYW-HeigfXkPSgnVK3t02Gv3krSeo7dDSqqsk';
+  const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+  window.supabaseClient = supabaseClient;
 
   document.addEventListener('DOMContentLoaded', function () {
-    const menuItems = document.querySelectorAll('.menu-item');
-    const iframe = document.querySelector('iframe');
+    const mainFrame = document.getElementById('main-frame'); // iframe principale visibile
+    const frailFrame = document.getElementById('frail-frame'); // iframe nascosto per calcolo frailty
+    const menuItems = document.querySelectorAll('.menu-item'); // elementi menu sidebar
 
     const pageMap = {
       'Chat': 'chat.html',
@@ -661,35 +599,51 @@ document.getElementById("logout-btn").addEventListener("click", async () => {
       item.addEventListener('click', async function (e) {
         e.preventDefault();
 
+        // Rimuove classe attiva da tutti
         menuItems.forEach(i => i.classList.remove('active'));
         this.classList.add('active');
 
+        // Ottieni il nome del link cliccato
         const label = this.querySelector('.menu-text')?.textContent?.trim();
+        const newPage = pageMap[label];
 
-        // 👉 Esegui il calcolo prima del cambio pagina
+        if (!newPage) return;
+
+        // ⚙️ Prima del cambio pagina → se è Dashboard, esegui il calcolo frailty
         if (label === "Dashboard") {
-          await calcolaEFissaFrail();
+          try {
+            await calcolaEFissaFrail(); // esegue script frail in iframe
+          } catch (err) {
+            console.error("❌ Errore calcolo frailty:", err);
+          }
         }
 
         const currentTheme = document.documentElement.getAttribute('data-theme');
 
-        iframe.classList.add('hidden');
-        iframe.src = pageMap[label];
+        // Anima uscita e cambio pagina
+        mainFrame.classList.add('hidden');
+        mainFrame.src = newPage;
 
-        iframe.onload = function () {
-          iframe.contentWindow.postMessage({
+        mainFrame.onload = () => {
+          mainFrame.contentWindow.postMessage({
             type: 'theme',
             theme: currentTheme
           }, '*');
-
           setTimeout(() => {
-            iframe.classList.remove('hidden');
-          }, 100);
+            mainFrame.classList.remove('hidden');
+          }, 100); // animazione fade-in
         };
       });
     });
+
+    // 🔒 Logout
+    document.getElementById("logout-btn").addEventListener("click", async () => {
+      await supabaseClient.auth.signOut();
+      window.location.href = "login.html";
+    });
   });
 </script>
+
 
 
 </body>
