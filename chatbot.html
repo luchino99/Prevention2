@@ -663,11 +663,9 @@ document.getElementById("logout-btn").addEventListener("click", async () => {
 
         const label = this.querySelector('.menu-text')?.textContent?.trim();
 
-        if (!label || !pageMap[label]) return;
-
-        // Prima calcola e salva FRAIL se la voce è "Dashboard"
+        // 👉 Esegui il calcolo prima del cambio pagina
         if (label === "Dashboard") {
-          await calcolaEFissaFrail(); // Calcolo + salvataggio score
+          await calcolaEFissaFrail();
         }
 
         const currentTheme = document.documentElement.getAttribute('data-theme');
