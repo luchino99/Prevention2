@@ -6,14 +6,16 @@ const supabase = createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3dWhkZ3JrYW95dmVqbXpmYnR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2NzU1MDcsImV4cCI6MjA2MTI1MTUwN30.1c5iH4PYW-HeigfXkPSgnVK3t02Gv3krSeo7dDSqqsk'
 );
 
-export async function calcolaEFissaFrail(emailOverride = null) {
-  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-  const email = emailOverride || sessionData?.session?.user?.email;
+export async function calcolaEFissaFrail() {
+  const { data: { session }, error } = await supabase.auth.getSession();
 
-  if (!email) {
-    console.warn("Email mancante, impossibile procedere.");
+  if (!session || !session.user) {
+    console.warn("Utente non autenticato. Reindirizzamento al login...");
+    window.location.href = "login.html";
     return;
   }
+
+  const email = session.user.email;
 
   const { data: profile, error: profileError } = await supabase
     .from('anagrafica_utenti')
@@ -21,8 +23,8 @@ export async function calcolaEFissaFrail(emailOverride = null) {
     .eq('email', email)
     .single();
 
-  if (profileError || !profile) {
-    console.error("Errore nel recupero del profilo:", profileError?.message);
+  if (profileError) {
+    console.error("❌ Errore nel recupero dei dati utente:", profileError.message);
     return;
   }
 
@@ -31,28 +33,24 @@ export async function calcolaEFissaFrail(emailOverride = null) {
     resistance: profile.sedia === "si" ? "yes" : "no",
     ambulation: profile.camminata === "no" ? "yes" : "no",
     illnesses: profile.malattie_croniche === "si" ? "yes" : "no",
-    loss: profile.perdita_peso === "si" ? "yes" : "no",
+    loss: profile.perdita_peso === "si" ? "yes" : "no"
   };
 
-  const score = Object.values(fields).filter(v => v === "yes").length;
-  let category = "robust";
-  if (score >= 3) category = "frail";
-  else if (score >= 1) category = "pre-frail";
+  for (const [key, value] of Object.entries(fields)) {
+    const input = document.querySelector(`input[name="${key}"][value="${value}"]`);
+    if (input) input.checked = true;
+  }
 
-  const { data: updateData, error: updateError } = await supabase
-    .from("anagrafica_utenti")
-    .update({
-      frail_score: parseInt(score),
-      frail_category: category.toLowerCase().trim()
-    })
-    .eq("email", email)
-    .select();
+  // Aggiorna stile dei radio button se necessario
+  if (typeof updateRadioStyles === 'function') {
+    updateRadioStyles();
+  }
 
-  if (updateError) {
-    console.error("❌ Errore salvataggio:", updateError.message);
-  } else if (!updateData || updateData.length === 0) {
-    console.warn("⚠️ Nessuna riga aggiornata. Controlla l'email.");
+  // ✅ Ecco dove va questo blocco:
+  const form = document.getElementById("frailForm");
+  if (form) {
+    form.requestSubmit(); // simula il click su "submit", attiva l'event listener esistente
   } else {
-    console.log("✅ Score FRAIL aggiornato:", updateData);
+    console.warn("⚠️ Form FRAIL non trovato nel DOM.");
   }
 }
