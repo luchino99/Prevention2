@@ -740,8 +740,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("riskCategory").textContent = category;
     document.getElementById("result").classList.add("show");
 
-const parsedScore = parseInt(score); // assicurati che sia numero
-const parsedCategory = String(category).trim().toLowerCase(); // normalizza
+
+const parsedScore = parseInt(score);
+const parsedCategory = String(category).trim().toLowerCase();
+
+console.log("Tentativo di salvataggio con email:", email);
+console.log("Score:", parsedScore, "Category:", parsedCategory);
 
 const { data, error: updateError } = await supabase
   .from("anagrafica_utenti")
@@ -749,16 +753,17 @@ const { data, error: updateError } = await supabase
     frail_score: parsedScore,
     frail_category: parsedCategory
   })
-  .eq("email", email)
+  .eq("email", email.trim().toLowerCase())
   .select();
 
 if (updateError) {
-  console.error("❌ Errore nel salvataggio del punteggio FRAIL:", updateError.message);
+  console.error("❌ Errore nel salvataggio:", updateError.message);
 } else if (!data || data.length === 0) {
-  console.warn("⚠️ Nessuna riga aggiornata. Verifica che l'email esista davvero nella tabella.");
+  console.warn("⚠️ Nessuna riga aggiornata. Email non trovata o colonne non corrette.");
 } else {
-  console.log("✅ Score salvato correttamente:", data);
+  console.log("✅ Salvataggio completato:", data);
 }
+
   });
 });
 </script>
