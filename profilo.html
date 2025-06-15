@@ -1214,7 +1214,7 @@
     </div>
     <div class="form-group">
     <label class="form-label">Hai perso più di 5 kg involontariamente nell'ultimo anno?</label>
-    <input type="text" id="profilo-sollevamento" value=${userData.perdita_peso || ''}>
+    <input type="text" id="profilo-perdita_peso" value=${userData.perdita_peso || ''}>
     </div>
     <div class="form-group">
     <label class="form-label">Difficoltà ad alzarti da una sedia?</label>
@@ -1222,7 +1222,7 @@
     </div>
     <div class="form-group">
     <label class="form-label">Hai più di 5 malattie croniche diagnosticate?</label>
-    <input type="text" id="profilo-cadute" value=${userData.malattie_croniche || ''}>
+    <input type="text" id="profilo-malattie_croniche" value=${userData.malattie_croniche || ''}>
     </div>
     </div>
     </div>
@@ -1472,6 +1472,9 @@ step_test: document.getElementById("profilo-step_test")?.value,
         camminata: document.getElementById("profilo-camminata")?.value,
         sollevamento: document.getElementById("profilo-sollevamento")?.value,
         sedia: document.getElementById("profilo-sedia")?.value,
+        perdita_peso: document.getElementById("profilo-perdita_peso")?.value,
+malattie_croniche: document.getElementById("profilo-malattie_croniche")?.value,
+
         cadute: document.getElementById("profilo-cadute")?.value,
         ggt: parseFloat(document.getElementById('profilo-ggt').value) || null,
 egfr: parseFloat(document.getElementById('profilo-egfr').value) || null,
