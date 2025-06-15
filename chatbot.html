@@ -637,6 +637,59 @@ document.getElementById("logout-btn").addEventListener("click", async () => {
 });
 
 </script>
+  <script type="module">
+  import { calcolaEFissaFrail } from './frail-score.js';
+
+  const supabase = window.supabaseClient;
+
+  document.addEventListener('DOMContentLoaded', function () {
+    const menuItems = document.querySelectorAll('.menu-item');
+    const iframe = document.querySelector('iframe');
+
+    const pageMap = {
+      'Chat': 'chat.html',
+      'Dashboard': 'dashboard.html',
+      'Profilo': 'profilo.html',
+      'Test precedenti': 'previous_test.html',
+      'Impostazioni': 'settings.html'
+    };
+
+    menuItems.forEach(item => {
+      item.addEventListener('click', async function (e) {
+        e.preventDefault();
+
+        menuItems.forEach(i => i.classList.remove('active'));
+        this.classList.add('active');
+
+        const label = this.querySelector('.menu-text')?.textContent?.trim();
+
+        if (!label || !pageMap[label]) return;
+
+        // Prima calcola e salva FRAIL se la voce è "Dashboard"
+        if (label === "Dashboard") {
+          await calcolaEFissaFrail(); // Calcolo + salvataggio score
+        }
+
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+
+        iframe.classList.add('hidden');
+        iframe.src = pageMap[label];
+
+        iframe.onload = function () {
+          iframe.contentWindow.postMessage({
+            type: 'theme',
+            theme: currentTheme
+          }, '*');
+
+          setTimeout(() => {
+            iframe.classList.remove('hidden');
+          }, 100);
+        };
+      });
+    });
+  });
+</script>
+
 
 </body>
 </html>
