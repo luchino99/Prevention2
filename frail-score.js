@@ -1,4 +1,3 @@
-// frail-score.js
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
 const supabase = createClient(
@@ -28,6 +27,14 @@ export async function calcolaEFissaFrail() {
     return;
   }
 
+  const frailFrame = document.getElementById("frail-frame");
+  const frailDoc = frailFrame?.contentDocument || frailFrame?.contentWindow?.document;
+
+  if (!frailDoc) {
+    console.warn("⚠️ Impossibile accedere all'iframe frail-frame.");
+    return;
+  }
+
   const fields = {
     fatigue: profile.stanchezza === "si" ? "yes" : "no",
     resistance: profile.sedia === "si" ? "yes" : "no",
@@ -37,20 +44,20 @@ export async function calcolaEFissaFrail() {
   };
 
   for (const [key, value] of Object.entries(fields)) {
-    const input = document.querySelector(`input[name="${key}"][value="${value}"]`);
+    const input = frailDoc.querySelector(`input[name="${key}"][value="${value}"]`);
     if (input) input.checked = true;
   }
 
-  // Aggiorna stile dei radio button se necessario
-  if (typeof updateRadioStyles === 'function') {
-    updateRadioStyles();
+  // Aggiorna stile dentro iframe
+  if (typeof frailFrame.contentWindow.updateRadioStyles === 'function') {
+    frailFrame.contentWindow.updateRadioStyles();
   }
 
-  // ✅ Ecco dove va questo blocco:
-  const form = document.getElementById("frailForm");
+  // Simula submit
+  const form = frailDoc.getElementById("frailForm");
   if (form) {
-    form.requestSubmit(); // simula il click su "submit", attiva l'event listener esistente
+    form.requestSubmit();
   } else {
-    console.warn("⚠️ Form FRAIL non trovato nel DOM.");
+    console.warn("⚠️ Form FRAIL non trovato nell’iframe.");
   }
 }
