@@ -679,47 +679,50 @@
     </script>
     <!-- altri script sopra, poi incolla qui -->
 <script type="module">
-  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-  const supabase = createClient('https://lwuhdgrkaoyvejmzfbtx.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3dWhkZ3JrYW95dmVqbXpmYnR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2NzU1MDcsImV4cCI6MjA2MTI1MTUwN30.1c5iH4PYW-HeigfXkPSgnVK3t02Gv3krSeo7dDSqqsk');
+const supabase = createClient(
+  'https://lwuhdgrkaoyvejmzfbtx.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+);
 
-  document.addEventListener("DOMContentLoaded", async () => {
-const userId = localStorage.getItem("user_id");
+document.addEventListener("DOMContentLoaded", async () => {
+  const { data: { session }, error } = await supabase.auth.getSession();
 
-if (!userId) {
-  console.error("❌ user_id non trovato in localStorage. Verifica che l'utente sia autenticato.");
-  return;
-}
+  if (!session || !session.user) {
+    console.warn("Utente non autenticato. Reindirizzamento al login...");
+    window.location.href = "login.html";
+    return;
+  }
 
-const { data: profile, error } = await supabase
-  .from('anagrafica_utenti')
-  .select('stanchezza, camminata, malattie_croniche, sedia, perdita_peso')
-  .eq('id', userId)
-  .single();
+  const userId = session.user.id;
+  localStorage.setItem("user_id", userId);
 
-if (error) {
-  console.error("❌ Errore nel recupero dei dati utente:", error.message);
-  return;
-}
+  const { data: profile, error: profileError } = await supabase
+    .from('anagrafica_utenti')
+    .select('stanchezza, camminata, malattie_croniche, sedia, perdita_peso')
+    .eq('id', userId)
+    .single();
 
+  if (profileError) {
+    console.error("❌ Errore nel recupero dei dati utente:", profileError.message);
+    return;
+  }
 
-    if (!profile) return;
+  const fields = {
+    fatigue: profile.stanchezza === "si" ? "yes" : "no",
+    resistance: profile.sedia === "si" ? "yes" : "no",
+    ambulation: profile.camminata === "no" ? "yes" : "no",
+    illnesses: profile.malattie_croniche === "si" ? "yes" : "no",
+    loss: profile.perdita_peso === "si" ? "yes" : "no"
+  };
 
-    const fields = {
-      fatigue: profile.stanchezza === "si" ? "yes" : "no",
-      resistance: profile.sedia === "si" ? "yes" : "no",
-      ambulation: profile.camminata === "no" ? "yes" : "no",
-      illnesses: profile.malattie_croniche === "si" ? "yes" : "no",
-      weightloss: profile.perdita_peso === "si" ? "yes" : "no"
-    };
+  for (const [key, value] of Object.entries(fields)) {
+    const input = document.querySelector(`input[name="${key}"][value="${value}"]`);
+    if (input) input.checked = true;
+  }
 
-    for (const [id, value] of Object.entries(fields)) {
-      const input = document.querySelector(`input[name="${id}"][value="${value}"]`);
-      if (input) input.checked = true;
-    }
-
-    document.querySelector('.calculate-btn').click();
-  });
+  document.querySelector('.calculate-btn').click();
 
   document.getElementById("frailForm").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -729,33 +732,27 @@ if (error) {
 
     let category = "robust";
     if (score >= 3) category = "frail";
-    else if (score === 1 || score === 2) category = "pre-frail";
+    else if (score >= 1) category = "pre-frail";
 
-    document.getElementById("riskValue").textContent = score;
+    document.getElementById("riskValue").textContent = score + ' / 5 punti';
     document.getElementById("riskCategory").textContent = category;
     document.getElementById("result").classList.add("show");
 
-const userId = localStorage.getItem("user_id");
+    const { error: updateError } = await supabase
+      .from("anagrafica_utenti")
+      .update({
+        frail_score: score,
+        frail_category: category
+      })
+      .eq("id", userId);
 
-if (!userId) {
-  console.error("❌ user_id non trovato nel localStorage. Salvataggio del risultato annullato.");
-  return;
-}
-
-const { error } = await supabase
-  .from("anagrafica_utenti")
-  .update({
-    frail_score: score,
-    frail_category: category
-  })
-  .eq("id", userId);
-
-if (error) {
-  console.error("❌ Errore nel salvataggio del punteggio FRAIL:", error.message);
-}
-
+    if (updateError) {
+      console.error("❌ Errore nel salvataggio del punteggio FRAIL:", updateError.message);
+    }
   });
+});
 </script>
+
 
 
 </body>
