@@ -695,13 +695,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  const userId = session.user.id;
-  localStorage.setItem("user_id", userId);
+  const email = session.user.email;
+  localStorage.setItem("user_email", email); // opzionale
 
   const { data: profile, error: profileError } = await supabase
     .from('anagrafica_utenti')
     .select('stanchezza, camminata, malattie_croniche, sedia, perdita_peso')
-    .eq("email", session.user.email)
+    .eq('email', email)
     .single();
 
   if (profileError) {
@@ -722,8 +722,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (input) input.checked = true;
   }
 
+  updateRadioStyles(); // applichi lo stile corretto
   document.querySelector('.calculate-btn').click();
 
+  // Salvataggio score
   document.getElementById("frailForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -744,7 +746,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         frail_score: score,
         frail_category: category
       })
-      .eq("id", userId);
+      .eq("email", email); // 👈 salvataggio basato su email
 
     if (updateError) {
       console.error("❌ Errore nel salvataggio del punteggio FRAIL:", updateError.message);
