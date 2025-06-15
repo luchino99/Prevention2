@@ -701,7 +701,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const { data: profile, error: profileError } = await supabase
     .from('anagrafica_utenti')
     .select('stanchezza, camminata, malattie_croniche, sedia, perdita_peso')
-    .eq('id', userId)
+    .eq("email", session.user.email)
     .single();
 
   if (profileError) {
