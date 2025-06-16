@@ -564,9 +564,8 @@
             document.getElementById('hdl').value = 50;
             document.getElementById('riskRegion').value = 'moderate';
         }
+<script>
 
-// Alla fine del calcolo, salva nel database
-// Alla fine del file score2.html, aggiungi questo script
 <script type="module">
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
@@ -608,9 +607,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 });
 </script>
-        
-        // Aggiungi event listener per debug (doppio click sul titolo per riempire dati di esempio)
-        document.querySelector('.header h1').addEventListener('dblclick', fillExampleData);
-    </script>
+       
+    
 </body>
 </html>
