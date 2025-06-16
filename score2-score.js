@@ -7,9 +7,7 @@ const supabase = createClient(
 
 export async function calcolaEFissaSCORE2() {
   const { data: { session }, error } = await supabase.auth.getSession();
-
   if (!session || !session.user) {
-    console.warn("Utente non autenticato. Reindirizzamento al login...");
     window.location.href = "login.html";
     return;
   }
@@ -23,46 +21,28 @@ export async function calcolaEFissaSCORE2() {
     .single();
 
   if (profileError) {
-    console.error("❌ Errore nel recupero dei dati utente:", profileError.message);
+    console.error("Errore nel recupero dei dati utente:", profileError.message);
     return;
   }
 
   const score2Frame = document.getElementById("score2-frame");
   const score2Doc = score2Frame?.contentDocument || score2Frame?.contentWindow?.document;
+  if (!score2Doc) return;
 
-  if (!score2Doc) {
-    console.warn("⚠️ Impossibile accedere all'iframe score2-frame.");
-    return;
-  }
+  score2Doc.getElementById("age").value = profile.eta || '';
+  score2Doc.getElementById("systolic").value = profile.pressione_sistolica || '';
+  score2Doc.getElementById("cholesterol").value = profile.colesterolo_totale || '';
+  score2Doc.getElementById("hdl").value = profile.colesterolo_hdl_valore || '';
 
-  // Compila i campi nel modulo SCORE2
-  const ageInput = score2Doc.getElementById("age");
-  const systolicInput = score2Doc.getElementById("systolic");
-  const cholesterolInput = score2Doc.getElementById("cholesterol");
-  const hdlInput = score2Doc.getElementById("hdl");
-  
-  if (ageInput) ageInput.value = profile.eta || '';
-  if (systolicInput) systolicInput.value = profile.pressione_sistolica || '';
-  if (cholesterolInput) cholesterolInput.value = profile.colesterolo_totale || '';
-  if (hdlInput) hdlInput.value = profile.colesterolo_hdl_valore || '';
+  const gender = profile.sesso === 'maschio' ? 'male' : 'female';
+  const smoking = profile.fumatore === 'si' ? 'yes' : 'no';
 
-  // Gestisci radio buttons per sesso e fumo
-  const genderRadio = score2Doc.querySelector(`input[name="gender"][value="${profile.sesso === 'maschio' ? 'male' : 'female'}"]`);
-  if (genderRadio) genderRadio.checked = true;
+  score2Doc.querySelector(`input[name="gender"][value="${gender}"]`).checked = true;
+  score2Doc.querySelector(`input[name="smoking"][value="${smoking}"]`).checked = true;
 
-  const smokingRadio = score2Doc.querySelector(`input[name="smoking"][value="${profile.fumatore === 'si' ? 'yes' : 'no'}"]`);
-  if (smokingRadio) smokingRadio.checked = true;
-
-  // Aggiorna stili se disponibili
   if (typeof score2Frame.contentWindow.updateRadioStyles === 'function') {
     score2Frame.contentWindow.updateRadioStyles();
   }
 
-  // Simula submit
-  const form = score2Doc.getElementById("score2Form");
-  if (form) {
-    form.requestSubmit();
-  } else {
-    console.warn("⚠️ Form SCORE2 non trovato nell'iframe.");
-  }
+  score2Doc.getElementById("score2Form")?.requestSubmit();
 }
