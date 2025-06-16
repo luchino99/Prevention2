@@ -613,7 +613,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Salva su Supabase
     const { error: updateError } = await supabase
       .from("anagrafica_utenti")
-      .update({ score2_score: parseFloat(riskPercent), score2_category: category.toLowerCase() })
+      .update({ score2_risk: parseFloat(riskPercent), score2_category: category.toLowerCase() })
       .eq("email", email);
 
     if (updateError) {
