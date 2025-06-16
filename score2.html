@@ -566,32 +566,48 @@
         }
 
 // Alla fine del calcolo, salva nel database
-document.getElementById("score2Form").addEventListener("submit", async (e) => {
-  e.preventDefault();
+// Alla fine del file score2.html, aggiungi questo script
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-  // Calcola il risultato (usa la tua logica esistente)
-  const riskValue = /* il tuo calcolo dello score2 */;
-  const riskCategory = /* la categoria di rischio */;
+const supabase = createClient(
+  'https://lwuhdgrkaoyvejmzfbtx.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3dWhkZ3JrYW95dmVqbXpmYnR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2NzU1MDcsImV4cCI6MjA2MTI1MTUwN30.1c5iH4PYW-HeigfXkPSgnVK3t02Gv3krSeo7dDSqqsk'
+);
 
-  // Salva nel database
-  const { data: { session } } = await supabase.auth.getSession();
+document.addEventListener("DOMContentLoaded", async () => {
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (!session?.user) return;
+  
   const email = session.user.email;
 
-  const { data, error: updateError } = await supabase
-    .from("anagrafica_utenti")
-    .update({
-      score2_value: riskValue,
-      score2_category: riskCategory
-    })
-    .eq("email", email.trim().toLowerCase())
-    .select();
+  // Aggiungi evento al form SCORE2
+  document.getElementById("score2Form").addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-  if (updateError) {
-    console.error("❌ Errore nel salvataggio SCORE2:", updateError.message);
-  } else {
-    console.log("✅ SCORE2 salvato:", data);
-  }
+    // Calcola il risultato usando la tua logica esistente
+    const riskValue = /* il risultato del calcolo SCORE2 */;
+    const riskCategory = /* la categoria di rischio */;
+
+    console.log("Salvataggio SCORE2:", riskValue, riskCategory);
+
+    const { data, error: updateError } = await supabase
+      .from("anagrafica_utenti")
+      .update({
+        score2_risk: parseFloat(riskValue),
+        score2_category: String(riskCategory).toLowerCase()
+      })
+      .eq("email", email.trim().toLowerCase())
+      .select();
+
+    if (updateError) {
+      console.error("❌ Errore salvataggio SCORE2:", updateError.message);
+    } else {
+      console.log("✅ SCORE2 salvato:", data);
+    }
+  });
 });
+</script>
         
         // Aggiungi event listener per debug (doppio click sul titolo per riempire dati di esempio)
         document.querySelector('.header h1').addEventListener('dblclick', fillExampleData);
