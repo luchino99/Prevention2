@@ -573,12 +573,14 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 const supabase = createClient(
   'https://lwuhdgrkaoyvejmzfbtx.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3dWhkZ3JrYW95dmVqbXpmYnR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2NzU1MDcsImV4cCI6MjA2MTI1MTUwN30.1c5iH4PYW-HeigfXkPSgnVK3t02Gv3krSeo7dDSqqsk'
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
 );
 
 document.addEventListener("DOMContentLoaded", async () => {
   const { data: { session } } = await supabase.auth.getSession();
+
   if (!session || !session.user) {
+    console.warn("Utente non autenticato. Reindirizzamento...");
     window.location.href = "login.html";
     return;
   }
@@ -593,41 +595,41 @@ document.addEventListener("DOMContentLoaded", async () => {
     const cholesterol = parseFloat(document.getElementById("cholesterol").value);
     const hdl = parseFloat(document.getElementById("hdl").value);
     const smoking = document.querySelector('input[name="smoking"]:checked')?.value === "yes";
-    
+
+    // Calcolo rischio fittizio (esempio)
     let score = 0;
+    if (age >= 50) score += 1;
+    if (systolic > 140) score += 1;
+    if (cholesterol - hdl > 200) score += 1;
+    if (smoking) score += 1;
 
-    if (age >= 50) score += 2;
-    if (age >= 60) score += 4;
-    if (systolic >= 140) score += 2;
-    if (cholesterol - hdl >= 190) score += 1;
-    if (cholesterol - hdl >= 220) score += 2;
-    if (smoking) score += 3;
-
-    const riskPercent = Math.min(score * 0.5, 20).toFixed(1);
-
-    let category = "Basso";
-    if (riskPercent >= 10) category = "Molto Alto";
-    else if (riskPercent >= 5) category = "Alto";
-    else if (riskPercent >= 1) category = "Moderato";
+    const risk = Math.min(score * 2.5, 10); // da 0 a 10%
+    let category = "basso";
+    if (risk >= 7) category = "alto";
+    else if (risk >= 4) category = "moderato";
 
     // Salva su Supabase
-    const { error: updateError } = await supabase
+    const { error } = await supabase
       .from("anagrafica_utenti")
-      .update({ score2_risk: parseFloat(riskPercent), score2_category: category.toLowerCase() })
+      .update({
+        score2_score: risk,
+        score2_category: category
+      })
       .eq("email", email);
 
-    if (updateError) {
-      console.error("Errore nel salvataggio:", updateError.message);
+    if (error) {
+      console.error("❌ Errore nel salvataggio SCORE2:", error.message);
     } else {
-      console.log("SCORE2 salvato correttamente:", { riskPercent, category });
+      console.log("✅ SCORE2 salvato:", { risk, category });
     }
 
-    // Mostra UI
+    // (facoltativo) Mostra risultati nell'interfaccia
+    document.getElementById("riskValue")?.textContent = risk + "%";
+    document.getElementById("riskCategory")?.textContent = category;
     document.getElementById("result")?.classList.add("show");
-    document.getElementById("riskValue").textContent = `${riskPercent} %`;
-    document.getElementById("riskCategory").textContent = category;
   });
 });
 </script>
+
 </body>
 </html>
