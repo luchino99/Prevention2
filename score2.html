@@ -577,40 +577,57 @@ const supabase = createClient(
 );
 
 document.addEventListener("DOMContentLoaded", async () => {
-  const { data: { session }, error } = await supabase.auth.getSession();
-  if (!session?.user) return;
-  
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session || !session.user) {
+    window.location.href = "login.html";
+    return;
+  }
+
   const email = session.user.email;
 
-  // Aggiungi evento al form SCORE2
   document.getElementById("score2Form").addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    // Calcola il risultato usando la tua logica esistente
-    const riskValue = /* il risultato del calcolo SCORE2 */
-    const riskCategory = /* la categoria di rischio */
+    const age = parseInt(document.getElementById("age").value);
+    const systolic = parseFloat(document.getElementById("systolic").value);
+    const cholesterol = parseFloat(document.getElementById("cholesterol").value);
+    const hdl = parseFloat(document.getElementById("hdl").value);
+    const smoking = document.querySelector('input[name="smoking"]:checked')?.value === "yes";
+    
+    let score = 0;
 
-    console.log("Salvataggio SCORE2:", riskValue, riskCategory);
+    if (age >= 50) score += 2;
+    if (age >= 60) score += 4;
+    if (systolic >= 140) score += 2;
+    if (cholesterol - hdl >= 190) score += 1;
+    if (cholesterol - hdl >= 220) score += 2;
+    if (smoking) score += 3;
 
-    const { data, error: updateError } = await supabase
+    const riskPercent = Math.min(score * 0.5, 20).toFixed(1);
+
+    let category = "Basso";
+    if (riskPercent >= 10) category = "Molto Alto";
+    else if (riskPercent >= 5) category = "Alto";
+    else if (riskPercent >= 1) category = "Moderato";
+
+    // Salva su Supabase
+    const { error: updateError } = await supabase
       .from("anagrafica_utenti")
-      .update({
-        score2_risk: parseFloat(riskValue),
-        score2_category: String(riskCategory).toLowerCase()
-      })
-      .eq("email", email.trim().toLowerCase())
-      .select();
+      .update({ score2_score: parseFloat(riskPercent), score2_category: category.toLowerCase() })
+      .eq("email", email);
 
     if (updateError) {
-      console.error("❌ Errore salvataggio SCORE2:", updateError.message);
+      console.error("Errore nel salvataggio:", updateError.message);
     } else {
-      console.log("✅ SCORE2 salvato:", data);
+      console.log("SCORE2 salvato correttamente:", { riskPercent, category });
     }
+
+    // Mostra UI
+    document.getElementById("result")?.classList.add("show");
+    document.getElementById("riskValue").textContent = `${riskPercent} %`;
+    document.getElementById("riskCategory").textContent = category;
   });
 });
-        
 </script>
-       
-    
 </body>
 </html>
