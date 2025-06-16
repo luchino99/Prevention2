@@ -565,6 +565,34 @@
             document.getElementById('riskRegion').value = 'moderate';
         }
 
+// Alla fine del calcolo, salva nel database
+document.getElementById("score2Form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  // Calcola il risultato (usa la tua logica esistente)
+  const riskValue = /* il tuo calcolo dello score2 */;
+  const riskCategory = /* la categoria di rischio */;
+
+  // Salva nel database
+  const { data: { session } } = await supabase.auth.getSession();
+  const email = session.user.email;
+
+  const { data, error: updateError } = await supabase
+    .from("anagrafica_utenti")
+    .update({
+      score2_value: riskValue,
+      score2_category: riskCategory
+    })
+    .eq("email", email.trim().toLowerCase())
+    .select();
+
+  if (updateError) {
+    console.error("❌ Errore nel salvataggio SCORE2:", updateError.message);
+  } else {
+    console.log("✅ SCORE2 salvato:", data);
+  }
+});
+        
         // Aggiungi event listener per debug (doppio click sul titolo per riempire dati di esempio)
         document.querySelector('.header h1').addEventListener('dblclick', fillExampleData);
     </script>
