@@ -569,67 +569,65 @@
 
     
 <script type="module">
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-const supabase = createClient(
-  'https://lwuhdgrkaoyvejmzfbtx.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
-);
+  const supabase = createClient(
+    'https://lwuhdgrkaoyvejmzfbtx.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+  );
 
-document.addEventListener("DOMContentLoaded", async () => {
-  const { data: { session } } = await supabase.auth.getSession();
-
-  if (!session || !session.user) {
-    console.warn("Utente non autenticato. Reindirizzamento...");
-    window.location.href = "login.html";
-    return;
-  }
-
-  const email = session.user.email;
-
-  document.getElementById("score2Form").addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const age = parseInt(document.getElementById("age").value);
-    const systolic = parseFloat(document.getElementById("systolic").value);
-    const cholesterol = parseFloat(document.getElementById("cholesterol").value);
-    const hdl = parseFloat(document.getElementById("hdl").value);
-    const smoking = document.querySelector('input[name="smoking"]:checked')?.value === "yes";
-
-    // Calcolo rischio fittizio (esempio)
-    let score = 0;
-    if (age >= 50) score += 1;
-    if (systolic > 140) score += 1;
-    if (cholesterol - hdl > 200) score += 1;
-    if (smoking) score += 1;
-
-    const risk = Math.min(score * 2.5, 10); // da 0 a 10%
-    let category = "basso";
-    if (risk >= 7) category = "alto";
-    else if (risk >= 4) category = "moderato";
-
-    // Salva su Supabase
-    const { error } = await supabase
-      .from("anagrafica_utenti")
-      .update({
-        score2_score: risk,
-        score2_category: category
-      })
-      .eq("email", email);
-
-    if (error) {
-      console.error("❌ Errore nel salvataggio SCORE2:", error.message);
-    } else {
-      console.log("✅ SCORE2 salvato:", { risk, category });
+  document.addEventListener("DOMContentLoaded", async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session || !session.user) {
+      console.warn("Utente non autenticato. Reindirizzamento...");
+      window.location.href = "login.html";
+      return;
     }
 
-    // (facoltativo) Mostra risultati nell'interfaccia
-    document.getElementById("riskValue")?.textContent = risk + "%";
-    document.getElementById("riskCategory")?.textContent = category;
-    document.getElementById("result")?.classList.add("show");
+    const email = session.user.email;
+
+    document.getElementById("score2Form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const age = parseInt(document.getElementById("age").value);
+      const systolic = parseFloat(document.getElementById("systolic").value);
+      const cholesterol = parseFloat(document.getElementById("cholesterol").value);
+      const hdl = parseFloat(document.getElementById("hdl").value);
+      const smoking = document.querySelector('input[name="smoking"]:checked')?.value === "yes";
+
+      let score = 0;
+      if (age >= 50) score += 1;
+      if (systolic > 140) score += 1;
+      if (cholesterol - hdl > 200) score += 1;
+      if (smoking) score += 1;
+
+      const risk = Math.min(score * 2.5, 10); // max 10%
+      let category = "basso";
+      if (risk >= 7) category = "alto";
+      else if (risk >= 4) category = "moderato";
+
+      const { error } = await supabase
+        .from("anagrafica_utenti")
+        .update({
+          score2_score: risk,
+          score2_category: category
+        })
+        .eq("email", email);
+
+      if (error) {
+        console.error("❌ Errore salvataggio SCORE2:", error.message);
+      } else {
+        console.log("✅ SCORE2 salvato con successo:", { risk, category });
+      }
+
+      // Mostra risultati nell'interfaccia (opzionale)
+      document.getElementById("riskValue")?.textContent = `${risk}%`;
+      document.getElementById("riskCategory")?.textContent = category;
+      document.getElementById("result")?.classList.add("show");
+    });
   });
-});
 </script>
+
 
 </body>
 </html>
