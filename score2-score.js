@@ -5,7 +5,7 @@ const supabase = createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3dWhkZ3JrYW95dmVqbXpmYnR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2NzU1MDcsImV4cCI6MjA2MTI1MTUwN30.1c5iH4PYW-HeigfXkPSgnVK3t02Gv3krSeo7dDSqqsk'
 );
 
-export async function calcolaEFissaScore2() {
+export async function calcolaEFissaSCORE2() {
   const { data: { session }, error } = await supabase.auth.getSession();
 
   if (!session || !session.user) {
@@ -18,7 +18,7 @@ export async function calcolaEFissaScore2() {
 
   const { data: profile, error: profileError } = await supabase
     .from('anagrafica_utenti')
-    .select('eta, sesso, fumatore, pressione_sistolica, colesterolo_totale, colesterolo_hdl_valore, regione_rischio_cv')
+    .select('eta, sesso, pressione_sistolica, colesterolo_totale, colesterolo_hdl_valore, fumatore')
     .eq('email', email)
     .single();
 
@@ -35,40 +35,30 @@ export async function calcolaEFissaScore2() {
     return;
   }
 
-  // Mappa i dati del profilo sui campi del form SCORE2
-  const fields = {
-    age: profile.eta || '',
-    gender: profile.sesso === 'maschio' ? 'male' : profile.sesso === 'femmina' ? 'female' : '',
-    smoking: profile.fumatore === 'sì' ? '1' : '0',
-    sbp: profile.pressione_sistolica || '',
-    tchol: profile.colesterolo_totale || '',
-    hdl: profile.colesterolo_hdl_valore || '',
-    riskRegion: profile.regione_rischio_cv || 'moderate'
-  };
+  // Compila i campi nel modulo SCORE2
+  const ageInput = score2Doc.getElementById("age");
+  const systolicInput = score2Doc.getElementById("systolic");
+  const cholesterolInput = score2Doc.getElementById("cholesterol");
+  const hdlInput = score2Doc.getElementById("hdl");
+  
+  if (ageInput) ageInput.value = profile.eta || '';
+  if (systolicInput) systolicInput.value = profile.pressione_sistolica || '';
+  if (cholesterolInput) cholesterolInput.value = profile.colesterolo_totale || '';
+  if (hdlInput) hdlInput.value = profile.colesterolo_hdl_valore || '';
 
-  // Compila il form nell'iframe
-  for (const [key, value] of Object.entries(fields)) {
-    if (key === 'gender' && value) {
-      const input = score2Doc.querySelector(`input[name="gender"][value="${value}"]`);
-      if (input) input.checked = true;
-    } else if (key === 'smoking' && value) {
-      const input = score2Doc.querySelector(`input[name="smoking"][value="${value}"]`);
-      if (input) input.checked = true;
-    } else if (key === 'riskRegion') {
-      const select = score2Doc.getElementById(key);
-      if (select) select.value = value;
-    } else {
-      const input = score2Doc.getElementById(key);
-      if (input && value) input.value = value;
-    }
-  }
+  // Gestisci radio buttons per sesso e fumo
+  const genderRadio = score2Doc.querySelector(`input[name="gender"][value="${profile.sesso === 'maschio' ? 'male' : 'female'}"]`);
+  if (genderRadio) genderRadio.checked = true;
 
-  // Aggiorna stile dentro iframe (se disponibile)
+  const smokingRadio = score2Doc.querySelector(`input[name="smoking"][value="${profile.fumatore === 'si' ? 'yes' : 'no'}"]`);
+  if (smokingRadio) smokingRadio.checked = true;
+
+  // Aggiorna stili se disponibili
   if (typeof score2Frame.contentWindow.updateRadioStyles === 'function') {
     score2Frame.contentWindow.updateRadioStyles();
   }
 
-  // Simula submit del form
+  // Simula submit
   const form = score2Doc.getElementById("score2Form");
   if (form) {
     form.requestSubmit();
