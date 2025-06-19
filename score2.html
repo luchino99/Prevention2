@@ -602,7 +602,7 @@
       const { error } = await supabase
         .from("anagrafica_utenti")
         .update({
-          score2_score: risk,
+          score2_risk: risk,
           score2_category: category
         })
         .eq("email", email);
