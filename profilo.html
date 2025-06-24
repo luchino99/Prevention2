@@ -133,6 +133,12 @@
 
   function displayUserProfile(userData) {
     const container = document.getElementById("user-data");
+    const dg = document.getElementById("profilo-diabete_gestazionale");
+if (dg && userData.sesso?.toLowerCase() === "femmina") {
+  dg.parentElement.parentElement.parentElement.style.display = "block"; // mostra sezione
+  dg.value = userData.diabete_gestazionale?.toLowerCase() || "";
+}
+
 
     // Basic user info section
     let html = `
@@ -903,7 +909,9 @@ pushups: parseInt(document.getElementById("profilo-pushups")?.value),
 squats: parseInt(document.getElementById("profilo-squats")?.value),
 plank: document.getElementById("profilo-plank")?.value,
 step_test: document.getElementById("profilo-step_test")?.value,
-
+        
+        // SEZIONE FEMMINILE
+        diabete_gestazionale: document.getElementById("profilo-diabete_gestazionale")?.value,
 
         // 🆕 NUOVI PARAMETRI PER GLI SCORE
         // HbA1c per SCORE2-Diabete
