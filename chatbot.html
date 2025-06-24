@@ -117,8 +117,7 @@ window.addEventListener('message', function(event) {
 
   <script type="module">
   import { calcolaEFissaFrail } from './frail-score.js';
-  import { calcolaEFissaSCORE2 } from './score2-score.js';
-
+ 
   const supabaseUrl = 'https://lwuhdgrkaoyvejmzfbtx.supabase.co';
   const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3dWhkZ3JrYW95dmVqbXpmYnR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2NzU1MDcsImV4cCI6MjA2MTI1MTUwN30.1c5iH4PYW-HeigfXkPSgnVK3t02Gv3krSeo7dDSqqsk';
   const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
@@ -155,7 +154,7 @@ window.addEventListener('message', function(event) {
         if (label === "Dashboard") {
           try {
             await calcolaEFissaFrail(); // esegue script frail in iframe
-            await calcolaEFissaSCORE2();
+            
           } catch (err) {
             console.error("❌ Errore calcolo frailty:", err);
           }
@@ -179,13 +178,25 @@ window.addEventListener('message', function(event) {
       });
     });
 
-    // 🔒 Logout
+    
+
+
     document.getElementById("logout-btn").addEventListener("click", async () => {
       await supabaseClient.auth.signOut();
       window.location.href = "login.html";
     });
   });
 </script>
+
+  <script type="module">
+  import { calcolaEFissaSCORE2 } from './score2-score.js';
+
+  document.addEventListener("DOMContentLoaded", () => {
+    calcolaEFissaSCORE2();
+  });
+</script>
+
+  
 
 
 </body>
