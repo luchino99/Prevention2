@@ -310,6 +310,21 @@
                             </select>
                         </div>
                     </div>
+                    
+                    <button type="submit" class="calculate-btn">Calcola Rischio</button>
+
+<div id="result" class="result">
+    <h3>Rischio stimato a 10 anni:</h3>
+    <div id="riskValue" class="risk-value">-</div>
+    <div id="riskCategory" class="risk-category">-</div>
+    <p id="riskInterpretation">-</p>
+</div>
+
+<div id="debugInfo" class="debug-info">
+    <h4>Debug Info</h4>
+    <div id="debugContent"></div>
+</div>
+
                 </div>
 
     <script>
@@ -525,9 +540,19 @@
                 const risk = calculateSCORE2(data);
                 const riskInfo = getRiskCategory(risk);
                 
-                document.getElementById('riskValue').textContent = risk.toFixed(1) + '%';
-                document.getElementById('riskCategory').textContent = riskInfo.category;
-                document.getElementById('riskInterpretation').textContent = riskInfo.interpretation;
+const valueElem = document.getElementById('riskValue');
+const categoryElem = document.getElementById('riskCategory');
+const interpElem = document.getElementById('riskInterpretation');
+const resultDiv = document.getElementById('result');
+
+if (valueElem) valueElem.textContent = risk.toFixed(1) + '%';
+if (categoryElem) {
+  categoryElem.textContent = 'Rischio ' + riskInfo.category;
+  categoryElem.className = 'risk-category ' + riskInfo.class;
+}
+if (interpElem) interpElem.textContent = riskInfo.interpretation;
+if (resultDiv) resultDiv.classList.add('show');
+
                 
                 const resultDiv = document.getElementById('result');
                 resultDiv.classList.add('show');
