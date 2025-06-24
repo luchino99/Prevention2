@@ -263,8 +263,8 @@
                             </div>
                         </div>
                         <div class="form-col">
-                            <label for="systolic">Pressione sistolica (mmHg):</label>
-                            <input type="number" id="systolic" min="80" max="200" required>
+                            <label for="sbp">Pressione sistolica (mmHg):</label>
+                            <input type="number" id="sbp" min="80" max="200" required>
                         </div>
                     </div>
                 </div>
@@ -272,8 +272,8 @@
                 <div class="form-group">
                     <div class="form-row">
                         <div class="form-col">
-                            <label for="cholesterol">Colesterolo totale (mg/dL):</label>
-                            <input type="number" id="cholesterol" min="100" max="500" required>
+                            <label for="tchol">Colesterolo totale (mg/dL):</label>
+                            <input type="number" id="tchol" min="100" max="500" required>
                             <div class="unit-info">Valori normali: 120-200 mg/dL</div>
                         </div>
                         <div class="form-col">
@@ -498,18 +498,19 @@
         document.getElementById('score2Form').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            const data = {
-                age: parseInt(document.getElementById('age').value),
-                gender: document.querySelector('input[name="gender"]:checked').value,
-                smoking: parseInt(document.querySelector('input[name="smoking"]:checked').value),
-                systolic: parseInt(document.getElementById('systolic').value),
-                cholesterol: parseFloat(document.getElementById('cholesterol').value),
-                hdl: parseFloat(document.getElementById('hdl').value), // mg/dL
-                agediab: parseInt(document.getElementById('agediab').value),
-                hba1c: parseFloat(document.getElementById('hba1c').value), // %
-                egfr: parseInt(document.getElementById('egfr').value),
-                riskRegion: document.getElementById('riskRegion').value
-            };
+const data = {
+    age: parseInt(document.getElementById('age').value),
+    gender: document.querySelector('input[name="gender"]:checked').value,
+    smoking: parseInt(document.querySelector('input[name="smoking"]:checked').value),
+    sbp: parseFloat(user.pressione_sistolica), // ✅ usa nome dal database
+    tchol: parseFloat(user.colesterolo_totale), // ✅ usa nome dal database
+    hdl: parseFloat(document.getElementById('hdl').value),
+    agediab: parseInt(document.getElementById('agediab').value),
+    hba1c: parseFloat(document.getElementById('hba1c').value),
+    egfr: parseInt(document.getElementById('egfr').value),
+    riskRegion: document.getElementById('riskRegion').value
+};
+
 
             // Validazioni
             if (!data.gender || !data.smoking === null || !data.riskRegion) {
@@ -523,7 +524,7 @@
             }
 
             // Validazioni specifiche per le nuove unità di misura
-            if (data.cholesterol < 50 || data.cholesterol > 600) {
+            if (data.tchol < 50 || data.tchol > 600) {
                 alert('Il valore del colesterolo totale deve essere compreso tra 50 e 600 mg/dL.');
                 return;
             }
