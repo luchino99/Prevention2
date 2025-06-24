@@ -554,5 +554,23 @@
         // Inizializza il calcolo BMI
         calculateBMI();
     </script>
+
+    <script>
+  window.addEventListener("message", (event) => {
+    if (event.data?.action === "extract_fli_result") {
+      const scoreText = document.getElementById("riskValue")?.textContent || "0";
+      const categoryText = document.getElementById("riskCategory")?.textContent || "Non calcolato";
+
+      const fliScore = parseFloat(scoreText) || 0;
+
+      window.parent.postMessage({
+        type: "fli_result",
+        fli: fliScore,
+        category: categoryText.trim()
+      }, "*");
+    }
+  });
+</script>
+
 </body>
 </html>
