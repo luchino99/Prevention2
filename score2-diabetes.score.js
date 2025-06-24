@@ -5,6 +5,8 @@ const supabase = createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3dWhkZ3JrYW95dmVqbXpmYnR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2NzU1MDcsImV4cCI6MjA2MTI1MTUwN30.1c5iH4PYW-HeigfXkPSgnVK3t02Gv3krSeo7dDSqqsk'
 );
 
+let listenerAttached = false;
+
 export async function calcolaEFissaSCORE2Diabetes() {
   const { data: { session }, error } = await supabase.auth.getSession();
   if (!session || !session.user) {
@@ -20,16 +22,16 @@ export async function calcolaEFissaSCORE2Diabetes() {
     .eq('email', email)
     .single();
 
-  if (profileError) {
-    console.error("❌ Errore nel recupero dati SCORE2-Diabetes:", profileError.message);
+  if (profileError || !profile) {
+    console.error("❌ Errore nel recupero dati SCORE2-Diabetes:", profileError?.message);
     return;
   }
 
- const iframe = document.getElementById("score2d-frame");
-
+  const iframe = document.getElementById("score2d-frame");
   const doc = iframe?.contentDocument || iframe?.contentWindow?.document;
   if (!doc) return;
 
+  // ✅ Precompilazione form
   doc.getElementById("age").value = profile.eta || '';
   doc.getElementById("sbp").value = profile.pressione_sistolica || '';
   doc.getElementById("tchol").value = profile.colesterolo_totale || '';
@@ -39,26 +41,18 @@ export async function calcolaEFissaSCORE2Diabetes() {
   doc.getElementById("egfr").value = profile.egfr || '';
   doc.getElementById("riskRegion").value = profile.regione_rischio_cv || 'moderate';
 
+  // ✅ Normalizzazione gender
   let gender = 'female';
-  if (profile.sesso && typeof profile.sesso === 'string') {
-    const sesso = profile.sesso.trim().toLowerCase();
-    if (['maschio', 'uomo'].includes(sesso)) {
-      gender = 'male';
-    }
-  }
+  const sesso = (profile.sesso || '').trim().toLowerCase();
+  if (['maschio', 'uomo'].includes(sesso)) gender = 'male';
 
+  // ✅ Normalizzazione fumatore
   let smoking = '0';
-  if (profile.fumatore && typeof profile.fumatore === 'string') {
-    const fumo = profile.fumatore.trim().toLowerCase();
-    if (['si', 'sì'].includes(fumo)) {
-      smoking = '1';
-    }
-  }
-
+  const fumo = (profile.fumatore || '').trim().toLowerCase();
+  if (['si', 'sì'].includes(fumo)) smoking = '1';
 
   const genderInput = doc.querySelector(`input[name="gender"][value="${gender}"]`);
   const smokingInput = doc.querySelector(`input[name="smoking"][value="${smoking}"]`);
-
   if (genderInput) genderInput.checked = true;
   if (smokingInput) smokingInput.checked = true;
 
@@ -66,28 +60,33 @@ export async function calcolaEFissaSCORE2Diabetes() {
     iframe.contentWindow.updateRadioStyles();
   }
 
-doc.getElementById("score2Form")?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+  // ✅ Invia il form
+  doc.getElementById("score2Form")?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
 
-  window.addEventListener("message", async (event) => {
-    if (event.data?.type === "score2_diabetes_result") {
-      const { risk, category } = event.data;
+  // ✅ Salvataggio: evitare registrazioni multiple
+  if (!listenerAttached) {
+    window.addEventListener("message", async (event) => {
+      if (event.data?.type === "score2_diabetes_result") {
+        const { risk, category } = event.data;
+        const { error: updateError } = await supabase
+          .from('anagrafica_utenti')
+          .update({
+            score2_diabetes_risk: risk,
+            score2_diabetes_category: category
+          })
+          .eq('email', email);
 
-      const { error: updateError } = await supabase
-        .from('anagrafica_utenti')
-        .update({
-          score2_diabetes_risk: risk,
-          score2_diabetes_category: category
-        })
-        .eq('email', email);
-
-      if (updateError) {
-        console.error("❌ Errore salvataggio SCORE2-Diabetes:", updateError.message);
-      } else {
-        console.log("✅ SCORE2-Diabetes salvato:", risk, category);
+        if (updateError) {
+          console.error("❌ Errore salvataggio SCORE2-Diabetes:", updateError.message);
+        } else {
+          console.log("✅ SCORE2-Diabetes salvato:", risk, category);
+        }
       }
-    }
-  });
+    });
+    listenerAttached = true;
+  }
 
+  // ✅ Richiesta postMessage per estrarre risultato
   setTimeout(() => {
     iframe.contentWindow.postMessage({ action: "extract_score2_diabetes" }, "*");
   }, 1000);
