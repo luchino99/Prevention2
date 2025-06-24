@@ -526,8 +526,7 @@
                 const riskInfo = getRiskCategory(risk);
                 
                 document.getElementById('riskValue').textContent = risk.toFixed(1) + '%';
-                document.getElementById('riskCategory').textContent = 'Rischio ' + riskInfo.category;
-                document.getElementById('riskCategory').className = 'risk-category ' + riskInfo.class;
+                document.getElementById('riskCategory').textContent = riskInfo.category;
                 document.getElementById('riskInterpretation').textContent = riskInfo.interpretation;
                 
                 const resultDiv = document.getElementById('result');
