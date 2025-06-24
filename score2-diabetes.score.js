@@ -1,0 +1,79 @@
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+const supabase = createClient(
+  'https://lwuhdgrkaoyvejmzfbtx.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3dWhkZ3JrYW95dmVqbXpmYnR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2NzU1MDcsImV4cCI6MjA2MTI1MTUwN30.1c5iH4PYW-HeigfXkPSgnVK3t02Gv3krSeo7dDSqqsk'
+);
+
+export async function calcolaEFissaSCORE2Diabetes() {
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (!session || !session.user) {
+    window.location.href = "login.html";
+    return;
+  }
+
+  const email = session.user.email;
+
+  const { data: profile, error: profileError } = await supabase
+    .from('anagrafica_utenti')
+    .select('eta, sesso, pressione_sistolica, colesterolo_totale, colesterolo_hdl_valore, fumatore, eta_diagnosi_diabete, hba1c, egfr, regione_rischio_cv')
+    .eq('email', email)
+    .single();
+
+  if (profileError) {
+    console.error("❌ Errore nel recupero dati SCORE2-Diabetes:", profileError.message);
+    return;
+  }
+
+  const iframe = document.getElementById("score2-diabetes-frame");
+  const doc = iframe?.contentDocument || iframe?.contentWindow?.document;
+  if (!doc) return;
+
+  doc.getElementById("age").value = profile.eta || '';
+  doc.getElementById("systolic").value = profile.pressione_sistolica || '';
+  doc.getElementById("cholesterol").value = profile.colesterolo_totale || '';
+  doc.getElementById("hdl").value = profile.colesterolo_hdl_valore || '';
+  doc.getElementById("agediab").value = profile.eta_diagnosi_diabete || '';
+  doc.getElementById("hba1c").value = profile.hba1c || '';
+  doc.getElementById("egfr").value = profile.egfr || '';
+  doc.getElementById("riskRegion").value = profile.regione_rischio_cv || 'moderate';
+
+  const gender = profile.sesso === 'maschio' ? 'male' : 'female';
+  const smoking = profile.fumatore === 'si' ? '1' : '0';
+
+  const genderInput = doc.querySelector(`input[name="gender"][value="${gender}"]`);
+  const smokingInput = doc.querySelector(`input[name="smoking"][value="${smoking === '1' ? 'yes' : 'no'}"]`);
+
+  if (genderInput) genderInput.checked = true;
+  if (smokingInput) smokingInput.checked = true;
+
+  if (typeof iframe.contentWindow.updateRadioStyles === 'function') {
+    iframe.contentWindow.updateRadioStyles();
+  }
+
+  doc.getElementById("score2Form")?.submit();
+
+  window.addEventListener("message", async (event) => {
+    if (event.data?.type === "score2_diabetes_result") {
+      const { risk, category } = event.data;
+
+      const { error: updateError } = await supabase
+        .from('anagrafica_utenti')
+        .update({
+          score2_diabetes_risk: risk,
+          score2_diabetes_category: category
+        })
+        .eq('email', email);
+
+      if (updateError) {
+        console.error("❌ Errore salvataggio SCORE2-Diabetes:", updateError.message);
+      } else {
+        console.log("✅ SCORE2-Diabetes salvato:", risk, category);
+      }
+    }
+  });
+
+  setTimeout(() => {
+    iframe.contentWindow.postMessage({ action: "extract_score2_diabetes" }, "*");
+  }, 1000);
+}
