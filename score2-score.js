@@ -30,8 +30,8 @@ export async function calcolaEFissaSCORE2() {
   if (!doc) return;
 
   doc.getElementById("age").value = profile.eta || '';
-  doc.getElementById("sbp").value = profile.pressione_sistolica || '';
-  doc.getElementById("tchol").value = profile.colesterolo_totale || '';
+doc.getElementById("systolic").value = profile.pressione_sistolica || '';
+doc.getElementById("cholesterol").value = profile.colesterolo_totale || '';
   doc.getElementById("hdl").value = profile.colesterolo_hdl_valore || '';
   doc.getElementById("riskRegion").value = profile.regione_rischio_cv || 'moderate';
 
