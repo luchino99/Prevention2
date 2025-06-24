@@ -31,8 +31,8 @@ export async function calcolaEFissaSCORE2Diabetes() {
   if (!doc) return;
 
   doc.getElementById("age").value = profile.eta || '';
-  doc.getElementById("systolic").value = profile.pressione_sistolica || '';
-  doc.getElementById("cholesterol").value = profile.colesterolo_totale || '';
+  doc.getElementById("sbp").value = profile.pressione_sistolica || '';
+  doc.getElementById("tchol").value = profile.colesterolo_totale || '';
   doc.getElementById("hdl").value = profile.colesterolo_hdl_valore || '';
   doc.getElementById("agediab").value = profile.eta_diagnosi_diabete || '';
   doc.getElementById("hba1c").value = profile.hba1c || '';
