@@ -552,15 +552,8 @@ if (categoryElem) {
 }
 if (interpElem) interpElem.textContent = riskInfo.interpretation;
 if (resultDiv) resultDiv.classList.add('show');
-
                 
-                const resultDiv = document.getElementById('result');
-                resultDiv.classList.add('show');
-                
-                // Mostra debug info se desiderato (decommentare la riga seguente)
-                // document.getElementById('debugInfo').classList.add('show');
-                
-                resultDiv.scrollIntoView({ behavior: 'smooth' });
+resultDiv.scrollIntoView({ behavior: 'smooth' });
                 
             } catch (error) {
                 alert('Errore nel calcolo. Verificare i dati inseriti.');
