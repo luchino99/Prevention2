@@ -418,8 +418,7 @@
         };
 
         function calculateSCORE2Diabetes(data) {
-            // Debug: stampa i dati ricevuti
-            console.log('Dati ricevuti per il calcolo:', data);
+
             
             // Conversione delle unità di misura
             const tcolMmol = convertCholesterolToMmol(data.tchol);
@@ -497,7 +496,7 @@
 
         document.getElementById('score2Form').addEventListener('submit', function(e) {
             e.preventDefault();
-            console.table(data);
+            
             
     const data = {
         age: parseInt(document.getElementById('age').value),
