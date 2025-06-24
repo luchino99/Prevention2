@@ -16,33 +16,61 @@ export async function calcolaEFissaSCORE2() {
 
   const { data: profile, error: profileError } = await supabase
     .from('anagrafica_utenti')
-    .select('eta, sesso, pressione_sistolica, colesterolo_totale, colesterolo_hdl_valore, fumatore')
+    .select('eta, sesso, pressione_sistolica, colesterolo_totale, colesterolo_hdl_valore, fumatore, regione_rischio_cv')
     .eq('email', email)
     .single();
 
   if (profileError) {
-    console.error("Errore nel recupero dei dati utente:", profileError.message);
+    console.error("Errore nel recupero dei dati SCORE2:", profileError.message);
     return;
   }
 
-  const score2Frame = document.getElementById("score2-frame");
-  const score2Doc = score2Frame?.contentDocument || score2Frame?.contentWindow?.document;
-  if (!score2Doc) return;
+  const iframe = document.getElementById("score2-frame");
+  const doc = iframe?.contentDocument || iframe?.contentWindow?.document;
+  if (!doc) return;
 
-  score2Doc.getElementById("age").value = profile.eta || '';
-  score2Doc.getElementById("systolic").value = profile.pressione_sistolica || '';
-  score2Doc.getElementById("cholesterol").value = profile.colesterolo_totale || '';
-  score2Doc.getElementById("hdl").value = profile.colesterolo_hdl_valore || '';
+  doc.getElementById("age").value = profile.eta || '';
+  doc.getElementById("sbp").value = profile.pressione_sistolica || '';
+  doc.getElementById("tchol").value = profile.colesterolo_totale || '';
+  doc.getElementById("hdl").value = profile.colesterolo_hdl_valore || '';
+  doc.getElementById("riskRegion").value = profile.regione_rischio_cv || 'moderate';
 
   const gender = profile.sesso === 'maschio' ? 'male' : 'female';
-  const smoking = profile.fumatore === 'si' ? 'yes' : 'no';
+  const smoking = profile.fumatore === 'si' ? '1' : '0';
 
-  score2Doc.querySelector(`input[name="gender"][value="${gender}"]`).checked = true;
-  score2Doc.querySelector(`input[name="smoking"][value="${smoking}"]`).checked = true;
+  doc.querySelector(`input[name="gender"][value="${gender}"]`)?.click();
+  doc.querySelector(`input[name="smoking"][value="${smoking}"]`)?.click();
 
-  if (typeof score2Frame.contentWindow.updateRadioStyles === 'function') {
-    score2Frame.contentWindow.updateRadioStyles();
+  // Stile + submit
+  if (typeof iframe.contentWindow.updateRadioStyles === 'function') {
+    iframe.contentWindow.updateRadioStyles();
   }
 
-  score2Doc.getElementById("score2Form")?.requestSubmit();
+  doc.getElementById("score2Form")?.requestSubmit();
+
+  // Ascolta il risultato
+  window.addEventListener("message", async (event) => {
+    if (event.data?.type === "score2_result") {
+      const { risk, category } = event.data;
+
+      const { error: updateError } = await supabase
+        .from('anagrafica_utenti')
+        .update({
+          score2_risk: risk,
+          score2_category: category
+        })
+        .eq('email', email);
+
+      if (updateError) {
+        console.error("❌ Errore salvataggio score2:", updateError.message);
+      } else {
+        console.log("✅ SCORE2 salvato:", risk, category);
+      }
+    }
+  });
+
+  // Chiedi all'iframe di inviare i dati una volta pronto
+  setTimeout(() => {
+    iframe.contentWindow.postMessage({ action: "extract_score2" }, "*");
+  }, 1000);
 }
