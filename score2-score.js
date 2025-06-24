@@ -63,7 +63,8 @@ if (smokingInput) smokingInput.checked = true;
   }
 
   // Submit silenzioso (bypass validazione HTML)
-  doc.getElementById("score2Form")?.submit();
+ doc.getElementById("score2Form")?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+
 
   // Listener risultato
   window.addEventListener("message", async (event) => {
