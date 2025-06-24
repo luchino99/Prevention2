@@ -37,7 +37,7 @@ export async function calcolaEFissaSCORE2() {
   doc.getElementById("riskRegion").value = profile.regione_rischio_cv || 'moderate';
 
   const gender = profile.sesso === 'maschio' ? 'male' : 'female';
-  + const smoking = profile.fumatore === 'si' ? 'yes' : 'no';
+  const smoking = profile.fumatore === 'si' ? 'yes' : 'no';
 
 const genderInput = doc.querySelector(`input[name="gender"][value="${gender}"]`);
 const smokingInput = doc.querySelector(`input[name="smoking"][value="${smoking}"]`);
