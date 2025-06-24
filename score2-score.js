@@ -29,9 +29,10 @@ export async function calcolaEFissaSCORE2() {
   const doc = iframe?.contentDocument || iframe?.contentWindow?.document;
   if (!doc) return;
 
+  // Compilazione form
   doc.getElementById("age").value = profile.eta || '';
-doc.getElementById("systolic").value = profile.pressione_sistolica || '';
-doc.getElementById("cholesterol").value = profile.colesterolo_totale || '';
+  doc.getElementById("systolic").value = profile.pressione_sistolica || '';
+  doc.getElementById("cholesterol").value = profile.colesterolo_totale || '';
   doc.getElementById("hdl").value = profile.colesterolo_hdl_valore || '';
   doc.getElementById("riskRegion").value = profile.regione_rischio_cv || 'moderate';
 
@@ -41,14 +42,15 @@ doc.getElementById("cholesterol").value = profile.colesterolo_totale || '';
   doc.querySelector(`input[name="gender"][value="${gender}"]`)?.click();
   doc.querySelector(`input[name="smoking"][value="${smoking}"]`)?.click();
 
-  // Stile + submit
+  // Aggiorna stili radio
   if (typeof iframe.contentWindow.updateRadioStyles === 'function') {
     iframe.contentWindow.updateRadioStyles();
   }
 
-  doc.getElementById("score2Form")?.requestSubmit();
+  // Submit silenzioso (bypass validazione HTML)
+  doc.getElementById("score2Form")?.submit();
 
-  // Ascolta il risultato
+  // Listener risultato
   window.addEventListener("message", async (event) => {
     if (event.data?.type === "score2_result") {
       const { risk, category } = event.data;
@@ -69,7 +71,7 @@ doc.getElementById("cholesterol").value = profile.colesterolo_totale || '';
     }
   });
 
-  // Chiedi all'iframe di inviare i dati una volta pronto
+  // Trigger di estrazione risultato (score2.html invierà postMessage)
   setTimeout(() => {
     iframe.contentWindow.postMessage({ action: "extract_score2" }, "*");
   }, 1000);
