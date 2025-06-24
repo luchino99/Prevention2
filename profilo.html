@@ -133,11 +133,7 @@
 
   function displayUserProfile(userData) {
     const container = document.getElementById("user-data");
-    const dg = document.getElementById("profilo-diabete_gestazionale");
-if (dg && userData.sesso?.toLowerCase() === "femmina") {
-  dg.parentElement.parentElement.parentElement.style.display = "block"; // mostra sezione
-  dg.value = userData.diabete_gestazionale?.toLowerCase() || "";
-}
+    
 
 
     // Basic user info section
@@ -717,6 +713,17 @@ if (dg && userData.sesso?.toLowerCase() === "femmina") {
     `;
 
     container.innerHTML = html;
+
+    const dg = document.getElementById("profilo-diabete_gestazionale");
+if (dg && userData.sesso?.toLowerCase() === "femmina") {
+  const sezioneFemminile = document.getElementById("sezione-femminile");
+  if (sezioneFemminile) sezioneFemminile.style.display = "block";
+
+  const val = userData.diabete_gestazionale?.toString().trim().toLowerCase();
+  if (["sì", "si"].includes(val)) dg.value = "sì";
+  else if (val === "no") dg.value = "no";
+}
+
 
     // Carica i valori PREDIMED
 for (let i = 1; i <= 14; i++) {
