@@ -109,6 +109,7 @@ const domandeFemminili = [
   { key: "contraccettivi", testo: "Hai mai usato contraccettivi ormonali?" },
   { key: "gravidezza", testo: "Hai avuto una o più gravidanze?" },
   { key: "eta_menopausa", testo: "A che età sei andata in menopausa? (facoltativo)" },
+  { key: "diabete_gestazionale", testo: "Hai mai sofferto di diabete gestazionale?" },
   { key: "familiarita_seno", testo: "Tua madre o tua nonna hanno avuto un tumore al seno?" },
   { key: "screening_seno", testo: "Hai mai svolto una mammografia o un'ecografia mammaria? (se hai più di 25 anni)" },
   { key: "papsmear", testo: "Svolgi regolarmente il Pap test? (se hai più di 25 anni)" }
@@ -203,6 +204,7 @@ const aliasCondivisi = {
   hba1c: ["hba1c"],
     perdita_peso: ["perdita_peso"],
   malattie_croniche: ["malattie_croniche"],
+  diabete_gestazionale: ["diabete_gestazionale"],
   circonferenza_vita: ["circonferenza_vita"]
 };
   
@@ -742,7 +744,9 @@ const campiValidi = [
   "plank", "step_test",
   "over_scale", "obiettivo", "esperienza", "frequenza", "durata",
   "luogo", "attrezzatura", "cardio", "focus", "infortuni", "pushups", "squats",
-  "stanchezza", "camminata", "sedia", "sollevamento", "cadute", "perdita_peso", "malattie_croniche", "circonferenza_vita"
+  "stanchezza", "camminata", "sedia", "sollevamento", "cadute", "perdita_peso", "malattie_croniche",
+"diabete_gestazionale",
+ "circonferenza_vita"
 ];
 
 
