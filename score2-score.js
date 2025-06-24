@@ -39,8 +39,12 @@ export async function calcolaEFissaSCORE2() {
   const gender = profile.sesso === 'maschio' ? 'male' : 'female';
   const smoking = profile.fumatore === 'si' ? '1' : '0';
 
-  doc.querySelector(`input[name="gender"][value="${gender}"]`)?.click();
-  doc.querySelector(`input[name="smoking"][value="${smoking}"]`)?.click();
+const genderInput = doc.querySelector(`input[name="gender"][value="${gender}"]`);
+const smokingInput = doc.querySelector(`input[name="smoking"][value="${smoking}"]`);
+
+if (genderInput) genderInput.checked = true;
+if (smokingInput) smokingInput.checked = true;
+
 
   // Aggiorna stili radio
   if (typeof iframe.contentWindow.updateRadioStyles === 'function') {
