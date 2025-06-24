@@ -511,6 +511,20 @@
         riskRegion: document.getElementById('riskRegion').value
     };
 
+            
+console.log("🎯 Dati inviati al form SCORE2-Diabetes:");
+console.table({
+  age: doc.getElementById("age").value,
+  sbp: doc.getElementById("sbp").value,
+  tchol: doc.getElementById("tchol").value,
+  hdl: doc.getElementById("hdl").value,
+  agediab: doc.getElementById("agediab").value,
+  hba1c: doc.getElementById("hba1c").value,
+  egfr: doc.getElementById("egfr").value,
+  riskRegion: doc.getElementById("riskRegion").value,
+  gender,
+  smoking
+});
 
 
 
