@@ -498,18 +498,19 @@
         document.getElementById('score2Form').addEventListener('submit', function(e) {
             e.preventDefault();
             
-const data = {
-    age: parseInt(document.getElementById('age').value),
-    gender: document.querySelector('input[name="gender"]:checked').value,
-    smoking: parseInt(document.querySelector('input[name="smoking"]:checked').value),
-    sbp: parseInt(document.getElementById('sbp').value),
-    tchol: parseFloat(document.getElementById('tchol').value),
-    hdl: parseFloat(document.getElementById('hdl').value),
-    agediab: parseInt(document.getElementById('agediab').value),
-    hba1c: parseFloat(document.getElementById('hba1c').value),
-    egfr: parseInt(document.getElementById('egfr').value),
-    riskRegion: document.getElementById('riskRegion').value
-};
+    const data = {
+        age: parseInt(document.getElementById('age').value),
+        gender: document.querySelector('input[name="gender"]:checked').value,
+        smoking: parseInt(document.querySelector('input[name="smoking"]:checked').value),
+        sbp: parseInt(document.getElementById('sbp').value),
+        tchol: parseFloat(document.getElementById('tchol').value),
+        hdl: parseFloat(document.getElementById('hdl').value),
+        agediab: parseInt(document.getElementById('agediab').value),
+        hba1c: parseFloat(document.getElementById('hba1c').value),
+        egfr: parseInt(document.getElementById('egfr').value),
+        riskRegion: document.getElementById('riskRegion').value
+    };
+
 
 
 
