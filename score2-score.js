@@ -45,6 +45,17 @@ const smokingInput = doc.querySelector(`input[name="smoking"][value="${smoking}"
 if (genderInput) genderInput.checked = true;
 if (smokingInput) smokingInput.checked = true;
 
+  console.log("[DEBUG] Valori inseriti SCORE2:", {
+  eta: profile.eta,
+  sesso: gender,
+  pressione: profile.pressione_sistolica,
+  colesterolo: profile.colesterolo_totale,
+  hdl: profile.colesterolo_hdl_valore,
+  fumatore: smoking,
+  regione: profile.regione_rischio_cv
+});
+
+
 
   // Aggiorna stili radio
   if (typeof iframe.contentWindow.updateRadioStyles === 'function') {
