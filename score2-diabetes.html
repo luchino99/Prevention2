@@ -502,14 +502,15 @@ const data = {
     age: parseInt(document.getElementById('age').value),
     gender: document.querySelector('input[name="gender"]:checked').value,
     smoking: parseInt(document.querySelector('input[name="smoking"]:checked').value),
-    sbp: parseFloat(user.pressione_sistolica), // ✅ usa nome dal database
-    tchol: parseFloat(user.colesterolo_totale), // ✅ usa nome dal database
+    sbp: parseInt(document.getElementById('sbp').value),
+    tchol: parseFloat(document.getElementById('tchol').value),
     hdl: parseFloat(document.getElementById('hdl').value),
     agediab: parseInt(document.getElementById('agediab').value),
     hba1c: parseFloat(document.getElementById('hba1c').value),
     egfr: parseInt(document.getElementById('egfr').value),
     riskRegion: document.getElementById('riskRegion').value
 };
+
 
 
             // Validazioni
