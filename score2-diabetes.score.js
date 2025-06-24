@@ -30,8 +30,8 @@ export async function calcolaEFissaSCORE2Diabetes() {
   if (!doc) return;
 
   doc.getElementById("age").value = profile.eta || '';
-  doc.getElementById("systolic").value = profile.pressione_sistolica || '';
-  doc.getElementById("cholesterol").value = profile.colesterolo_totale || '';
+  doc.getElementById("sbp").value = profile.pressione_sistolica || '';
+  doc.getElementById("tchol").value = profile.colesterolo_totale || '';
   doc.getElementById("hdl").value = profile.colesterolo_hdl_valore || '';
   doc.getElementById("agediab").value = profile.eta_diagnosi_diabete || '';
   doc.getElementById("hba1c").value = profile.hba1c || '';
@@ -42,7 +42,7 @@ export async function calcolaEFissaSCORE2Diabetes() {
   const smoking = profile.fumatore === 'si' ? '1' : '0';
 
   const genderInput = doc.querySelector(`input[name="gender"][value="${gender}"]`);
-  const smokingInput = doc.querySelector(`input[name="smoking"][value="${smoking === '1' ? 'yes' : 'no'}"]`);
+  const smokingInput = doc.querySelector(`input[name="smoking"][value="${smoking}"]`);
 
   if (genderInput) genderInput.checked = true;
   if (smokingInput) smokingInput.checked = true;
