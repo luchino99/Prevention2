@@ -154,6 +154,7 @@ window.addEventListener('message', function(event) {
         if (label === "Dashboard") {
           try {
             await calcolaEFissaFrail(); // esegue script frail in iframe
+            await calcolaEFissaSCORE2();
             
           } catch (err) {
             console.error("❌ Errore calcolo frailty:", err);
