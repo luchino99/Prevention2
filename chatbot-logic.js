@@ -205,6 +205,7 @@ const aliasCondivisi = {
     perdita_peso: ["perdita_peso"],
   malattie_croniche: ["malattie_croniche"],
   diabete_gestazionale: ["diabete_gestazionale"],
+  gravidanza: ["gravidanza"],
   circonferenza_vita: ["circonferenza_vita"]
 };
   
@@ -745,7 +746,7 @@ const campiValidi = [
   "over_scale", "obiettivo", "esperienza", "frequenza", "durata",
   "luogo", "attrezzatura", "cardio", "focus", "infortuni", "pushups", "squats",
   "stanchezza", "camminata", "sedia", "sollevamento", "cadute", "perdita_peso", "malattie_croniche",
-"diabete_gestazionale",
+"diabete_gestazionale", "gravidanza",
  "circonferenza_vita"
 ];
 
