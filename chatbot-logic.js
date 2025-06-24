@@ -107,7 +107,7 @@ const domandeOver65 = [
 const domandeFemminili = [
   { key: "eta_menarca", testo: "A che età hai avuto il primo ciclo mestruale?" },
   { key: "contraccettivi", testo: "Hai mai usato contraccettivi ormonali?" },
-  { key: "gravidezza", testo: "Hai avuto una o più gravidanze?" },
+  { key: "gravidanza", testo: "Hai avuto una o più gravidanze?" },
   { key: "eta_menopausa", testo: "A che età sei andata in menopausa? (facoltativo)" },
   { key: "diabete_gestazionale", testo: "Hai mai sofferto di diabete gestazionale?" },
   { key: "familiarita_seno", testo: "Tua madre o tua nonna hanno avuto un tumore al seno?" },
