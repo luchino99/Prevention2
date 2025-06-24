@@ -27,7 +27,8 @@ export async function calcolaEFissaSCORE2Diabetes() {
     return;
   }
 
-  const iframe = document.getElementById("score2d-frame");
+  const iframe = document.getElementById("score2-diabetes-frame");
+
   const doc = iframe?.contentDocument || iframe?.contentWindow?.document;
   if (!doc) return;
 
