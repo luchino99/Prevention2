@@ -12,6 +12,8 @@
   <iframe id="score2-frame" src="score2.html" style="display: none;"></iframe>
   <iframe id="score2-diabetes-frame" src="score2-diabetes.html" style="display:none;"></iframe>
   <iframe id="fli-frame" src="FLI.html" style="display:none;"></iframe>
+  <iframe id="ada-frame" src="ADA-score.html" style="display:none;"></iframe>
+
 
 
 
@@ -124,6 +126,8 @@ window.addEventListener('message', function(event) {
   import { calcolaEFissaSCORE2 } from './score2-score.js';
   import { calcolaEFissaSCORE2Diabetes } from './score2-diabetes.score.js';
   import { calcolaEFissaFLI } from './fli-score.js';
+  import { calcolaEFissaADAScore } from './ada-score.js';
+
  
   const supabaseUrl = 'https://lwuhdgrkaoyvejmzfbtx.supabase.co';
   const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3dWhkZ3JrYW95dmVqbXpmYnR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2NzU1MDcsImV4cCI6MjA2MTI1MTUwN30.1c5iH4PYW-HeigfXkPSgnVK3t02Gv3krSeo7dDSqqsk';
@@ -164,6 +168,7 @@ window.addEventListener('message', function(event) {
             await calcolaEFissaSCORE2();
             await calcolaEFissaSCORE2Diabetes();
             await calcolaEFissaFLI();
+            await calcolaEFissaADAScore(); 
             
           } catch (err) {
             console.error("❌ Errore calcolo frailty:", err);
