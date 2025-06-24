@@ -564,5 +564,22 @@
             }
         });
     </script>
+    <script>
+  window.addEventListener("message", (event) => {
+    if (event.data?.action === "extract_score2_diabetes") {
+      const scoreText = document.getElementById("riskValue")?.textContent || "0";
+      const categoryText = document.getElementById("riskCategory")?.textContent || "Non calcolato";
+
+      const score2Value = parseFloat(scoreText.replace('%', '')) || 0;
+
+      window.parent.postMessage({
+        type: "score2_diabetes_result",
+        risk: score2Value,
+        category: categoryText.trim()
+      }, "*");
+    }
+  });
+</script>
+
 </body>
 </html>
