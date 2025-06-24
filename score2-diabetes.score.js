@@ -39,8 +39,22 @@ export async function calcolaEFissaSCORE2Diabetes() {
   doc.getElementById("egfr").value = profile.egfr || '';
   doc.getElementById("riskRegion").value = profile.regione_rischio_cv || 'moderate';
 
-  const gender = profile.sesso === 'maschio' ? 'male' : 'female';
-  const smoking = profile.fumatore === 'si' ? '1' : '0';
+  let gender = 'female';
+  if (profile.sesso && typeof profile.sesso === 'string') {
+    const sesso = profile.sesso.trim().toLowerCase();
+    if (['maschio', 'uomo'].includes(sesso)) {
+      gender = 'male';
+    }
+  }
+
+  let smoking = '0';
+  if (profile.fumatore && typeof profile.fumatore === 'string') {
+    const fumo = profile.fumatore.trim().toLowerCase();
+    if (['si', 'sì'].includes(fumo)) {
+      smoking = '1';
+    }
+  }
+
 
   const genderInput = doc.querySelector(`input[name="gender"][value="${gender}"]`);
   const smokingInput = doc.querySelector(`input[name="smoking"][value="${smoking}"]`);
