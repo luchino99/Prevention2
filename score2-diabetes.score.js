@@ -25,7 +25,8 @@ export async function calcolaEFissaSCORE2Diabetes() {
     return;
   }
 
-  const iframe = document.getElementById("score2-diabetes-frame");
+ const iframe = document.getElementById("score2d-frame");
+
   const doc = iframe?.contentDocument || iframe?.contentWindow?.document;
   if (!doc) return;
 
@@ -51,7 +52,7 @@ export async function calcolaEFissaSCORE2Diabetes() {
     iframe.contentWindow.updateRadioStyles();
   }
 
-  doc.getElementById("score2Form")?.submit();
+doc.getElementById("score2Form")?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
 
   window.addEventListener("message", async (event) => {
     if (event.data?.type === "score2_diabetes_result") {
