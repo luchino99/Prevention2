@@ -19,7 +19,7 @@ export async function calcolaEFissaADAScore() {
 
   const { data: profile, error: profileError } = await supabase
     .from('anagrafica_utenti')
-    .select('eta, sesso, diabete_gestazionale, familiari_diabete, ipertensione, attivo, altezza, peso')
+    .select('eta, sesso, diabete_gestazionale, familiari_diabete, pressione_alta, attivo, altezza, peso')
     .eq('email', email)
     .single();
 
@@ -47,7 +47,7 @@ export async function calcolaEFissaADAScore() {
   const familyInput = doc.querySelector(`input[name="family_history"][value="${profile.familiari_diabete === 'si' ? 'yes' : 'no'}"]`);
   if (familyInput) familyInput.checked = true;
 
-  const hyperInput = doc.querySelector(`input[name="hypertension"][value="${profile.ipertensione === 'si' ? 'yes' : 'no'}"]`);
+  const hyperInput = doc.querySelector(`input[name="hypertension"][value="${profile.pressione_alta === 'si' ? 'yes' : 'no'}"]`);
   if (hyperInput) hyperInput.checked = true;
 
   const activeInput = doc.querySelector(`input[name="physical_activity"][value="${profile.attivo === 'si' ? 'yes' : 'no'}"]`);
