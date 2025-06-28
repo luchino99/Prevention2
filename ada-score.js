@@ -47,12 +47,14 @@ export async function calcolaEFissaADAScore() {
   const familyInput = doc.querySelector(`input[name="family_history"][value="${profile.familiari_diabete === 'si' ? 'yes' : 'no'}"]`);
   if (familyInput) familyInput.checked = true;
 
+  const hyperInput = doc.querySelector(`input[name="hypertension"][value="${profile.pressione_alta === 'si' ? 'yes' : 'no'}"]`);
+  if (hyperInput) hyperInput.checked = true;
+
+
 const activeFlag = profile.durata_attivita && parseInt(profile.durata_attivita) >= 150 ? 'yes' : 'no';
 const activeInput = doc.querySelector(`input[name="physical_activity"][value="${activeFlag}"]`);
 if (activeInput) activeInput.checked = true;
 
-  const activeInput = doc.querySelector(`input[name="physical_activity"][value="${profile.attivo === 'si' ? 'yes' : 'no'}"]`);
-  if (activeInput) activeInput.checked = true;
 
   if (typeof iframe.contentWindow.updateRadioStyles === 'function') {
     iframe.contentWindow.updateRadioStyles();
