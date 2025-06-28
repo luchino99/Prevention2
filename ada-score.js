@@ -65,7 +65,9 @@ export async function calcolaEFissaADAScore() {
   // Submit silenzioso del form
   const form = doc.getElementById("adaForm");
   if (form) {
-    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+setTimeout(() => {
+  form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+}, 300); // leggero delay per sicurezza
   }
 
   // Listener per ricevere punteggio da ADA-score.html
