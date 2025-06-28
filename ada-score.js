@@ -31,16 +31,7 @@ export async function calcolaEFissaADAScore() {
   const doc = iframe?.contentDocument || iframe?.contentWindow?.document;
   if (!doc) return;
 
-  // Helper per selezionare e attivare radio button
-  const setRadio = (name, value) => {
-    const input = doc.querySelector(`input[name="${name}"][value="${value}"]`);
-    if (input) {
-      input.checked = true;
-      input.dispatchEvent(new Event("change", { bubbles: true }));
-    }
-  };
-
-  // Precompilazione del form
+// Precompilazione del form
   doc.getElementById("age").value = profile.eta || '';
   doc.getElementById("height").value = profile.altezza || '';
   doc.getElementById("weight").value = profile.peso || '';
