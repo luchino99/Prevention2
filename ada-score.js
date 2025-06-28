@@ -9,7 +9,6 @@ let listenerAttached = false;
 
 export async function calcolaEFissaADAScore() {
   const { data: { session }, error } = await supabase.auth.getSession();
-
   if (!session || !session.user) {
     window.location.href = "login.html";
     return;
@@ -32,38 +31,44 @@ export async function calcolaEFissaADAScore() {
   const doc = iframe?.contentDocument || iframe?.contentWindow?.document;
   if (!doc) return;
 
+  // Helper per selezionare e attivare radio button
+  const setRadio = (name, value) => {
+    const input = doc.querySelector(`input[name="${name}"][value="${value}"]`);
+    if (input) {
+      input.checked = true;
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  };
+
   // Precompilazione del form
   doc.getElementById("age").value = profile.eta || '';
   doc.getElementById("height").value = profile.altezza || '';
   doc.getElementById("weight").value = profile.peso || '';
 
-  const gender = (profile.sesso || '').toLowerCase();
-  const genderInput = doc.querySelector(`input[name="gender"][value="${gender}"]`);
-  if (genderInput) genderInput.checked = true;
+  setRadio("gender", (profile.sesso || '').toLowerCase());
+  setRadio("gestational", profile.diabete_gestazionale === 'si' ? 'yes' : 'no');
+  setRadio("family_history", profile.familiari_diabete === 'si' ? 'yes' : 'no');
+  setRadio("hypertension", profile.pressione_alta === 'si' ? 'yes' : 'no');
 
-  const gestationalInput = doc.querySelector(`input[name="gestational"][value="${profile.diabete_gestazionale === 'si' ? 'yes' : 'no'}"]`);
-  if (gestationalInput) gestationalInput.checked = true;
+  // Valutazione attività fisica su base settimanale (≥150 minuti)
+  let activeFlag = 'no';
+  if (profile.durata_attivita !== null && !isNaN(parseInt(profile.durata_attivita))) {
+    activeFlag = parseInt(profile.durata_attivita) >= 150 ? 'yes' : 'no';
+  }
+  setRadio("physical_activity", activeFlag);
 
-  const familyInput = doc.querySelector(`input[name="family_history"][value="${profile.familiari_diabete === 'si' ? 'yes' : 'no'}"]`);
-  if (familyInput) familyInput.checked = true;
-
-  const hyperInput = doc.querySelector(`input[name="hypertension"][value="${profile.pressione_alta === 'si' ? 'yes' : 'no'}"]`);
-  if (hyperInput) hyperInput.checked = true;
-
-
-const activeFlag = profile.durata_attivita && parseInt(profile.durata_attivita) >= 150 ? 'yes' : 'no';
-const activeInput = doc.querySelector(`input[name="physical_activity"][value="${activeFlag}"]`);
-if (activeInput) activeInput.checked = true;
-
-
+  // Assicurati che gli stili dei radio button siano aggiornati
   if (typeof iframe.contentWindow.updateRadioStyles === 'function') {
     iframe.contentWindow.updateRadioStyles();
   }
 
-  // Submit silenzioso
-  doc.getElementById("adaForm")?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+  // Submit silenzioso del form
+  const form = doc.getElementById("adaForm");
+  if (form) {
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+  }
 
-  // Listener per salvataggio
+  // Listener per ricevere punteggio da ADA-score.html
   if (!listenerAttached) {
     window.addEventListener("message", async (event) => {
       if (event.data?.type === "ada_result") {
@@ -87,7 +92,7 @@ if (activeInput) activeInput.checked = true;
     listenerAttached = true;
   }
 
-  // Trigger postMessage per estrazione risultato
+  // Trigger postMessage per richiesta risultato ADA Score
   setTimeout(() => {
     iframe.contentWindow.postMessage({ action: "extract_ada_result" }, "*");
   }, 1000);
