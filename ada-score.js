@@ -62,6 +62,13 @@ export async function calcolaEFissaADAScore() {
     iframe.contentWindow.updateRadioStyles();
   }
 
+console.log("✅ Pre-submit check:");
+console.log("Gender:", doc.querySelector('input[name="gender"]:checked')?.value);
+console.log("Family history:", doc.querySelector('input[name="family_history"]:checked')?.value);
+console.log("Hypertension:", doc.querySelector('input[name="hypertension"]:checked')?.value);
+console.log("Physical activity:", doc.querySelector('input[name="physical_activity"]:checked')?.value);
+
+  
   // Submit silenzioso del form
   const form = doc.getElementById("adaForm");
   if (form) {
