@@ -45,7 +45,34 @@ export async function calcolaEFissaADAScore() {
   doc.getElementById("height").value = profile.altezza || '';
   doc.getElementById("weight").value = profile.peso || '';
 
-  setRadio("gender", (profile.sesso || '').toLowerCase());
+  // Normalizzazione del sesso
+const sessoRaw = (profile.sesso || '').trim().toLowerCase();
+let genderVal = 'female'; // default
+
+const maleWords = ['maschio', 'uomo', 'ragazzo', 'male', 'm', 'm.'];
+const femaleWords = ['femmina', 'donna', 'ragazza', 'female', 'f', 'f.'];
+
+if (maleWords.includes(sessoRaw)) {
+  genderVal = 'male';
+} else if (femaleWords.includes(sessoRaw)) {
+  genderVal = 'female';
+} else {
+  console.warn(`⚠️ Valore sesso non riconosciuto: "${sessoRaw}", uso default "female"`);
+}
+
+// Simula clic sul radio corretto
+const setRadio = (name, value) => {
+  const input = doc.querySelector(`input[name="${name}"][value="${value}"]`);
+  if (input) {
+    input.click(); // simula selezione reale
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  } else {
+    console.warn(`❗ Radio "${name}" con valore "${value}" non trovato`);
+  }
+};
+
+
+  setRadio("gender", genderVal);
   setRadio("gestational", profile.diabete_gestazionale === 'si' ? 'yes' : 'no');
   setRadio("family_history", profile.familiari_diabete === 'si' ? 'yes' : 'no');
   setRadio("hypertension", profile.pressione_alta === 'si' ? 'yes' : 'no');
