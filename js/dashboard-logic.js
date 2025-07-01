@@ -1333,4 +1333,9 @@ function updateActivityTab() {
 
     document.getElementById('refresh-btn').addEventListener('click', function() {
       window.location.reload();
-    });
+      
+        }); // Chiude document.getElementById('refresh-btn'...
+
+  }); // Chiude document.addEventListener('DOMContentLoaded'...
+
+} 
