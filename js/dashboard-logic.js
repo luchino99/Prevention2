@@ -41,6 +41,44 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Carica dati dal database
     await loadUserData(emailUtente);
+
+    // 🔁 Sincronizza dashboardData con dati salvati da Supabase (userData)
+dashboardData.score2 = {
+  value: parseFloat(userData.score2_risk) || 0,
+  risk: userData.score2_category || "Non calcolato",
+  category: (userData.score2_category || "").toLowerCase().includes("alto") ? "danger"
+           : (userData.score2_category || "").toLowerCase().includes("moderato") ? "warning"
+           : "success"
+};
+
+dashboardData.score2Diabetes = {
+  value: parseFloat(userData.score2_diabetes_risk) || 0,
+  hba1c: parseFloat(userData.hba1c) || 0,
+  glicemia: parseFloat(userData.glicemia_valore) || 0,
+  sistolica: parseFloat(userData.pressione_sistolica) || 0,
+  category: (userData.score2_diabetes_category || "").toLowerCase().includes("alto") ? "danger"
+           : (userData.score2_diabetes_category || "").toLowerCase().includes("moderato") ? "warning"
+           : "success"
+};
+
+dashboardData.fni = {
+  value: parseFloat(userData.fli_score) || 0,
+  albumina: parseFloat(userData.albumina) || 0,
+  linfociti: parseFloat(userData.linfociti) || 0,
+  category: (userData.fli_category || "").toLowerCase().includes("alto") ? "danger"
+           : (userData.fli_category || "").toLowerCase().includes("intermedio") ? "warning"
+           : "success"
+};
+
+
+
+dashboardData.diabetesRisk = {
+  score: parseInt(userData.ada_score) || 0,
+  risk: userData.ada_category || "Non calcolato",
+  maxScore: 8
+};
+
+    
     calculateAllScores();
     updateDashboard();
     initializeCharts();
