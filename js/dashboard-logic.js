@@ -88,11 +88,11 @@ document.addEventListener('DOMContentLoaded', async function () {
     calculateBMI();
     calculatePREDIMED();
     checkMetabolicSyndrome();
+    setupTabs();
+    setupExportButton();
     updateDashboard();
     initializeCharts();
     analyzeLifestyle();
-    setupTabs();
-    setupExportButton();
 
 
   } catch (error) {
