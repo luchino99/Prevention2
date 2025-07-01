@@ -77,6 +77,18 @@ dashboardData.diabetesRisk = {
   maxScore: 8
 };
 
+    dashboardData.fib4 = {
+  ast: parseFloat(userData.ast) || 0,
+  alt: parseFloat(userData.alt) || 0,
+  plt: parseFloat(userData.piastrine) || 0,
+  value: 0,
+  category: '',
+  risk: ''
+};
+
+// Calcola ora FIB4 (avendo i dati)
+calculateFIB4();
+
     
     // ⚠️ Calcola solo BMI, PREDIMED e FIB4
 calculateBMI();
