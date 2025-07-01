@@ -886,7 +886,8 @@ function updateNewScoreBanners() {
   }
 
   
-  // FIB4
+console.log("📌 Verifica ingresso blocco FIB4", dashboardData.fib4);
+  //FIB4
 if (!isNaN(parseFloat(dashboardData.fib4?.value))) {
   const fib4 = dashboardData.fib4;
 
