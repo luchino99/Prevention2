@@ -94,6 +94,12 @@ document.addEventListener('DOMContentLoaded', async function () {
     setupTabs();
     setupExportButton();
 
+
+  } catch (error) {
+    console.error('Errore inizializzazione dashboard:', error);
+  }
+});
+
 const themeToggle = document.getElementById('theme-toggle');
 
 function applyTheme(theme) {
@@ -128,11 +134,6 @@ window.addEventListener('message', function (event) {
   }
 });
 
-
-  } catch (error) {
-    console.error('Errore inizializzazione dashboard:', error);
-  }
-});
 
 
 // Funzione per caricare i dati utente
