@@ -874,9 +874,47 @@ function updateDashboard() {
   console.log('🔄 Inizio aggiornamento dashboard...');
   console.log('📊 Dati da visualizzare:', {
     score2: dashboardData.score2,
-    diabetesRisk: dashboardData.diabetesRisk
+    diabetesRisk: dashboardData.diabetesRisk,
+    score2Diabetes: dashboardData.score2Diabetes,
+    frail: {
+      score: userData.frail_score,
+      category: userData.frail_category
+    },
+    fli: dashboardData.fni
   });
 
+  // SCORE2
+  document.getElementById("score2-indicator").textContent = `${userData.score2?.value || "--"}%`;
+  document.getElementById("score2-category").textContent = userData.score2?.risk || "--";
+
+  // SCORE2-Diabete
+  document.getElementById("score2d-banner-text").textContent = `${userData.score2Diabetes?.value || "--"}%`;
+  document.getElementById("score2d-banner-hba1c").textContent = `${userData.score2Diabetes?.hba1c || "--"} %`;
+  document.getElementById("score2d-banner-glucose").textContent = `${userData.score2Diabetes?.glicemia || "--"} mg/dL`;
+  document.getElementById("score2d-banner-sbp").textContent = `${userData.score2Diabetes?.sistolica || "--"} mmHg`;
+
+  // FRAIL
+  document.getElementById("frail-banner-score").textContent = `${userData.frail_score || "--"} / 5`;
+  const frailBadge = document.getElementById("frail-banner-badge");
+  frailBadge.textContent = userData.frail_category || "--";
+  frailBadge.className = "badge";
+  if (userData.frail_category === "Robusto") frailBadge.classList.add("badge-success");
+  else if (userData.frail_category === "Pre-Frailty") frailBadge.classList.add("badge-warning");
+  else if (userData.frail_category === "Fragile") frailBadge.classList.add("badge-danger");
+
+  // FLI
+  document.getElementById("fni-banner-score").textContent = userData.fni?.value || "--";
+  document.getElementById("fni-banner-albumina").textContent = userData.fni?.albumina || "--";
+  document.getElementById("fni-banner-linfociti").textContent = userData.fni?.linfociti || "--";
+
+  // ADA Risk
+  document.getElementById("cv-risk-text").textContent = `${userData.diabetesRisk?.score || "--"} / ${userData.diabetesRisk?.maxScore || "8"}`;
+  document.getElementById("cv-age").textContent = `${userData.eta || "--"} anni`;
+  document.getElementById("cv-pressure").textContent = `${userData.pressione_sistolica || "--"} mmHg`;
+  document.getElementById("cv-cholesterol").textContent = `${userData.colesterolo_totale || "--"} mg/dL`;
+  document.getElementById("cv-smoking").textContent = userData.fumatore || "--";
+
+  // Altri metodi esistenti
   updateHealthSummary();
   updateMetabolicProfile();
   updateRiskTab();
@@ -889,6 +927,7 @@ function updateDashboard() {
 
   console.log('✅ Dashboard aggiornata');
 }
+
 
 // Funzioni di aggiornamento UI
 function updateHealthSummary() {
