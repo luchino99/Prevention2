@@ -178,7 +178,6 @@ async function loadUserData(email) {
   }
 }
 
-// Calcola tutti gli score clinici - Versione con debug
 function calculateAllScores() {
   console.log('🚀 Inizio calcolo di tutti gli score...');
   console.log('📊 Dati disponibili:', Object.keys(userData));
@@ -188,24 +187,16 @@ function calculateAllScores() {
   dashboardData.diabetesRisk = { score: 0, maxScore: 8, factors: [], risk: 'Non calcolato' };
 
   calculateBMI();
-  
   calculatePREDIMED();
   checkMetabolicSyndrome();
-  
-  
   calculateFIB4();
-  
-  //generateRecommendations();
-  //determineScreenings();
-  //analyzeLifestyle();
-  //calculateNutritionalNeeds();
-  //evaluatePhysicalActivity();
 
   console.log('🎯 Risultati finali degli score:', {
     bmi: dashboardData.bmi,
     fib4: dashboardData.fib4,
-    
   });
+} // ✅ CHIUSURA CORRETTA DEL BLOCCO
+
 
 
 // 1. Calcolo BMI
