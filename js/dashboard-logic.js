@@ -27,11 +27,10 @@ let predimedChart = null;
 let macroChart = null;
 
 // Carica i dati dell'utente all'avvio
-document.addEventListener('DOMContentLoaded', async function() {
+document.addEventListener('DOMContentLoaded', async function () {
   try {
     // Verifica autenticazione
     const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
-
     if (sessionError || !sessionData.session) {
       window.location.href = 'login.html';
       return;
@@ -39,96 +38,93 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     const emailUtente = sessionData.session.user.email;
 
-   
-
     // Carica dati dal database
     await loadUserData(emailUtente);
-// ✅ Sovrascrivi i dati dinamici con quelli salvati dal DB
-dashboardData.score2 = {
-  value: parseFloat(userData.score2_risk) || 0,
-  risk: userData.score2_category || "Non calcolato",
-  category: (userData.score2_category || "").toLowerCase().includes("alto") ? "danger"
-           : (userData.score2_category || "").toLowerCase().includes("moderato") ? "warning"
-           : "success"
-};
 
-dashboardData.score2Diabetes = {
-  value: parseFloat(userData.score2_diabetes_risk) || 0,
-  hba1c: parseFloat(userData.hba1c) || 0,
-  glicemia: parseFloat(userData.glicemia_valore) || 0,
-  sistolica: parseFloat(userData.pressione_sistolica) || 0,
-  category: (userData.score2_diabetes_category || "").toLowerCase().includes("alto") ? "danger"
-           : (userData.score2_diabetes_category || "").toLowerCase().includes("moderato") ? "warning"
-           : "success"
-};
+    // Sovrascrivi i dati dinamici con quelli salvati dal DB
+    dashboardData.score2 = {
+      value: parseFloat(userData.score2_risk) || 0,
+      risk: userData.score2_category || "Non calcolato",
+      category: (userData.score2_category || "").toLowerCase().includes("alto") ? "danger"
+              : (userData.score2_category || "").toLowerCase().includes("moderato") ? "warning"
+              : "success"
+    };
 
-dashboardData.fni = {
-  value: parseFloat(userData.fli_score) || 0,
-  albumina: parseFloat(userData.albumina) || 0,
-  linfociti: parseFloat(userData.linfociti) || 0,
-  category: (userData.fli_category || "").toLowerCase().includes("alto") ? "danger"
-           : (userData.fli_category || "").toLowerCase().includes("intermedio") ? "warning"
-           : "success"
-};
+    dashboardData.score2Diabetes = {
+      value: parseFloat(userData.score2_diabetes_risk) || 0,
+      hba1c: parseFloat(userData.hba1c) || 0,
+      glicemia: parseFloat(userData.glicemia_valore) || 0,
+      sistolica: parseFloat(userData.pressione_sistolica) || 0,
+      category: (userData.score2_diabetes_category || "").toLowerCase().includes("alto") ? "danger"
+              : (userData.score2_diabetes_category || "").toLowerCase().includes("moderato") ? "warning"
+              : "success"
+    };
 
-dashboardData.diabetesRisk = {
-  score: parseInt(userData.ada_score) || 0,
-  risk: userData.ada_category || "Non calcolato",
-  maxScore: 8
-};
+    dashboardData.fni = {
+      value: parseFloat(userData.fli_score) || 0,
+      albumina: parseFloat(userData.albumina) || 0,
+      linfociti: parseFloat(userData.linfociti) || 0,
+      category: (userData.fli_category || "").toLowerCase().includes("alto") ? "danger"
+              : (userData.fli_category || "").toLowerCase().includes("intermedio") ? "warning"
+              : "success"
+    };
 
-dashboardData.fib4 = {
-  value: 0,
-  ast: parseFloat(userData.ast) || 0,
-  alt: parseFloat(userData.alt) || 0,
-  plt: parseFloat(userData.piastrine) || 0,
-  risk: '',
-  category: ''
-};
+    dashboardData.diabetesRisk = {
+      score: parseInt(userData.ada_score) || 0,
+      risk: userData.ada_category || "Non calcolato",
+      maxScore: 8
+    };
 
-calculateFIB4(); // Calcola dopo aver valorizzato i dati
+    dashboardData.fib4 = {
+      value: 0,
+      ast: parseFloat(userData.ast) || 0,
+      alt: parseFloat(userData.alt) || 0,
+      plt: parseFloat(userData.piastrine) || 0,
+      risk: '',
+      category: ''
+    };
 
-calculateBMI();
-calculatePREDIMED();
-checkMetabolicSyndrome();
-updateDashboard();
-initializeCharts();
-setupTabs();
-setupExportButton();
+    // Calcoli e aggiornamenti
+    calculateFIB4();
+    calculateBMI();
+    calculatePREDIMED();
+    checkMetabolicSyndrome();
+    updateDashboard();
+    initializeCharts();
+    setupTabs();
+    setupExportButton();
 
-// Gestione tema chiaro/scuro
-const themeToggle = document.getElementById('theme-toggle');
+    // Gestione tema
+    const themeToggle = document.getElementById('theme-toggle');
 
-function applyTheme(theme) {
-  const html = document.documentElement;
-  html.setAttribute('data-theme', theme);
+    function applyTheme(theme) {
+      const html = document.documentElement;
+      html.setAttribute('data-theme', theme);
+      if (themeToggle) {
+        themeToggle.textContent = (theme === 'dark') ? '☀️' : '🌙';
+      }
+    }
 
-  if (themeToggle) {
-    themeToggle.textContent = (theme === 'dark') ? '☀️' : '🌙';
-  }
-}
+    if (themeToggle) {
+      themeToggle.addEventListener('click', function () {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        applyTheme(newTheme);
+        window.parent.postMessage({ type: 'theme', theme: newTheme }, '*');
+      });
+    }
 
-if (themeToggle) {
-  themeToggle.addEventListener('click', function () {
-    const currentTheme = document.documentElement.getAttribute('data-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-
-    applyTheme(newTheme);
-    window.parent.postMessage({ type: 'theme', theme: newTheme }, '*');
-  });
-}
-
-window.addEventListener('message', function (event) {
-  if (event.data && event.data.type === 'theme') {
-    applyTheme(event.data.theme);
-  }
-});
-
+    window.addEventListener('message', function (event) {
+      if (event.data && event.data.type === 'theme') {
+        applyTheme(event.data.theme);
+      }
+    });
 
   } catch (error) {
     console.error('Errore inizializzazione dashboard:', error);
   }
 });
+
 
 // Funzione per caricare i dati utente
 async function loadUserData(email) {
