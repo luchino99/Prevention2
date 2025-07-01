@@ -94,31 +94,40 @@ document.addEventListener('DOMContentLoaded', async function () {
     setupTabs();
     setupExportButton();
 
-    // Gestione tema
-    const themeToggle = document.getElementById('theme-toggle');
+const themeToggle = document.getElementById('theme-toggle');
 
-    function applyTheme(theme) {
-      const html = document.documentElement;
-      html.setAttribute('data-theme', theme);
-      if (themeToggle) {
-        themeToggle.textContent = (theme === 'dark') ? '☀️' : '🌙';
-      }
-    }
+function applyTheme(theme) {
+  const html = document.documentElement;
+  html.setAttribute('data-theme', theme);
+  if (themeToggle) {
+    themeToggle.textContent = (theme === 'dark') ? '☀️' : '🌙';
+  }
 
-    if (themeToggle) {
-      themeToggle.addEventListener('click', function () {
-        const currentTheme = document.documentElement.getAttribute('data-theme');
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        applyTheme(newTheme);
-        window.parent.postMessage({ type: 'theme', theme: newTheme }, '*');
-      });
-    }
+  // Salva la preferenza
+  localStorage.setItem('preferred-theme', theme);
+}
 
-    window.addEventListener('message', function (event) {
-      if (event.data && event.data.type === 'theme') {
-        applyTheme(event.data.theme);
-      }
-    });
+// Imposta il tema iniziale
+const savedTheme = localStorage.getItem('preferred-theme') || 'light';
+applyTheme(savedTheme);
+
+if (themeToggle) {
+  themeToggle.addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    applyTheme(next);
+    // Invia messaggio al frame esterno se serve
+    window.parent.postMessage({ type: 'theme', theme: next }, '*');
+  });
+}
+
+// (opzionale) ricevi tema da iframe genitore
+window.addEventListener('message', function (event) {
+  if (event.data?.type === 'theme') {
+    applyTheme(event.data.theme);
+  }
+});
+
 
   } catch (error) {
     console.error('Errore inizializzazione dashboard:', error);
