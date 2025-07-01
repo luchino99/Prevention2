@@ -82,6 +82,7 @@ dashboardData.diabetesRisk = {
 calculateBMI();
 calculatePREDIMED();
 calculateFIB4();
+    checkMetabolicSyndrome();
 
     
     updateDashboard();
