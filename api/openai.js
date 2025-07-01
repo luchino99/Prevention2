@@ -101,7 +101,7 @@ Che sia completo, bilanciato basandoti sul risulatato di questi score e sugli ob
 Ogni giorno deve contenere:
 - Colazione, spuntino mattina, pranzo, spuntino pomeriggio, cena
 - Grammature indicative degli alimenti
-Per il TDEE, calcola il TDEE moltiplicando il BMR per il coefficiente ${tdeeFactor}
+Per il TDEE, calcola il TDEE moltiplicando il BMR per il coefficiente ${tdeeFactor} in base all'obiettivo: ${safe(data.obiettivo)}.
 In fondo, includi: 
 - Suggerimenti per l’idratazione, attività fisica e stile di vita
 Dati da utilizzare per programmare la dieta:
