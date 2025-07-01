@@ -906,7 +906,10 @@ if (!isNaN(parseFloat(dashboardData.fib4?.value))) {
   }
 
   if (astEl) astEl.textContent = `${fib4.ast || '--'} U/L`;
-  if (altEl) altEl.textContent = `${fi
+  if (altEl) altEl.textContent = `${fib4.alt || '--'} U/L`;
+  if (pltEl) pltEl.textContent = `${fib4.plt || '--'} x10⁹/L`;
+}
+
 
 
   // FNI
