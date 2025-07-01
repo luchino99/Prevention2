@@ -90,6 +90,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     checkMetabolicSyndrome();
     updateDashboard();
     initializeCharts();
+    analyzeLifestyle();
     setupTabs();
     setupExportButton();
 
