@@ -895,20 +895,24 @@ if (!isNaN(parseFloat(dashboardData.fib4?.value))) {
   const altEl = document.getElementById('fib4-banner-alt');
   const pltEl = document.getElementById('fib4-banner-plt');
 
-  console.log("🔍 FIB4 elements check:", { scoreEl, astEl, altEl, pltEl });
-
   if (scoreEl) {
     scoreEl.textContent = fib4.value;
-    scoreEl.className = `score-indicator-2 text-2xl score-${
-      fib4.category === 'success' ? 'medium' :
-      fib4.category === 'warning' ? 'low' : 'high'
-    }`;
+    scoreEl.className = `score-indicator-2 text-2xl score-${...}`;
   }
 
   if (astEl) astEl.textContent = `${fib4.ast || '--'} U/L`;
   if (altEl) altEl.textContent = `${fib4.alt || '--'} U/L`;
   if (pltEl) pltEl.textContent = `${fib4.plt || '--'} x10⁹/L`;
+
+  // ✅ Aggiungi questo log subito qui
+  console.log("🎯 FIB4 nella UI:", {
+    value: document.getElementById('fib4-banner-score')?.textContent,
+    ast: document.getElementById('fib4-banner-ast')?.textContent,
+    alt: document.getElementById('fib4-banner-alt')?.textContent,
+    plt: document.getElementById('fib4-banner-plt')?.textContent,
+  });
 }
+
 
 
 
