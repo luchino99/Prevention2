@@ -104,7 +104,7 @@ Ogni giorno deve contenere:
 Per il TDEE, calcola il TDEE moltiplicando il BMR per il coefficiente ${tdeeFactor} in base all'obiettivo: ${safe(data.obiettivo)}.
 In fondo, includi: 
 - Suggerimenti per l’idratazione, attività fisica e stile di vita
-Dati da utilizzare per programmare la dieta:
+Dati da utilizzare per programmare la dieta in base ai vari dati forniti dall'utente e  anche in base al risultato del TDEE:
 - Età: ${data.eta}
 - Sesso: ${data.sesso}
 - Altezza: ${data.altezza} cm
