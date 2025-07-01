@@ -968,7 +968,7 @@ function updateHealthSummary() {
   console.log('🔄 Aggiornamento riepilogo salute...');
   console.log('📊 Dati per riepilogo:', {
     bmi: dashboardData.bmi,
-    score2: dashboardData.score2,
+    
     predimed: dashboardData.predimed
   });
 
@@ -997,33 +997,26 @@ function updateHealthSummary() {
   }
 
   // SCORE2 - Usa ID specifici
-  const score2Indicator = document.getElementById('score2-indicator');
+   const score2Indicator = document.getElementById('score2-indicator');
   const score2Badge = document.getElementById('score2-badge');
   const score2Category = document.getElementById('score2-category');
+  const score2Status = dashboardData.score2.category;
 
   if (score2Indicator) {
-    score2Indicator.textContent = dashboardData.score2.value + '%';
-    score2Indicator.className = `score-indicator score-${dashboardData.score2.category === 'success' ? 'medium' : dashboardData.score2.category === 'warning' ? 'low' : 'high'}`;
-    console.log('✅ SCORE2 indicator aggiornato:', dashboardData.score2.value + '%');
-  } else {
-    console.warn('⚠️ SCORE2 indicator non trovato');
+    const classSuffix = score2Status === 'success' ? 'medium' : score2Status === 'warning' ? 'low' : 'high';
+    score2Indicator.textContent = `${dashboardData.score2.value}%`;
+    score2Indicator.className = `score-indicator score-${classSuffix}`;
   }
 
   if (score2Badge) {
     score2Badge.textContent = dashboardData.score2.risk;
-    score2Badge.className = `badge badge-${dashboardData.score2.category === 'success' ? 'success' : dashboardData.score2.category === 'warning' ? 'warning' : 'danger'}`;
-    console.log('✅ SCORE2 badge aggiornato:', dashboardData.score2.risk);
-  } else {
-    console.warn('⚠️ SCORE2 badge non trovato');
+    score2Badge.className = `badge badge-${score2Status}`;
   }
 
   if (score2Category) {
     score2Category.textContent = dashboardData.score2.risk;
-    console.log('✅ SCORE2 categoria aggiornata:', dashboardData.score2.risk);
-  } else {
-    console.warn('⚠️ SCORE2 categoria non trovata');
   }
-
+  
   // PREDIMED - Usa ID specifici
   const predimedIndicator = document.getElementById('predimed-indicator');
   const predimedBadge = document.getElementById('predimed-badge');
@@ -1206,7 +1199,7 @@ function updateNewScoreBanners() {
   console.log('🔄 === AGGIORNAMENTO GRAFICI NUOVI SCORE ===');
 
   // SCORE2-Diabete (questo funziona già bene)
-  if (dashboardData.score2Diabetes?.value > 0) {
+ if (dashboardData.score2Diabetes?.value > 0) {
     const circle = document.querySelector('#score2d-banner .progress-ring__circle');
     const text = document.getElementById('score2d-banner-text');
     const hba1cEl = document.getElementById('score2d-banner-hba1c');
@@ -1215,25 +1208,22 @@ function updateNewScoreBanners() {
 
     if (circle && text) {
       const percentage = parseFloat(dashboardData.score2Diabetes.value);
-      console.log('📊 SCORE2-Diabete:', percentage + '%');
-
-      // Usa la stessa logica che funziona
       const circumference = 314.16;
       const offset = circumference - (percentage / 100 * circumference);
       circle.style.strokeDashoffset = offset;
 
       const strokeColor = dashboardData.score2Diabetes.category === 'danger' ? '#EA4335' :
-      dashboardData.score2Diabetes.category === 'warning' ? '#FBBC05' : '#34A853';
+                          dashboardData.score2Diabetes.category === 'warning' ? '#FBBC05' : '#34A853';
       circle.setAttribute('stroke', strokeColor);
 
       text.textContent = `${dashboardData.score2Diabetes.value}%`;
-      console.log('✅ SCORE2-Diabete aggiornato: ' + percentage + '% con offset ' + offset);
     }
 
     if (hba1cEl) hba1cEl.textContent = `${dashboardData.score2Diabetes.hba1c || '--'} %`;
     if (glicemiaEl) glicemiaEl.textContent = `${dashboardData.score2Diabetes.glicemia || '--'} mg/dL`;
     if (sbpEl) sbpEl.textContent = `${dashboardData.score2Diabetes.sistolica || '--'} mmHg`;
   }
+
 
   // FIB4 - CORREZIONE GRAFICO
   if (dashboardData.fib4?.value > 0) {
@@ -1257,25 +1247,24 @@ function updateNewScoreBanners() {
     console.log('✅ FIB4 non ha grafico circolare - usa solo indicator');
   }
 
-  // FNI - CORREZIONE GRAFICO
-  if (dashboardData.fni?.value > 0) {
-    console.log('📊 FNI - Valore:', dashboardData.fni.value, 'Categoria:', dashboardData.fni.category);
-
+if (dashboardData.fni?.value > 0) {
     const scoreEl = document.getElementById('fni-banner-score');
     const albuminaEl = document.getElementById('fni-banner-albumina');
     const linfocitiEl = document.getElementById('fni-banner-linfociti');
 
     if (scoreEl) {
+      const classSuffix = dashboardData.fni.category === 'danger' ? 'high' :
+                          dashboardData.fni.category === 'warning' ? 'low' : 'medium';
       scoreEl.textContent = dashboardData.fni.value;
-      scoreEl.className = `score-indicator-2 text-2xl score-${dashboardData.fni.category === 'success' ? 'medium' : dashboardData.fni.category === 'warning' ? 'low' : 'high'}`;
-      console.log('✅ FNI score indicator aggiornato:', dashboardData.fni.value);
+      scoreEl.className = `score-indicator-2 text-2xl score-${classSuffix}`;
     }
 
     if (albuminaEl) albuminaEl.textContent = `${dashboardData.fni.albumina || '--'} g/dL`;
     if (linfocitiEl) linfocitiEl.textContent = `${dashboardData.fni.linfociti || '--'} /mm³`;
-
-    console.log('✅ FNI non ha grafico circolare - usa solo indicator');
   }
+
+  console.log('✅ Tutti i nuovi score aggiornati');
+}
 
   console.log('✅ Tutti i nuovi score aggiornati');
 }
