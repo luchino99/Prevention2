@@ -1266,8 +1266,6 @@ if (dashboardData.fni?.value > 0) {
   console.log('✅ Tutti i nuovi score aggiornati');
 }
 
-  console.log('✅ Tutti i nuovi score aggiornati');
-}
 
 function updateScreeningTab() {
   const container = document.querySelector('#tab-screening .space-y-3');
