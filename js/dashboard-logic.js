@@ -966,38 +966,30 @@ function updateDashboard() {
 // Funzioni di aggiornamento UI
 function updateHealthSummary() {
   console.log('🔄 Aggiornamento riepilogo salute...');
-  console.log('📊 Dati per riepilogo:', {
-    bmi: dashboardData.bmi,
-    
-    predimed: dashboardData.predimed
-  });
-
-  // BMI - Usa ID specifici
+  
+  // BMI
   const bmiIndicator = document.getElementById('bmi-indicator');
   const bmiBadge = document.getElementById('bmi-badge');
   const bmiCategory = document.getElementById('bmi-category');
+  const bmiStatus = dashboardData.bmi.status;
 
   if (bmiIndicator) {
+    const classSuffix = bmiStatus === 'success' ? 'medium' : bmiStatus === 'warning' ? 'low' : 'high';
     bmiIndicator.textContent = dashboardData.bmi.value;
-    bmiIndicator.className = `score-indicator score-${dashboardData.bmi.status === 'success' ? 'medium' : dashboardData.bmi.status === 'warning' ? 'low' : 'high'}`;
-    console.log('✅ BMI indicator aggiornato:', dashboardData.bmi.value);
-  } else {
-    console.warn('⚠️ BMI indicator non trovato');
+    bmiIndicator.className = `score-indicator score-${classSuffix}`;
   }
 
   if (bmiBadge) {
     bmiBadge.textContent = dashboardData.bmi.category;
-    bmiBadge.className = `badge badge-${dashboardData.bmi.status}`;
-    console.log('✅ BMI badge aggiornato:', dashboardData.bmi.category);
+    bmiBadge.className = `badge badge-${bmiStatus}`;
   }
 
   if (bmiCategory) {
     bmiCategory.textContent = dashboardData.bmi.category;
-    console.log('✅ BMI categoria aggiornata:', dashboardData.bmi.category);
   }
 
-  // SCORE2 - Usa ID specifici
-   const score2Indicator = document.getElementById('score2-indicator');
+  // SCORE2
+  const score2Indicator = document.getElementById('score2-indicator');
   const score2Badge = document.getElementById('score2-badge');
   const score2Category = document.getElementById('score2-category');
   const score2Status = dashboardData.score2.category;
@@ -1016,37 +1008,31 @@ function updateHealthSummary() {
   if (score2Category) {
     score2Category.textContent = dashboardData.score2.risk;
   }
-  
-  // PREDIMED - Usa ID specifici
+
+  // PREDIMED
   const predimedIndicator = document.getElementById('predimed-indicator');
   const predimedBadge = document.getElementById('predimed-badge');
   const predimedCategory = document.getElementById('predimed-category');
+  const predimedStatus = dashboardData.predimed.status;
 
   if (predimedIndicator) {
+    const classSuffix = predimedStatus === 'success' ? 'medium' : predimedStatus === 'warning' ? 'low' : 'high';
     predimedIndicator.textContent = dashboardData.predimed.value;
-    predimedIndicator.className = `score-indicator score-${dashboardData.predimed.status === 'success' ? 'medium' : dashboardData.predimed.status === 'warning' ? 'low' : 'high'}`;
-    console.log('✅ PREDIMED indicator aggiornato:', dashboardData.predimed.value);
-  } else {
-    console.warn('⚠️ PREDIMED indicator non trovato');
+    predimedIndicator.className = `score-indicator score-${classSuffix}`;
   }
 
   if (predimedBadge) {
-    predimedBadge.textContent = dashboardData.predimed.status === 'success' ? 'Buona' : dashboardData.predimed.status === 'warning' ? 'Migliorabile' : 'Scarsa';
-    predimedBadge.className = `badge badge-${dashboardData.predimed.status}`;
-    console.log('✅ PREDIMED badge aggiornato');
-  } else {
-    console.warn('⚠️ PREDIMED badge non trovato');
+    predimedBadge.textContent = predimedStatus === 'success' ? 'Buona' : predimedStatus === 'warning' ? 'Migliorabile' : 'Scarsa';
+    predimedBadge.className = `badge badge-${predimedStatus}`;
   }
 
   if (predimedCategory) {
     predimedCategory.textContent = dashboardData.predimed.adherence;
-    console.log('✅ PREDIMED categoria aggiornata:', dashboardData.predimed.adherence);
-  } else {
-    console.warn('⚠️ PREDIMED categoria non trovata');
   }
 
   console.log('✅ Riepilogo salute aggiornato');
 }
+
 
 function updateMetabolicProfile() {
   const metabolicSection = document.querySelector('.card .space-y-3');
@@ -1198,8 +1184,8 @@ function updateRiskTab() {
 function updateNewScoreBanners() {
   console.log('🔄 === AGGIORNAMENTO GRAFICI NUOVI SCORE ===');
 
-  // SCORE2-Diabete (questo funziona già bene)
- if (dashboardData.score2Diabetes?.value > 0) {
+  // SCORE2-Diabetes
+  if (dashboardData.score2Diabetes?.value > 0) {
     const circle = document.querySelector('#score2d-banner .progress-ring__circle');
     const text = document.getElementById('score2d-banner-text');
     const hba1cEl = document.getElementById('score2d-banner-hba1c');
@@ -1224,30 +1210,27 @@ function updateNewScoreBanners() {
     if (sbpEl) sbpEl.textContent = `${dashboardData.score2Diabetes.sistolica || '--'} mmHg`;
   }
 
-
-  // FIB4 - CORREZIONE GRAFICO
+  // FIB4
   if (dashboardData.fib4?.value > 0) {
-    console.log('📊 FIB4 - Valore:', dashboardData.fib4.value, 'Categoria:', dashboardData.fib4.category);
-
     const scoreEl = document.getElementById('fib4-banner-score');
     const astEl = document.getElementById('fib4-banner-ast');
     const altEl = document.getElementById('fib4-banner-alt');
     const pltEl = document.getElementById('fib4-banner-plt');
 
     if (scoreEl) {
+      const classSuffix = dashboardData.fib4.category === 'danger' ? 'high' :
+                          dashboardData.fib4.category === 'warning' ? 'low' : 'medium';
       scoreEl.textContent = dashboardData.fib4.value;
-      scoreEl.className = `score-indicator-2 text-2xl score-${dashboardData.fib4.category === 'success' ? 'medium' : dashboardData.fib4.category === 'warning' ? 'low' : 'high'}`;
-      console.log('✅ FIB4 score indicator aggiornato:', dashboardData.fib4.value);
+      scoreEl.className = `score-indicator-2 text-2xl score-${classSuffix}`;
     }
 
     if (astEl) astEl.textContent = `${dashboardData.fib4.ast || '--'} U/L`;
     if (altEl) altEl.textContent = `${dashboardData.fib4.alt || '--'} U/L`;
     if (pltEl) pltEl.textContent = `${dashboardData.fib4.plt || '--'} x10⁹/L`;
-
-    console.log('✅ FIB4 non ha grafico circolare - usa solo indicator');
   }
 
-if (dashboardData.fni?.value > 0) {
+  // FNI
+  if (dashboardData.fni?.value > 0) {
     const scoreEl = document.getElementById('fni-banner-score');
     const albuminaEl = document.getElementById('fni-banner-albumina');
     const linfocitiEl = document.getElementById('fni-banner-linfociti');
