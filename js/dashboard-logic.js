@@ -77,30 +77,24 @@ dashboardData.diabetesRisk = {
   maxScore: 8
 };
 
-    dashboardData.fib4 = {
+dashboardData.fib4 = {
+  value: 0,
   ast: parseFloat(userData.ast) || 0,
   alt: parseFloat(userData.alt) || 0,
   plt: parseFloat(userData.piastrine) || 0,
-  value: 0,
-  category: '',
-  risk: ''
+  risk: '',
+  category: ''
 };
 
-// Calcola ora FIB4 (avendo i dati)
-calculateFIB4();
+calculateFIB4(); // Calcola dopo aver valorizzato i dati
 
-    
-    // ⚠️ Calcola solo BMI, PREDIMED e FIB4
 calculateBMI();
 calculatePREDIMED();
-calculateFIB4();
-    checkMetabolicSyndrome();
-
-    
-    updateDashboard();
-    initializeCharts();
-    setupTabs();
-    setupExportButton();
+checkMetabolicSyndrome();
+updateDashboard();
+initializeCharts();
+setupTabs();
+setupExportButton();
 
   } catch (error) {
     console.error('Errore inizializzazione dashboard:', error);
@@ -170,33 +164,25 @@ function calculateAllScores() {
   dashboardData.diabetesRisk = { score: 0, maxScore: 8, factors: [], risk: 'Non calcolato' };
 
   calculateBMI();
-  calculateSCORE2();
+  
   calculatePREDIMED();
   checkMetabolicSyndrome();
-  calculateDiabetesRisk();
-  calculateScore2Diabetes();
+  
+  
   calculateFIB4();
-  calculateFNI();
-  generateRecommendations();
-  determineScreenings();
-  analyzeLifestyle();
-  calculateNutritionalNeeds();
-  evaluatePhysicalActivity();
+  
+  //generateRecommendations();
+  //determineScreenings();
+  //analyzeLifestyle();
+  //calculateNutritionalNeeds();
+  //evaluatePhysicalActivity();
 
   console.log('🎯 Risultati finali degli score:', {
     bmi: dashboardData.bmi,
-    score2: dashboardData.score2,
-    diabetesRisk: dashboardData.diabetesRisk,
-    score2Diabetes: dashboardData.score2Diabetes,
     fib4: dashboardData.fib4,
-    fni: dashboardData.fni
+    
   });
 
-  // Debug specifico per i valori che non si vedono
-  console.log('🔢 SCORE2 - Valore specifico:', dashboardData.score2.value, 'Rischio:', dashboardData.score2.risk);
-  console.log('🔢 ADA Risk - Score specifico:', dashboardData.diabetesRisk.score, '/', dashboardData.diabetesRisk.maxScore, 'Rischio:', dashboardData.diabetesRisk.risk);
-  console.log('🔢 Nuovi score - SCORE2D:', dashboardData.score2Diabetes?.value, 'FIB4:', dashboardData.fib4?.value, 'FNI:', dashboardData.fni?.value);
-}
 
 // 1. Calcolo BMI
 function calculateBMI() {
@@ -223,85 +209,7 @@ function calculateBMI() {
   }
 }
 
-// 2. Calcolo SCORE2 - Versione migliorata con debug
-function calculateSCORE2() {
-  console.log('🔄 Inizio calcolo SCORE2...');
 
-  const eta = parseInt(userData.eta);
-  const sesso = userData.sesso?.toLowerCase();
-  const sistolica = parseFloat(userData.pressione_sistolica);
-  const colTotale = parseFloat(userData.colesterolo_totale);
-  const hdl = parseFloat(userData.colesterolo_hdl_valore);
-  const fumatore = userData.fumatore?.toLowerCase() === 'sì';
-
-  console.log('📋 Valori SCORE2 estratti:', {
-    eta, sesso, sistolica, colTotale, hdl, fumatore
-  });
-
-  // Verifica che tutti i valori necessari siano presenti
-  if (!eta || isNaN(eta)) {
-    console.warn('⚠️ Età mancante o non valida:', userData.eta);
-    dashboardData.score2 = { value: '0.0', risk: 'Dati insufficienti', category: 'warning' };
-    return;
-  }
-
-  if (!sistolica || isNaN(sistolica)) {
-    console.warn('⚠️ Pressione sistolica mancante o non valida:', userData.pressione_sistolica);
-    dashboardData.score2 = { value: '0.0', risk: 'Dati insufficienti', category: 'warning' };
-    return;
-  }
-
-  if (!colTotale || isNaN(colTotale) || !hdl || isNaN(hdl)) {
-    console.warn('⚠️ Valori colesterolo mancanti:', { colTotale, hdl });
-    dashboardData.score2 = { value: '0.0', risk: 'Dati insufficienti', category: 'warning' };
-    return;
-  }
-
-  let score = 0;
-
-  // Fattore età
-  if (eta >= 40 && eta < 50) score += 0;
-  else if (eta >= 50 && eta < 60) score += 3;
-  else if (eta >= 60 && eta < 70) score += 6;
-  else if (eta >= 70) score += 9;
-
-  // Fattore pressione
-  if (sistolica >= 140) score += 2;
-  if (sistolica >= 160) score += 3;
-  if (sistolica >= 180) score += 4;
-
-  // Fattore colesterolo
-  const nonHDL = colTotale - hdl;
-  if (nonHDL >= 190) score += 1;
-  if (nonHDL >= 220) score += 2;
-  if (nonHDL >= 280) score += 3;
-
-  // Fattore fumo
-  if (fumatore) score += 4;
-
-  // Converti in percentuale di rischio
-  const riskPercent = Math.min(score * 0.5, 20);
-
-  console.log('🧮 Calcolo SCORE2 completato:', { score, riskPercent });
-
-  dashboardData.score2.value = riskPercent.toFixed(1);
-
-  if (riskPercent < 1) {
-    dashboardData.score2.risk = 'Basso';
-    dashboardData.score2.category = 'success';
-  } else if (riskPercent < 5) {
-    dashboardData.score2.risk = 'Moderato';
-    dashboardData.score2.category = 'warning';
-  } else if (riskPercent < 10) {
-    dashboardData.score2.risk = 'Alto';
-    dashboardData.score2.category = 'danger';
-  } else {
-    dashboardData.score2.risk = 'Molto alto';
-    dashboardData.score2.category = 'danger';
-  }
-
-  console.log('✅ SCORE2 calcolato:', dashboardData.score2);
-}
 
 // 3. Calcolo PREDIMED
 function calculatePREDIMED() {
@@ -372,258 +280,8 @@ function checkMetabolicSyndrome() {
   };
 }
 
-// 5. Calcolo rischio diabete (ADA Risk Score) - Versione con debug ultra-dettagliato
-function calculateDiabetesRisk() {
-  console.log('🔄 Inizio calcolo ADA Diabetes Risk...');
-
-  let score = 0;
-  let factors = [];
-
-  const eta = parseInt(userData.eta);
-  const bmi = parseFloat(dashboardData.bmi.value);
-
-  console.log('📋 Valori base ADA Risk:', {
-    eta: eta,
-    bmi: bmi,
-    peso: userData.peso,
-    altezza: userData.altezza
-  });
-
-  // 1. FATTORE ETÀ
-  console.log('🎂 === CONTROLLO ETÀ ===');
-  console.log('Età utente:', eta);
-
-  if (eta >= 40 && eta < 50) {
-    score += 1;
-    factors.push('Età 40-49');
-    console.log('✅ Età 40-49: +1 punto');
-  } else if (eta >= 50 && eta < 60) {
-    score += 2;
-    factors.push('Età 50-59');
-    console.log('✅ Età 50-59: +2 punti');
-  } else if (eta >= 60) {
-    score += 3;
-    factors.push('Età ≥60');
-    console.log('✅ Età ≥60: +3 punti');
-  } else {
-    console.log('❌ Età <40: 0 punti');
-  }
-  console.log('Punteggio dopo età:', score);
-
-  // 2. FATTORE BMI
-  console.log('⚖️ === CONTROLLO BMI ===');
-  console.log('BMI calcolato:', bmi);
-
-  if (!isNaN(bmi)) {
-    if (bmi >= 25 && bmi < 30) {
-      score += 1;
-      factors.push('Sovrappeso');
-      console.log('✅ BMI 25-30 (Sovrappeso): +1 punto');
-    } else if (bmi >= 30 && bmi < 40) {
-      score += 2;
-      factors.push('Obesità');
-      console.log('✅ BMI 30-40 (Obesità): +2 punti');
-    } else if (bmi >= 40) {
-      score += 3;
-      factors.push('Obesità grave');
-      console.log('✅ BMI ≥40 (Obesità grave): +3 punti');
-    } else {
-      console.log('❌ BMI normale (<25): 0 punti');
-    }
-  } else {
-    console.log('⚠️ BMI non calcolabile');
-  }
-  console.log('Punteggio dopo BMI:', score);
-
-  // 3. FAMILIARITÀ DIABETE
-  console.log('👨‍👩‍👧‍👦 === CONTROLLO FAMILIARITÀ ===');
-  const famRaw = userData.familiari_diabete;
-  console.log('Familiarità diabete (raw):', famRaw, 'Tipo:', typeof famRaw);
-
-  if (famRaw) {
-    const rispostaFam = String(famRaw).toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-
-    console.log('Familiarità diabete (processed):', rispostaFam);
-
-    const hasFamilyHistory = rispostaFam && (
-      rispostaFam.includes("si") ||
-      rispostaFam.includes("yes") ||
-      rispostaFam === "true" ||
-      rispostaFam === "ok" ||
-      rispostaFam === "y" ||
-      rispostaFam === "1"
-    );
-
-    if (hasFamilyHistory) {
-      score += 1;
-      factors.push("Familiarità diabete");
-      console.log('✅ Familiarità diabete: +1 punto');
-    } else {
-      console.log('❌ Nessuna familiarità diabete: 0 punti');
-    }
-  } else {
-    console.log('❌ Campo familiarità vuoto: 0 punti');
-  }
-  console.log('Punteggio dopo familiarità:', score);
-
-  // 4. IPERTENSIONE
-  console.log('🩺 === CONTROLLO IPERTENSIONE ===');
-  const pressioneAltaRaw = userData.pressione_alta;
-  const sistolica = parseFloat(userData.pressione_sistolica);
-
-  console.log('Pressione alta (campo):', pressioneAltaRaw, 'Tipo:', typeof pressioneAltaRaw);
-  console.log('Pressione sistolica:', sistolica, 'Tipo:', typeof sistolica);
-
-  let hasHypertension = false;
-
-  // Controllo campo pressione_alta
-  if (pressioneAltaRaw) {
-    const rispostaIpertensione = String(pressioneAltaRaw).toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    console.log('Pressione alta (processed):', rispostaIpertensione);
-
-    if (['si', 'sì', 'yes', 'true', 'ok', 'y', '1'].includes(rispostaIpertensione)) {
-      hasHypertension = true;
-      console.log('✅ Ipertensione da campo "pressione_alta": SÌ');
-    }
-  }
-
-  // Controllo valore numerico pressione
-  if (!hasHypertension && !isNaN(sistolica) && sistolica >= 140) {
-    hasHypertension = true;
-    console.log('✅ Ipertensione da valore sistolica ≥140: SÌ');
-  }
-
-  if (hasHypertension) {
-    score += 1;
-    factors.push('Ipertensione');
-    console.log('✅ Ipertensione: +1 punto');
-  } else {
-    console.log('❌ Nessuna ipertensione: 0 punti');
-  }
-  console.log('Punteggio dopo ipertensione:', score);
-
-  // 5. ATTIVITÀ FISICA
-  console.log('🏃‍♂️ === CONTROLLO ATTIVITÀ FISICA ===');
-  const attivitaRaw = userData.attivita_fisica;
-  const durataRaw = userData.durata_attivita;
-
-  console.log('Attività fisica (campo):', attivitaRaw, 'Tipo:', typeof attivitaRaw);
-  console.log('Durata attività:', durataRaw, 'Tipo:', typeof durataRaw);
-
-  let insufficientActivity = false;
-
-  if (attivitaRaw && String(attivitaRaw).toLowerCase().includes('no')) {
-    insufficientActivity = true;
-    console.log('✅ Sedentario (attività_fisica = no)');
-  } else {
-    // Controlla durata se fa attività
-    const durata = parseInt(durataRaw || '0');
-    console.log('Durata attività fisica:', durata, 'minuti/settimana');
-
-    if (durata < 150) {
-      insufficientActivity = true;
-      console.log('✅ Attività fisica insufficiente (<150 min/settimana)');
-    } else {
-      console.log('❌ Attività fisica adeguata (≥150 min/settimana)');
-    }
-  }
-
-  if (insufficientActivity) {
-    score += 1;
-    const reason = attivitaRaw && String(attivitaRaw).toLowerCase().includes('no') ?
-    'Sedentarietà' : 'Attività fisica insufficiente';
-    factors.push(reason);
-    console.log('✅ Attività fisica insufficiente: +1 punto');
-  } else {
-    console.log('❌ Attività fisica adeguata: 0 punti');
-  }
-  console.log('Punteggio dopo attività fisica:', score);
-
-  // RISULTATO FINALE
-  const riskLevel = score >= 5 ? 'Alto' : score >= 3 ? 'Moderato' : 'Basso';
-
-  console.log('🎯 === RISULTATO FINALE ADA ===');
-  console.log('Punteggio totale:', score, '/ 8');
-  console.log('Fattori di rischio:', factors);
-  console.log('Livello di rischio:', riskLevel);
-
-  dashboardData.diabetesRisk = {
-    score: score,
-    maxScore: 8,
-    factors: factors,
-    risk: riskLevel
-  };
-
-  console.log('✅ ADA Diabetes Risk calcolato:', dashboardData.diabetesRisk);
-}
-
-// 6. Calcolo SCORE2-Diabete
-function calculateScore2Diabetes() {
-const hba1c = parseFloat(userData.hba1c);
-const sistolica = parseFloat(userData.pressione_sistolica);
-const eta = parseInt(userData.eta);
-const haDiabete = String(userData.diabete || "").toLowerCase().includes("sì");
-const fumatore = String(userData.fumatore || "").toLowerCase().includes("sì");
-
-if (!haDiabete) {
-  dashboardData.score2Diabetes = {
-    value: 'ND',
-    hba1c: hba1c || 0,
-    sistolica: sistolica || 0,
-    risk: 'Non applicabile',
-    category: 'warning'
-  };
-  return;
-}
-
-let riskScore = 0;
-
-// Età
-if (eta >= 40 && eta < 50) riskScore += 2;
-else if (eta >= 50 && eta < 60) riskScore += 4;
-else if (eta >= 60 && eta < 70) riskScore += 6;
-else if (eta >= 70) riskScore += 8;
-
-// Pressione sistolica
-if (sistolica >= 130) riskScore += 2;
-if (sistolica >= 160) riskScore += 3;
-if (sistolica >= 180) riskScore += 4;
-
-// Fumo
-if (fumatore) riskScore += 3;
-
-// HbA1c
-if (hba1c >= 6.5 && hba1c < 7.5) riskScore += 1;
-else if (hba1c >= 7.5 && hba1c < 9) riskScore += 2;
-else if (hba1c >= 9) riskScore += 3;
-
-// Rischio stimato (più realistico)
-const riskPercent = riskScore * 1.3; // oppure *1.4
 
 
-let category = 'success';
-let risk = 'Basso';
-if (riskPercent >= 20) {
-  category = 'danger';
-  risk = 'Molto alto';
-} else if (riskPercent >= 15) {
-  category = 'danger';
-  risk = 'Alto';
-} else if (riskPercent >= 10) {
-  category = 'warning';
-  risk = 'Moderato';
-}
-
-dashboardData.score2Diabetes = {
-  value: riskPercent.toFixed(1),
-  hba1c: hba1c || 0,
-  sistolica: sistolica || 0,
-  risk: risk,
-  category: category
-};
-}
 
 
 // 7. Calcolo FIB4
@@ -634,7 +292,6 @@ function calculateFIB4() {
   const plt = parseFloat(userData.piastrine);
 
   if (!isNaN(age) && !isNaN(ast) && !isNaN(alt) && !isNaN(plt) && alt !== 0 && plt !== 0) {
-    // Formula FIB4: (Age × AST) / (Platelets × √ALT)
     const fib4 = (age * ast) / (plt * Math.sqrt(alt));
     const fib4Rounded = fib4.toFixed(2);
 
@@ -657,39 +314,24 @@ function calculateFIB4() {
       risk: risk,
       category: category
     };
-  }
-}
 
-// 8. Calcolo FNI (Functional Nutritional Index)
-function calculateFNI() {
-  const albumina = parseFloat(userData.albumina);
-  const linfociti = parseFloat(userData.linfociti);
+    console.log("✅ FIB4 calcolato:", dashboardData.fib4);
 
-  if (!isNaN(albumina) && !isNaN(linfociti)) {
-    // Formula FNI: (10 × albumina) + (0.005 × linfociti)
-    const fni = (10 * albumina) + (0.005 * linfociti);
-    const fniRounded = fni.toFixed(1);
-
-    let status = 'Normale';
-    let category = 'success';
-
-    if (fni < 35) {
-      status = 'Malnutrizione severa';
-      category = 'danger';
-    } else if (fni < 45) {
-      status = 'Malnutrizione lieve';
-      category = 'warning';
-    }
-
-    dashboardData.fni = {
-      value: fniRounded,
-      albumina: albumina,
-      linfociti: linfociti,
-      status: status,
-      category: category
+  } else {
+    dashboardData.fib4 = {
+      value: "--",
+      ast: ast || 0,
+      alt: alt || 0,
+      plt: plt || 0,
+      risk: "Dati insufficienti",
+      category: "warning"
     };
+
+    console.warn("⚠️ FIB4 non calcolabile. Dati mancanti:", { age, ast, alt, plt });
   }
 }
+
+
 
 // 9. Genera raccomandazioni personalizzate
 function generateRecommendations() {
@@ -1229,7 +871,8 @@ function updateNewScoreBanners() {
 
   
   // FIB4
-  if (dashboardData.fib4?.value > 0) {
+  if (parseFloat(dashboardData.fib4?.value) > 0) {
+
     console.log('📊 FIB4 - Valore:', dashboardData.fib4.value, 'Categoria:', dashboardData.fib4.category);
 
     const scoreEl = document.getElementById('fib4-banner-score');
