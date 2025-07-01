@@ -887,28 +887,27 @@ function updateNewScoreBanners() {
 
   
   // FIB4
-  if (!isNaN(parseFloat(dashboardData.fib4?.value))) {
+if (!isNaN(parseFloat(dashboardData.fib4?.value))) {
+  const fib4 = dashboardData.fib4;
 
+  const scoreEl = document.getElementById('fib4-banner-score');
+  const astEl = document.getElementById('fib4-banner-ast');
+  const altEl = document.getElementById('fib4-banner-alt');
+  const pltEl = document.getElementById('fib4-banner-plt');
 
-    console.log('📊 FIB4 - Valore:', dashboardData.fib4.value, 'Categoria:', dashboardData.fib4.category);
+  console.log("🔍 FIB4 elements check:", { scoreEl, astEl, altEl, pltEl });
 
-    const scoreEl = document.getElementById('fib4-banner-score');
-    const astEl = document.getElementById('fib4-banner-ast');
-    const altEl = document.getElementById('fib4-banner-alt');
-    const pltEl = document.getElementById('fib4-banner-plt');
-
-    if (scoreEl) {
-      scoreEl.textContent = dashboardData.fib4.value;
-      scoreEl.className = `score-indicator-2 text-2xl score-${dashboardData.fib4.category === 'success' ? 'medium' : dashboardData.fib4.category === 'warning' ? 'low' : 'high'}`;
-      console.log('✅ FIB4 score indicator aggiornato:', dashboardData.fib4.value);
-    }
-
-    if (astEl) astEl.textContent = `${dashboardData.fib4.ast || '--'} U/L`;
-    if (altEl) altEl.textContent = `${dashboardData.fib4.alt || '--'} U/L`;
-    if (pltEl) pltEl.textContent = `${dashboardData.fib4.plt || '--'} x10⁹/L`;
-
-    console.log('✅ FIB4 non ha grafico circolare - usa solo indicator');
+  if (scoreEl) {
+    scoreEl.textContent = fib4.value;
+    scoreEl.className = `score-indicator-2 text-2xl score-${
+      fib4.category === 'success' ? 'medium' :
+      fib4.category === 'warning' ? 'low' : 'high'
+    }`;
   }
+
+  if (astEl) astEl.textContent = `${fib4.ast || '--'} U/L`;
+  if (altEl) altEl.textContent = `${fi
+
 
   // FNI
   if (dashboardData.fni?.value > 0) {
