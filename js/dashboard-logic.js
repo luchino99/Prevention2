@@ -1215,23 +1215,27 @@ function updateNewScoreBanners() {
     if (sbpEl) sbpEl.textContent = `${dashboardData.score2Diabetes.sistolica || '--'} mmHg`;
   }
 
+  
   // FIB4
   if (dashboardData.fib4?.value > 0) {
+    console.log('📊 FIB4 - Valore:', dashboardData.fib4.value, 'Categoria:', dashboardData.fib4.category);
+
     const scoreEl = document.getElementById('fib4-banner-score');
     const astEl = document.getElementById('fib4-banner-ast');
     const altEl = document.getElementById('fib4-banner-alt');
     const pltEl = document.getElementById('fib4-banner-plt');
 
     if (scoreEl) {
-      const classSuffix = dashboardData.fib4.category === 'danger' ? 'high' :
-                          dashboardData.fib4.category === 'warning' ? 'low' : 'medium';
       scoreEl.textContent = dashboardData.fib4.value;
-      scoreEl.className = `score-indicator-2 text-2xl score-${classSuffix}`;
+      scoreEl.className = `score-indicator-2 text-2xl score-${dashboardData.fib4.category === 'success' ? 'medium' : dashboardData.fib4.category === 'warning' ? 'low' : 'high'}`;
+      console.log('✅ FIB4 score indicator aggiornato:', dashboardData.fib4.value);
     }
 
     if (astEl) astEl.textContent = `${dashboardData.fib4.ast || '--'} U/L`;
     if (altEl) altEl.textContent = `${dashboardData.fib4.alt || '--'} U/L`;
     if (pltEl) pltEl.textContent = `${dashboardData.fib4.plt || '--'} x10⁹/L`;
+
+    console.log('✅ FIB4 non ha grafico circolare - usa solo indicator');
   }
 
   // FNI
