@@ -620,7 +620,7 @@ function updateDashboard() {
   document.getElementById("cv-cholesterol").textContent = `${userData.colesterolo_totale || "--"} mg/dL`;
   document.getElementById("cv-smoking").textContent = userData.fumatore || "--";
 
-  // Aggiorna elementi della dashboard estesi
+  updateNewScoreBanners();
   updateHealthSummary();
   updateMetabolicProfile();
   updateRiskTab();
@@ -629,7 +629,7 @@ function updateDashboard() {
   updateNutritionTab();
   updateActivityTab();
   updateRecommendations();
-  updateNewScoreBanners();
+ 
 
   console.log('✅ Dashboard aggiornata');
 }
