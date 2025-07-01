@@ -78,7 +78,11 @@ dashboardData.diabetesRisk = {
 };
 
     
-    //calculateAllScores();
+    // ⚠️ Calcola solo BMI, PREDIMED e FIB4
+calculateBMI();
+calculatePREDIMED();
+calculateFIB4();
+
     
     updateDashboard();
     initializeCharts();
