@@ -887,7 +887,8 @@ function updateNewScoreBanners() {
 
   
   // FIB4
-  if (parseFloat(dashboardData.fib4?.value) > 0) {
+  if (!isNaN(parseFloat(dashboardData.fib4?.value))) {
+
 
     console.log('📊 FIB4 - Valore:', dashboardData.fib4.value, 'Categoria:', dashboardData.fib4.category);
 
