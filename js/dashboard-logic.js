@@ -96,6 +96,35 @@ initializeCharts();
 setupTabs();
 setupExportButton();
 
+// Gestione tema chiaro/scuro
+const themeToggle = document.getElementById('theme-toggle');
+
+function applyTheme(theme) {
+  const html = document.documentElement;
+  html.setAttribute('data-theme', theme);
+
+  if (themeToggle) {
+    themeToggle.textContent = (theme === 'dark') ? '☀️' : '🌙';
+  }
+}
+
+if (themeToggle) {
+  themeToggle.addEventListener('click', function () {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+    applyTheme(newTheme);
+    window.parent.postMessage({ type: 'theme', theme: newTheme }, '*');
+  });
+}
+
+window.addEventListener('message', function (event) {
+  if (event.data && event.data.type === 'theme') {
+    applyTheme(event.data.theme);
+  }
+});
+
+
   } catch (error) {
     console.error('Errore inizializzazione dashboard:', error);
   }
@@ -1299,43 +1328,5 @@ function updateActivityTab() {
       await supabaseClient.auth.signOut();
       window.location.href = 'login.html';
     });
-
-    // Gestione temi
-    document.addEventListener('DOMContentLoaded', function () {
-      const themeToggle = document.getElementById('theme-toggle');
-
-      function applyTheme(theme) {
-        const html = document.documentElement;
-        html.setAttribute('data-theme', theme);
-
-        if (themeToggle) {
-          themeToggle.textContent = (theme === 'dark') ? '☀️' : '🌙';
-        }
-      }
-
-      if (themeToggle) {
-        themeToggle.addEventListener('click', function () {
-          const currentTheme = document.documentElement.getAttribute('data-theme');
-          const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-
-          applyTheme(newTheme);
-          window.parent.postMessage({ type: 'theme', theme: newTheme }, '*');
-        });
-      }
-
-      window.addEventListener('message', function (event) {
-        if (event.data && event.data.type === 'theme') {
-          applyTheme(event.data.theme);
-        }
-      });
-    });
-
-
-    document.getElementById('refresh-btn').addEventListener('click', function() {
-      window.location.reload();
-      
-        }); // Chiude document.getElementById('refresh-btn'...
-
-  }); // Chiude document.addEventListener('DOMContentLoaded'...
-
+ });
 } 
