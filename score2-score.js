@@ -36,7 +36,9 @@ export async function calcolaEFissaSCORE2() {
   doc.getElementById("hdl").value = profile.colesterolo_hdl_valore || '';
   doc.getElementById("riskRegion").value = profile.regione_rischio_cv || 'moderate';
 
-  const gender = profile.sesso === 'maschio' ? 'male' : 'female';
+  let gender = 'female';
+const sesso = (profile.sesso || '').trim().toLowerCase();
+if (['maschio', 'uomo'].includes(sesso)) gender = 'male';
   const smoking = profile.fumatore === 'si' ? 'yes' : 'no';
 
 const genderInput = doc.querySelector(`input[name="gender"][value="${gender}"]`);
