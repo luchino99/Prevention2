@@ -1,8 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = 'https://nkkaxbmzacaxkwgtfmds.supabase.co';
-const supabaseKey = process.env.SUPABASE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabaseClient = window.supabase.createClient(
+  'https://lwuhdgrkaoyvejmzfbtx.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3dWhkZ3JrYW95dmVqbXpmYnR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2NzU1MDcsImV4cCI6MjA2MTI1MTUwN30.1c5iH4PYW-HeigfXkPSgnVK3t02Gv3krSeo7dDSqqsk'
+);
 
 document.addEventListener("DOMContentLoaded", () => {
   const showSignupBtn = document.getElementById("show-signup");
