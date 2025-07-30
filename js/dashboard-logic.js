@@ -553,24 +553,25 @@ function setupLifestyleSliders() {
     }
   };
 
-  // Aggiungi listener real-time + salvataggio
-  stressSlider.addEventListener('input', () => {
-    const val = parseInt(stressSlider.value);
-    valoreStress.textContent = val;
-    salvaValore('stress', val);
-  });
+// Aggiungi listener real-time + salvataggio
+stressSlider.addEventListener('input', async () => {
+  const val = parseInt(stressSlider.value);
+  valoreStress.textContent = `${val}/10`;
+  await salvaValore('stress', val);
+});
 
-  umoreSlider.addEventListener('input', () => {
-    const val = parseInt(umoreSlider.value);
-    valoreUmore.textContent = val;
-    salvaValore('umore', val);
-  });
+umoreSlider.addEventListener('input', async () => {
+  const val = parseInt(umoreSlider.value);
+  valoreUmore.textContent = `${val}/10`;
+  await salvaValore('umore', val);
+});
 
-  sonnoSlider.addEventListener('input', () => {
-    const val = parseInt(sonnoSlider.value);
-    valoreSonno.textContent = val;
-    salvaValore('sonno_qualita', val);
-  });
+sonnoSlider.addEventListener('input', async () => {
+  const val = parseInt(sonnoSlider.value);
+  valoreSonno.textContent = `${val}/10`;
+  await salvaValore('sonno_qualita', val);
+});
+
 }
 
 
