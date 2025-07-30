@@ -93,6 +93,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     updateDashboard();
     initializeCharts();
     analyzeLifestyle();
+    setupLifestyleSliders();
+
 
 
   } catch (error) {
@@ -510,6 +512,59 @@ function analyzeLifestyle() {
     }
   };
 }
+
+function setupLifestyleSliders() {
+  const stressSlider = document.getElementById('slider-stress');
+  const umoreSlider = document.getElementById('slider-umore');
+  const sonnoSlider = document.getElementById('slider-sonno');
+
+  const valoreStress = document.getElementById('valore-stress');
+  const valoreUmore = document.getElementById('valore-umore');
+  const valoreSonno = document.getElementById('valore-sonno');
+
+  if (!stressSlider || !umoreSlider || !sonnoSlider) return;
+
+  // Imposta i valori iniziali dai dati dell'utente
+  stressSlider.value = userData.stress || 5;
+  umoreSlider.value = userData.umore || 5;
+  sonnoSlider.value = userData.sonno_qualita || 5;
+
+  valoreStress.textContent = stressSlider.value;
+  valoreUmore.textContent = umoreSlider.value;
+  valoreSonno.textContent = sonnoSlider.value;
+
+  const salvaValore = async (campo, valore) => {
+    try {
+      const { error } = await supabaseClient
+        .from('anagrafica_utenti')
+        .update({ [campo]: valore })
+        .eq('email', userData.email);
+
+      if (error) throw error;
+      userData[campo] = valore;
+      analyzeLifestyle();   // aggiorna l'analisi
+      updateLifestyleTab(); // aggiorna grafico e testo
+    } catch (err) {
+      console.error(`❌ Errore aggiornamento ${campo}:`, err);
+    }
+  };
+
+  stressSlider.addEventListener('input', () => {
+    valoreStress.textContent = stressSlider.value;
+    salvaValore('stress', parseInt(stressSlider.value));
+  });
+
+  umoreSlider.addEventListener('input', () => {
+    valoreUmore.textContent = umoreSlider.value;
+    salvaValore('umore', parseInt(umoreSlider.value));
+  });
+
+  sonnoSlider.addEventListener('input', () => {
+    valoreSonno.textContent = sonnoSlider.value;
+    salvaValore('sonno_qualita', parseInt(sonnoSlider.value));
+  });
+}
+
 
 // 12. Calcola fabbisogno nutrizionale
 function calculateNutritionalNeeds() {
