@@ -513,6 +513,7 @@ function analyzeLifestyle() {
   };
 }
 
+// Funzione per gestire e salvare slider
 function setupLifestyleSliders() {
   const stressSlider = document.getElementById('slider-stress');
   const umoreSlider = document.getElementById('slider-umore');
@@ -524,7 +525,7 @@ function setupLifestyleSliders() {
 
   if (!stressSlider || !umoreSlider || !sonnoSlider) return;
 
-  // Imposta i valori iniziali dai dati dell'utente
+  // Valori iniziali da userData
   stressSlider.value = userData.stress || 5;
   umoreSlider.value = userData.umore || 5;
   sonnoSlider.value = userData.sonno_qualita || 5;
@@ -541,29 +542,37 @@ function setupLifestyleSliders() {
         .eq('email', userData.email);
 
       if (error) throw error;
+      console.log(`✅ ${campo} salvato:`, valore);
       userData[campo] = valore;
-      analyzeLifestyle();   // aggiorna l'analisi
-      updateLifestyleTab(); // aggiorna grafico e testo
+
+      analyzeLifestyle();
+      updateLifestyleTab();
+
     } catch (err) {
-      console.error(`❌ Errore aggiornamento ${campo}:`, err);
+      console.error(`❌ Errore salvataggio ${campo}:`, err.message);
     }
   };
 
+  // Aggiungi listener real-time + salvataggio
   stressSlider.addEventListener('input', () => {
-    valoreStress.textContent = stressSlider.value;
-    salvaValore('stress', parseInt(stressSlider.value));
+    const val = parseInt(stressSlider.value);
+    valoreStress.textContent = val;
+    salvaValore('stress', val);
   });
 
   umoreSlider.addEventListener('input', () => {
-    valoreUmore.textContent = umoreSlider.value;
-    salvaValore('umore', parseInt(umoreSlider.value));
+    const val = parseInt(umoreSlider.value);
+    valoreUmore.textContent = val;
+    salvaValore('umore', val);
   });
 
   sonnoSlider.addEventListener('input', () => {
-    valoreSonno.textContent = sonnoSlider.value;
-    salvaValore('sonno_qualita', parseInt(sonnoSlider.value));
+    const val = parseInt(sonnoSlider.value);
+    valoreSonno.textContent = val;
+    salvaValore('sonno_qualita', val);
   });
 }
+
 
 
 // 12. Calcola fabbisogno nutrizionale
