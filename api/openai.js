@@ -68,6 +68,48 @@ Devono essere pratici, comprensibili, e basati su linee guida cliniche.`;
       });
     }
 
+if (data.screening_ai) {
+  const prompt = `
+Hai accesso ai dati clinici di un paziente. In base ai seguenti dati:
+- Età: ${data.eta}
+- Sesso: ${data.sesso}
+- Patologie: ${data.patologie}
+- Farmaci: ${data.farmaci}
+- Colesterolo Totale: ${data.colesterolo_totale}
+- HDL: ${data.colesterolo_hdl_valore}
+- Pressione arteriosa: ${data.pressione_sistolica}/${data.pressione_diastolica}
+- BMI: ${data.bmi}
+- Fumatore: ${data.fumatore}
+- Score cardiovascolare: ${data.score2_risk} (${data.score2_category})
+- Score diabete: ${data.ada_score} (${data.ada_category})
+- FIB4: ${data.fib4}
+- Sindrome metabolica presente: ${data.metabolicSyndrome ? 'Sì' : 'No'}
+
+Genera una lista di **screening preventivi consigliati** per questo paziente, secondo le linee guida italiane (Ministero della Salute, OMS, ecc.).
+
+Per ogni screening includi:
+- **Nome dello screening**
+- **Motivazione**
+- **Frequenza consigliata**
+- **Grado di priorità** (es. alta, media, bassa)
+`;
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-4-turbo",
+    messages: [
+      { role: "system", content: "Sei un medico esperto in medicina preventiva, screening oncologici e cardiovascolari." },
+      { role: "user", content: prompt }
+    ],
+    temperature: 0.7
+  });
+
+  const result = response?.choices?.[0]?.message?.content;
+  return res.status(200).json({
+    screening: result || "⚠️ Nessuna risposta generata."
+  });
+}
+
+
     // 2. FOLLOW-UP CONTESTUALE
     if (data.contesto_chat) {
       const { ultima_domanda, ultima_risposta, nuova_domanda } = data.contesto_chat;
