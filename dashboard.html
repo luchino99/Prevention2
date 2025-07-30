@@ -353,36 +353,33 @@
             </div>
           </div>
           <div class="p-4 bg-gray-50 rounded-lg">
-            <h3 class="font-semibold mb-3">Benessere Psicologico</h3>
-            <div class="space-y-4">
-              <div class="p-3  rounded-lg">
-                <div class="flex justify-between mb-1">
-                  <span class="text-sm font-medium">Stress</span>
-                  <span class="text-sm font-medium text-yellow-600">Medio</span>
-                </div>
-                <div class="w-full bg-gray-200 rounded-full h-2">
-                  <div class="bg-yellow-500 h-2 rounded-full" style="width: 60%"></div>
-                </div>
-              </div>
-              <div class="p-3  rounded-lg">
-                <div class="flex justify-between mb-1">
-                  <span class="text-sm font-medium">Sonno</span>
-                  <span class="text-sm font-medium text-red-600">Insufficiente</span>
-                </div>
-                <div class="w-full bg-gray-200 rounded-full h-2">
-                  <div class="bg-red-500 h-2 rounded-full" style="width: 30%"></div>
-                </div>
-                <p class="text-xs text-gray-500 mt-1">Insonnia moderata</p>
-              </div>
-              <div class="p-3  rounded-lg">
-                <div class="flex justify-between mb-1">
-                  <span class="text-sm font-medium">Umore</span>
-                  <span class="text-sm font-medium text-green-600">Buono</span>
-                </div>
-                <div class="w-full bg-gray-200 rounded-full h-2">
-                  <div class="bg-green-500 h-2 rounded-full" style="width: 75%"></div>
-                </div>
-              </div>
+  <h3 class="font-semibold mb-3">Benessere Psicologico</h3>
+  <div class="space-y-6">
+
+    <!-- Stress -->
+    <div>
+      <label for="slider-stress" class="text-sm font-medium text-gray-700">Livello di Stress</label>
+      <input type="range" id="slider-stress" min="0" max="10" value="5" class="w-full">
+      <div class="text-xs text-gray-600 mt-1">Valore: <span id="valore-stress" class="font-semibold text-blue-600">5</span>/10</div>
+    </div>
+
+    <!-- Umore -->
+    <div>
+      <label for="slider-umore" class="text-sm font-medium text-gray-700">Umore Attuale</label>
+      <input type="range" id="slider-umore" min="0" max="10" value="5" class="w-full">
+      <div class="text-xs text-gray-600 mt-1">Valore: <span id="valore-umore" class="font-semibold text-blue-600">5</span>/10</div>
+    </div>
+
+    <!-- Sonno -->
+    <div>
+      <label for="slider-sonno" class="text-sm font-medium text-gray-700">Qualità del Sonno</label>
+      <input type="range" id="slider-sonno" min="0" max="10" value="5" class="w-full">
+      <div class="text-xs text-gray-600 mt-1">Valore: <span id="valore-sonno" class="font-semibold text-blue-600">5</span>/10</div>
+    </div>
+
+  </div>
+</div>
+
             </div>
           </div>
         </div>
