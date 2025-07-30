@@ -645,6 +645,41 @@ function updateDashboard() {
 }
 
 
+document.getElementById('btn-avvia-suggerimenti')?.addEventListener('click', async () => {
+  const contenitore = document.getElementById('contenitore-suggerimenti-ai');
+  contenitore.classList.remove('hidden');
+  contenitore.innerHTML = '<p class="text-gray-500 text-sm italic">🧠 Analisi in corso... Attendere qualche secondo.</p>';
+
+  try {
+    const response = await fetch("https://prevention2.vercel.app/api/openai", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        suggerimenti_prioritari: true,
+        ...userData
+      })
+    });
+
+    const { suggerimenti } = await response.json();
+
+    if (!suggerimenti) {
+      throw new Error("Nessuna risposta dal modello.");
+    }
+
+    // Converti i suggerimenti in paragrafi HTML
+    const paragrafi = suggerimenti
+      .split('\n')
+      .filter(line => line.trim() !== '')
+      .map(text => `<div class="p-3 bg-blue-50 border-l-4 border-blue-500 rounded text-sm text-gray-800">${text}</div>`)
+      .join('');
+
+    contenitore.innerHTML = paragrafi;
+
+  } catch (error) {
+    console.error("Errore generazione suggerimenti:", error);
+    contenitore.innerHTML = `<p class="text-red-600 text-sm">❌ Errore durante la generazione dei suggerimenti. Riprova più tardi.</p>`;
+  }
+});
 
 
 
