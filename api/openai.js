@@ -3,100 +3,126 @@ import { OpenAI } from 'openai';
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export default async function handler(req, res) {
-  
-const allowedOrigins = [
-  "https://luchino99.github.io",
-  "https://prevention2.vercel.app"
-];
+  const allowedOrigins = [
+    "https://luchino99.github.io",
+    "https://prevention2.vercel.app"
+  ];
 
-const origin = req.headers.origin;
+  const origin = req.headers.origin;
 
-
-if (allowedOrigins.includes(origin)) {
-  res.setHeader("Access-Control-Allow-Origin", origin);
-} else {
-  res.setHeader("Access-Control-Allow-Origin", "https://prevention2.vercel.app"); // fallback o rimuovi se non voluto
-  console.warn("⚠️ Origin non autorizzato:", origin);
-}
-
-res.setHeader("Vary", "Origin");
-res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-
-if (req.method === "OPTIONS") {
-  return res.status(200).end();
-}
-
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Solo richieste POST sono accettate' });
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  } else {
+    res.setHeader("Access-Control-Allow-Origin", allowedOrigins[1]); // fallback
+    console.warn("⚠️ Origin non autorizzato:", origin);
   }
 
+  res.setHeader("Vary", "Origin");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  if (req.method === "OPTIONS") return res.status(200).end();
+  if (req.method !== "POST") return res.status(405).json({ error: "Solo richieste POST sono accettate" });
 
   const data = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
-
-  const fattoriLavoro = {
-    "sedentario": 1.2,
-    "leggermente attivo": 1.375,
-    "moderatamente attivo": 1.55,
-    "molto attivo": 1.725,
-    "estremamente attivo": 1.9
-  };
-
-  const tipo = data.tipo_lavoro?.trim();
-  const tdeeFactor = fattoriLavoro[tipo];
-
-if (data.dieta && !tdeeFactor) {
-  return res.status(400).json({
-    errore: `Tipo di lavoro non valido o mancante: "${tipo}". I valori accettati sono: ${Object.keys(fattoriLavoro).join(", ")}.`
-  });
-}
-
-
   const safe = (val) => val ?? "non disponibile";
   const escape = (str) => (str || "").toString().replace(/[`$]/g, "");
 
-
   try {
-    let compiledPrompt = "";
-    
-if (data.contesto_chat) {
-  const { ultima_domanda, ultima_risposta, nuova_domanda } = data.contesto_chat;
-  compiledPrompt = `
+    let prompt = "";
+
+    // 1. SUGGERIMENTI PRIORITARI
+    if (data.suggerimenti_prioritari) {
+      prompt = `
+Hai accesso ai dati clinici e anagrafici di un paziente.
+Età: ${data.eta}
+Sesso: ${data.sesso}
+Peso: ${data.peso} kg
+Altezza: ${data.altezza} cm
+Pressione: ${data.pressione_sistolica}/${data.pressione_diastolica}
+Glicemia: ${data.glicemia_valore} mg/dL
+HbA1c: ${data.hba1c} %
+Colesterolo Totale: ${data.colesterolo_totale}
+HDL: ${data.colesterolo_hdl_valore}
+Trigliceridi: ${data.trigliceridi}
+BMI: ${data.bmi}
+Attività fisica: ${data.attivita_fisica}
+Insonnia: ${data.insonnia}
+Stress: ${data.stress}
+
+Genera **3 consigli prioritari** personalizzati per migliorare la salute generale.
+Devono essere pratici, comprensibili, e basati su linee guida cliniche.`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4-turbo",
+        messages: [
+          { role: "system", content: "Sei un assistente sanitario esperto in prevenzione, alimentazione e stile di vita." },
+          { role: "user", content: prompt }
+        ],
+        temperature: 0.7
+      });
+
+      const result = response?.choices?.[0]?.message?.content;
+      return res.status(200).json({
+        suggerimenti: result || "⚠️ Nessuna risposta valida."
+      });
+    }
+
+    // 2. FOLLOW-UP CONTESTUALE
+    if (data.contesto_chat) {
+      const { ultima_domanda, ultima_risposta, nuova_domanda } = data.contesto_chat;
+
+      prompt = `
 Sei un assistente sanitario digitale. Un utente ha già posto una domanda, a cui hai risposto. Ora ha inviato una nuova domanda di approfondimento.
 
-🧠 **Domanda precedente dell'utente:** ${ultima_domanda}
-🤖 **Risposta che hai dato:** ${ultima_risposta}
-❓ **Nuova domanda:** ${nuova_domanda}
+🧠 Domanda precedente: ${ultima_domanda}
+🤖 Tua risposta: ${ultima_risposta}
+❓ Nuova domanda: ${nuova_domanda}
 
-👉 Fornisci una risposta coerente e utile, che tenga conto del contesto precedente, e sviluppi una risposta completa alla nuova richiesta. Il tono deve essere empatico, chiaro, e professionale.
-`;
-  console.log("📤 Prompt follow-up generato:", compiledPrompt);
+Fornisci una risposta coerente e utile, empatica e professionale.`;
 
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4-turbo',
-    messages: [
-      { role: 'system', content: 'Sei un assistente sanitario esperto in prevenzione e analisi dati clinici, nutrizione e allenamento.' },
-      { role: 'user', content: compiledPrompt }
-    ],
-    temperature: 0.7
-  });
+      const response = await openai.chat.completions.create({
+        model: "gpt-4-turbo",
+        messages: [
+          { role: "system", content: "Sei un assistente esperto in prevenzione e medicina dello stile di vita." },
+          { role: "user", content: prompt }
+        ],
+        temperature: 0.7
+      });
 
-  const result = response?.choices?.[0]?.message?.content;
-  return res.status(200).json({ risposta: result || "⚠️ Nessuna risposta valida." });
-}
+      const result = response?.choices?.[0]?.message?.content;
+      return res.status(200).json({
+        risposta: result || "⚠️ Nessuna risposta valida."
+      });
+    }
 
-    
+    // 3. PROMPT PER DIETA, ALLENAMENTO, SINTOMI, ANALISI GENERALE
+    const fattoriLavoro = {
+      "sedentario": 1.2,
+      "leggermente attivo": 1.375,
+      "moderatamente attivo": 1.55,
+      "molto attivo": 1.725,
+      "estremamente attivo": 1.9
+    };
+
+    const tipo = data.tipo_lavoro?.trim();
+    const tdeeFactor = fattoriLavoro[tipo];
+
+    if (data.dieta && !tdeeFactor) {
+      return res.status(400).json({
+        errore: `Tipo di lavoro non valido o mancante: "${tipo}". Valori accettati: ${Object.keys(fattoriLavoro).join(", ")}.`
+      });
+    }
+
     if (data.sintomi && data.sintomi.trim() !== "") {
-      compiledPrompt =  `
-Sei un assistente sanitario digitale esperto. Una persona ha descritto i seguenti sintomi:
-🩺 **Sintomi riportati:**
+      prompt = `
+Una persona ha descritto i seguenti sintomi:
 ${escape(data.sintomi)}
 Sulla base di questi sintomi, offri un'analisi iniziale, suggerisci possibili cause. Specifica quando è opportuno rivolgersi a un medico o andare al pronto soccorso. 
-Ricorda che la tua risposta **non sostituisce una valutazione medica professionale**.`;
+Ricorda che la tua risposta **non sostituisce una valutazione medica professionale**.
+`;
     } else if (data.dieta) {
-    compiledPrompt = `
-Sei un nutrizionista clinico esperto in nutrizione personalizzata. In base ai dati forniti di seguito, calcola il fabbisogno calorico giornaliero (BMR e TDEE) del paziente secondo le formule Mifflin-St Jeor e le linee guida LARN/SINU, non scrivere i vari calcoli nella risposta, ma mostra soltando il risultato. Successivamente, crea un piano alimentare settimanale variabile per ogni giorno della settimana dal lunedi fino alla domenica compresa.
+      prompt = `Sei un nutrizionista clinico esperto in nutrizione personalizzata. In base ai dati forniti di seguito, calcola il fabbisogno calorico giornaliero (BMR e TDEE) del paziente secondo le formule Mifflin-St Jeor e le linee guida LARN/SINU, non scrivere i vari calcoli nella risposta, ma mostra soltando il risultato. Successivamente, crea un piano alimentare settimanale variabile per ogni giorno della settimana dal lunedi fino alla domenica compresa.
 Che sia completo, bilanciato basandoti sul risulatato di questi score e sugli obbiettivi del paziente (dimagrimento, mantenimento, massa), eventuali patologie, preferenze, allergie. 
 Ogni giorno deve contenere:
 - Colazione, spuntino mattina, pranzo, spuntino pomeriggio, cena
@@ -118,10 +144,8 @@ Dati da utilizzare per programmare la dieta in base ai vari dati forniti dall'ut
 
 inoltre devi creare il programma alimentare consigliando piatti non troppo complessi, e che permettano di evitare sprechi, quindi anche alimenti che si possono combinare fra loro se mai in giorni diversi, per creare piatti diversi ma che evitano sprechi.
 Il piano sarà usato per essere trasformato in PDF.`;
-    
     } else if (data.allenamento) {
-      compiledPrompt = `
-Sei un personal trainer certificato NSCA, ACSM e NASM. In base ai dati raccolti crea un programma di allenamento settimanale altamente personalizzato.
+      prompt = `Sei un personal trainer certificato NSCA, ACSM e NASM. In base ai dati raccolti crea un programma di allenamento settimanale altamente personalizzato.
 
 Dati utente:
 - Età: ${safe(data.eta)}
@@ -152,9 +176,8 @@ Crea:
 - Programmazione cardio se richiesto
 
 Tono: motivante, preciso, chiaro per utenti non esperti.`;
-
-      } else {
-    compiledPrompt =   `
+    } else {
+      prompt =    `
 Sei un assistente sanitario digitale. Analizza i dati forniti per calcolare score clinici ufficiali e fornire consigli personalizzati secondo linee guida OMS, ESC, AIFA, ADA e Ministero della Salute.
 
  **DATI RACCOLTI:**
@@ -273,60 +296,25 @@ Usa un linguaggio semplice, empatico, ma tecnico. Comunica con tono rassicurante
 
     }
 
-
-    console.log("📤 Prompt generato:", compiledPrompt);
-
-    if (data.suggerimenti_prioritari) {
-  const prompt = `
-Hai accesso ai dati clinici e anagrafici di un paziente.
-Età: ${data.eta}
-Sesso: ${data.sesso}
-Peso: ${data.peso} kg
-Altezza: ${data.altezza} cm
-Pressione: ${data.pressione_sistolica}/${data.pressione_diastolica}
-Glicemia: ${data.glicemia_valore} mg/dL
-HbA1c: ${data.hba1c} %
-Colesterolo Totale: ${data.colesterolo_totale}
-HDL: ${data.colesterolo_hdl_valore}
-Trigliceridi: ${data.trigliceridi}
-BMI: ${data.bmi}
-Attività fisica: ${data.attivita_fisica}
-Insonnia: ${data.insonnia}
-Stress: ${data.stress}
-
-Genera **3 consigli prioritari** e personalizzati per migliorare la salute generale.
-Ogni consiglio deve essere chiaro, pratico e basato su evidenze cliniche scientificamente approvate dalle linee guida.
-`;
-
-
-
     const response = await openai.chat.completions.create({
-      model: 'gpt-4-turbo',
+      model: "gpt-4-turbo",
       messages: [
-        { role: 'system', content: 'Sei un assistente sanitario esperto in prevenzione e analisi dati clinici, nutrizione e allenamento.' },
-        { role: 'user', content: compiledPrompt }
+        { role: "system", content: "Sei un assistente sanitario digitale esperto." },
+        { role: "user", content: prompt }
       ],
       temperature: 0.7
     });
 
     const result = response?.choices?.[0]?.message?.content;
-    if (!response?.choices || !response.choices.length) {
-  throw new Error("Nessuna risposta valida da OpenAI");
-}
-
-
-    if (!result) {
-      return res.status(200).json({
-        risposta: "⚠️ L'intelligenza artificiale non ha restituito una risposta valida. Riprova più tardi o contatta un professionista sanitario."
-      });
-    }
-
-    res.status(200).json({ risposta: result });
+    return res.status(200).json({
+      risposta: result || "⚠️ Nessuna risposta valida."
+    });
 
   } catch (error) {
     console.error("❌ Errore OpenAI:", error);
-    res.status(500).json({
-      risposta: "⚠️ Si è verificato un errore nella comunicazione con il sistema. Verifica la connessione o riprova più tardi."
+    return res.status(500).json({
+      errore: "⚠️ Si è verificato un errore nella comunicazione con OpenAI. Riprova più tardi."
     });
   }
 }
+
