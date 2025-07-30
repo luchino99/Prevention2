@@ -681,6 +681,45 @@ document.getElementById('btn-avvia-suggerimenti')?.addEventListener('click', asy
   }
 });
 
+document.getElementById('btn-avvia-screening-ai')?.addEventListener('click', async () => {
+  const container = document.getElementById('contenitore-screening-ai');
+  container.classList.remove('hidden');
+  container.innerHTML = '<p class="text-gray-500 text-sm italic">🧠 Generazione in corso... Attendere qualche secondo.</p>';
+
+  try {
+    const response = await fetch("https://prevention2.vercel.app/api/openai", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        screening_ai: true,
+        ...userData,
+        score2_risk: dashboardData.score2?.value || "--",
+        score2_category: dashboardData.score2?.category || "--",
+        ada_score: dashboardData.diabetesRisk?.score || "--",
+        ada_category: dashboardData.diabetesRisk?.risk || "--",
+        fib4: dashboardData.fib4?.value || "--",
+        bmi: dashboardData.bmi?.value || "--",
+        metabolicSyndrome: dashboardData.metabolicSyndrome?.present || false
+      })
+    });
+
+    const { screening } = await response.json();
+
+    if (!screening) throw new Error("Nessuna risposta dal modello.");
+
+    const blocchi = screening
+      .split('\n')
+      .filter(line => line.trim() !== '')
+      .map(text => `<div class="p-3 bg-green-50 border-l-4 border-green-600 rounded text-sm text-gray-800">${text}</div>`)
+      .join('');
+
+    container.innerHTML = blocchi;
+
+  } catch (error) {
+    console.error("❌ Errore generazione screening:", error);
+    container.innerHTML = `<p class="text-red-600 text-sm">❌ Errore durante la generazione. Riprova più tardi.</p>`;
+  }
+});
 
 
 // Funzioni di aggiornamento UI
