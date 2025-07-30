@@ -316,7 +316,7 @@
             .header h1 {
                 font-size: 2em;
             }
-            
+
             .form-container {
                 padding: 20px;
             }
@@ -347,7 +347,7 @@
             <h1>🏥 FRAIL Scale Calculator</h1>
             <p>Scala di valutazione della fragilità nell'anziano</p>
         </div>
-        
+
         <div class="form-container">
             <div class="acronym-explanation">
                 <h4>📝 FRAIL - Significato dell'acronimo</h4>
@@ -491,7 +491,7 @@
                 <h3>Risultato della valutazione</h3>
                 <div class="risk-value" id="riskValue">-- punti</div>
                 <div class="risk-category" id="riskCategory">--</div>
-                
+
                 <div class="score-breakdown" id="scoreBreakdown">
                     <h4>Dettaglio punteggio:</h4>
                     <div id="scoreDetails"></div>
@@ -506,8 +506,8 @@
                     <li><strong>3-5 punti:</strong> Fragile - Condizione che richiede interventi preventivi e supporto</li>
                 </ul>
                 <p style="margin-top: 15px;">
-                    La FRAIL Scale è uno strumento di screening rapido e validato per identificare la fragilità 
-                    negli anziani. Un punteggio elevato suggerisce la necessità di una valutazione geriatrica 
+                    La FRAIL Scale è uno strumento di screening rapido e validato per identificare la fragilità
+                    negli anziani. Un punteggio elevato suggerisce la necessità di una valutazione geriatrica
                     completa e interventi mirati per prevenire eventi avversi.
                 </p>
             </div>
@@ -524,7 +524,7 @@
                     <li>Applicabilità in diverse popolazioni di anziani</li>
                 </ul>
                 <p style="margin-top: 10px;">
-                    <strong>Nota:</strong> Questo strumento è destinato a scopi di screening. 
+                    <strong>Nota:</strong> Questo strumento è destinato a scopi di screening.
                     Una valutazione completa dovrebbe sempre essere effettuata da un medico specialista.
                 </p>
             </div>
@@ -537,7 +537,7 @@
             document.querySelectorAll('.radio-option').forEach(option => {
                 const radio = option.querySelector('input[type="radio"]');
                 option.classList.remove('selected', 'positive', 'negative');
-                
+
                 if (radio.checked) {
                     option.classList.add('selected');
                     if (radio.value === 'no') {
@@ -569,7 +569,7 @@
                 const answer = data[question.key];
                 const points = answer === 'yes' ? 1 : 0;
                 totalScore += points;
-                
+
                 breakdown.push({
                     question: question.label,
                     answer: answer === 'yes' ? 'Sì' : 'No',
@@ -583,21 +583,21 @@
 
         function getRiskCategory(score) {
             if (score === 0) {
-                return { 
-                    category: 'Robusto (Non Fragile)', 
-                    class: 'risk-robust', 
+                return {
+                    category: 'Robusto (Non Fragile)',
+                    class: 'risk-robust',
                     description: 'Stato funzionale ottimale'
                 };
             } else if (score <= 2) {
-                return { 
-                    category: 'Pre-fragile (A Rischio)', 
-                    class: 'risk-prefrail', 
+                return {
+                    category: 'Pre-fragile (A Rischio)',
+                    class: 'risk-prefrail',
                     description: 'Stato intermedio che richiede monitoraggio'
                 };
             } else {
-                return { 
-                    category: 'Fragile', 
-                    class: 'risk-frail', 
+                return {
+                    category: 'Fragile',
+                    class: 'risk-frail',
                     description: 'Condizione che richiede interventi preventivi'
                 };
             }
@@ -605,7 +605,7 @@
 
         document.getElementById('frailForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            
+
             const data = {
                 fatigue: document.querySelector('input[name="fatigue"]:checked')?.value,
                 resistance: document.querySelector('input[name="resistance"]:checked')?.value,
@@ -623,16 +623,16 @@
             try {
                 const result = calculateFRAIL(data);
                 const riskInfo = getRiskCategory(result.totalScore);
-                
+
                 // Mostra risultato principale
                 document.getElementById('riskValue').textContent = result.totalScore + ' / 5 punti';
                 document.getElementById('riskCategory').textContent = riskInfo.category;
                 document.getElementById('riskCategory').className = 'risk-category ' + riskInfo.class;
-                
+
                 // Mostra breakdown del punteggio
                 const scoreDetails = document.getElementById('scoreDetails');
                 scoreDetails.innerHTML = '';
-                
+
                 result.breakdown.forEach(item => {
                     const div = document.createElement('div');
                     div.className = `score-item ${item.hasPoint ? 'point' : 'no-point'}`;
@@ -645,7 +645,7 @@
                     `;
                     scoreDetails.appendChild(div);
                 });
-                
+
                 // Totale
                 const totalDiv = document.createElement('div');
                 totalDiv.className = 'score-item';
@@ -654,7 +654,7 @@
                     <span><strong>${result.totalScore} / 5 punti</strong></span>
                 `;
                 scoreDetails.appendChild(totalDiv);
-                
+
                 // Interpretazione
                 const interpDiv = document.createElement('div');
                 interpDiv.innerHTML = `
@@ -663,11 +663,11 @@
                     </div>
                 `;
                 scoreDetails.appendChild(interpDiv);
-                
+
                 const resultDiv = document.getElementById('result');
                 resultDiv.classList.add('show');
                 resultDiv.scrollIntoView({ behavior: 'smooth' });
-                
+
             } catch (error) {
                 alert('Errore nel calcolo. Riprova.');
                 console.error('Errore di calcolo:', error);
@@ -682,8 +682,8 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
 const supabase = createClient(
-  'https://lwuhdgrkaoyvejmzfbtx.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3dWhkZ3JrYW95dmVqbXpmYnR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2NzU1MDcsImV4cCI6MjA2MTI1MTUwN30.1c5iH4PYW-HeigfXkPSgnVK3t02Gv3krSeo7dDSqqsk'
+  'https://nkkaxbmzacaxkwgtfmds.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ra2F4Ym16YWNheGt3Z3RmbWRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM4Nzc3NzQsImV4cCI6MjA2OTQ1Mzc3NH0.k36sBT3jILmLXc9jcLz843uLDCHrnuvhuMmMvBNzEPo'
 );
 
 document.addEventListener("DOMContentLoaded", async () => {

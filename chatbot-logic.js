@@ -17,7 +17,7 @@ const domandeBase = [
   { key: "hba1c", testo: "Conosci il valore della tua emoglobina glicata (HbA1c)? (in percentuale)" },
   { key: "colesterolo_totale", testo: "Qual è il valore del tuo colesterolo totale (mg/dL)?" },
   { key: "colesterolo_ldl", testo: "Il tuo colesterolo LDL supera il valore di 70 mg/dL?(si/no)" },
-  
+
   { key: "colesterolo_hdl_valore", testo: "Qual è il valore del tuo colesterolo HDL (se lo conosci)?" },
   { key: "trigliceridi", testo: "Qual è il valore dei tuoi trigliceridi (mg/dL)?" },
   { key: "pressione", testo: "La tua pressione arteriosa media è inferiore a 130/85 mmHg?(si/no)" },
@@ -73,7 +73,7 @@ const domandeBase = [
   { key: "tipo_attivita", testo: "Che tipo di attività fisica svolgi? (aerobica, rafforzamento muscolare, rafforzamento osseo e stretching)" , condizione: "attivita_fisica" },
   { key: "durata_attivita", testo: "Quanto dura ogni allenamento in minuti? " , condizione: "attivita_fisica" },
   { key: "predimed_1", testo: "Usi l'olio extravergine di oliva come condimento principale (es. per cucinare, condire insalate)?" },
- 
+
   { key: "predimed_2", testo: "Ne usi più di 4 cucchiai al giorno?" },
   { key: "predimed_3", testo: "Mangi almeno 2 porzioni di verdura al giorno? (1 porzione = 200g circa)" },
   { key: "predimed_4", testo: "Mangi almeno 3 porzioni di frutta al giorno? (1 porzione = 1 frutto medio o 100g circa)" },
@@ -102,7 +102,7 @@ const domandeOver65 = [
   { key: "malattie_croniche", testo: "Hai più di 5 malattie croniche?" },
   { key: "perdita_peso", testo: "Hai perso più di 5 kg nell’ultimo anno senza volerlo?" },
   { key: "sedia", testo: "Hai problemi ad alzarti da una sedia?" },
-  
+
 ];
 
 const domandeFemminili = [
@@ -130,7 +130,7 @@ const domandePianoAlimentare = [
   { key: "pasti", testo: "Quanti pasti al giorno preferisci fare? (includi colazione e spuntini)" },
   { key: "orari_pasti", testo: "Hai orari fissi per i pasti principali? (opzionale)" },
   { key: "patologie", testo: "Hai patologie diagnosticate? (es: diabete, ipertensione, gastrite, ecc.)" },
-  { key: "farmaci", testo: "Stai assumendo farmaci al momento? Se si, elencali (opzionale)" }, 
+  { key: "farmaci", testo: "Stai assumendo farmaci al momento? Se si, elencali (opzionale)" },
   ];
 
   const domandeAllenamento = [
@@ -153,7 +153,7 @@ const domandePianoAlimentare = [
   { key: "plank", testo: "Quanto tempo mantieni la posizione plank? (secondi) " },
   { key: "step_test", testo: "Dopo 3 minuti di step, misura il battito cardiaco (opzionale)" }
 ];
-  
+
 
 
 let domande = [];
@@ -161,8 +161,8 @@ let risposte = {};
 
 let ultimaDomandaUtente = "";
 let ultimaRispostaBot = "";
-  
-  
+
+
 const aliasCondivisi = {
   // ... mantieni tutti gli alias esistenti ...
   eta: ["eta"],
@@ -209,7 +209,7 @@ const aliasCondivisi = {
   gravidanza: ["gravidanza"],
   circonferenza_vita: ["circonferenza_vita"]
 };
-  
+
 function haRispostaCondivisa(domandaKey) {
   for (const [profiloKey, domandeKeys] of Object.entries(aliasCondivisi)) {
     if (domandeKeys.includes(domandaKey) && risposte[profiloKey]) {
@@ -257,10 +257,10 @@ domandeFemminiliAggiunte = false;
 
 
   modalita = tipo;
-  step = -1; 
-  risposte = { ...risposte, email: emailUtente }; 
+  step = -1;
+  risposte = { ...risposte, email: emailUtente };
 
-  
+
   document.querySelectorAll(".button-container").forEach(el => el.remove());
   document.getElementById("welcome-banner")?.classList.add("hidden");
   document.getElementById("chat-interface")?.classList.add("active");
@@ -275,7 +275,7 @@ domandeFemminiliAggiunte = false;
   case "prevenzione":
   domande = [...domandeBase];
 
-  
+
   const etaNum = parseInt(risposte.eta);
   if (!isNaN(etaNum) && etaNum > 65 && !domandeOver65Aggiunte) {
     domande.push(...domandeOver65);
@@ -319,7 +319,7 @@ let domandeOver65Aggiunte = false;
 let domandeFemminiliAggiunte = false;
 
 async function next() {
-  
+
   const val = input.value.trim();
 
   if (modalita === "aggiorna" && step >= domande.length) {
@@ -334,7 +334,7 @@ async function next() {
   return;
 }
 
-  
+
   if (modalita === "sintomi") {
     if (!val) {
       mostraMessaggio("❗ Per favore descrivi i tuoi sintomi prima di premere invio.");
@@ -343,7 +343,7 @@ async function next() {
 
     mostraMessaggio(val, "user");
     await salvaMessaggioChat(emailUtente, "user", val);
-    
+
     ultimaDomandaUtente = val;
 
 
@@ -500,7 +500,7 @@ if (!chiaveSalvata) {
   }
 
   step++;
-  
+
   } else if (step === -1) {
     step = 0; // primo avanzamento dopo scelta modalità
   }
@@ -634,7 +634,7 @@ function inviaOpenAI(nuovaDomandaUtente = null) {
     });
 }
 
-  
+
 
 
 function generaPDF(contenuto) {
@@ -653,7 +653,7 @@ function generaPDF(contenuto) {
       </footer>
     </div>
   `;
-  
+
   html2pdf().set({
     margin: 10,
     filename: 'Piano_Alimentare_Personalizzato.pdf',
@@ -661,9 +661,9 @@ function generaPDF(contenuto) {
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   }).from(pdfElement).save();
 }
-  const supabaseUrl = 'https://lwuhdgrkaoyvejmzfbtx.supabase.co';  // ➔ Cambia con la tua URL
-  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3dWhkZ3JrYW95dmVqbXpmYnR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2NzU1MDcsImV4cCI6MjA2MTI1MTUwN30.1c5iH4PYW-HeigfXkPSgnVK3t02Gv3krSeo7dDSqqsk';                  // ➔ Cambia con la tua API KEY
-  
+  const supabaseUrl = 'https://nkkaxbmzacaxkwgtfmds.supabase.co';  // ➔ Cambia con la tua URL
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ra2F4Ym16YWNheGt3Z3RmbWRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM4Nzc3NzQsImV4cCI6MjA2OTQ1Mzc3NH0.k36sBT3jILmLXc9jcLz843uLDCHrnuvhuMmMvBNzEPo';                  // ➔ Cambia con la tua API KEY
+
 const supabase = window.supabase;  // caricato da CDN
 const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 supabaseClient.auth.getSession().then(({ data }) => {
@@ -699,7 +699,7 @@ recuperaAnagraficaDalDatabase(emailUtente).then((dati) => {
           mostraProfiloUtente();
         });
       }
-  
+
   const logoutBtn = document.getElementById("btn-logout");
   if (logoutBtn) {
     logoutBtn.addEventListener("click", async () => {
@@ -710,7 +710,7 @@ recuperaAnagraficaDalDatabase(emailUtente).then((dati) => {
 });
 
 
-  
+
 async function salvaAnagraficaNelDatabase(dati) {
   try {
     if (!dati.email) {
@@ -739,8 +739,8 @@ const campiValidi = [
   "predimed_13", "predimed_14", "depressione", "insonnia",
   "tipo_insonnia", "stress", "frequenza_attivita_fisica", "durata_attivita", "tipo_attivita",
   "hba1c", "ast", "alt", "piastrine", "albumina", "linfociti",
-  "n_sigarette", "alcol", "eta_menarca", "eta_menopausa", 
-  "contraccettivi", "gravidanza", "familiarita_seno", 
+  "n_sigarette", "alcol", "eta_menarca", "eta_menopausa",
+  "contraccettivi", "gravidanza", "familiarita_seno",
   "screening_seno", "papsmear",
   "ggt", "egfr", "eta_diagnosi_diabete", "regione_rischio_cv",
   "plank", "step_test",
@@ -1005,7 +1005,7 @@ if (form) {
   form.addEventListener("submit", async function (e) {
     e.preventDefault();
 
-    
+
     const val = input.value.trim();
     if (!val) return;
 
@@ -1071,7 +1071,7 @@ Vuoi aggiornarli? (sì / no)`);
       input.value = "";
       return;
     }
-    
+
 
     if (modalitaConclusa) {
   mostraMessaggio(val, "user");
@@ -1087,10 +1087,9 @@ Vuoi aggiornarli? (sì / no)`);
       input.value = "";
       return;
     }
-   
+
     next();
   });
 }
 
 });
-

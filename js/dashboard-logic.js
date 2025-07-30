@@ -1,6 +1,6 @@
 // Configuration constants
-const supabaseUrl = 'https://lwuhdgrkaoyvejmzfbtx.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3dWhkZ3JrYW95dmVqbXpmYnR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2NzU1MDcsImV4cCI6MjA2MTI1MTUwN30.1c5iH4PYW-HeigfXkPSgnVK3t02Gv3krSeo7dDSqqsk';
+const supabaseUrl = 'https://nkkaxbmzacaxkwgtfmds.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ra2F4Ym16YWNheGt3Z3RmbWRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM4Nzc3NzQsImV4cCI6MjA2OTQ1Mzc3NH0.k36sBT3jILmLXc9jcLz843uLDCHrnuvhuMmMvBNzEPo';
 const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
 // Variabili globali per i dati utente
@@ -639,7 +639,7 @@ function updateDashboard() {
   updateNutritionTab();
   updateActivityTab();
   updateRecommendations();
- 
+
 
   console.log('✅ Dashboard aggiornata');
 }
@@ -651,7 +651,7 @@ function updateDashboard() {
 // Funzioni di aggiornamento UI
 function updateHealthSummary() {
   console.log('🔄 Aggiornamento riepilogo salute...');
-  
+
   // BMI
   const bmiIndicator = document.getElementById('bmi-indicator');
   const bmiBadge = document.getElementById('bmi-badge');
@@ -895,7 +895,7 @@ function updateNewScoreBanners() {
     if (sbpEl) sbpEl.textContent = `${dashboardData.score2Diabetes.sistolica || '--'} mmHg`;
   }
 
-  
+
 
   //FIB4
 if (!isNaN(parseFloat(dashboardData.fib4?.value))) {
@@ -1336,4 +1336,3 @@ function updateActivityTab() {
       await supabaseClient.auth.signOut();
       window.location.href = 'login.html';
     });
-

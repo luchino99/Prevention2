@@ -128,9 +128,9 @@ window.addEventListener('message', function(event) {
   import { calcolaEFissaFLI } from './fli-score.js';
   import { calcolaEFissaADAScore } from './ada-score.js';
 
- 
-  const supabaseUrl = 'https://lwuhdgrkaoyvejmzfbtx.supabase.co';
-  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3dWhkZ3JrYW95dmVqbXpmYnR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2NzU1MDcsImV4cCI6MjA2MTI1MTUwN30.1c5iH4PYW-HeigfXkPSgnVK3t02Gv3krSeo7dDSqqsk';
+
+  const supabaseUrl = 'https://nkkaxbmzacaxkwgtfmds.supabase.co';
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ra2F4Ym16YWNheGt3Z3RmbWRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM4Nzc3NzQsImV4cCI6MjA2OTQ1Mzc3NH0.k36sBT3jILmLXc9jcLz843uLDCHrnuvhuMmMvBNzEPo';
   const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
   window.supabaseClient = supabaseClient;
 
@@ -168,8 +168,8 @@ window.addEventListener('message', function(event) {
             await calcolaEFissaSCORE2();
             await calcolaEFissaSCORE2Diabetes();
             await calcolaEFissaFLI();
-            await calcolaEFissaADAScore(); 
-            
+            await calcolaEFissaADAScore();
+
           } catch (err) {
             console.error("❌ Errore calcolo frailty:", err);
           }
@@ -193,7 +193,7 @@ window.addEventListener('message', function(event) {
       });
     });
 
-    
+
 
 
     document.getElementById("logout-btn").addEventListener("click", async () => {
@@ -205,7 +205,7 @@ window.addEventListener('message', function(event) {
 
 
 
-  
+
 
 
 </body>

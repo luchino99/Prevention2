@@ -1,7 +1,7 @@
 // api/salvaAnagrafica.js
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = 'https://lwuhdgrkaoyvejmzfbtx.supabase.co';
+const supabaseUrl = 'https://nkkaxbmzacaxkwgtfmds.supabase.co';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // ⚡ Sicuro!
 const supabase = createClient(supabaseUrl, supabaseKey);
 

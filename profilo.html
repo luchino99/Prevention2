@@ -61,8 +61,8 @@
 
 <script>
   // Configuration constants from chatbot-logic.js
-  const supabaseUrl = 'https://lwuhdgrkaoyvejmzfbtx.supabase.co';
-  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3dWhkZ3JrYW95dmVqbXpmYnR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2NzU1MDcsImV4cCI6MjA2MTI1MTUwN30.1c5iH4PYW-HeigfXkPSgnVK3t02Gv3krSeo7dDSqqsk';
+  const supabaseUrl = 'https://nkkaxbmzacaxkwgtfmds.supabase.co';
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ra2F4Ym16YWNheGt3Z3RmbWRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM4Nzc3NzQsImV4cCI6MjA2OTQ1Mzc3NH0.k36sBT3jILmLXc9jcLz843uLDCHrnuvhuMmMvBNzEPo';
   const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
   // Load user profile data on page load
@@ -133,7 +133,7 @@
 
   function displayUserProfile(userData) {
     const container = document.getElementById("user-data");
-    
+
 
 
     // Basic user info section
@@ -1002,7 +1002,7 @@ pushups: parseInt(document.getElementById("profilo-pushups")?.value),
 squats: parseInt(document.getElementById("profilo-squats")?.value),
 plank: document.getElementById("profilo-plank")?.value,
 step_test: document.getElementById("profilo-step_test")?.value,
-        
+
         // Domande femminili
 eta_menarca: parseInt(document.getElementById("profilo-eta_menarca")?.value) || null,
 contraccettivi: document.getElementById("profilo-contraccettivi")?.value,
