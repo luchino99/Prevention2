@@ -276,6 +276,30 @@ Usa un linguaggio semplice, empatico, ma tecnico. Comunica con tono rassicurante
 
     console.log("📤 Prompt generato:", compiledPrompt);
 
+    if (data.suggerimenti_prioritari) {
+  const prompt = `
+Hai accesso ai dati clinici e anagrafici di un paziente.
+Età: ${data.eta}
+Sesso: ${data.sesso}
+Peso: ${data.peso} kg
+Altezza: ${data.altezza} cm
+Pressione: ${data.pressione_sistolica}/${data.pressione_diastolica}
+Glicemia: ${data.glicemia_valore} mg/dL
+HbA1c: ${data.hba1c} %
+Colesterolo Totale: ${data.colesterolo_totale}
+HDL: ${data.colesterolo_hdl_valore}
+Trigliceridi: ${data.trigliceridi}
+BMI: ${data.bmi}
+Attività fisica: ${data.attivita_fisica}
+Insonnia: ${data.insonnia}
+Stress: ${data.stress}
+
+Genera **3 consigli prioritari** e personalizzati per migliorare la salute generale.
+Ogni consiglio deve essere chiaro, pratico e basato su evidenze cliniche scientificamente approvate dalle linee guida.
+`;
+
+
+
     const response = await openai.chat.completions.create({
       model: 'gpt-4-turbo',
       messages: [
