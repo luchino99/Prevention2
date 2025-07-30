@@ -295,7 +295,7 @@ Usa un linguaggio semplice, empatico, ma tecnico. Comunica con tono rassicurante
 `;
 
     }
-
+ 
     const response = await openai.chat.completions.create({
       model: "gpt-4-turbo",
       messages: [
