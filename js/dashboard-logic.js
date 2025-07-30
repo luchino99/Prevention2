@@ -1217,41 +1217,43 @@ function updateActivityTab() {
       // PREDIMED Chart
       const predimedCtx = document.getElementById('predimed-chart').getContext('2d');
 
-      if (predimedChart) {
-        predimedChart.destroy();
-      }
+if (predimedChart) predimedChart.destroy();
 
-      predimedChart = new Chart(predimedCtx, {
-        type: 'radar',
-        data: {
-          labels: ['Olio oliva', 'Verdura', 'Frutta', 'Cereali', 'Legumi', 'Pesce', 'Vino'],
-          datasets: [{
-            label: 'Punteggio attuale',
-            data: [0, 0, 0, 0, 0, 0, 0],
-            backgroundColor: 'rgba(66, 133, 244, 0.2)',
-            borderColor: '#4285F4',
-            borderWidth: 2,
-            pointBackgroundColor: '#4285F4'
-          }, {
-            label: 'Obiettivo',
-            data: [1, 1, 1, 1, 1, 1, 1],
-            backgroundColor: 'rgba(52, 168, 83, 0.1)',
-            borderColor: '#34A853',
-            borderWidth: 1,
-            borderDash: [5, 5],
-            pointBackgroundColor: '#34A853'
-          }]
-        },
-        options: {
-          scale: {
-            ticks: {
-              beginAtZero: true,
-              max: 1,
-              stepSize: 1
-            }
-          }
-        }
-      });
+predimedChart = new Chart(predimedCtx, {
+  type: 'radar',
+  data: {
+    labels: [
+      'Olio d’oliva', 'Verdure', 'Frutta', 'Carne rossa', 'Burro/panna', 'Bevande zuccherate',
+      'Vino', 'Legumi', 'Pesce', 'Dolci', 'Frutta secca', 'Pasta integrale',
+      'Soffritti', 'Preferenze cucina mediterranea'
+    ],
+    datasets: [{
+      label: 'Risposte utente',
+      data: Array(14).fill(0),
+      backgroundColor: 'rgba(66, 133, 244, 0.2)',
+      borderColor: '#4285F4',
+      borderWidth: 2,
+      pointBackgroundColor: '#4285F4'
+    }, {
+      label: 'Obiettivo',
+      data: Array(14).fill(1),
+      backgroundColor: 'rgba(52, 168, 83, 0.1)',
+      borderColor: '#34A853',
+      borderWidth: 1,
+      borderDash: [5, 5],
+      pointBackgroundColor: '#34A853'
+    }]
+  },
+  options: {
+    scale: {
+      ticks: {
+        beginAtZero: true,
+        max: 1,
+        stepSize: 1
+      }
+    }
+  }
+});
 
       // Macronutrienti Chart
       const macroCtx = document.getElementById('macro-chart').getContext('2d');
