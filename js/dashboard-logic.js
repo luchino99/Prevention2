@@ -1053,20 +1053,16 @@ function updateScreeningTab() {
 }
 
 function updateLifestyleTab() {
-  if (predimedChart) {
-    const predimedData = [
-      userData.predimed_1 === 'sì' ? 1 : 0,
-      userData.predimed_2 === 'sì' ? 1 : 0,
-      userData.predimed_3 === 'sì' ? 1 : 0,
-      userData.predimed_4 === 'sì' ? 1 : 0,
-      userData.predimed_5 === 'sì' ? 1 : 0,
-      userData.predimed_6 === 'sì' ? 1 : 0,
-      userData.predimed_7 === 'sì' ? 1 : 0
-    ];
-
-    predimedChart.data.datasets[0].data = predimedData;
-    predimedChart.update();
+if (predimedChart) {
+  const predimedData = [];
+  for (let i = 1; i <= 14; i++) {
+    const val = (userData[`predimed_${i}`] || '').toLowerCase();
+    predimedData.push(['sì', 'si', '1', 'true'].includes(val) ? 1 : 0);
   }
+  predimedChart.data.datasets[0].data = predimedData;
+  predimedChart.update();
+}
+
 
   const predimedScoreEl = document.getElementById('predimed-score');
   const predimedAdherenceEl = document.getElementById('predimed-adherence');
