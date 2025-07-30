@@ -470,22 +470,25 @@
               </div>
             </div>
           </div>
-          <div class="p-4 bg-gray-50 rounded-lg">
-            <h3 class="font-semibold mb-3">Suggerimenti Personalizzati</h3>
-            <div class="space-y-3">
-              <div class="p-3  rounded-lg border-l-4 border-blue-500">
-                <h4 class="font-medium">Obiettivo Principale</h4>
-                <p class="text-sm text-gray-600">Aumentare l'attività aerobica a 150 min/settimana</p>
-              </div>
-              <div class="p-3  rounded-lg border-l-4 border-green-500">
-                <h4 class="font-medium">Tipo di Allenamento</h4>
-                <p class="text-sm text-gray-600">Combinare cardio (60%) e forza (40%)</p>
-              </div>
-              <div class="p-3  rounded-lg border-l-4 border-yellow-500">
-                <h4 class="font-medium">Progressione</h4>
-                <p class="text-sm text-gray-600">Aumentare di 10 min/settimana fino a 150 min</p>
-              </div>
-            </div>
+<!-- Suggerimenti Prioritari -->
+<div class="card p-4">
+  <h2 class="text-lg font-bold mb-3">Suggerimenti Prioritari</h2>
+  <p class="text-sm text-gray-600 mb-4">
+    Ottieni tre consigli personalizzati basati sui tuoi dati clinici e sul tuo stile di vita.
+  </p>
+
+  <button
+    id="btn-avvia-suggerimenti"
+    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold transition"
+  >
+    🧠 Genera consigli personalizzati
+  </button>
+
+  <div id="contenitore-suggerimenti-ai" class="mt-4 space-y-3 hidden">
+    <p class="text-gray-500 text-sm italic">Analisi in corso...</p>
+  </div>
+</div>
+
           </div>
         </div>
       </div>
