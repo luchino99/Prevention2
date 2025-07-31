@@ -1341,20 +1341,16 @@ predimedChart = new Chart(predimedCtx, {
         callbacks: {
 label: function (context) {
   const index = context.dataIndex;
-  const datasetLabel = context.dataset.label;
-  const value = context.raw;
+  const valueUtente = predimedChart.data.datasets[0].data[index]; // dataset utente sempre al primo posto
+  const obiettivo = predimedTooltips[index];
 
-  // Risposta utente
-  const rispostaUtente = value === 1
+  const rispostaUtente = valueUtente === 1
     ? 'Risposta utente: Lo faccio'
     : 'Risposta utente: Non lo faccio, ma dovrei';
 
-  // Obiettivo per ogni punto
-  const obiettivo = `Obiettivo: ${predimedTooltips[index]}`;
-
-  // Mostra entrambi sempre (indipendentemente dal dataset)
-  return [rispostaUtente, obiettivo];
+  return [rispostaUtente, `Obiettivo: ${obiettivo}`];
 }
+
 
         }
       },
