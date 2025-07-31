@@ -783,6 +783,61 @@ document.getElementById('btn-avvia-screening-ai')?.addEventListener('click', asy
   }
 });
 
+document.getElementById('btn-consigli-benessere')?.addEventListener('click', async () => {
+  const container = document.getElementById('contenitore-consigli-benessere');
+  container.classList.remove('hidden');
+  container.innerHTML = '<p class="text-gray-500 text-sm italic">🧠 Generazione consigli in corso... Attendere qualche secondo.</p>';
+
+  try {
+    const response = await fetch("https://prevention2.vercel.app/api/openai", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        consigli_benessere: true,
+        stress: userData.stress || 5,
+        umore: userData.umore || 5,
+        sonno_qualita: userData.sonno_qualita || 5,
+        prompt: `
+Sei un assistente esperto in psicologia del benessere. L'utente ha riportato i seguenti livelli:
+- Stress: ${userData.stress || 5}/10
+- Umore: ${userData.umore || 5}/10
+- Qualità del sonno: ${userData.sonno_qualita || 5}/10
+
+Genera 3 consigli scientificamente validati e pratici, uno per ciascuno di questi ambiti, per aiutare a migliorare:
+1. Il livello di stress
+2. L'umore generale
+3. La qualità del sonno
+
+Ogni consiglio deve essere chiaro, breve e con un tono incoraggiante.
+        `
+      })
+    });
+
+    const data = await response.json();
+    const suggerimenti = data.suggerimenti;
+
+    if (!suggerimenti) throw new Error("Nessuna risposta dal modello.");
+
+    // Mostra i consigli in blocchi separati
+    const blocchi = suggerimenti
+      .split('\n')
+      .filter(line => line.trim() !== '')
+      .map(text => `
+        <div class="p-3 bg-purple-100 border-l-4 border-purple-600 rounded text-sm text-gray-800 shadow-sm">
+          ${text.trim()}
+        </div>
+      `)
+      .join('');
+
+    container.innerHTML = blocchi;
+
+  } catch (error) {
+    console.error("❌ Errore durante la generazione dei consigli benessere:", error);
+    container.innerHTML = `<p class="text-red-600 text-sm">❌ Errore durante la generazione. Riprova più tardi.</p>`;
+  }
+});
+
+
 
 // Funzioni di aggiornamento UI
 function updateHealthSummary() {
