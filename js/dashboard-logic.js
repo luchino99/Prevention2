@@ -1115,13 +1115,22 @@ function updateScreeningTab() {
 }
 
 function updateLifestyleTab() {
-if (predimedChart) {
-const predimedData = Array.from({ length: 14 }, (_, i) => {
-  const key = `predimed_${i + 1}`;
-  return userData[key] === 'sì' ? 1 : 0;
-});
+  if (predimedChart) {
+    // Prepara i dati da predimed_1 a predimed_14
+    const predimedData = Array.from({ length: 14 }, (_, i) => {
+      const key = `predimed_${i + 1}`;
+      const risposta = String(userData[key] || '').toLowerCase();
+      return ['sì', 'si', '1', 'true'].includes(risposta) ? 1 : 0;
+    });
 
+    console.log("📊 Dati PREDIMED per radar chart:", predimedData);
 
+    // Aggiorna i dati del grafico
+    predimedChart.data.datasets[0].data = predimedData;
+    predimedChart.update();
+  }
+
+  // Aggiorna testo punteggio e aderenza
   const predimedScoreEl = document.getElementById('predimed-score');
   const predimedAdherenceEl = document.getElementById('predimed-adherence');
 
@@ -1133,23 +1142,28 @@ const predimedData = Array.from({ length: 14 }, (_, i) => {
     predimedAdherenceEl.innerHTML = `Aderenza alla dieta mediterranea: <span class="font-medium">${dashboardData.predimed.adherence}</span>`;
   }
 
+  // Aggiorna barre di benessere psicologico
   const stressBar = document.querySelector('#tab-stile-vita .bg-yellow-500');
   if (stressBar) {
-    stressBar.style.width = dashboardData.lifestyle.stress.percentage + '%';
-    stressBar.className = `h-2 rounded-full ${dashboardData.lifestyle.stress.percentage > 70 ? 'bg-red-500' : dashboardData.lifestyle.stress.percentage > 40 ? 'bg-yellow-500' : 'bg-green-500'}`;
+    const pct = dashboardData.lifestyle.stress.percentage;
+    stressBar.style.width = pct + '%';
+    stressBar.className = `h-2 rounded-full ${pct > 70 ? 'bg-red-500' : pct > 40 ? 'bg-yellow-500' : 'bg-green-500'}`;
   }
 
   const sleepBar = document.querySelector('#tab-stile-vita .bg-red-500');
   if (sleepBar) {
-    sleepBar.style.width = dashboardData.lifestyle.sleep.percentage + '%';
-    sleepBar.className = `h-2 rounded-full ${dashboardData.lifestyle.sleep.percentage < 40 ? 'bg-red-500' : dashboardData.lifestyle.sleep.percentage < 70 ? 'bg-yellow-500' : 'bg-green-500'}`;
+    const pct = dashboardData.lifestyle.sleep.percentage;
+    sleepBar.style.width = pct + '%';
+    sleepBar.className = `h-2 rounded-full ${pct < 40 ? 'bg-red-500' : pct < 70 ? 'bg-yellow-500' : 'bg-green-500'}`;
   }
 
   const moodBar = document.querySelector('#tab-stile-vita .bg-green-500');
   if (moodBar) {
-    moodBar.style.width = dashboardData.lifestyle.mood.percentage + '%';
+    const pct = dashboardData.lifestyle.mood.percentage;
+    moodBar.style.width = pct + '%';
   }
 }
+
 
 function updateNutritionTab() {
   const nutritionDetails = document.querySelector('#tab-nutritional .space-y-3');
