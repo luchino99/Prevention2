@@ -535,24 +535,20 @@ function setupLifestyleSliders() {
   valoreUmore.textContent = umoreSlider.value;
   valoreSonno.textContent = sonnoSlider.value;
 
-  const salvaValore = async (campo, valore) => {
-    try {
-      const { error } = await supabaseClient
-        .from('anagrafica_utenti')
-        .update({ [campo]: valore })
-        .eq('email', userData.email);
+const salvaValore = async (campo, valore) => {
+  try {
+    console.log(`📤 Tentativo di salvataggio di ${campo}:`, valore);
+    const { error } = await supabaseClient
+      .from('anagrafica_utenti')
+      .update({ [campo]: valore })
+      .eq('email', userData.email);
 
-      if (error) throw error;
-      console.log(`✅ ${campo} salvato:`, valore);
-      userData[campo] = valore;
-
-      analyzeLifestyle();
-      updateLifestyleTab();
-
-    } catch (err) {
-      console.error(`❌ Errore salvataggio ${campo}:`, err.message);
-    }
-  };
+    if (error) throw error;
+    console.log(`✅ ${campo} salvato con successo`);
+  } catch (err) {
+    console.error(`❌ Errore salvataggio ${campo}:`, err.message);
+  }
+};
 
 // Aggiungi listener real-time + salvataggio
 stressSlider.addEventListener('input', async () => {
