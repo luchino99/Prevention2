@@ -816,18 +816,18 @@ Sei un assistente esperto in psicologia del benessere. L'utente ha riportato i s
 - Umore: ${userData.umore || 5}/10
 - Qualità del sonno: ${userData.sonno_qualita || 5}/10
 
-Rispondi solo in codice HTML. Genera 3 consigli scientificamente validati e pratici per:
+Rispondi solo in codice HTML. Genera 3 consigli scientificamente validati e pratici, basandoti sui dati inseriti dall'utente, per:
 
 1. Gestione dello stress
 2. Miglioramento dell’umore
 3. Qualità del sonno
 
 Formato obbligatorio:
-<h2>Gestione dello stress</h2>
+<strong>Gestione dello stress (${userData.stress || 5}/10)</strong>
 <p>...consiglio breve qui...</p>
-<h2>Miglioramento dell'umore</h2>
+<strong>Miglioramento dell'umore (${userData.umore || 5}/10)</strong>
 <p>...consiglio breve qui...</p>
-<h2>Qualità del sonno</h2>
+<strong>Qualità del sonno (${userData.sonno_qualita || 5}/10)</strong>
 <p>...consiglio breve qui...</p>
 
 NON scrivere alcuna introduzione o testo extra al di fuori dell’HTML. Ogni sezione verrà renderizzata come blocco indipendente.
