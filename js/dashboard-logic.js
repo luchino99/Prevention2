@@ -1309,7 +1309,6 @@ function initializeCharts() {
     'Preferire una cucina tradizionale mediterranea'
   ];
 
-  // Costruiamo i dati dinamici dalle risposte
   const risposteUtente = Array.from({ length: 14 }, (_, i) => {
     const key = `predimed_${i + 1}`;
     const risposta = String(userData[key] || '').toLowerCase();
@@ -1328,8 +1327,8 @@ function initializeCharts() {
           borderColor: '#4285F4',
           borderWidth: 2,
           pointBackgroundColor: '#4285F4',
-          pointRadius: risposteUtente.map(val => val === 0 ? 4 : 6),
-          pointHoverRadius: 8
+          pointRadius: 5,
+          pointHoverRadius: 7
         },
         {
           label: 'Obiettivo',
@@ -1338,8 +1337,7 @@ function initializeCharts() {
           borderColor: '#34A853',
           borderWidth: 1,
           borderDash: [5, 5],
-          pointBackgroundColor: '#34A853',
-          pointRadius: 0 // Nascondiamo i punti obiettivo per non confondere
+          pointRadius: 0 // non necessario per tooltip
         }
       ]
     },
@@ -1356,11 +1354,11 @@ function initializeCharts() {
           callbacks: {
             label: function (context) {
               const index = context.dataIndex;
-              const value = context.raw;
               const datasetLabel = context.dataset.label;
 
-              if (datasetLabel !== 'Risposte utente') return '';
+              if (datasetLabel !== 'Risposte utente') return null;
 
+              const value = context.raw;
               const rispostaUtente = value === 1
                 ? 'Risposta utente: Lo faccio'
                 : 'Risposta utente: Non lo faccio, ma dovrei';
