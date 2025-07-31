@@ -1335,8 +1335,8 @@ function initializeCharts() {
           borderWidth: 2,
           pointBackgroundColor: '#4285F4',
           pointRadius: 5,
-          pointHoverRadius: 9,
-          pointHitRadius: 50
+          pointHoverRadius: 80,
+          pointHitRadius: 100
         },
         {
           label: 'Obiettivo',
