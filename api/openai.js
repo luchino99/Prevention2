@@ -109,26 +109,25 @@ Per ogni screening includi:
   });
 }
 
-  if (body.consigli_benessere) {
-  const prompt = body.prompt || `
-    Fornisci tre consigli pratici per migliorare il benessere psicologico dell'utente.
-    Uno per ridurre lo stress (livello: ${body.stress}/10),
-    uno per migliorare l'umore (livello: ${body.umore}/10),
-    uno per la qualità del sonno (livello: ${body.sonno_qualita}/10).
-    I consigli devono essere chiari, basati su evidenze scientifiche e facili da seguire.
-  `;
+  if (data.consigli_benessere) {
+  const prompt = data.prompt || `
+Fornisci tre consigli pratici per migliorare il benessere psicologico dell'utente.
+- Uno per ridurre lo stress (livello: ${data.stress}/10)
+- Uno per migliorare l'umore (livello: ${data.umore}/10)
+- Uno per la qualità del sonno (livello: ${data.sonno_qualita}/10)
+I consigli devono essere brevi, chiari, pratici e basati su evidenze scientifiche.
+`;
 
-  const completion = await openai.createChatCompletion({
-    model: "gpt-4",
+  const response = await openai.chat.completions.create({
+    model: "gpt-4-turbo",
     messages: [
-      { role: "system", content: "Sei un esperto di benessere psicologico basato su evidenze scientifiche." },
+      { role: "system", content: "Sei un esperto in benessere psicologico e salute mentale basata su evidenze scientifiche." },
       { role: "user", content: prompt }
     ],
-    temperature: 0.7,
-    max_tokens: 500
+    temperature: 0.7
   });
 
-  const suggerimenti = completion.data.choices[0].message.content;
+  const suggerimenti = response?.choices?.[0]?.message?.content;
   return res.status(200).json({ suggerimenti });
 }
 
