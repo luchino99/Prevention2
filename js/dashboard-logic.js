@@ -1116,14 +1116,10 @@ function updateScreeningTab() {
 
 function updateLifestyleTab() {
 if (predimedChart) {
-  const predimedData = [];
-  for (let i = 1; i <= 14; i++) {
-    const val = (userData[`predimed_${i}`] || '').toLowerCase();
-    predimedData.push(['sì', 'si', '1', 'true'].includes(val) ? 1 : 0);
-  }
-  predimedChart.data.datasets[0].data = predimedData;
-  predimedChart.update();
-}
+const predimedData = Array.from({ length: 14 }, (_, i) => {
+  const key = `predimed_${i + 1}`;
+  return userData[key] === 'sì' ? 1 : 0;
+});
 
 
   const predimedScoreEl = document.getElementById('predimed-score');
@@ -1280,11 +1276,11 @@ if (predimedChart) predimedChart.destroy();
 predimedChart = new Chart(predimedCtx, {
   type: 'radar',
   data: {
-    labels: [
-      'Olio d’oliva', 'Verdure', 'Frutta', 'Carne rossa', 'Burro/panna', 'Bevande zuccherate',
-      'Vino', 'Legumi', 'Pesce', 'Dolci', 'Frutta secca', 'Pasta integrale',
-      'Soffritti', 'Preferenze cucina mediterranea'
-    ],
+labels: [
+  'Olio d’oliva', 'Verdure', 'Frutta', 'Carne rossa', 'Burro/panna', 'Bevande zuccherate',
+  'Vino', 'Legumi', 'Pesce', 'Dolci', 'Frutta secca', 'Pasta integrale',
+  'Soffritti', 'Cucina mediterranea'
+],
     datasets: [{
       label: 'Risposte utente',
       data: Array(14).fill(0),
