@@ -1283,7 +1283,6 @@ function updateActivityTab() {
     // Inizializza i grafici
 function initializeCharts() {
   const predimedCtx = document.getElementById('predimed-chart').getContext('2d');
-
   if (predimedChart) predimedChart.destroy();
 
   const predimedLabels = [
@@ -1309,82 +1308,64 @@ function initializeCharts() {
     'Preferire una cucina tradizionale mediterranea'
   ];
 
-  // Calcolo risposte come 0 o 1, ma manteniamo anche i valori raw per tooltip
   const predimedRawAnswers = [];
   const predimedNumericalAnswers = [];
 
   for (let i = 0; i < 14; i++) {
     const key = `predimed_${i + 1}`;
     const risposta = String(userData[key] || '').toLowerCase();
-
-    predimedRawAnswers.push(risposta); // 'sì', 'no', etc.
-
-    const valoreNumerico = ['sì', 'si', '1', 'true'].includes(risposta) ? 1 : 0;
-    predimedNumericalAnswers.push(valoreNumerico);
+    predimedRawAnswers.push(risposta);
+    predimedNumericalAnswers.push(['sì', 'si', '1', 'true'].includes(risposta) ? 1 : 0);
   }
 
   predimedChart = new Chart(predimedCtx, {
     type: 'radar',
     data: {
       labels: predimedLabels,
-      datasets: [
-        {
-          label: 'Risposte utente',
-          data: predimedNumericalAnswers,
-          backgroundColor: 'rgba(66, 133, 244, 0.2)',
-          borderColor: '#4285F4',
-          borderWidth: 2,
-          pointBackgroundColor: '#4285F4',
-          pointRadius: 5,
-          pointHoverRadius: 7,
-          pointHitRadius: 15 // più facile interazione
-        },
-        {
-          label: 'Obiettivo',
-          data: Array(14).fill(1),
-          backgroundColor: 'rgba(52, 168, 83, 0.1)',
-          borderColor: '#34A853',
-          borderWidth: 1,
-          borderDash: [5, 5],
-          pointRadius: 0
-        }
-      ]
+      datasets: [{
+        label: 'Risposte utente',
+        data: predimedNumericalAnswers,
+        backgroundColor: 'rgba(66, 133, 244, 0.2)',
+        borderColor: '#4285F4',
+        borderWidth: 2,
+        pointBackgroundColor: '#4285F4',
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        pointHitRadius: 20
+      }]
     },
     options: {
       responsive: true,
       interaction: {
         mode: 'nearest',
         axis: 'xy',
-        intersect: true
+        intersect: false
       },
       plugins: {
         tooltip: {
-          enabled: true,
           callbacks: {
             label: function (context) {
-              const index = context.dataIndex;
-              const risposta = predimedRawAnswers[index];
-              const obiettivo = predimedTooltips[index];
+              const i = context.dataIndex;
+              const risposta = predimedRawAnswers[i];
+              const obiettivo = predimedTooltips[i];
 
-              let messaggioRisposta = 'Risposta utente: ';
+              let rispostaTesto;
               if (['sì', 'si', '1', 'true'].includes(risposta)) {
-                messaggioRisposta += 'Lo faccio';
+                rispostaTesto = 'Risposta utente: Lo faccio';
               } else if (['no', '0', 'false'].includes(risposta)) {
-                messaggioRisposta += 'Non lo faccio, ma dovrei';
+                rispostaTesto = 'Risposta utente: Non lo faccio, ma dovrei';
               } else {
-                messaggioRisposta += 'Non disponibile';
+                rispostaTesto = 'Risposta utente: Non disponibile';
               }
 
-              return [messaggioRisposta, `Obiettivo: ${obiettivo}`];
+              return [rispostaTesto, `Obiettivo: ${obiettivo}`];
             }
           }
         },
         legend: {
           labels: {
             usePointStyle: true,
-            font: {
-              size: 13
-            }
+            font: { size: 13 }
           }
         }
       },
@@ -1396,9 +1377,7 @@ function initializeCharts() {
           display: false
         },
         pointLabels: {
-          font: {
-            size: 12
-          }
+          font: { size: 12 }
         }
       }
     }
