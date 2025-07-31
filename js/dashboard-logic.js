@@ -1334,7 +1334,7 @@ function initializeCharts() {
   borderColor: '#4285F4',
   borderWidth: 2,
   pointBackgroundColor: '#4285F4',
-  pointRadius: predimedNumericalAnswers.map(val => val === 1 ? 5 : 0), // mostro punto solo se lo fa
+  pointRadius: 25
   pointHoverRadius: 8,
   pointHitRadius: predimedNumericalAnswers.map(() => 25), // grande hit radius per tutti
   pointStyle: 'circle'
