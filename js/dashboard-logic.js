@@ -1367,7 +1367,9 @@ plugins: {
   }
 }
 
-});}
+});
+
+}
 
 
     // Setup delle tabs
