@@ -369,7 +369,7 @@ body {
   content: attr(data-tooltip);
   position: absolute;
   bottom: 125%;
-  left: 50px; /* margine sinistro */
+  left: 20px; /* margine sinistro */
   transform: translateX(0); /* rimuove il centraggio */
   background: rgba(30, 41, 59, 0.9);
   color: #fff;

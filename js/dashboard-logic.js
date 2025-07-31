@@ -816,13 +816,23 @@ Sei un assistente esperto in psicologia del benessere. L'utente ha riportato i s
 - Umore: ${userData.umore || 5}/10
 - Qualità del sonno: ${userData.sonno_qualita || 5}/10
 
-Genera 3 consigli scientificamente validati e pratici, uno per ciascuno di questi ambiti, per aiutare a migliorare:
-1. Il livello di stress
-2. L'umore generale
-3. La qualità del sonno
+Rispondi solo in codice HTML. Genera 3 consigli scientificamente validati e pratici per:
 
-Ogni consiglio deve essere chiaro, breve e con un tono incoraggiante.
-        `
+1. Gestione dello stress
+2. Miglioramento dell’umore
+3. Qualità del sonno
+
+Formato obbligatorio:
+<h2>Gestione dello stress</h2>
+<p>...consiglio breve qui...</p>
+<h2>Miglioramento dell'umore</h2>
+<p>...consiglio breve qui...</p>
+<h2>Qualità del sonno</h2>
+<p>...consiglio breve qui...</p>
+
+NON scrivere alcuna introduzione o testo extra al di fuori dell’HTML. Ogni sezione verrà renderizzata come blocco indipendente.
+`
+
       })
     });
 
@@ -831,25 +841,34 @@ Ogni consiglio deve essere chiaro, breve e con un tono incoraggiante.
 
     if (!suggerimenti) throw new Error("Nessuna risposta dal modello.");
 
-    // Mostra i consigli in blocchi separati
-    const blocchi = suggerimenti
-      .split('\n')
-      .filter(line => line.trim() !== '')
-      .map(text => `
-        <div class="p-3 bg-purple-100 border-l-4 border-purple-600 rounded text-sm text-gray-800 shadow-sm">
-          ${text.trim()}
-        </div>
-      `)
-      .join('');
+    // Parsing della risposta HTML strutturata
+    const rawHTML = suggerimenti.trim();
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = rawHTML;
 
-    container.innerHTML = blocchi;
+    const sections = tempDiv.querySelectorAll('h2');
+    const htmlFinale = Array.from(sections).map((h2, index) => {
+      const p = h2.nextElementSibling;
+      const colori = ['bg-indigo-100', 'bg-green-100', 'bg-yellow-100'];
+      const bordi = ['border-indigo-400', 'border-green-400', 'border-yellow-400'];
+
+      return `
+        <div class="w-full md:w-1/3 p-3">
+          <div class="p-4 rounded shadow ${colori[index]} border-l-4 ${bordi[index]} h-full">
+            ${h2.outerHTML}
+            ${p?.outerHTML || ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    container.innerHTML = `<div class="flex flex-col md:flex-row -mx-3">${htmlFinale}</div>`;
 
   } catch (error) {
     console.error("❌ Errore durante la generazione dei consigli benessere:", error);
     container.innerHTML = `<p class="text-red-600 text-sm">❌ Errore durante la generazione. Riprova più tardi.</p>`;
   }
 });
-
 
 
 // Funzioni di aggiornamento UI
