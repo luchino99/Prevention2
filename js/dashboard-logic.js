@@ -1346,7 +1346,7 @@ function initializeCharts() {
           borderColor: '#34A853',
           borderWidth: 1,
           borderDash: [5, 5],
-          pointRadius: 0 // invisibile ma serve per confronto
+          pointRadius: 20 // invisibile ma serve per confronto
         }
       ]
     },
