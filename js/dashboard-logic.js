@@ -1336,7 +1336,7 @@ function initializeCharts() {
   pointBackgroundColor: '#4285F4',
   pointRadius: 5,
   pointHoverRadius: 8,
-  pointHitRadius: 8
+  pointHitRadius: 8,
   pointStyle: 'circle'
 },
         {
