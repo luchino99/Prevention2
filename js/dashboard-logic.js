@@ -1309,11 +1309,19 @@ function initializeCharts() {
     'Preferire una cucina tradizionale mediterranea'
   ];
 
-  const risposteUtente = Array.from({ length: 14 }, (_, i) => {
+  // Calcolo risposte come 0 o 1, ma manteniamo anche i valori raw per tooltip
+  const predimedRawAnswers = [];
+  const predimedNumericalAnswers = [];
+
+  for (let i = 0; i < 14; i++) {
     const key = `predimed_${i + 1}`;
     const risposta = String(userData[key] || '').toLowerCase();
-    return ['sì', 'si', '1', 'true'].includes(risposta) ? 1 : 0;
-  });
+
+    predimedRawAnswers.push(risposta); // 'sì', 'no', etc.
+
+    const valoreNumerico = ['sì', 'si', '1', 'true'].includes(risposta) ? 1 : 0;
+    predimedNumericalAnswers.push(valoreNumerico);
+  }
 
   predimedChart = new Chart(predimedCtx, {
     type: 'radar',
@@ -1322,13 +1330,14 @@ function initializeCharts() {
       datasets: [
         {
           label: 'Risposte utente',
-          data: risposteUtente,
+          data: predimedNumericalAnswers,
           backgroundColor: 'rgba(66, 133, 244, 0.2)',
           borderColor: '#4285F4',
           borderWidth: 2,
           pointBackgroundColor: '#4285F4',
           pointRadius: 5,
-          pointHoverRadius: 7
+          pointHoverRadius: 7,
+          pointHitRadius: 15 // più facile interazione
         },
         {
           label: 'Obiettivo',
@@ -1337,7 +1346,7 @@ function initializeCharts() {
           borderColor: '#34A853',
           borderWidth: 1,
           borderDash: [5, 5],
-          pointRadius: 0 // non necessario per tooltip
+          pointRadius: 0
         }
       ]
     },
@@ -1354,17 +1363,19 @@ function initializeCharts() {
           callbacks: {
             label: function (context) {
               const index = context.dataIndex;
-              const datasetLabel = context.dataset.label;
+              const risposta = predimedRawAnswers[index];
+              const obiettivo = predimedTooltips[index];
 
-              if (datasetLabel !== 'Risposte utente') return null;
+              let messaggioRisposta = 'Risposta utente: ';
+              if (['sì', 'si', '1', 'true'].includes(risposta)) {
+                messaggioRisposta += 'Lo faccio';
+              } else if (['no', '0', 'false'].includes(risposta)) {
+                messaggioRisposta += 'Non lo faccio, ma dovrei';
+              } else {
+                messaggioRisposta += 'Non disponibile';
+              }
 
-              const value = context.raw;
-              const rispostaUtente = value === 1
-                ? 'Risposta utente: Lo faccio'
-                : 'Risposta utente: Non lo faccio, ma dovrei';
-
-              const obiettivo = `Obiettivo: ${predimedTooltips[index]}`;
-              return [rispostaUtente, obiettivo];
+              return [messaggioRisposta, `Obiettivo: ${obiettivo}`];
             }
           }
         },
@@ -1393,6 +1404,7 @@ function initializeCharts() {
     }
   });
 }
+
 
 
 
