@@ -1282,20 +1282,16 @@ function updateActivityTab() {
 
     // Inizializza i grafici
 function initializeCharts() {
-  // === Inizializzazione grafico PREDIMED ===
   const predimedCtx = document.getElementById('predimed-chart').getContext('2d');
 
-  // Distrugge grafico precedente se esistente
   if (predimedChart) predimedChart.destroy();
 
-  // Etichette delle domande Predimed
   const predimedLabels = [
     'Olio d’oliva', 'Verdure', 'Frutta', 'Carne rossa', 'Burro/panna', 'Bevande zuccherate',
     'Vino', 'Legumi', 'Pesce', 'Dolci', 'Frutta secca', 'Pasta integrale',
     'Soffritti', 'Cucina mediterranea'
   ];
 
-  // Obiettivi corrispondenti per tooltip
   const predimedTooltips = [
     'Usare olio extravergine d’oliva come principale fonte di grassi',
     'Consumare verdure almeno 2 volte al giorno',
@@ -1313,7 +1309,13 @@ function initializeCharts() {
     'Preferire una cucina tradizionale mediterranea'
   ];
 
-  // Crea il grafico radar
+  // Costruiamo i dati dinamici dalle risposte
+  const risposteUtente = Array.from({ length: 14 }, (_, i) => {
+    const key = `predimed_${i + 1}`;
+    const risposta = String(userData[key] || '').toLowerCase();
+    return ['sì', 'si', '1', 'true'].includes(risposta) ? 1 : 0;
+  });
+
   predimedChart = new Chart(predimedCtx, {
     type: 'radar',
     data: {
@@ -1321,11 +1323,13 @@ function initializeCharts() {
       datasets: [
         {
           label: 'Risposte utente',
-          data: Array(14).fill(0), // aggiornato dinamicamente da updateLifestyleTab()
+          data: risposteUtente,
           backgroundColor: 'rgba(66, 133, 244, 0.2)',
           borderColor: '#4285F4',
           borderWidth: 2,
-          pointBackgroundColor: '#4285F4'
+          pointBackgroundColor: '#4285F4',
+          pointRadius: risposteUtente.map(val => val === 0 ? 4 : 6),
+          pointHoverRadius: 8
         },
         {
           label: 'Obiettivo',
@@ -1334,7 +1338,8 @@ function initializeCharts() {
           borderColor: '#34A853',
           borderWidth: 1,
           borderDash: [5, 5],
-          pointBackgroundColor: '#34A853'
+          pointBackgroundColor: '#34A853',
+          pointRadius: 0 // Nascondiamo i punti obiettivo per non confondere
         }
       ]
     },
@@ -1343,7 +1348,7 @@ function initializeCharts() {
       interaction: {
         mode: 'nearest',
         axis: 'xy',
-        intersect: false  // ✅ Mostra tooltip anche su valore 0
+        intersect: true
       },
       plugins: {
         tooltip: {
@@ -1354,17 +1359,14 @@ function initializeCharts() {
               const value = context.raw;
               const datasetLabel = context.dataset.label;
 
-              if (datasetLabel === 'Risposte utente') {
-                const rispostaUtente = value === 1
-                  ? 'Risposta utente: Lo faccio'
-                  : 'Risposta utente: Non lo faccio, ma dovrei';
+              if (datasetLabel !== 'Risposte utente') return '';
 
-                const obiettivo = `Obiettivo: ${predimedTooltips[index]}`;
-                return [rispostaUtente, obiettivo];
-              }
+              const rispostaUtente = value === 1
+                ? 'Risposta utente: Lo faccio'
+                : 'Risposta utente: Non lo faccio, ma dovrei';
 
-              // ❌ Nessun tooltip per il dataset "Obiettivo"
-              return '';
+              const obiettivo = `Obiettivo: ${predimedTooltips[index]}`;
+              return [rispostaUtente, obiettivo];
             }
           }
         },
@@ -1382,7 +1384,7 @@ function initializeCharts() {
           beginAtZero: true,
           max: 1,
           stepSize: 1,
-          display: false // Nasconde scala numerica
+          display: false
         },
         pointLabels: {
           font: {
