@@ -109,27 +109,33 @@ Per ogni screening includi:
   });
 }
 
-  if (data.consigli_benessere) {
+if (data.consigli_benessere) {
+  if (!data.stress || !data.umore || !data.sonno_qualita) {
+    return res.status(400).json({ errore: "Dati mancanti per generare i consigli." });
+  }
+
   const prompt = data.prompt || `
 Fornisci tre consigli pratici per migliorare il benessere psicologico dell'utente.
 - Uno per ridurre lo stress (livello: ${data.stress}/10)
 - Uno per migliorare l'umore (livello: ${data.umore}/10)
 - Uno per la qualità del sonno (livello: ${data.sonno_qualita}/10)
-I consigli devono essere brevi, chiari, pratici e basati su evidenze scientifiche.
+I consigli devono essere chiari, applicabili nella vita quotidiana e basati su evidenze scientifiche.
 `;
 
   const response = await openai.chat.completions.create({
     model: "gpt-4-turbo",
     messages: [
-      { role: "system", content: "Sei un esperto in benessere psicologico e salute mentale basata su evidenze scientifiche." },
+      { role: "system", content: "Sei un esperto in benessere psicologico." },
       { role: "user", content: prompt }
     ],
     temperature: 0.7
   });
 
   const suggerimenti = response?.choices?.[0]?.message?.content;
-  return res.status(200).json({ suggerimenti });
+
+  return res.status(200).json({ suggerimenti: suggerimenti || "⚠️ Nessun suggerimento generato." });
 }
+
 
 
     // 2. FOLLOW-UP CONTESTUALE
