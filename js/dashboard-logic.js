@@ -1341,15 +1341,25 @@ predimedChart = new Chart(predimedCtx, {
         callbacks: {
 label: function (context) {
   const index = context.dataIndex;
-  const valueUtente = predimedChart.data.datasets[0].data[index]; // dataset utente sempre al primo posto
-  const obiettivo = predimedTooltips[index];
+  const datasetLabel = context.dataset.label;
 
-  const rispostaUtente = valueUtente === 1
+  // Calcola la risposta dell'utente
+  const userValue = predimedChart.data.datasets[0].data[index];
+  const rispostaUtente = userValue === 1
     ? 'Risposta utente: Lo faccio'
     : 'Risposta utente: Non lo faccio, ma dovrei';
 
-  return [rispostaUtente, `Obiettivo: ${obiettivo}`];
+  const obiettivo = `Obiettivo: ${predimedTooltips[index]}`;
+
+  if (datasetLabel === 'Risposte utente') {
+    // Mostra entrambi i messaggi solo per "Risposte utente"
+    return [rispostaUtente, obiettivo];
+  }
+
+  // Non mostra nulla per il dataset "Obiettivo"
+  return null;
 }
+
 
 
         }
