@@ -1283,6 +1283,7 @@ function updateActivityTab() {
     // Inizializza i grafici
 function initializeCharts() {
   const predimedCtx = document.getElementById('predimed-chart').getContext('2d');
+
   if (predimedChart) predimedChart.destroy();
 
   const predimedLabels = [
@@ -1331,25 +1332,25 @@ function initializeCharts() {
         pointBackgroundColor: '#4285F4',
         pointRadius: 5,
         pointHoverRadius: 7,
-        pointHitRadius: 20
+        pointHitRadius: 15
       }]
     },
     options: {
       responsive: true,
       interaction: {
-        mode: 'nearest',
-        axis: 'xy',
-        intersect: false
+        mode: 'nearest',       // Tooltip solo vicino al puntino
+        intersect: true        // Attiva solo se stai passando davvero sopra al punto
       },
       plugins: {
         tooltip: {
+          enabled: true,
           callbacks: {
             label: function (context) {
               const i = context.dataIndex;
               const risposta = predimedRawAnswers[i];
               const obiettivo = predimedTooltips[i];
 
-              let rispostaTesto;
+              let rispostaTesto = '';
               if (['sì', 'si', '1', 'true'].includes(risposta)) {
                 rispostaTesto = 'Risposta utente: Lo faccio';
               } else if (['no', '0', 'false'].includes(risposta)) {
@@ -1365,7 +1366,9 @@ function initializeCharts() {
         legend: {
           labels: {
             usePointStyle: true,
-            font: { size: 13 }
+            font: {
+              size: 13
+            }
           }
         }
       },
@@ -1377,12 +1380,15 @@ function initializeCharts() {
           display: false
         },
         pointLabels: {
-          font: { size: 12 }
+          font: {
+            size: 12
+          }
         }
       }
     }
   });
 }
+
 
 
 
