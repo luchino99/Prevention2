@@ -823,11 +823,11 @@ Rispondi solo in codice HTML. Genera 3 consigli scientificamente validati e prat
 3. Qualità del sonno
 
 Formato obbligatorio:
-<strong>Gestione dello stress (livello di stress rilevato)</strong>
+<h2>Gestione dello stress (livello di stress rilevato)</h2>
 <p>...consiglio breve qui...</p>
-<strong>Miglioramento dell'umore (livello di umore rilevato)</strong>
+<h2>Miglioramento dell'umore (livello di umore rilevato)</h2>
 <p>...consiglio breve qui...</p>
-<strong>Qualità del sonno (livello di sonno rilevato)</strong>
+<h2>Qualità del sonno (livello di sonno rilevato)</h2>
 <p>...consiglio breve qui...</p>
 
 NON scrivere alcuna introduzione o testo extra al di fuori dell’HTML. Ogni sezione verrà renderizzata come blocco indipendente.
