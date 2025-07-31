@@ -359,3 +359,30 @@ body {
 .dashboard-main {
   transition: background-color var(--animation-speed);
 }
+
+[data-tooltip] {
+  position: relative;
+  cursor: help;
+}
+
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 125%; /* sopra il testo */
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(30, 41, 59, 0.9); /* blu scuro trasparente */
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 100;
+}
+
+[data-tooltip]:hover::after {
+  opacity: 1;
+}

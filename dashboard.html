@@ -427,25 +427,26 @@
             <h3 class="font-semibold mb-3">Fabbisogno Calorico</h3>
             <div class="space-y-2 mt-4">
               <div class="flex justify-between">
-                <span class="text-sm text-gray-600" title="Il BMR (Basal Metabolic Rate) indica il numero di calorie consumate a riposo, per mantenere le funzioni vitali.">BMR</span>
+                <span class="text-sm text-gray-600" data-tooltip="Il BMR (Basal Metabolic Rate) indica le calorie bruciate a riposo.">BMR</span>
                 <span id="valore-bmr" class="font-medium">--</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-sm text-gray-600" title="Il TDEE (Total Daily Energy Expenditure) è il totale delle calorie bruciate in un giorno, includendo tutte le attività.">TDEE</span>
+                <span class="text-sm text-gray-600" data-tooltip="Il TDEE rappresenta il fabbisogno calorico giornaliero totale.">TDEE</span>
                 <span id="valore-tdee" class="font-medium">--</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-sm text-gray-600" title="Obiettivo nutrizionale selezionato: mantenimento, dimagrimento o aumento della massa muscolare.">Obiettivo</span>
+                <span class="text-sm text-gray-600" data-tooltip="Obiettivo nutrizionale selezionato: mantenimento, dimagrimento o massa.">Obiettivo</span>
                 <span id="valore-obiettivo" class="font-medium">--</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-sm text-gray-600" title="Quantità consigliata di calorie da assumere giornalmente in base all'obiettivo scelto.">Calorie suggerite</span>
+                <span class="text-sm text-gray-600" data-tooltip="Calorie suggerite per raggiungere l’obiettivo.">Calorie suggerite</span>
                 <span id="valore-calorie-target" class="font-medium text-blue-600">--</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-sm text-gray-600" title="Livello stimato di attività fisica dell’utente, importante per il calcolo del TDEE.">Attività fisica</span>
+                <span class="text-sm text-gray-600" data-tooltip="Il livello di attività influisce sul TDEE.">Attività fisica</span>
                 <span id="valore-attivita" class="font-medium">--</span>
               </div>
+
             </div>
 
           </div>
@@ -457,16 +458,16 @@
             <div class="grid grid-cols-3 gap-4 mt-6">
               <!-- Proteine -->
               <div class="text-center">
-                <div class="text-sm font-medium" title="Le proteine sono fondamentali per la costruzione e il mantenimento della massa muscolare.">Proteine</div>
+                <div class="text-sm font-medium" data-tooltip="Le proteine aiutano a costruire e mantenere la massa muscolare.">Proteine</div>
                 <div id="macro-protein" class="text-lg font-bold text-green-600">--%</div>
                 <div id="grammi-protein" class="text-xs text-gray-500">--g</div>
               </div>
 
               <!-- Carboidrati -->
               <div class="text-center">
-                <div class="text-sm font-medium" title="I carboidrati forniscono energia primaria al corpo, specialmente durante l’attività fisica.">Carboidrati</div>
-                <div id="macro-carbs" class="text-lg font-bold text-blue-600">--%</div>
-                <div id="grammi-carbs" class="text-xs text-gray-500">--g</div>
+                <div class="text-sm font-medium" data-tooltip="I grassi sono essenziali per ormoni e vitamine.">Grassi</div>
+                <div id="macro-fat" class="text-lg font-bold text-yellow-600">--%</div>
+                <div id="grammi-fat" class="text-xs text-gray-500">--g</div>
               </div>
 
               <!-- Grassi -->

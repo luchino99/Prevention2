@@ -473,7 +473,18 @@
   </div>
   <div class="accordion-body">
     <div class="accordion-content grid gap-4">
-
+    <div class="form-group">
+      <label class="form-label">Obiettivo di allenamento</label>
+      <select id="profilo-obiettivo_fisico">
+        <option value="">-- Seleziona --</option>
+        <option value="dimagrimento" ${userData.obiettivo_fisico === 'dimagrimento' ? 'selected' : ''}>Dimagrimento</option>
+        <option value="aumento massa" ${userData.obiettivo_fisico === 'aumento massa' ? 'selected' : ''}>Aumento massa</option>
+        <option value="definizione" ${userData.obiettivo_fisico === 'definizione' ? 'selected' : ''}>Definizione</option>
+        <option value="resistenza" ${userData.obiettivo_fisico === 'resistenza' ? 'selected' : ''}>Resistenza</option>
+        <option value="postura" ${userData.obiettivo_fisico === 'postura' ? 'selected' : ''}>Postura</option>
+        <option value="preparazione atletica" ${userData.obiettivo_fisico === 'preparazione atletica' ? 'selected' : ''}>Preparazione atleticae</option>
+      </select>
+    </div>
       <div class="form-group">
         <label class="form-label">Livello di esperienza</label>
         <input type="text" id="profilo-esperienza" placeholder="Principiante, intermedio, avanzato" />

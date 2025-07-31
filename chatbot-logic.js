@@ -121,9 +121,9 @@ const domandePianoAlimentare = [
   { key: "sesso", testo: "Qual è il tuo sesso biologico? (maschio/femmina)" },
   { key: "altezza", testo: "Quanto sei alto/a in centimetri?" },
   { key: "peso", testo: "Quanto pesi in chilogrammi?" },
-  { key: "obiettivo", testo: "Qual è il tuo obiettivo? (dimagrimento / mantenimento / aumento massa muscolare)" },
   { key: "attivita_fisica", testo: "Che livello di attività fisica hai? (sedentario / leggero / moderato / intenso)" },
   { key: "tipo_lavoro", testo: "Quale tipo di stile di vita tra questi elencati descrive al meglio il tuo? (Sedentario, Leggermente attivo, Moderatamente attivo, Molto attivo, Estremamente attivo)" },
+  { key: "obiettivo", testo: "Qual è il tuo obiettivo? (dimagrimento / mantenimento / aumento massa muscolare)" },
   { key: "preferenze", testo: "Hai uno stile alimentare preferito? (es: mediterranea, vegetariana, vegana, keto, nessuna)" },
   { key: "intolleranze", testo: "Hai intolleranze o allergie alimentari? (es: glutine, lattosio, ecc.)" },
   { key: "alimenti_esclusi", testo: "Ci sono alimenti che non vuoi includere nella dieta?" },
@@ -138,7 +138,7 @@ const domandePianoAlimentare = [
   { key: "sesso", testo: "Qual è il tuo sesso biologico? (maschio/femmina)" },
   { key: "altezza", testo: "Quanto sei alto/a in centimetri?" },
   { key: "peso", testo: "Quanto pesi in chilogrammi?" },
-  { key: "obiettivo", testo: "Qual è il tuo obiettivo principale tra questi elencati? (dimagrimento/aumento massa/definizione/resistenza/postura/preparazione atletica)" },
+  { key: "obiettivo_fisico", testo: "Qual è il tuo obiettivo principale tra questi elencati? (dimagrimento/aumento massa/definizione/resistenza/postura/preparazione atletica)" },
   { key: "esperienza", testo: "Che livello di esperienza hai? (principiante/intermedio/avanzato)" },
   { key: "frequenza", testo: "Quanti allenamenti a settimana vuoi fare? (1-2/3-4/5-6)" },
   { key: "durata", testo: "Quanto tempo dedichi a ogni sessione in minuti? (20 min/30-45 min/1 ora o più)" },
@@ -169,6 +169,7 @@ const aliasCondivisi = {
   sesso: ["sesso"],
   altezza: ["altezza"],
   peso: ["peso"],
+  obiettivo_fisico: ["obiettivo_fisico"],
   attivita_fisica: ["attivita_fisica"],
   tipo_lavoro: ["tipo_lavoro"],
   preferenze: ["preferenze"],
@@ -720,7 +721,7 @@ async function salvaAnagraficaNelDatabase(dati) {
 
     // ✅ Elenco COMPLETO dei campi validi inclusi i NUOVI
 const campiValidi = [
-  "email", "eta", "sesso", "altezza", "peso",
+  "email", "eta", "sesso", "altezza", "peso", "obiettivo_fisico",
   "origine_etnica", "vita", "glicemia", "glicemia_valore",
   "colesterolo_totale", "colesterolo_hdl_valore", "trigliceridi", "colesterolo_ldl_valore",
   "colesterolo_ldl", "pressione_sistolica", "pressione_diastolica",
@@ -932,7 +933,7 @@ async function mostraProfiloUtente() {
         "fumatore", "diabete", "glicemia_valore", "pressione_alta",
         "familiari_diabete", "frattura", "famiglia_frattura_anca", "corticosteroidi",
         "alcol_eccessivo", "artrite", "stanchezza", "camminata",
-        "sollevamento", "sedia", "cadute"
+        "sollevamento", "sedia", "cadute", "obiettivo_fisico"
       ];
 
       const integerFields = [
