@@ -1309,57 +1309,71 @@ function initializeCharts() {
     'Preferire una cucina tradizionale mediterranea'
   ];
 
-  const predimedRawAnswers = [];
+  // Dati predimed (valori numerici e risposte testuali)
   const predimedNumericalAnswers = [];
+  const predimedRawAnswers = [];
 
   for (let i = 0; i < 14; i++) {
     const key = `predimed_${i + 1}`;
     const risposta = String(userData[key] || '').toLowerCase();
     predimedRawAnswers.push(risposta);
-    predimedNumericalAnswers.push(['sì', 'si', '1', 'true'].includes(risposta) ? 1 : 0);
+
+    const isPositive = ['sì', 'si', '1', 'true'].includes(risposta);
+    predimedNumericalAnswers.push(isPositive ? 1 : 0);
   }
 
   predimedChart = new Chart(predimedCtx, {
     type: 'radar',
     data: {
       labels: predimedLabels,
-      datasets: [{
-        label: 'Risposte utente',
-        data: predimedNumericalAnswers,
-        backgroundColor: 'rgba(66, 133, 244, 0.2)',
-        borderColor: '#4285F4',
-        borderWidth: 2,
-        pointBackgroundColor: '#4285F4',
-        pointRadius: 5,
-        pointHoverRadius: 7,
-        pointHitRadius: 15
-      }]
+      datasets: [
+        {
+          label: 'Risposte utente',
+          data: predimedNumericalAnswers,
+          backgroundColor: 'rgba(66, 133, 244, 0.2)',
+          borderColor: '#4285F4',
+          borderWidth: 2,
+          pointBackgroundColor: '#4285F4',
+          pointRadius: 5,
+          pointHoverRadius: 7,
+          pointHitRadius: 20
+        },
+        {
+          label: 'Obiettivo',
+          data: Array(14).fill(1),
+          backgroundColor: 'rgba(52, 168, 83, 0.1)',
+          borderColor: '#34A853',
+          borderWidth: 1,
+          borderDash: [5, 5],
+          pointRadius: 0 // invisibile ma serve per confronto
+        }
+      ]
     },
     options: {
       responsive: true,
       interaction: {
-        mode: 'nearest',       // Tooltip solo vicino al puntino
-        intersect: true        // Attiva solo se stai passando davvero sopra al punto
+        mode: 'nearest',
+        axis: 'x',
+        intersect: true
       },
       plugins: {
         tooltip: {
-          enabled: true,
           callbacks: {
             label: function (context) {
               const i = context.dataIndex;
               const risposta = predimedRawAnswers[i];
               const obiettivo = predimedTooltips[i];
 
-              let rispostaTesto = '';
+              let messaggioRisposta = 'Risposta utente: ';
               if (['sì', 'si', '1', 'true'].includes(risposta)) {
-                rispostaTesto = 'Risposta utente: Lo faccio';
+                messaggioRisposta += 'Lo faccio';
               } else if (['no', '0', 'false'].includes(risposta)) {
-                rispostaTesto = 'Risposta utente: Non lo faccio, ma dovrei';
+                messaggioRisposta += 'Non lo faccio, ma dovrei';
               } else {
-                rispostaTesto = 'Risposta utente: Non disponibile';
+                messaggioRisposta += 'Non disponibile';
               }
 
-              return [rispostaTesto, `Obiettivo: ${obiettivo}`];
+              return [messaggioRisposta, `Obiettivo: ${obiettivo}`];
             }
           }
         },
