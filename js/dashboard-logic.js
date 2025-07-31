@@ -1334,9 +1334,9 @@ function initializeCharts() {
   borderColor: '#4285F4',
   borderWidth: 2,
   pointBackgroundColor: '#4285F4',
-  pointRadius: 5,
-  pointHoverRadius: 8,
-  pointHitRadius: 8,
+  pointRadius: 7,
+  pointHoverRadius: 9,
+  pointHitRadius: 9,
   pointStyle: 'circle'
 },
         {
