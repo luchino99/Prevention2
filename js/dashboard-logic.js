@@ -1282,74 +1282,105 @@ function updateActivityTab() {
 
     // Inizializza i grafici
     function initializeCharts() {
-      // PREDIMED Chart
-      const predimedCtx = document.getElementById('predimed-chart').getContext('2d');
+// === PREDIMED Chart Personalizzato ===
+const predimedCtx = document.getElementById('predimed-chart').getContext('2d');
 
 if (predimedChart) predimedChart.destroy();
+
+const predimedLabels = [
+  'Olio d’oliva', 'Verdure', 'Frutta', 'Carne rossa', 'Burro/panna', 'Bevande zuccherate',
+  'Vino', 'Legumi', 'Pesce', 'Dolci', 'Frutta secca', 'Pasta integrale',
+  'Soffritti', 'Cucina mediterranea'
+];
+
+const predimedTooltips = [
+  'Usare olio extravergine d’oliva come principale fonte di grassi',
+  'Consumare verdure almeno 2 volte al giorno',
+  'Mangiare frutta almeno 1–2 volte al giorno',
+  'Limitare la carne rossa a meno di 1 volta a settimana',
+  'Evitare burro, panna o margarina',
+  'Limitare le bevande zuccherate',
+  'Bere vino moderatamente durante i pasti (se si consuma alcol)',
+  'Consumare legumi almeno 3 volte a settimana',
+  'Consumare pesce almeno 3 volte a settimana',
+  'Limitare dolci e dessert a meno di 3 volte a settimana',
+  'Mangiare frutta secca almeno 3 volte a settimana',
+  'Preferire pasta o pane integrale',
+  'Utilizzare soffritti a base di olio d’oliva e pomodoro',
+  'Preferire una cucina tradizionale mediterranea'
+];
 
 predimedChart = new Chart(predimedCtx, {
   type: 'radar',
   data: {
-labels: [
-  'Olio d’oliva', 'Verdure', 'Frutta', 'Carne rossa', 'Burro/panna', 'Bevande zuccherate',
-  'Vino', 'Legumi', 'Pesce', 'Dolci', 'Frutta secca', 'Pasta integrale',
-  'Soffritti', 'Cucina mediterranea'
-],
-    datasets: [{
-      label: 'Risposte utente',
-      data: Array(14).fill(0),
-      backgroundColor: 'rgba(66, 133, 244, 0.2)',
-      borderColor: '#4285F4',
-      borderWidth: 2,
-      pointBackgroundColor: '#4285F4'
-    }, {
-      label: 'Obiettivo',
-      data: Array(14).fill(1),
-      backgroundColor: 'rgba(52, 168, 83, 0.1)',
-      borderColor: '#34A853',
-      borderWidth: 1,
-      borderDash: [5, 5],
-      pointBackgroundColor: '#34A853'
-    }]
+    labels: predimedLabels,
+    datasets: [
+      {
+        label: 'Risposte utente',
+        data: Array(14).fill(0), // verrà aggiornato dinamicamente
+        backgroundColor: 'rgba(66, 133, 244, 0.2)',
+        borderColor: '#4285F4',
+        borderWidth: 2,
+        pointBackgroundColor: '#4285F4'
+      },
+      {
+        label: 'Obiettivo',
+        data: Array(14).fill(1),
+        backgroundColor: 'rgba(52, 168, 83, 0.1)',
+        borderColor: '#34A853',
+        borderWidth: 1,
+        borderDash: [5, 5],
+        pointBackgroundColor: '#34A853'
+      }
+    ]
   },
   options: {
+    responsive: true,
+    plugins: {
+      tooltip: {
+        callbacks: {
+          label: function (context) {
+            const index = context.dataIndex;
+            const datasetLabel = context.dataset.label;
+            const value = context.raw;
+
+            if (datasetLabel === 'Risposte utente') {
+              return `Risposta utente: ${value === 1 ? 'Lo faccio' : 'Non lo faccio, ma dovrei'}`;
+            }
+
+            if (datasetLabel === 'Obiettivo') {
+              return `Obiettivo: ${predimedTooltips[index]}`;
+            }
+
+            return null;
+          }
+        }
+      },
+      legend: {
+        labels: {
+          usePointStyle: true,
+          font: {
+            size: 13
+          }
+        }
+      }
+    },
     scale: {
       ticks: {
         beginAtZero: true,
         max: 1,
-        stepSize: 1
+        stepSize: 1,
+        display: false // Nasconde i numeri 0/1 per maggiore pulizia
+      },
+      pointLabels: {
+        font: {
+          size: 12
+        }
       }
     }
   }
 });
 
-      // Macronutrienti Chart
-      const macroCtx = document.getElementById('macro-chart').getContext('2d');
-
-      if (macroChart) {
-        macroChart.destroy();
-      }
-
-      macroChart = new Chart(macroCtx, {
-        type: 'doughnut',
-        data: {
-          labels: ['Proteine', 'Carboidrati', 'Grassi'],
-          datasets: [{
-            data: [25, 45, 30],
-            backgroundColor: ['#34A853', '#4285F4', '#FBBC05'],
-            borderWidth: 0
-          }]
-        },
-        options: {
-          cutout: '70%',
-          plugins: {
-            legend: {
-              display: false
-            }
-          }
-        }
-      });
-    }
 
     // Setup delle tabs
     function setupTabs() {
