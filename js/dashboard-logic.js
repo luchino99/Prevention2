@@ -1281,99 +1281,92 @@ function updateActivityTab() {
     }
 
     // Inizializza i grafici
-    function initializeCharts() {
-// === PREDIMED Chart Personalizzato ===
-const predimedCtx = document.getElementById('predimed-chart').getContext('2d');
+function initializeCharts() {
+  const predimedCtx = document.getElementById('predimed-chart').getContext('2d');
 
-if (predimedChart) predimedChart.destroy();
+  if (predimedChart) predimedChart.destroy();
 
-const predimedLabels = [
-  'Olio d’oliva', 'Verdure', 'Frutta', 'Carne rossa', 'Burro/panna', 'Bevande zuccherate',
-  'Vino', 'Legumi', 'Pesce', 'Dolci', 'Frutta secca', 'Pasta integrale',
-  'Soffritti', 'Cucina mediterranea'
-];
+  const predimedLabels = [
+    'Olio d’oliva', 'Verdure', 'Frutta', 'Carne rossa', 'Burro/panna', 'Bevande zuccherate',
+    'Vino', 'Legumi', 'Pesce', 'Dolci', 'Frutta secca', 'Pasta integrale',
+    'Soffritti', 'Cucina mediterranea'
+  ];
 
-const predimedTooltips = [
-  'Usare olio extravergine d’oliva come principale fonte di grassi',
-  'Consumare verdure almeno 2 volte al giorno',
-  'Mangiare frutta almeno 1–2 volte al giorno',
-  'Limitare la carne rossa a meno di 1 volta a settimana',
-  'Evitare burro, panna o margarina',
-  'Limitare le bevande zuccherate',
-  'Bere vino moderatamente durante i pasti (se si consuma alcol)',
-  'Consumare legumi almeno 3 volte a settimana',
-  'Consumare pesce almeno 3 volte a settimana',
-  'Limitare dolci e dessert a meno di 3 volte a settimana',
-  'Mangiare frutta secca almeno 3 volte a settimana',
-  'Preferire pasta o pane integrale',
-  'Utilizzare soffritti a base di olio d’oliva e pomodoro',
-  'Preferire una cucina tradizionale mediterranea'
-];
+  const predimedTooltips = [
+    'Usare olio extravergine d’oliva come principale fonte di grassi',
+    'Consumare verdure almeno 2 volte al giorno',
+    'Mangiare frutta almeno 1–2 volte al giorno',
+    'Limitare la carne rossa a meno di 1 volta a settimana',
+    'Evitare burro, panna o margarina',
+    'Limitare le bevande zuccherate',
+    'Bere vino moderatamente durante i pasti (se si consuma alcol)',
+    'Consumare legumi almeno 3 volte a settimana',
+    'Consumare pesce almeno 3 volte a settimana',
+    'Limitare dolci e dessert a meno di 3 volte a settimana',
+    'Mangiare frutta secca almeno 3 volte a settimana',
+    'Preferire pasta o pane integrale',
+    'Utilizzare soffritti a base di olio d’oliva e pomodoro',
+    'Preferire una cucina tradizionale mediterranea'
+  ];
 
-predimedChart = new Chart(predimedCtx, {
-  type: 'radar',
-  data: {
-    labels: predimedLabels,
-    datasets: [
-      {
-        label: 'Risposte utente',
-        data: Array(14).fill(0), // verrà aggiornato dinamicamente
-        backgroundColor: 'rgba(66, 133, 244, 0.2)',
-        borderColor: '#4285F4',
-        borderWidth: 2,
-        pointBackgroundColor: '#4285F4'
-      },
-      {
-        label: 'Obiettivo',
-        data: Array(14).fill(1),
-        backgroundColor: 'rgba(52, 168, 83, 0.1)',
-        borderColor: '#34A853',
-        borderWidth: 1,
-        borderDash: [5, 5],
-        pointBackgroundColor: '#34A853'
-      }
-    ]
-  },
-  options: {
-    responsive: true,
-plugins: {
-  tooltip: {
-    filter: function (context) {
-      // Mostra tooltip solo per "Risposte utente"
-      return context.dataset.label === 'Risposte utente';
+  predimedChart = new Chart(predimedCtx, {
+    type: 'radar',
+    data: {
+      labels: predimedLabels,
+      datasets: [
+        {
+          label: 'Risposte utente',
+          data: Array(14).fill(0),
+          backgroundColor: 'rgba(66, 133, 244, 0.2)',
+          borderColor: '#4285F4',
+          borderWidth: 2,
+          pointBackgroundColor: '#4285F4'
+        },
+        {
+          label: 'Obiettivo',
+          data: Array(14).fill(1),
+          backgroundColor: 'rgba(52, 168, 83, 0.1)',
+          borderColor: '#34A853',
+          borderWidth: 1,
+          borderDash: [5, 5],
+          pointBackgroundColor: '#34A853'
+        }
+      ]
     },
-    callbacks: {
-      label: function (context) {
-        const index = context.dataIndex;
-        const value = context.raw;
+    options: {
+      responsive: true,
+      plugins: {
+        tooltip: {
+          filter: function (context) {
+            return context.dataset.label === 'Risposte utente';
+          },
+          callbacks: {
+            label: function (context) {
+              const index = context.dataIndex;
+              const value = context.raw;
 
-        const risposta = value === 1
-          ? 'Risposta utente: Lo faccio'
-          : 'Risposta utente: Non lo faccio, ma dovrei';
+              const risposta = value === 1
+                ? 'Risposta utente: Lo faccio'
+                : 'Risposta utente: Non lo faccio, ma dovrei';
 
-        const obiettivo = `Obiettivo: ${predimedTooltips[index]}`;
-
-        return [risposta, obiettivo];
+              const obiettivo = `Obiettivo: ${predimedTooltips[index]}`;
+              return [risposta, obiettivo];
+            }
+          }
+        },
+        legend: {
+          labels: {
+            usePointStyle: true,
+            font: { size: 13 }
+          }
+        }
       }
     }
-  },
-  legend: {
-    labels: {
-      usePointStyle: true,
-      font: {
-        size: 13
-      }
-    }
-  }
-}
-
-});
+  });
+} // ✅ chiusura corretta
 
 
-
-
-    // Setup delle tabs
-    function setupTabs() {
+function setupTabs() {
       document.querySelectorAll('.tab-button').forEach(button => {
         button.addEventListener('click', () => {
           const tabId = button.getAttribute('data-tab');
