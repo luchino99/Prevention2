@@ -87,11 +87,11 @@ document.addEventListener('DOMContentLoaded', async function () {
     calculateFIB4();
     calculateBMI();
     calculatePREDIMED();
+    initializeCharts();
     checkMetabolicSyndrome();
     setupTabs();
     setupExportButton();
     updateDashboard();
-    initializeCharts();
     analyzeLifestyle();
     setupLifestyleSliders();
 
