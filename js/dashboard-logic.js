@@ -1282,17 +1282,20 @@ function updateActivityTab() {
 
     // Inizializza i grafici
 function initializeCharts() {
-  // === PREDIMED Chart Personalizzato ===
+  // === Inizializzazione grafico PREDIMED ===
   const predimedCtx = document.getElementById('predimed-chart').getContext('2d');
 
+  // Distrugge grafico precedente se esistente
   if (predimedChart) predimedChart.destroy();
 
+  // Etichette delle domande Predimed
   const predimedLabels = [
     'Olio d’oliva', 'Verdure', 'Frutta', 'Carne rossa', 'Burro/panna', 'Bevande zuccherate',
     'Vino', 'Legumi', 'Pesce', 'Dolci', 'Frutta secca', 'Pasta integrale',
     'Soffritti', 'Cucina mediterranea'
   ];
 
+  // Obiettivi corrispondenti per tooltip
   const predimedTooltips = [
     'Usare olio extravergine d’oliva come principale fonte di grassi',
     'Consumare verdure almeno 2 volte al giorno',
@@ -1310,6 +1313,7 @@ function initializeCharts() {
     'Preferire una cucina tradizionale mediterranea'
   ];
 
+  // Crea il grafico radar
   predimedChart = new Chart(predimedCtx, {
     type: 'radar',
     data: {
@@ -1317,7 +1321,7 @@ function initializeCharts() {
       datasets: [
         {
           label: 'Risposte utente',
-          data: Array(14).fill(0), // verrà aggiornato dinamicamente
+          data: Array(14).fill(0), // aggiornato dinamicamente da updateLifestyleTab()
           backgroundColor: 'rgba(66, 133, 244, 0.2)',
           borderColor: '#4285F4',
           borderWidth: 2,
@@ -1339,10 +1343,11 @@ function initializeCharts() {
       interaction: {
         mode: 'nearest',
         axis: 'xy',
-        intersect: true
+        intersect: false  // ✅ Mostra tooltip anche su valore 0
       },
       plugins: {
         tooltip: {
+          enabled: true,
           callbacks: {
             label: function (context) {
               const index = context.dataIndex;
@@ -1358,7 +1363,7 @@ function initializeCharts() {
                 return [rispostaUtente, obiettivo];
               }
 
-              // Nessun tooltip per "Obiettivo"
+              // ❌ Nessun tooltip per il dataset "Obiettivo"
               return '';
             }
           }
@@ -1377,7 +1382,7 @@ function initializeCharts() {
           beginAtZero: true,
           max: 1,
           stepSize: 1,
-          display: false // nasconde i numeri sull'asse per pulizia
+          display: false // Nasconde scala numerica
         },
         pointLabels: {
           font: {
@@ -1388,6 +1393,7 @@ function initializeCharts() {
     }
   });
 }
+
 
 
 
