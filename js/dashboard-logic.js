@@ -94,7 +94,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     updateDashboard();
     analyzeLifestyle();
     setupLifestyleSliders();
-
+    calculateNutritionalNeeds();  // già esistente
+    updateNutritionTab();         // AGGIUNGI QUESTA
 
 
   } catch (error) {
@@ -580,6 +581,7 @@ function calculateNutritionalNeeds() {
   const eta = parseInt(userData.eta);
   const sesso = userData.sesso?.toLowerCase();
   const attivita = userData.tipo_lavoro || 'sedentario';
+  const obiettivo = userData.obiettivo?.toLowerCase() || 'mantenimento';
 
   let bmr;
   if (sesso === 'maschio' || sesso === 'uomo') {
@@ -597,21 +599,31 @@ function calculateNutritionalNeeds() {
   };
 
   const tdee = bmr * (activityFactors[attivita] || 1.2);
-  const targetCalories = dashboardData.bmi.value > 25 ? tdee - 300 : tdee;
+
+  let calorieTarget = tdee;
+  let obiettivoDescrizione = "Mantenimento";
+  if (obiettivo.includes("dimagr")) {
+    calorieTarget = tdee - 300;
+    obiettivoDescrizione = "Dimagrimento moderato";
+  } else if (obiettivo.includes("massa")) {
+    calorieTarget = tdee + 300;
+    obiettivoDescrizione = "Aumento massa muscolare";
+  }
 
   dashboardData.nutrition = {
     bmr: Math.round(bmr),
     tdee: Math.round(tdee),
-    target: Math.round(targetCalories),
-    objective: dashboardData.bmi.value > 25 ? 'Dimagrimento moderato' : 'Mantenimento',
+    target: Math.round(calorieTarget),
+    objective: obiettivoDescrizione,
     activityLevel: attivita,
     macros: {
-      protein: { percentage: 25, grams: Math.round(targetCalories * 0.25 / 4) },
-      carbs: { percentage: 45, grams: Math.round(targetCalories * 0.45 / 4) },
-      fats: { percentage: 30, grams: Math.round(targetCalories * 0.30 / 9) }
+      protein: { percentage: 25, grams: Math.round(calorieTarget * 0.25 / 4) },
+      carbs: { percentage: 45, grams: Math.round(calorieTarget * 0.45 / 4) },
+      fats: { percentage: 30, grams: Math.round(calorieTarget * 0.30 / 9) }
     }
   };
 }
+
 
 // 13. Valuta attività fisica
 function evaluatePhysicalActivity() {
@@ -698,6 +710,7 @@ function updateDashboard() {
   updateRiskTab();
   updateScreeningTab();
   updateLifestyleTab();
+  calculateNutritionalNeeds();
   updateNutritionTab();
   updateActivityTab();
   updateRecommendations();
@@ -1221,62 +1234,43 @@ function updateLifestyleTab() {
 
 
 function updateNutritionTab() {
-  const nutritionDetails = document.querySelector('#tab-nutritional .space-y-3');
-  if (nutritionDetails) {
-    nutritionDetails.innerHTML = `
-    <div class="flex justify-between">
-    <span class="text-sm text-gray-600">BMR</span>
-    <span class="font-medium">${dashboardData.nutrition.bmr} kcal</span>
-    </div>
-    <div class="flex justify-between">
-    <span class="text-sm text-gray-600">TDEE</span>
-    <span class="font-medium">${dashboardData.nutrition.tdee} kcal</span>
-    </div>
-    <div class="flex justify-between">
-    <span class="text-sm text-gray-600">Obiettivo</span>
-    <span class="font-medium">${dashboardData.nutrition.objective}</span>
-    </div>
-    <div class="flex justify-between">
-    <span class="text-sm text-gray-600">Calorie suggerite</span>
-    <span class="font-medium text-blue-600">${dashboardData.nutrition.target} kcal</span>
-    </div>
-    <div class="flex justify-between">
-    <span class="text-sm text-gray-600">Attività fisica</span>
-    <span class="font-medium">${dashboardData.nutrition.activityLevel}</span>
-    </div>
-    `;
-  }
+  const data = dashboardData.nutrition;
 
-  if (macroChart) {
-    macroChart.data.datasets[0].data = [
-      dashboardData.nutrition.macros.protein.percentage,
-      dashboardData.nutrition.macros.carbs.percentage,
-      dashboardData.nutrition.macros.fats.percentage
-    ];
-    macroChart.update();
-  }
+  document.getElementById("valore-bmr").textContent = `${data.bmr} kcal`;
+  document.getElementById("valore-tdee").textContent = `${data.tdee} kcal`;
+  document.getElementById("valore-obiettivo").textContent = data.objective;
+  document.getElementById("valore-calorie-target").textContent = `${data.target} kcal`;
+  document.getElementById("valore-attivita").textContent = data.activityLevel;
 
-  const macroDetails = document.querySelector('#tab-nutritional .grid.grid-cols-3');
-  if (macroDetails) {
-    macroDetails.innerHTML = `
-    <div class="p-2 rounded-lg">
-    <div class="text-sm font-medium">Proteine</div>
-    <div class="text-lg font-bold text-green-600">${dashboardData.nutrition.macros.protein.percentage}%</div>
-    <div class="text-xs text-gray-500">${dashboardData.nutrition.macros.protein.grams}g</div>
-    </div>
-    <div class="p-2 rounded-lg">
-    <div class="text-sm font-medium">Carboidrati</div>
-    <div class="text-lg font-bold text-blue-600">${dashboardData.nutrition.macros.carbs.percentage}%</div>
-    <div class="text-xs text-gray-500">${dashboardData.nutrition.macros.carbs.grams}g</div>
-    </div>
-    <div class="p-2 rounded-lg">
-    <div class="text-sm font-medium">Grassi</div>
-    <div class="text-lg font-bold text-yellow-600">${dashboardData.nutrition.macros.fats.percentage}%</div>
-    <div class="text-xs text-gray-500">${dashboardData.nutrition.macros.fats.grams}g</div>
-    </div>
-    `;
-  }
+  document.getElementById("macro-protein").textContent = `${data.macros.protein.percentage}%`;
+  document.getElementById("grammi-protein").textContent = `${data.macros.protein.grams}g`;
+
+  document.getElementById("macro-carbs").textContent = `${data.macros.carbs.percentage}%`;
+  document.getElementById("grammi-carbs").textContent = `${data.macros.carbs.grams}g`;
+
+  document.getElementById("macro-fat").textContent = `${data.macros.fats.percentage}%`;
+  document.getElementById("grammi-fat").textContent = `${data.macros.fats.grams}g`;
+
+  // Grafico a torta (se previsto)
+  if (macroChart) macroChart.destroy();
+  const ctx = document.getElementById("macro-chart").getContext("2d");
+  macroChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Proteine', 'Carboidrati', 'Grassi'],
+      datasets: [{
+        data: [
+          data.macros.protein.percentage,
+          data.macros.carbs.percentage,
+          data.macros.fats.percentage
+        ],
+        backgroundColor: ['#16a34a', '#2563eb', '#facc15']
+      }]
+    },
+    options: { cutout: '60%' }
+  });
 }
+
 
 function updateActivityTab() {
   const activityDetails = document.querySelector('#tab-attivita .space-y-3');

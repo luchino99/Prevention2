@@ -392,7 +392,7 @@
 
 
 
-    
+
 
 <!-- Consigli Benessere Psicologico - Versione con margini perfezionati -->
 <div class="w-full mb-10 mt-6">
@@ -419,7 +419,7 @@
 
 
 
-  
+
       <!-- Contenuto tab nutrizione -->
       <div id="tab-nutritional" class="tab-content">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -428,24 +428,25 @@
             <div class="space-y-3">
               <div class="flex justify-between">
                 <span class="text-sm text-gray-600">BMR</span>
-                <span class="font-medium">1650 kcal</span>
+                <span id="valore-bmr" class="font-medium">--</span>
               </div>
               <div class="flex justify-between">
                 <span class="text-sm text-gray-600">TDEE</span>
-                <span class="font-medium">2200 kcal</span>
+                <span id="valore-tdee" class="font-medium">--</span>
               </div>
               <div class="flex justify-between">
                 <span class="text-sm text-gray-600">Obiettivo</span>
-                <span class="font-medium">Dimagrimento moderato</span>
+                <span id="valore-obiettivo" class="font-medium">--</span>
               </div>
               <div class="flex justify-between">
                 <span class="text-sm text-gray-600">Calorie suggerite</span>
-                <span class="font-medium text-blue-600">1900 kcal</span>
+                <span id="valore-calorie-target" class="font-medium text-blue-600">--</span>
               </div>
               <div class="flex justify-between">
                 <span class="text-sm text-gray-600">Attività fisica</span>
-                <span class="font-medium">Moderatamente attivo</span>
+                <span id="valore-attivita" class="font-medium">--</span>
               </div>
+
             </div>
           </div>
           <div class="p-4 bg-gray-50 rounded-lg">
@@ -454,21 +455,21 @@
               <canvas id="macro-chart" width="200" height="200"></canvas>
             </div>
             <div class="grid grid-cols-3 gap-2 text-center">
-              <div class="p-2  rounded-lg">
-                <div class="text-sm font-medium">Proteine</div>
-                <div class="text-lg font-bold text-green-600">25%</div>
-                <div class="text-xs text-gray-500">119g</div>
-              </div>
-              <div class="p-2  rounded-lg">
-                <div class="text-sm font-medium">Carboidrati</div>
-                <div class="text-lg font-bold text-blue-600">45%</div>
-                <div class="text-xs text-gray-500">214g</div>
-              </div>
-              <div class="p-2  rounded-lg">
-                <div class="text-sm font-medium">Grassi</div>
-                <div class="text-lg font-bold text-yellow-600">30%</div>
-                <div class="text-xs text-gray-500">63g</div>
-              </div>
+              <!-- PROTEINE -->
+              <div class="text-sm font-medium">Proteine</div>
+              <div id="macro-protein" class="text-lg font-bold text-green-600">--%</div>
+              <div id="grammi-protein" class="text-xs text-gray-500">--g</div>
+
+              <!-- CARBOIDRATI -->
+              <div class="text-sm font-medium">Carboidrati</div>
+              <div id="macro-carbs" class="text-lg font-bold text-blue-600">--%</div>
+              <div id="grammi-carbs" class="text-xs text-gray-500">--g</div>
+
+              <!-- GRASSI -->
+              <div class="text-sm font-medium">Grassi</div>
+              <div id="macro-fat" class="text-lg font-bold text-yellow-600">--%</div>
+              <div id="grammi-fat" class="text-xs text-gray-500">--g</div>
+
             </div>
           </div>
         </div>
