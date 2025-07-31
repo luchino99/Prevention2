@@ -1379,7 +1379,7 @@ predimedChart = new Chart(predimedCtx, {
       }
     }
   }
-});
+});}
 
 
     // Setup delle tabs
