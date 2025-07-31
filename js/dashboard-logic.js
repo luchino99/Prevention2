@@ -1282,7 +1282,9 @@ function updateActivityTab() {
 
     // Inizializza i grafici
 function initializeCharts() {
-  const predimedCtx = document.getElementById('predimed-chart').getContext('2d');
+  // === PREDIMED Chart Personalizzato ===
+  const predimedCtx = document.getElementById('predimed-chart')?.getContext('2d');
+  if (!predimedCtx) return;
 
   if (predimedChart) predimedChart.destroy();
 
@@ -1316,7 +1318,7 @@ function initializeCharts() {
       datasets: [
         {
           label: 'Risposte utente',
-          data: Array(14).fill(0),
+          data: Array(14).fill(0), // verrà aggiornato dinamicamente
           backgroundColor: 'rgba(66, 133, 244, 0.2)',
           borderColor: '#4285F4',
           borderWidth: 2,
@@ -1335,35 +1337,51 @@ function initializeCharts() {
     },
     options: {
       responsive: true,
+      interaction: {
+        mode: 'nearest',
+        axis: 'xy',
+        intersect: true
+      },
       plugins: {
         tooltip: {
-          filter: function (context) {
-            return context.dataset.label === 'Risposte utente';
-          },
           callbacks: {
             label: function (context) {
               const index = context.dataIndex;
               const value = context.raw;
-
-              const risposta = value === 1
+              const rispostaUtente = value === 1
                 ? 'Risposta utente: Lo faccio'
                 : 'Risposta utente: Non lo faccio, ma dovrei';
-
               const obiettivo = `Obiettivo: ${predimedTooltips[index]}`;
-              return [risposta, obiettivo];
+              return [rispostaUtente, obiettivo];
             }
           }
         },
         legend: {
           labels: {
             usePointStyle: true,
-            font: { size: 13 }
+            font: {
+              size: 13
+            }
+          }
+        }
+      },
+      scale: {
+        ticks: {
+          beginAtZero: true,
+          max: 1,
+          stepSize: 1,
+          display: false // ✅ Nasconde i tick numerici (0-1) per maggiore pulizia
+        },
+        pointLabels: {
+          font: {
+            size: 13
           }
         }
       }
     }
   });
-} // ✅ chiusura corretta
+}
+
 
 
 function setupTabs() {
