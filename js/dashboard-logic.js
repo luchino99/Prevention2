@@ -1283,8 +1283,7 @@ function updateActivityTab() {
     // Inizializza i grafici
 function initializeCharts() {
   // === PREDIMED Chart Personalizzato ===
-  const predimedCtx = document.getElementById('predimed-chart')?.getContext('2d');
-  if (!predimedCtx) return;
+  const predimedCtx = document.getElementById('predimed-chart').getContext('2d');
 
   if (predimedChart) predimedChart.destroy();
 
@@ -1348,11 +1347,19 @@ function initializeCharts() {
             label: function (context) {
               const index = context.dataIndex;
               const value = context.raw;
-              const rispostaUtente = value === 1
-                ? 'Risposta utente: Lo faccio'
-                : 'Risposta utente: Non lo faccio, ma dovrei';
-              const obiettivo = `Obiettivo: ${predimedTooltips[index]}`;
-              return [rispostaUtente, obiettivo];
+              const datasetLabel = context.dataset.label;
+
+              if (datasetLabel === 'Risposte utente') {
+                const rispostaUtente = value === 1
+                  ? 'Risposta utente: Lo faccio'
+                  : 'Risposta utente: Non lo faccio, ma dovrei';
+
+                const obiettivo = `Obiettivo: ${predimedTooltips[index]}`;
+                return [rispostaUtente, obiettivo];
+              }
+
+              // Nessun tooltip per "Obiettivo"
+              return '';
             }
           }
         },
@@ -1370,17 +1377,18 @@ function initializeCharts() {
           beginAtZero: true,
           max: 1,
           stepSize: 1,
-          display: false // ✅ Nasconde i tick numerici (0-1) per maggiore pulizia
+          display: false // nasconde i numeri sull'asse per pulizia
         },
         pointLabels: {
           font: {
-            size: 13
+            size: 12
           }
         }
       }
     }
   });
 }
+
 
 
 
