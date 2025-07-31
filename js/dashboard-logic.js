@@ -1334,9 +1334,9 @@ function initializeCharts() {
   borderColor: '#4285F4',
   borderWidth: 2,
   pointBackgroundColor: '#4285F4',
-  pointRadius: 25,
+  pointRadius: 5,
   pointHoverRadius: 8,
-  pointHitRadius: predimedNumericalAnswers.map(() => 25), // grande hit radius per tutti
+  pointHitRadius: 8
   pointStyle: 'circle'
 },
         {
@@ -1346,7 +1346,9 @@ function initializeCharts() {
           borderColor: '#34A853',
           borderWidth: 1,
           borderDash: [5, 5],
-          pointRadius: 20 // invisibile ma serve per confronto
+          pointRadius: 4 ,// invisibile ma serve per confronto
+          pointHoverRadius: 7,
+          pointHitRadius: 7
         }
       ]
     },
