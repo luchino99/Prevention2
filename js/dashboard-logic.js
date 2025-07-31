@@ -1327,17 +1327,18 @@ function initializeCharts() {
     data: {
       labels: predimedLabels,
       datasets: [
-        {
-          label: 'Risposte utente',
-          data: predimedNumericalAnswers,
-          backgroundColor: 'rgba(66, 133, 244, 0.2)',
-          borderColor: '#4285F4',
-          borderWidth: 2,
-          pointBackgroundColor: '#4285F4',
-          pointRadius: 5,
-          pointHoverRadius: 80,
-          pointHitRadius: 100
-        },
+{
+  label: 'Risposte utente',
+  data: predimedNumericalAnswers,
+  backgroundColor: 'rgba(66, 133, 244, 0.2)',
+  borderColor: '#4285F4',
+  borderWidth: 2,
+  pointBackgroundColor: '#4285F4',
+  pointRadius: predimedNumericalAnswers.map(val => val === 1 ? 5 : 0), // mostro punto solo se lo fa
+  pointHoverRadius: 8,
+  pointHitRadius: predimedNumericalAnswers.map(() => 25), // grande hit radius per tutti
+  pointStyle: 'circle'
+},
         {
           label: 'Obiettivo',
           data: Array(14).fill(1),
