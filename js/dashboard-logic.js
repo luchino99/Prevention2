@@ -1334,7 +1334,7 @@ function initializeCharts() {
   borderColor: '#4285F4',
   borderWidth: 2,
   pointBackgroundColor: '#4285F4',
-  pointRadius: 25
+  pointRadius: 25,
   pointHoverRadius: 8,
   pointHitRadius: predimedNumericalAnswers.map(() => 25), // grande hit radius per tutti
   pointStyle: 'circle'
