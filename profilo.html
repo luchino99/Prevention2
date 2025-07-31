@@ -173,9 +173,28 @@
     <input type="text" id="profilo-sesso" value=${userData.sesso || ''} />
     </div>
     <div class="form-group">
-    <label class="form-label">Livello di attività fisica (sedentario / leggero / moderato / intenso)</label>
-    <input type="text" id="profilo-tipo_lavoro" value=${userData.tipo_lavoro || ''} />
-    </div>
+  <label class="form-label">Livello di attività fisica</label>
+  <select id="profilo-tipo_lavoro">
+    <option value="">-- Seleziona --</option>
+    <option value="sedentario" ${userData.tipo_lavoro === 'sedentario' ? 'selected' : ''}>Sedentario</option>
+    <option value="leggermente attivo" ${userData.tipo_lavoro === 'leggermente attivo' ? 'selected' : ''}>Leggermente attivo</option>
+    <option value="moderatamente attivo" ${userData.tipo_lavoro === 'moderatamente attivo' ? 'selected' : ''}>Moderatamente attivo</option>
+    <option value="molto attivo" ${userData.tipo_lavoro === 'molto attivo' ? 'selected' : ''}>Molto attivo</option>
+    <option value="estremamente attivo" ${userData.tipo_lavoro === 'estremamente attivo' ? 'selected' : ''}>Estremamente attivo</option>
+  </select>
+</div>
+
+<!-- Inserisci qui anche l'obiettivo -->
+<div class="form-group">
+  <label class="form-label">Obiettivo nutrizionale</label>
+  <select id="profilo-obiettivo">
+    <option value="">-- Seleziona --</option>
+    <option value="mantenimento" ${userData.obiettivo === 'mantenimento' ? 'selected' : ''}>Mantenimento</option>
+    <option value="dimagrimento" ${userData.obiettivo === 'dimagrimento' ? 'selected' : ''}>Dimagrimento</option>
+    <option value="massa muscolare" ${userData.obiettivo === 'massa muscolare' ? 'selected' : ''}>Massa muscolare</option>
+  </select>
+</div>
+
     <div class="form-group">
     <label class="form-label">Altezza (cm)</label>
     <input type="number" id="profilo-altezza" value=${userData.altezza ? userData.altezza + ' cm' : ''} />
@@ -454,10 +473,7 @@
   </div>
   <div class="accordion-body">
     <div class="accordion-content grid gap-4">
-      <div class="form-group">
-        <label class="form-label">Obiettivo di allenamento</label>
-        <input type="text" id="profilo-obiettivo" placeholder="Es. dimagrimento, massa muscolare" />
-      </div>
+
       <div class="form-group">
         <label class="form-label">Livello di esperienza</label>
         <input type="text" id="profilo-esperienza" placeholder="Principiante, intermedio, avanzato" />
