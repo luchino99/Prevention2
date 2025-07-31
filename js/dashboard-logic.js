@@ -153,6 +153,7 @@ async function loadUserData(email) {
     }
 
     userData = data || {};
+    userData.email = email;
     console.log('🔍 Dati utente caricati:', userData);
 
     // Debug: verifica campi specifici per SCORE2 e ADA Risk
@@ -556,19 +557,19 @@ function setupLifestyleSliders() {
 // Aggiungi listener real-time + salvataggio
 stressSlider.addEventListener('input', async () => {
   const val = parseInt(stressSlider.value);
-  valoreStress.textContent = `${val}/10`;
+  valoreStress.textContent = val;
   await salvaValore('stress', val);
 });
 
 umoreSlider.addEventListener('input', async () => {
   const val = parseInt(umoreSlider.value);
-  valoreUmore.textContent = `${val}/10`;
+  valoreUmore.textContent = val;
   await salvaValore('umore', val);
 });
 
 sonnoSlider.addEventListener('input', async () => {
   const val = parseInt(sonnoSlider.value);
-  valoreSonno.textContent = `${val}/10`;
+  valoreSonno.textContent = val;
   await salvaValore('sonno_qualita', val);
 });
 
