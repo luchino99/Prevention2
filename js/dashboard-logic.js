@@ -1339,21 +1339,23 @@ predimedChart = new Chart(predimedCtx, {
     plugins: {
       tooltip: {
         callbacks: {
-          label: function (context) {
-            const index = context.dataIndex;
-            const datasetLabel = context.dataset.label;
-            const value = context.raw;
+label: function (context) {
+  const index = context.dataIndex;
+  const datasetLabel = context.dataset.label;
+  const value = context.raw;
 
-            if (datasetLabel === 'Risposte utente') {
-              return `Risposta utente: ${value === 1 ? 'Lo faccio' : 'Non lo faccio, ma dovrei'}`;
-            }
+  // Risposta utente
+  const rispostaUtente = value === 1
+    ? 'Risposta utente: Lo faccio'
+    : 'Risposta utente: Non lo faccio, ma dovrei';
 
-            if (datasetLabel === 'Obiettivo') {
-              return `Obiettivo: ${predimedTooltips[index]}`;
-            }
+  // Obiettivo per ogni punto
+  const obiettivo = `Obiettivo: ${predimedTooltips[index]}`;
 
-            return null;
-          }
+  // Mostra entrambi sempre (indipendentemente dal dataset)
+  return [rispostaUtente, obiettivo];
+}
+
         }
       },
       legend: {
