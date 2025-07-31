@@ -1336,57 +1336,37 @@ predimedChart = new Chart(predimedCtx, {
   },
   options: {
     responsive: true,
-    plugins: {
-      tooltip: {
-        callbacks: {
-label: function (context) {
-  const index = context.dataIndex;
-  const datasetLabel = context.dataset.label;
-
-  // Calcola la risposta dell'utente
-  const userValue = predimedChart.data.datasets[0].data[index];
-  const rispostaUtente = userValue === 1
-    ? 'Risposta utente: Lo faccio'
-    : 'Risposta utente: Non lo faccio, ma dovrei';
-
-  const obiettivo = `Obiettivo: ${predimedTooltips[index]}`;
-
-  if (datasetLabel === 'Risposte utente') {
-    // Mostra entrambi i messaggi solo per "Risposte utente"
-    return [rispostaUtente, obiettivo];
-  }
-
-  // Non mostra nulla per il dataset "Obiettivo"
-  return null;
-}
-
-
-
-        }
-      },
-      legend: {
-        labels: {
-          usePointStyle: true,
-          font: {
-            size: 13
-          }
-        }
-      }
+plugins: {
+  tooltip: {
+    filter: function (context) {
+      // Mostra tooltip solo per "Risposte utente"
+      return context.dataset.label === 'Risposte utente';
     },
-    scale: {
-      ticks: {
-        beginAtZero: true,
-        max: 1,
-        stepSize: 1,
-        display: false // Nasconde i numeri 0/1 per maggiore pulizia
-      },
-      pointLabels: {
-        font: {
-          size: 12
-        }
+    callbacks: {
+      label: function (context) {
+        const index = context.dataIndex;
+        const value = context.raw;
+
+        const risposta = value === 1
+          ? 'Risposta utente: Lo faccio'
+          : 'Risposta utente: Non lo faccio, ma dovrei';
+
+        const obiettivo = `Obiettivo: ${predimedTooltips[index]}`;
+
+        return [risposta, obiettivo];
+      }
+    }
+  },
+  legend: {
+    labels: {
+      usePointStyle: true,
+      font: {
+        size: 13
       }
     }
   }
+}
+
 });}
 
 
