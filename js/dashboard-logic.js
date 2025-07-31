@@ -1355,6 +1355,9 @@ predimedChart = new Chart(predimedCtx, {
           });
 
           button.classList.add('active');
+          if (tabId === 'tab-stile-vita') {
+  setupLifestyleSliders();
+}
           document.getElementById(tabId).classList.add('active');
 
           if (tabId === 'tab-stile-vita' && predimedChart) {
