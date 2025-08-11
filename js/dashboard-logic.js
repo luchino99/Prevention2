@@ -67,6 +67,7 @@ if (btnGeneraPiano) {
   btnGeneraPiano.addEventListener("click", async () => {
     const output = document.getElementById("piano-alimentare-output");
 
+    // Messaggio di caricamento
     output.innerHTML = `
       <div class="flex items-center gap-2 text-green-700">
         <i class="fas fa-spinner fa-spin"></i>
@@ -75,14 +76,26 @@ if (btnGeneraPiano) {
     `;
 
     try {
-      const datiPiano = {
-        dieta: true, // come nel chatbot
+      // Normalizza tipo_lavoro
+      let tipoLavoroVal = userData.tipo_lavoro || document.getElementById("attivita_fisica")?.value || "";
+      tipoLavoroVal = tipoLavoroVal.trim().toLowerCase();
+
+      const validi = ["sedentario", "leggermente attivo", "moderatamente attivo", "molto attivo", "estremamente attivo"];
+      if (!validi.includes(tipoLavoroVal)) {
+        output.innerHTML = `<p class="text-red-600">⚠️ Seleziona un livello di attività fisica valido.</p>`;
+        return;
+      }
+
+      // Costruzione payload come nel chatbot
+      const payload = {
+        dieta: true,
+        email: userData.email || "", // se disponibile
         eta: userData.eta || document.getElementById("eta")?.value || "",
         sesso: userData.sesso || document.getElementById("sesso")?.value || "",
         altezza: userData.altezza || document.getElementById("altezza")?.value || "",
         peso: userData.peso || document.getElementById("peso")?.value || "",
         obiettivo: userData.obiettivo || document.getElementById("obiettivo")?.value || "",
-        tipo_lavoro: userData.tipo_lavoro || document.getElementById("attivita_fisica")?.value || "", // ✅ FIX
+        tipo_lavoro: tipoLavoroVal,
         preferenze_alimentari: userData.preferenze_alimentari || document.getElementById("preferenze")?.value || "",
         intolleranze: userData.intolleranze || document.getElementById("intolleranze")?.value || "",
         alimenti_esclusi: userData.alimenti_esclusi || document.getElementById("alimenti_esclusi")?.value || "",
@@ -92,29 +105,26 @@ if (btnGeneraPiano) {
         farmaci: userData.farmaci_dettaglio || document.getElementById("farmaci")?.value || ""
       };
 
-      // Controllo valori tipo_lavoro
-      const validi = ["sedentario", "leggermente attivo", "moderatamente attivo", "molto attivo", "estremamente attivo"];
-      if (!validi.includes(datiPiano.tipo_lavoro.toLowerCase())) {
-        output.innerHTML = `<p class="text-red-600">⚠️ Seleziona un livello di attività fisica valido.</p>`;
-        return;
-      }
+      console.log("📤 Invio payload dieta (dashboard):", payload);
 
-      console.log("📤 Invio dati per piano alimentare:", datiPiano);
-
+      // Chiamata API
       const response = await fetch("https://prevention2.vercel.app/api/openai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(datiPiano)
+        body: JSON.stringify(payload)
       });
 
       const data = await response.json();
+      console.log("📥 Risposta API:", data);
+
       if (!data.risposta) {
         throw new Error("Nessuna risposta dal modello");
       }
 
+      // Mostra il piano
       output.innerHTML = `
         <h4 class="text-lg font-semibold mb-3 text-green-700">🍽️ Il tuo piano alimentare personalizzato</h4>
-        <div class="whitespace-pre-wrap text-sm text-gray-700">${data.risposta}</div>
+        <pre class="whitespace-pre-wrap text-gray-800">${data.risposta}</pre>
       `;
 
     } catch (error) {
@@ -123,6 +133,7 @@ if (btnGeneraPiano) {
     }
   });
 }
+
 
 
 // Funzione per formattare il testo del piano in tabella
