@@ -716,11 +716,11 @@ else if (userData.frail_category === "Fragile") frailBadge.classList.add("badge-
 
 // === Parametri FRAIL in stile SCORE2 ===
 const frailVars = [
-  { label: 'Affaticamento', value: userData.frail_affaticamento || '--', positive: (userData.frail_affaticamento || '').toLowerCase() === 'no' },
-  { label: 'Resistenza', value: userData.frail_resistenza || '--', positive: (userData.frail_resistenza || '').toLowerCase() === 'no' },
-  { label: 'Cammino', value: userData.frail_cammino || '--', positive: (userData.frail_cammino || '').toLowerCase() === 'no' },
-  { label: 'Malattie', value: userData.frail_malattie || '--', positive: (userData.frail_malattie || '').toLowerCase() === 'no' },
-  { label: 'Perdita di peso', value: userData.frail_perdita_peso || '--', positive: (userData.frail_perdita_peso || '').toLowerCase() === 'no' }
+  { label: 'Affaticamento', value: userData.stanchezza || '--', positive: (userData.stanchezza || '').toLowerCase() === 'no' },
+  { label: 'Resistenza', value: userData.sedia || '--', positive: (userData.sedia || '').toLowerCase() === 'no' },
+  { label: 'Cammino', value: userData.camminata || '--', positive: (userData.camminata || '').toLowerCase() === 'no' },
+  { label: 'Malattie', value: userData.malattie_croniche || '--', positive: (userData.malattie_croniche || '').toLowerCase() === 'no' },
+  { label: 'Perdita di peso', value: userData.perdita_peso || '--', positive: (userData.perdita_peso || '').toLowerCase() === 'no' }
 ];
 
 document.getElementById("frail-variable-list").innerHTML =
