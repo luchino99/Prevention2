@@ -80,7 +80,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     ? parseFloat(profile.fli_score).toFixed(1)
     : "--";
 
-  document.getElementById("fni-banner-score").textContent = fliVal;
-  setScoreCircleColor("fni-bg-circle", parseFloat(fliVal), { high: 60, medium: 30 });
+ 
 
 });
