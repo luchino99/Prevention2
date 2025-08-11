@@ -199,24 +199,26 @@ async function loadUserData(email) {
   }
 }
 
-function populatePianoAlimentareForm() {
+
   // Lista dei campi del piano alimentare
-  const campi = [
-    "eta",
-    "sesso",
-    "altezza",
-    "peso",
-    "obiettivo",
-    "attivita_fisica",
-    "tipo_lavoro",
-    "preferenze_dieta",
-    "intolleranze",
-    "alimenti_esclusi",
-    "numero_pasti",
-    "orario_pasti",
-    "patologie",
-    "farmaci_dettaglio"
-  ];
+function populatePianoAlimentareForm() {
+  const mapping = {
+    eta: "eta",
+    sesso: "sesso",
+    altezza: "altezza",
+    peso: "peso",
+    obiettivo: "obiettivo",
+    attivita_fisica: "attivita_fisica",
+    tipo_lavoro: "tipo_lavoro",
+    preferenze: "preferenze_alimentari", // ✅ usa la colonna giusta
+    intolleranze: "intolleranze",
+    alimenti_esclusi: "alimenti_esclusi",
+    pasti: "pasti",
+    orari_pasti: "orari_pasti",
+    patologie: "patologie",
+    farmaci: "farmaci_dettaglio"
+  };
+
 
   campi.forEach(campo => {
     const el = document.getElementById(campo);
