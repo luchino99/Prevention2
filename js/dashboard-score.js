@@ -15,9 +15,20 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const email = session.user.email;
 
+  // Recupero tutti i dati in un'unica query
   const { data: profile, error: profileError } = await supabase
     .from('anagrafica_utenti')
-    .select('stanchezza, camminata, malattie_croniche, sedia, perdita_peso')
+    .select(`
+      stanchezza,
+      camminata,
+      malattie_croniche,
+      sedia,
+      perdita_peso,
+      score2_risk,
+      score2_category,
+      ada_score,
+      ada_category
+    `)
     .eq('email', email)
     .single();
 
@@ -26,40 +37,40 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
+  // ====== FRAIL SCALE ======
   const answers = {
     fatigue: profile.stanchezza === "si" ? "yes" : "no",
     resistance: profile.sedia === "si" ? "yes" : "no",
-    ambulation: profile.camminata === "no" ? "yes" : "no",
+    ambulation: profile.camminata === "no" ? "yes" : "no", // qui NO è negativo
     illnesses: profile.malattie_croniche === "si" ? "yes" : "no",
     loss: profile.perdita_peso === "si" ? "yes" : "no"
   };
 
-  const score = Object.values(answers).filter(v => v === "yes").length;
+  const frailScore = Object.values(answers).filter(v => v === "yes").length;
 
-  let badgeText = "";
-  let badgeClass = "";
+  let frailBadgeText = "";
+  let frailBadgeClass = "";
 
-  if (score === 0) {
-    badgeText = "Robusto";
-    badgeClass = "bg-green-100 text-green-700";
-  } else if (score <= 2) {
-    badgeText = "Pre-Frailty";
-    badgeClass = "bg-yellow-100 text-yellow-700";
+  if (frailScore === 0) {
+    frailBadgeText = "Robusto";
+    frailBadgeClass = "bg-green-100 text-green-700";
+  } else if (frailScore <= 2) {
+    frailBadgeText = "Pre-Frailty";
+    frailBadgeClass = "bg-yellow-100 text-yellow-700";
   } else {
-    badgeText = "Fragile";
-    badgeClass = "bg-red-100 text-red-700";
+    frailBadgeText = "Fragile";
+    frailBadgeClass = "bg-red-100 text-red-700";
   }
 
-  // Aggiorna banner principali
-  document.getElementById("frail-banner-score").textContent = `${score} / 5`;
-  const badgeEl = document.getElementById("frail-banner-badge");
-  badgeEl.textContent = badgeText;
-  badgeEl.className = `badge ${badgeClass}`;
+  // Aggiorna banner FRAIL
+  document.getElementById("frail-banner-score").textContent = `${frailScore} / 5`;
+  const frailBadgeEl = document.getElementById("frail-banner-badge");
+  frailBadgeEl.textContent = frailBadgeText;
+  frailBadgeEl.className = `badge ${frailBadgeClass}`;
 
-  // Aggiorna dettagli delle variabili
-  const varsEl = document.getElementById("frail-variable-list");
-  varsEl.innerHTML = "";
-
+  // Aggiorna dettagli variabili FRAIL
+  const frailVarsEl = document.getElementById("frail-variable-list");
+  frailVarsEl.innerHTML = "";
   const labelMap = {
     fatigue: "Affaticamento",
     resistance: "Resistenza",
@@ -74,6 +85,21 @@ document.addEventListener("DOMContentLoaded", async () => {
       value === "yes" ? "text-red-600" : "text-green-600"
     }`;
     item.innerHTML = `<span>${labelMap[key]}</span><span>${value === "yes" ? "❌ Sì" : "✅ No"}</span>`;
-    varsEl.appendChild(item);
+    frailVarsEl.appendChild(item);
+  }
+
+  // ====== SCORE2 ======
+  const score2El = document.getElementById("score2-indicator");
+  const score2CategoryEl = document.getElementById("score2-category");
+  if (score2El) score2El.textContent = `${profile.score2_risk || "--"}%`;
+  if (score2CategoryEl) score2CategoryEl.textContent = profile.score2_category || "--";
+
+  // ====== ADA DIABETES RISK ======
+  const adaScoreEl = document.getElementById("ada-banner-score");
+  if (adaScoreEl) adaScoreEl.textContent = `${profile.ada_score || "--"}/8`;
+  const adaBadgeEl = document.getElementById("ada-badge");
+  if (adaBadgeEl) {
+    adaBadgeEl.className = "badge";
+    adaBadgeEl.classList.add(profile.ada_score >= 5 ? "badge-danger" : "badge-success");
   }
 });
