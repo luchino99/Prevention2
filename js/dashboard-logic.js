@@ -102,15 +102,14 @@ if (btnGeneraPiano) {
     `;
 
     try {
-      // ✅ Ricrea il payload come fa il chatbot in modalità pianoalimentare
       const datiPiano = {
-        dieta: true, // <-- come nel chatbot
+        dieta: true, // come nel chatbot
         eta: userData.eta || document.getElementById("eta")?.value || "",
         sesso: userData.sesso || document.getElementById("sesso")?.value || "",
         altezza: userData.altezza || document.getElementById("altezza")?.value || "",
         peso: userData.peso || document.getElementById("peso")?.value || "",
         obiettivo: userData.obiettivo || document.getElementById("obiettivo")?.value || "",
-        attivita_fisica: userData.tipo_lavoro || document.getElementById("attivita_fisica")?.value || "",
+        tipo_lavoro: userData.tipo_lavoro || document.getElementById("attivita_fisica")?.value || "", // ✅ FIX
         preferenze_alimentari: userData.preferenze_alimentari || document.getElementById("preferenze")?.value || "",
         intolleranze: userData.intolleranze || document.getElementById("intolleranze")?.value || "",
         alimenti_esclusi: userData.alimenti_esclusi || document.getElementById("alimenti_esclusi")?.value || "",
@@ -119,6 +118,7 @@ if (btnGeneraPiano) {
         patologie: userData.patologie || document.getElementById("patologie")?.value || "",
         farmaci: userData.farmaci_dettaglio || document.getElementById("farmaci")?.value || ""
       };
+
 
       console.log("📤 Invio dati per piano alimentare (modalità chatbot):", datiPiano);
 
