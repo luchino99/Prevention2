@@ -675,10 +675,11 @@ function updateDashboard() {
   console.log('📊 Dati da visualizzare:', dashboardData);
 
   // SCORE2
-  const score2El = document.getElementById("score2-indicator");
-  const score2CategoryEl = document.getElementById("score2-category");
-  if (score2El) score2El.textContent = `${dashboardData.score2?.value || "--"}%`;
-  if (score2CategoryEl) score2CategoryEl.textContent = dashboardData.score2?.risk || "--";
+const score2El = document.getElementById("score2-indicator");
+const score2CategoryEl = document.getElementById("score2-category");
+
+if (score2El) score2El.textContent = `${userData.score2_risk || "--"}%`;
+if (score2CategoryEl) score2CategoryEl.textContent = userData.score2_category || "--";
 
   // === Parametri SCORE2 in stile FRAIL ===
   const score2Vars = [
