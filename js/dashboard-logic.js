@@ -1355,20 +1355,20 @@ function initializeCharts() {
   if (predimedChart) predimedChart.destroy();
 
 const predimedLabels = [
-  'Olio EVO come condimento principale',  // predimed_1
-  '≥ 4 cucchiai olio/die',                // predimed_2
-  'Verdure ≥ 2 porzioni/die',             // predimed_3
-  'Frutta ≥ 3 porzioni/die',              // predimed_4
-  'Carne rossa/salumi < 1 porzione/die',  // predimed_5
-  'Bevande zuccherate < 1/die',           // predimed_6
-  'Vino moderato',                        // predimed_7
-  'Legumi ≥ 3 volte/settimana',           // predimed_8
-  'Pesce/frutti di mare ≥ 3 volte/settimana', // predimed_9
-  'Dolci < 3 volte/settimana',            // predimed_10
-  'Carni bianche preferite',              // predimed_11
-  'Frutta secca ≥ 3 volte/settimana',     // predimed_12
-  'Soffritti mediterranei ≥ 2 volte/settimana', // predimed_13
-  'Alimentazione vicina alla dieta mediterranea' // predimed_14
+  'Olio EVO',     // predimed_1
+  'Olio ≥ 4',    // predimed_2
+  'Verdure',      // predimed_3
+  'Frutta',       // predimed_4
+  'Carne rossa',  // predimed_5
+  'Bevande zuccherate',  // predimed_6
+  'Vino',         // predimed_7
+  'Legumi',       // predimed_8
+  'Pesce',        // predimed_9
+  'Dolci',        // predimed_10
+  'Carni bianche',// predimed_11
+  'Frutta secca', // predimed_12
+  'Soffritti',    // predimed_13
+  'Dieta Mediterranea'    // predimed_14
 ];
 
 const predimedTooltips = [
