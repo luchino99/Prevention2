@@ -24,16 +24,18 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Solo richieste POST sono accettate" });
 
+  // Parsing del body e log di debug
+  console.log("📥 Body ricevuto (raw):", req.body);
   const data = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
-  const safe = (val) => val ?? "non disponibile";
+  console.log("📥 Data parse:", data);
+
+  const safe = (val) => val ?? "non specificato";
   const escape = (str) => (str || "").toString().replace(/[`$]/g, "");
-  console.log("📥 Body ricevuto:", req.body);
-console.log("📥 Data parse:", data);
 
   try {
     let prompt = "";
 
-    // 1. SUGGERIMENTI PRIORITARI
+    /** 1️⃣ SUGGERIMENTI PRIORITARI **/
     if (data.suggerimenti_prioritari) {
       prompt = `
 Hai accesso ai dati clinici e anagrafici di un paziente.
@@ -53,8 +55,8 @@ Insonnia: ${data.insonnia}
 Stress: ${data.stress}
 
 Genera **3 consigli prioritari** personalizzati per migliorare la salute generale.
-Devono essere pratici, comprensibili, e basati su linee guida cliniche.`;
-
+Devono essere pratici, comprensibili, e basati su linee guida cliniche.
+`;
       const response = await openai.chat.completions.create({
         model: "gpt-4-turbo",
         messages: [
@@ -64,14 +66,14 @@ Devono essere pratici, comprensibili, e basati su linee guida cliniche.`;
         temperature: 0.7
       });
 
-      const result = response?.choices?.[0]?.message?.content;
       return res.status(200).json({
-        suggerimenti: result || "⚠️ Nessuna risposta valida."
+        suggerimenti: response?.choices?.[0]?.message?.content || "⚠️ Nessuna risposta valida."
       });
     }
 
-if (data.screening_ai) {
-  const prompt = `
+    /** 2️⃣ SCREENING AI **/
+    else if (data.screening_ai) {
+      prompt = `
 Hai accesso ai dati clinici di un paziente. In base ai seguenti dati:
 - Età: ${data.eta}
 - Sesso: ${data.sesso}
@@ -97,26 +99,22 @@ Per ogni screening includi:
 `;
 
   const response = await openai.chat.completions.create({
-    model: "gpt-4-turbo",
-    messages: [
-      { role: "system", content: "Sei un medico esperto in medicina preventiva, screening oncologici e cardiovascolari." },
-      { role: "user", content: prompt }
-    ],
-    temperature: 0.7
-  });
+        model: "gpt-4-turbo",
+        messages: [
+          { role: "system", content: "Sei un medico esperto in medicina preventiva, screening oncologici e cardiovascolari." },
+          { role: "user", content: prompt }
+        ],
+        temperature: 0.7
+      });
 
-  const result = response?.choices?.[0]?.message?.content;
-  return res.status(200).json({
-    screening: result || "⚠️ Nessuna risposta generata."
-  });
-}
+      return res.status(200).json({
+        screening: response?.choices?.[0]?.message?.content || "⚠️ Nessuna risposta generata."
+      });
+    }
 
-if (data.consigli_benessere) {
-  if (!data.stress || !data.umore || !data.sonno_qualita) {
-    return res.status(400).json({ errore: "Dati mancanti per generare i consigli." });
-  }
-
-  const prompt = data.prompt || `
+    /** 3️⃣ CONSIGLI BENESSERE **/
+    else if (data.consigli_benessere) {
+      prompt = `
 Fornisci tre consigli pratici per migliorare il benessere psicologico dell'utente.
 - Uno per ridurre lo stress (livello: ${data.stress}/10)
 - Uno per migliorare l'umore (livello: ${data.umore}/10)
@@ -124,29 +122,26 @@ Fornisci tre consigli pratici per migliorare il benessere psicologico dell'utent
 I consigli devono essere chiari, applicabili nella vita quotidiana e basati su evidenze scientifiche.
 `;
 
-  const response = await openai.chat.completions.create({
-    model: "gpt-4-turbo",
-    messages: [
-      { role: "system", content: "Sei un esperto in benessere psicologico." },
-      { role: "user", content: prompt }
-    ],
-    temperature: 0.7
-  });
+ const response = await openai.chat.completions.create({
+        model: "gpt-4-turbo",
+        messages: [
+          { role: "system", content: "Sei un esperto in benessere psicologico." },
+          { role: "user", content: prompt }
+        ],
+        temperature: 0.7
+      });
 
-  const suggerimenti = response?.choices?.[0]?.message?.content;
+      return res.status(200).json({
+        suggerimenti: response?.choices?.[0]?.message?.content || "⚠️ Nessun suggerimento generato."
+      });
+    }
 
-  return res.status(200).json({ suggerimenti: suggerimenti || "⚠️ Nessun suggerimento generato." });
-}
+    /** 4️⃣ PIANO ALIMENTARE PERSONALIZZATO **/
+    else if (data?.piano_alimentare === true || data?.piano_alimentare === "true") {
+      console.log("📥 Richiesta per piano alimentare:", data);
 
-
-
-// 3. PIANO ALIMENTARE PERSONALIZZATO
-if (data.piano_alimentare) {
-  const safe = (v) => v || "Non specificato";
-  console.log("📥 Richiesta ricevuta per piano alimentare:", data);
-
-  const prompt = `
-Crea un piano alimentare settimanale personalizzato e sicuro in base ai seguenti dati dell'utente:
+      prompt = `
+Crea un piano alimentare settimanale personalizzato e sicuro in base ai seguenti dati:
 
 📋 **DATI ANAGRAFICI E FISICI**
 - Età: ${safe(data.eta)}
@@ -165,58 +160,37 @@ Crea un piano alimentare settimanale personalizzato e sicuro in base ai seguenti
 
 🕒 **ORGANIZZAZIONE PASTI**
 - Numero pasti giornalieri: ${safe(data.numero_pasti)}
-- Orari abituali dei pasti: ${safe(data.orari_pasti)}
+- Orari abituali: ${safe(data.orari_pasti)}
 
 🏥 **SALUTE**
 - Patologie diagnosticate: ${safe(data.patologie)}
 - Farmaci assunti: ${safe(data.farmaci)}
 
----
+📌 **REQUISITI**
+- 7 giorni (lunedì-domenica)
+- Pasti giornalieri secondo ${safe(data.numero_pasti)}
+- Quantità in grammi o porzioni
+- Adattato a obiettivo, attività fisica e restrizioni
+- Formato tabellare con Giorno | Pasto | Alimenti e Quantità | Note
+`;
+      const response = await openai.chat.completions.create({
+        model: "gpt-4-turbo",
+        messages: [
+          { role: "system", content: "Sei un nutrizionista certificato. Genera solo piani alimentari sicuri e bilanciati secondo linee guida internazionali." },
+          { role: "user", content: prompt }
+        ],
+        temperature: 0.7
+      });
 
-📌 **REQUISITI DEL PIANO**
-1. Il piano deve coprire **7 giorni** (lunedì-domenica).
-2. Ogni giorno deve includere i pasti previsti (colazione, spuntini, pranzo, cena, ecc. in base a ${safe(data.numero_pasti)} pasti).
-3. Includere alimenti variati, equilibrati e facilmente reperibili.
-4. Specificare quantità indicative (in grammi o porzioni) per ogni alimento.
-5. Adattare calorie e macronutrienti all'obiettivo e al livello di attività fisica.
-6. Evitare cibi nelle liste di intolleranze o alimenti esclusi.
-7. Tenere conto di eventuali patologie e farmaci, evitando interazioni alimentari potenzialmente rischiose.
-8. Presentare il piano in **formato tabellare** ordinato, con colonne:
-   - Giorno
-   - Pasto
-   - Alimenti e quantità
-   - Note nutrizionali
+      console.log("📤 Risposta grezza GPT:", JSON.stringify(response, null, 2));
 
-💡 **Esempio di formato atteso**
-Giorno | Pasto | Alimenti e Quantità | Note
-Lunedì | Colazione | Yogurt greco 150g + Mirtilli 50g + Avena 40g | Ricco di proteine e fibre
-...
-  `;
+      return res.status(200).json({
+        piano: response?.choices?.[0]?.message?.content || "⚠️ Nessuna risposta valida dal modello."
+      });
+    }
 
-  const response = await openai.chat.completions.create({
-    model: "gpt-4-turbo",
-    messages: [
-      { role: "system", content: "Sei un nutrizionista certificato. Genera solo piani alimentari sicuri e bilanciati secondo linee guida internazionali." },
-      { role: "user", content: prompt }
-    ],
-    temperature: 0.7
-  });
-  console.log("📤 Risposta grezza GPT:", JSON.stringify(response, null, 2));
-
-  const result = response?.choices?.[0]?.message?.content || null;
-  
-
-  return res.status(200).json({
-    piano: result || "⚠️ Nessuna risposta valida dal modello."
-  });
-}
-
-
-
-    // 2. FOLLOW-UP CONTESTUALE
-    if (data.contesto_chat) {
-      const { ultima_domanda, ultima_risposta, nuova_domanda } = data.contesto_chat;
-
+    /** 5️⃣ CONTESTO CHAT **/
+    else if (data.contesto_chat) {
       prompt = `
 Sei un assistente sanitario digitale. Un utente ha già posto una domanda, a cui hai risposto. Ora ha inviato una nuova domanda di approfondimento.
 
