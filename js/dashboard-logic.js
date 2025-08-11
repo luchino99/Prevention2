@@ -1804,7 +1804,58 @@ Il benessere psicologico è un determinante fondamentale della salute: gestire s
 - Attività fisica regolare, preferibilmente all'aperto.<br>
 - Coltivare relazioni sociali positive.<br>
 - Chiedere supporto a professionisti in caso di sintomi persistenti.
+`,
+
+  "caloric-needs": `
+<strong>🔥 Fabbisogno Calorico – BMR, TDEE e Calorie Suggerite</strong><br><br>
+Il fabbisogno calorico indica la quantità di energia (calorie) necessaria per mantenere le funzioni vitali e sostenere l’attività fisica quotidiana.<br><br>
+
+📌 <u>Concetti chiave:</u><br>
+- <strong>BMR (Basal Metabolic Rate)</strong>: il metabolismo basale, cioè il numero di calorie necessarie per mantenere le funzioni vitali a riposo (respirazione, circolazione, temperatura corporea).<br>
+- <strong>TDEE (Total Daily Energy Expenditure)</strong>: il dispendio energetico totale, ottenuto sommando al BMR le calorie consumate per tutte le attività giornaliere, compreso lo sport.<br>
+- <strong>Calorie suggerite</strong>: il fabbisogno calorico totale personalizzato in base all’obiettivo (mantenimento, dimagrimento o aumento di massa).<br><br>
+
+⚙️ <u>Come influisce l’attività fisica:</u><br>
+- Più alta è l’attività fisica, maggiore sarà il TDEE e quindi le calorie suggerite.<br>
+- Allenamenti intensi richiedono un surplus calorico per evitare perdita di massa muscolare.<br><br>
+
+💡 <u>Consigli pratici:</u><br>
+- Per <strong>dimagrire</strong>: mantenere un deficit calorico moderato (circa 300–500 kcal/die) preservando un adeguato apporto proteico.<br>
+- Per <strong>aumentare massa</strong>: mantenere un surplus calorico controllato (200–400 kcal/die) con rapporto equilibrato di macronutrienti.<br>
+- Per <strong>mantenimento</strong>: assumere un apporto calorico pari al TDEE con proporzione bilanciata di nutrienti.
+`,
+
+"macronutrients": `
+<strong>🍽️ Ripartizione dei Macronutrienti – Proteine, Carboidrati, Grassi</strong><br><br>
+La ripartizione dei macronutrienti è la distribuzione delle calorie totali giornaliere tra proteine, carboidrati e grassi, fondamentale per ottimizzare prestazioni, composizione corporea e salute generale.<br><br>
+
+📌 <u>Proteine</u>:<br>
+- Le quantità indicate nel nostro grafico si riferiscono a <strong>proteine nette</strong>, cioè la quantità di proteine effettivamente contenute nell’alimento.<br>
+- La quantità netta dipende dalla <em>composizione dell’alimento</em>. Ad esempio:<br>
+  • 100g di <strong>petto di pollo</strong> → ~23g proteine nette.<br>
+  • 100g di <strong>tonno fresco</strong> → ~21g proteine nette.<br>
+  • 100g di <strong>uova intere</strong> → ~13g proteine nette.<br>
+  • 100g di <strong>pane</strong> → ~8g proteine nette.<br>
+  • 100g di <strong>riso</strong> crudo → ~7g proteine nette.<br>
+- Per calcolare quante proteine nette si assumono, è necessario conoscere la tabella nutrizionale dell’alimento.<br><br>
+
+📌 <u>Carboidrati</u>:<br>
+- Fonte primaria di energia per muscoli e cervello.<br>
+- Presenti in pane, pasta, riso, patate, frutta.<br>
+- Meglio privilegiare carboidrati complessi e ricchi di fibre.<br><br>
+
+📌 <u>Grassi</u>:<br>
+- Essenziali per ormoni, vitamine liposolubili e salute cellulare.<br>
+- Fonti salutari: olio extravergine d’oliva, frutta secca, pesce azzurro, avocado.<br><br>
+
+⚖️ <u>Rapporto per obiettivo</u>:<br>
+- <strong>Dimagrimento</strong>: proteine alte, carboidrati moderati, grassi moderati.<br>
+- <strong>Aumento massa</strong>: carboidrati alti, proteine moderate-alte, grassi moderati.<br>
+- <strong>Mantenimento</strong>: proporzioni bilanciate in base alle preferenze e all’attività.<br><br>
+
+💡 <u>Nota</u>: una dieta equilibrata non significa eliminare un macronutriente, ma adattarne la quantità alle necessità personali.
 `
+
 
 
 };
