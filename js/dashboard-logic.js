@@ -86,55 +86,67 @@ document.getElementById("salva-dati-piano")?.addEventListener("click", async () 
   }
 });
 
- document.getElementById("btn-genera-piano")?.addEventListener("click", async () => {
-  const output = document.getElementById("piano-alimentare-output");
+// Pulsante per generare il piano alimentare
+const btnGeneraPiano = document.getElementById("btn-genera-piano");
+if (btnGeneraPiano) {
+  btnGeneraPiano.addEventListener("click", async () => {
+    const output = document.getElementById("piano-alimentare-output");
 
-  // Mostra messaggio di caricamento
-  output.innerHTML = `
-    <div class="flex items-center gap-2 text-green-700">
-      <i class="fas fa-spinner fa-spin"></i>
-      <span>Generazione piano in corso... Attendere qualche secondo</span>
-    </div>
-  `;
-
-  try {
-    const response = await fetch("https://prevention2.vercel.app/api/openai", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        piano_alimentare: true,
-        ...userData // Passiamo tutti i dati salvati nel DB
-      })
-    });
-
-    const data = await response.json();
-
-    if (!data.piano) {
-      throw new Error("Nessuna risposta dal modello");
-    }
-
-    // Formatta il testo AI in HTML tabellare
-    const formattedPlan = formatMealPlan(data.piano);
-
+    // Mostra messaggio di caricamento
     output.innerHTML = `
-      <h4 class="text-lg font-semibold mb-3 text-green-700">🍽️ Il tuo piano alimentare personalizzato</h4>
-      ${formattedPlan}
+      <div class="flex items-center gap-2 text-green-700">
+        <i class="fas fa-spinner fa-spin"></i>
+        <span>Generazione piano in corso... Attendere qualche secondo</span>
+      </div>
     `;
 
-  } catch (error) {
-    console.error("❌ Errore generazione piano alimentare:", error);
-    output.innerHTML = `<p class="text-red-600">❌ Errore durante la generazione del piano. Riprova più tardi.</p>`;
-  }
-});
+    try {
+      // Estrazione solo dei campi necessari
+      const datiPiano = {
+        eta: userData.eta || document.getElementById("eta")?.value || "",
+        sesso: userData.sesso || document.getElementById("sesso")?.value || "",
+        altezza: userData.altezza || document.getElementById("altezza")?.value || "",
+        peso: userData.peso || document.getElementById("peso")?.value || "",
+        obiettivo: userData.obiettivo || document.getElementById("obiettivo")?.value || "",
+        attivita_fisica: userData.attivita_fisica || document.getElementById("attivita_fisica")?.value || "",
+        preferenze_alimentari: userData.preferenze_alimentari || document.getElementById("preferenze")?.value || "",
+        intolleranze: userData.intolleranze || document.getElementById("intolleranze")?.value || "",
+        alimenti_esclusi: userData.alimenti_esclusi || document.getElementById("alimenti_esclusi")?.value || "",
+        numero_pasti: userData.numero_pasti || document.getElementById("pasti")?.value || "",
+        orari_pasti: userData.orari_pasti || document.getElementById("orari_pasti")?.value || "",
+        patologie: userData.patologie || document.getElementById("patologie")?.value || "",
+        farmaci: userData.farmaci_dettaglio || document.getElementById("farmaci")?.value || ""
+      };
 
-/**
- * Converte il testo generato in una tabella leggibile
- * Esempio di output AI atteso:
- * Colazione: ...
- * Spuntino: ...
- * Pranzo: ...
- * Cena: ...
- */
+      // Chiamata API per generare il piano
+      const response = await fetch("https://prevention2.vercel.app/api/openai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          piano_alimentare: true,
+          ...datiPiano
+        })
+      });
+
+      const data = await response.json();
+      if (!data.piano) {
+        throw new Error("Nessuna risposta dal modello");
+      }
+
+      // Mostra il piano formattato
+      output.innerHTML = `
+        <h4 class="text-lg font-semibold mb-3 text-green-700">🍽️ Il tuo piano alimentare personalizzato</h4>
+        ${formatMealPlan(data.piano)}
+      `;
+
+    } catch (error) {
+      console.error("❌ Errore generazione piano alimentare:", error);
+      output.innerHTML = `<p class="text-red-600">❌ Errore durante la generazione del piano. Riprova più tardi.</p>`;
+    }
+  });
+}
+
+// Funzione per formattare il testo del piano in tabella
 function formatMealPlan(planText) {
   const lines = planText.split("\n").filter(line => line.trim() !== "");
   const rows = lines.map(line => {
@@ -163,7 +175,6 @@ function formatMealPlan(planText) {
     </div>
   `;
 }
-
 
     
 
