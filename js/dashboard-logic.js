@@ -133,6 +133,8 @@ if (btnGeneraPiano) {
         throw new Error("Nessuna risposta dal modello");
       }
 
+      console.log("📥 Risposta grezza API piano alimentare:", data);
+
       // Mostra il piano formattato
       output.innerHTML = `
         <h4 class="text-lg font-semibold mb-3 text-green-700">🍽️ Il tuo piano alimentare personalizzato</h4>
