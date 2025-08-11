@@ -121,11 +121,10 @@ if (btnGeneraPiano) {
         throw new Error("Nessuna risposta dal modello");
       }
 
-      // Mostra il piano
-      output.innerHTML = `
-        <h4 class="text-lg font-semibold mb-3 text-green-700">🍽️ Il tuo piano alimentare personalizzato</h4>
-        <pre class="whitespace-pre-wrap text-gray-800">${data.risposta}</pre>
-      `;
+output.innerHTML = `
+  <h4 class="text-lg font-semibold mb-3 text-green-700">🍽️ Il tuo piano alimentare personalizzato</h4>
+  ${formatMealPlanProfessional(data.risposta)}
+`;
 
     } catch (error) {
       console.error("❌ Errore generazione piano alimentare:", error);
@@ -137,34 +136,76 @@ if (btnGeneraPiano) {
 
 
 // Funzione per formattare il testo del piano in tabella
-function formatMealPlan(planText) {
-  const lines = planText.split("\n").filter(line => line.trim() !== "");
-  const rows = lines.map(line => {
-    const [meal, ...rest] = line.split(":");
-    return `
-      <tr class="border-b border-gray-200">
-        <td class="px-4 py-2 font-medium text-gray-800">${meal || ""}</td>
-        <td class="px-4 py-2 text-gray-600">${rest.join(":").trim() || ""}</td>
-      </tr>
-    `;
-  }).join("");
+function formatMealPlanProfessional(planText) {
+  if (!planText || typeof planText !== "string") {
+    return `<p class="text-red-600">⚠️ Nessun piano disponibile.</p>`;
+  }
 
-  return `
-    <div class="overflow-x-auto">
-      <table class="min-w-full bg-white border border-gray-200 rounded-lg shadow">
-        <thead class="bg-green-100">
+  // 🔹 Correzioni di formattazione comuni di GPT
+  planText = planText
+    .replace(/\s-\s/g, " | ") // sostituisce " - " con " | "
+    .replace(/\t/g, " ") // rimuove tab
+    .replace(/ {2,}/g, " "); // rimuove spazi multipli
+
+  const lines = planText.split("\n").filter(line => line.trim() !== "");
+
+  let html = `
+    <div class="overflow-x-auto shadow-xl rounded-xl border border-gray-200">
+      <table class="min-w-full border-collapse">
+        <thead class="bg-gradient-to-r from-green-500 to-emerald-600 text-white">
           <tr>
-            <th class="px-4 py-2 text-left text-gray-700">Pasto</th>
-            <th class="px-4 py-2 text-left text-gray-700">Descrizione</th>
+            <th class="px-4 py-3 text-left font-semibold">📅 Giorno</th>
+            <th class="px-4 py-3 text-left font-semibold">🍽️ Pasto</th>
+            <th class="px-4 py-3 text-left font-semibold">🥗 Alimenti & Quantità</th>
+            <th class="px-4 py-3 text-left font-semibold">📝 Note</th>
           </tr>
         </thead>
-        <tbody>
-          ${rows}
+        <tbody class="bg-white divide-y divide-gray-100">
+  `;
+
+  lines.forEach(line => {
+    const parts = line.split("|").map(p => p.trim());
+
+    // 🔹 Riga che rappresenta solo il nome del giorno
+    if (parts.length === 1 && /^[A-Za-zÀ-ù]+$/.test(parts[0])) {
+      html += `
+        <tr class="bg-green-100">
+          <td colspan="4" class="px-4 py-2 font-bold text-green-800 uppercase">${parts[0]}</td>
+        </tr>
+      `;
+    }
+    // 🔹 Riga con tutti i dati
+    else if (parts.length >= 4) {
+      html += `
+        <tr class="hover:bg-green-50 transition duration-200">
+          <td class="px-4 py-3 font-semibold text-green-700">${parts[0]}</td>
+          <td class="px-4 py-3">${parts[1]}</td>
+          <td class="px-4 py-3 text-gray-700">${parts[2]}</td>
+          <td class="px-4 py-3 text-sm text-gray-500">${parts.slice(3).join(" | ")}</td>
+        </tr>
+      `;
+    }
+    // 🔹 Riga parziale (es. senza note)
+    else if (parts.length === 3) {
+      html += `
+        <tr class="hover:bg-green-50 transition duration-200">
+          <td class="px-4 py-3 font-semibold text-green-700">${parts[0]}</td>
+          <td class="px-4 py-3">${parts[1]}</td>
+          <td class="px-4 py-3 text-gray-700" colspan="2">${parts[2]}</td>
+        </tr>
+      `;
+    }
+  });
+
+  html += `
         </tbody>
       </table>
     </div>
   `;
+
+  return html;
 }
+
 
     
 
