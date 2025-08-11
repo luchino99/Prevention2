@@ -40,6 +40,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Carica dati dal database
     await loadUserData(emailUtente);
     populatePianoAlimentareForm();
+    fixFloatingLabels();
 
     
 
@@ -229,6 +230,25 @@ function populatePianoAlimentareForm() {
     }
   });
 }
+
+function fixFloatingLabels() {
+  document.querySelectorAll("#form-piano-alimentare input, #form-piano-alimentare select").forEach(el => {
+    if (el.value && el.value.trim() !== "") {
+      el.classList.add("has-value");
+    } else {
+      el.classList.remove("has-value");
+    }
+
+    el.addEventListener("input", () => {
+      if (el.value && el.value.trim() !== "") {
+        el.classList.add("has-value");
+      } else {
+        el.classList.remove("has-value");
+      }
+    });
+  });
+}
+
 
 
 function calculateAllScores() {
