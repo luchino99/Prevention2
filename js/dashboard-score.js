@@ -160,7 +160,7 @@ const fliScore = profile.fli_score !== null && profile.fli_score !== undefined
   : "--";
 
 // Testo FLI
-const fliScoreEl = document.getElementById("fni-banner-score");
+const fliScoreEl = document.getElementById("fli-banner-score");
 if (fliScoreEl) fliScoreEl.textContent = fliScore;
 
 // Cerchio colore FLI
