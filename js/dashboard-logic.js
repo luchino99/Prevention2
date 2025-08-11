@@ -39,6 +39,9 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // Carica dati dal database
     await loadUserData(emailUtente);
+    populatePianoAlimentareForm();
+
+    
 
     // Sovrascrivi i dati dinamici con quelli salvati dal DB
 dashboardData.score2 = {
@@ -194,6 +197,39 @@ async function loadUserData(email) {
     console.log('🔧 Usando dati di fallback per debug:', userData);
   }
 }
+
+function populatePianoAlimentareForm() {
+  // Lista dei campi del piano alimentare
+  const campi = [
+    "eta",
+    "sesso",
+    "altezza",
+    "peso",
+    "obiettivo",
+    "attivita_fisica",
+    "tipo_lavoro",
+    "preferenze",
+    "intolleranze",
+    "alimenti_esclusi",
+    "pasti",
+    "orari_pasti",
+    "patologie",
+    "farmaci"
+  ];
+
+  campi.forEach(campo => {
+    const el = document.getElementById(campo);
+    if (el && userData[campo] !== undefined && userData[campo] !== null) {
+      // Gestione maiuscole/minuscole e valori di select
+      if (el.tagName === "SELECT") {
+        el.value = userData[campo]?.toString().toLowerCase() || "";
+      } else {
+        el.value = userData[campo] || "";
+      }
+    }
+  });
+}
+
 
 function calculateAllScores() {
   console.log('🚀 Inizio calcolo di tutti gli score...');
