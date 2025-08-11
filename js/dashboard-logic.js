@@ -1636,8 +1636,17 @@ function setupTabs() {
       }
     }, 300000);
 
-    // Gestione logout
+    
+  
+  
+  // Gestione logout
     document.getElementById('logout-btn')?.addEventListener('click', async () => {
       await supabaseClient.auth.signOut();
       window.location.href = 'login.html';
     });
+
+
+
+
+
+  
