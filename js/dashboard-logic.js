@@ -1770,7 +1770,42 @@ La sindrome metabolica aumenta significativamente il rischio di <strong>infarto,
 - Limitare il consumo di alcol e abolire il fumo<br><br>
 📅 <u>Follow-up raccomandato:</u><br>
 Visita di controllo e monitoraggio dei parametri ogni 6-12 mesi, o più frequentemente in caso di peggioramento.
+`,
+
+"predimed": `
+<strong>🥗 Valutazione PREDIMED – Aderenza alla Dieta Mediterranea</strong><br><br>
+Il <strong>PREDIMED</strong> è un questionario validato che misura il grado di <em>aderenza alla dieta mediterranea</em>, uno dei modelli alimentari più studiati e associati a una riduzione significativa del rischio cardiovascolare e metabolico.<br><br>
+📌 <u>Interpretazione punteggio:</u><br>
+- <strong>Bassa aderenza</strong>: 0–5 punti → Necessarie modifiche sostanziali all’alimentazione.<br>
+- <strong>Media aderenza</strong>: 6–9 punti → Buona base, ma margini di miglioramento.<br>
+- <strong>Alta aderenza</strong>: ≥10 punti → Alimentazione fortemente protettiva.<br><br>
+📊 <u>Benefici documentati della dieta mediterranea:</u><br>
+Riduzione del rischio di infarto, ictus, diabete tipo 2, alcuni tumori e malattie neurodegenerative.<br><br>
+💡 <u>Raccomandazioni pratiche:</u><br>
+- Aumentare consumo di frutta, verdura, legumi e cereali integrali.<br>
+- Usare olio extravergine d'oliva come principale fonte di grassi.<br>
+- Incrementare il consumo di pesce e frutta secca.<br>
+- Limitare carni rosse, insaccati e dolci industriali.<br>
+- Preferire cotture semplici e moderare l'uso del sale.
+`,
+
+"psychological-wellbeing": `
+<strong>🧠 Benessere Psicologico – Stress, Sonno e Umore</strong><br><br>
+La valutazione del <strong>benessere psicologico</strong> si basa su tre indicatori chiave: <em>stress percepito</em>, <em>qualità del sonno</em> e <em>stato dell'umore</em>. Questi fattori influenzano profondamente la salute generale, il sistema immunitario e il rischio di malattie croniche.<br><br>
+📌 <u>Interpretazione indicatori:</u><br>
+- <strong>Stress</strong>: livelli alti (&gt;7/10) associati a rischio cardiovascolare, disturbi del sonno e peggioramento del controllo glicemico.<br>
+- <strong>Sonno</strong>: qualità scarsa (<6 ore o frequenti risvegli) aumenta rischio di obesità, diabete e depressione.<br>
+- <strong>Umore</strong>: sintomi persistenti di tristezza o ansia richiedono valutazione clinica.<br><br>
+📊 <u>Importanza clinica:</u><br>
+Il benessere psicologico è un determinante fondamentale della salute: gestire stress e sonno migliora parametri metabolici, pressione arteriosa e resilienza immunitaria.<br><br>
+💡 <u>Strategie di miglioramento:</u><br>
+- Praticare tecniche di rilassamento (respirazione, meditazione, mindfulness).<br>
+- Mantenere routine regolari di sonno e igiene del sonno.<br>
+- Attività fisica regolare, preferibilmente all'aperto.<br>
+- Coltivare relazioni sociali positive.<br>
+- Chiedere supporto a professionisti in caso di sintomi persistenti.
 `
+
 
 };
 
