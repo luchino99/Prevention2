@@ -697,7 +697,7 @@ function updateDashboard() {
   const score2dVars = [
     { label: 'HbA1c', value: `${userData.hba1c || '--'} %`, positive: parseFloat(userData.hba1c) < 5.7 },
     { label: 'Glicemia', value: `${userData.glicemia_valore || '--'} mg/dL`, positive: parseFloat(userData.glicemia_valore) < 100 },
-    { label: 'Pressione', value: `${userData.pressione_sistolica || '--'} mmHg`, positive: parseFloat(userData.pressione_sistolica) < 140 },
+    { label: 'Pressione', value: `${userData.pressione_sistolica || '--'} mmHg`, positive: parseFloat(userData.pressione_sistolica) < 131 },
     { label: 'Colesterolo Totale', value: `${userData.colesterolo_totale || '--'} mg/dL`, positive: parseFloat(userData.colesterolo_totale) < 200 },
     { label: 'HDL', value: `${userData.colesterolo_hdl_valore || '--'} mg/dL`, positive: parseFloat(userData.colesterolo_hdl_valore) >= 40 }
   ];
@@ -718,7 +718,7 @@ else if (userData.frail_category === "Fragile") frailBadge.classList.add("badge-
 const frailVars = [
   { label: 'Affaticamento', value: userData.stanchezza || '--', positive: (userData.stanchezza || '').toLowerCase() === 'no' },
   { label: 'Resistenza', value: userData.sedia || '--', positive: (userData.sedia || '').toLowerCase() === 'no' },
-  { label: 'Cammino', value: userData.camminata || '--', positive: (userData.camminata || '').toLowerCase() === 'no' },
+  { label: 'Cammino', value: userData.camminata || '--', positive: (userData.camminata || '').toLowerCase() === 'si' },
   { label: 'Malattie', value: userData.malattie_croniche || '--', positive: (userData.malattie_croniche || '').toLowerCase() === 'no' },
   { label: 'Perdita di peso', value: userData.perdita_peso || '--', positive: (userData.perdita_peso || '').toLowerCase() === 'no' }
 ];
@@ -732,7 +732,7 @@ document.getElementById("frail-variable-list").innerHTML =
   const fib4Vars = [
     { label: 'AST', value: `${dashboardData.fib4.ast || '--'} U/L`, positive: dashboardData.fib4.ast < 40 },
     { label: 'ALT', value: `${dashboardData.fib4.alt || '--'} U/L`, positive: dashboardData.fib4.alt < 41 },
-    { label: 'Piastrine', value: `${dashboardData.fib4.plt || '--'} x10⁹/L`, positive: dashboardData.fib4.plt >= 150 }
+    { label: 'Piastrine', value: `${dashboardData.fib4.plt || '--'} x10⁹/L`, positive: dashboardData.fib4.plt > 150 && dashboardData.fib4.plt < 450 }
   ];
   document.getElementById("fib4-variable-list").innerHTML =
     fib4Vars.map(v => `<div class="badge ${v.positive ? 'badge-success' : 'badge-danger'}">${v.label}: ${v.value}</div>`).join('');
