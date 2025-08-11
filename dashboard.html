@@ -138,9 +138,8 @@
                   <div class="text-gray-500 italic">Caricamento...</div>
                 </div>
               </div>
-
             </div>
-          </div>
+        
 
           <!-- FRAIL Scale (Migliorato) -->
           <div id="frail-banner" class="p-4 bg-gray-50 rounded-lg flex flex-col justify-between h-auto">
@@ -170,103 +169,77 @@
 
 
           <!-- FIB4 -->
-          <div id="fib4-banner" class="p-4 bg-gray-50 rounded-lg flex flex-col justify-between h-[320px]">
+<div id="fib4-banner" class="p-4 bg-gray-50 rounded-lg">
+  <h3 class="font-semibold mb-3">FIB4</h3>
+  <div class="flex items-center justify-center mb-4">
+    <svg width="120" height="120" viewBox="0 0 120 120">
+      <circle cx="60" cy="60" r="50" fill="none" stroke="#e6e6e6" stroke-width="10"></circle>
+      <circle class="progress-ring__circle" cx="60" cy="60" r="50" fill="none" stroke="#FBBC05" stroke-width="10" stroke-dashoffset="220" stroke-linecap="round"></circle>
+      <text id="fib4-banner-score" x="60" y="65" text-anchor="middle" font-size="18" font-weight="bold" fill="var(--chart-text-color)">--</text>
+    </svg>
+  </div>
+  <div class="mt-4">
+    <p class="text-sm font-semibold mb-1">📋 Risposte utilizzate:</p>
+    <div id="fib4-variable-list" class="space-y-1 text-xs">
+      <div class="text-gray-500 italic">Caricamento...</div>
+    </div>
+  </div>
+</div>
 
-            <h3 class="font-semibold mb-3">FIB4</h3>
-            <div class="flex items-center justify-center mb-4">
-              <div id="fib4-banner-score" class="score-indicator-2 score-medium text-2xl">--</div>
-            </div>
-            <div class="space-y-2">
-              <div class="flex justify-between text-sm">
-                <span>AST</span>
-                <span id="fib4-banner-ast" class="font-medium">--</span>
-              </div>
-              <div class="flex justify-between text-sm">
-                <span>ALT</span>
-                <span id="fib4-banner-alt" class="font-medium">--</span>
-              </div>
-              <div class="flex justify-between text-sm">
-                <span>Piastrine</span>
-                <span id="fib4-banner-plt" class="font-medium">--</span>
-              </div>   
-            </div>
-          </div>
+          <!-- FLI -->
+<div id="fni-banner" class="p-4 bg-gray-50 rounded-lg">
+  <h3 class="font-semibold mb-3">Fatty Liver Index</h3>
+  <div class="flex items-center justify-center mb-4">
+    <svg width="120" height="120" viewBox="0 0 120 120">
+      <circle cx="60" cy="60" r="50" fill="none" stroke="#e6e6e6" stroke-width="10"></circle>
+      <circle class="progress-ring__circle" cx="60" cy="60" r="50" fill="none" stroke="#34A853" stroke-width="10" stroke-dashoffset="220" stroke-linecap="round"></circle>
+      <text id="fni-banner-score" x="60" y="65" text-anchor="middle" font-size="18" font-weight="bold" fill="var(--chart-text-color)">--</text>
+    </svg>
+  </div>
+  <div class="mt-4">
+    <p class="text-sm font-semibold mb-1">📋 Risposte utilizzate:</p>
+    <div id="fni-variable-list" class="space-y-1 text-xs">
+      <div class="text-gray-500 italic">Caricamento...</div>
+    </div>
+  </div>
+</div>
 
-          <!-- FNI -->
-          <div id="fni-banner" class="p-4 bg-gray-50 rounded-lg flex flex-col justify-between h-[320px]">
+<!-- SCORE2 -->
+<div id="score2-banner" class="p-4 bg-gray-50 rounded-lg">
+  <h3 class="font-semibold mb-3">SCORE2</h3>
+  <div class="flex items-center justify-center mb-4">
+    <svg width="120" height="120" viewBox="0 0 120 120">
+      <circle cx="60" cy="60" r="50" fill="none" stroke="#e6e6e6" stroke-width="10"></circle>
+      <circle class="progress-ring__circle" cx="60" cy="60" r="50" fill="none" stroke="#4285F4" stroke-width="10" stroke-dashoffset="220" stroke-linecap="round"></circle>
+      <text id="score2-indicator" x="60" y="65" text-anchor="middle" font-size="18" font-weight="bold" fill="var(--chart-text-color)">--%</text>
+    </svg>
+  </div>
+  <div class="mt-4">
+    <p class="text-sm font-semibold mb-1">📋 Risposte utilizzate:</p>
+    <div id="score2-variable-list" class="space-y-1 text-xs">
+      <div class="text-gray-500 italic">Caricamento...</div>
+    </div>
+  </div>
+</div>
 
-            <h3 class="font-semibold mb-3">Fatty liver index</h3>
-            <div class="flex items-center justify-center mb-4">
-              <div id="fni-banner-score" class="score-indicator-2 score-medium text-2xl">--</div>
-            </div>
-            <div class="space-y-2">
-              <div class="flex justify-between text-sm">
-                <span>Albumina</span>
-                <span id="fni-banner-albumina" class="font-medium">--</span>
-              </div>
-              <div class="flex justify-between text-sm">
-                <span>Linfociti</span>
-                <span id="fni-banner-linfociti" class="font-medium">--</span>
-              </div>
-            </div>
-          </div>
+<!-- ADA Diabetes Risk -->
+<div id="ada-banner" class="p-4 bg-gray-50 rounded-lg">
+  <h3 class="font-semibold mb-3">ADA Diabetes Risk</h3>
+  <div class="flex items-center justify-center mb-4">
+    <svg width="120" height="120" viewBox="0 0 120 120">
+      <circle cx="60" cy="60" r="50" fill="none" stroke="#e6e6e6" stroke-width="10"></circle>
+      <circle class="progress-ring__circle" cx="60" cy="60" r="50" fill="none" stroke="#FF9800" stroke-width="10" stroke-dashoffset="220" stroke-linecap="round"></circle>
+      <text id="ada-banner-score" x="60" y="65" text-anchor="middle" font-size="18" font-weight="bold" fill="var(--chart-text-color)">--/8</text>
+    </svg>
+  </div>
+  <div class="mt-4">
+    <p class="text-sm font-semibold mb-1">📋 Risposte utilizzate:</p>
+    <div id="ada-variable-list" class="space-y-1 text-xs">
+      <div class="text-gray-500 italic">Caricamento...</div>
+    </div>
+  </div>
+</div>
 
-          <div class="p-4 bg-gray-50 rounded-lg">
-            <h3 class="font-semibold mb-3">Rischio Cardiovascolare</h3>
-            <div class="flex items-center justify-center mb-4">
-              <svg width="120" height="120" viewBox="0 0 120 120" class="progress-ring">
-                <circle cx="60" cy="60" r="50" fill="none" stroke="#e6e6e6" stroke-width="10"></circle>
-                <circle class="progress-ring__circle ring-cv" cx="60" cy="60" r="50" fill="none" stroke="#4285F4" stroke-width="10" stroke-dasharray="314.16" stroke-dashoffset="220" stroke-linecap="round"></circle>
-                <text x="60" y="65" text-anchor="middle" font-size="18" font-weight="bold" fill="var(--chart-text-color)" id="cv-risk-text">--%</text>
-              </svg>
-            </div>
-            <div class="space-y-2">
-              <div class="flex justify-between text-sm">
-                <span>Età</span>
-                <span class="font-medium" id="cv-age">-- anni</span>
-              </div>
-              <div class="flex justify-between text-sm">
-                <span>Pressione</span>
-                <span class="font-medium" id="cv-pressure">-- mmHg</span>
-              </div>
-              <div class="flex justify-between text-sm">
-                <span>Colesterolo</span>
-                <span class="font-medium" id="cv-cholesterol">-- mg/dL</span>
-              </div>
-              <div class="flex justify-between text-sm">
-                <span>Fumo</span>
-                <span class="font-medium" id="cv-smoking">--</span>
-              </div>
-            </div>
-          </div>
-          <div class="p-4 bg-gray-50 rounded-lg">
-            <h3 class="font-semibold mb-3">Rischio Diabete (ADA)</h3>
-            <div class="flex items-center justify-center mb-4">
-              <svg width="120" height="120" viewBox="0 0 120 120" class="progress-ring">
-                <circle cx="60" cy="60" r="50" fill="none" stroke="#e6e6e6" stroke-width="10"></circle>
-                <circle class="progress-ring__circle ring-ada" cx="60" cy="60" r="50" fill="none" stroke="#FBBC05" stroke-width="10" stroke-dasharray="314.16" stroke-dashoffset="157" stroke-linecap="round"></circle>
-                <text x="60" y="65" text-anchor="middle" font-size="18" font-weight="bold" fill="var(--chart-text-color)" id="diabetes-risk-text">--/--</text>
-              </svg>
-            </div>
-            <div class="space-y-2">
-              <div class="flex justify-between text-sm">
-                <span>Glicemia</span>
-                <span id="glicemia-valore" class="font-medium text-yellow-600">-- mg/dL</span>
-              </div>
-              <div class="flex justify-between text-sm">
-                <span>Familiarità diabete</span>
-                <span id="familiarita-diabete" class="font-medium text-red-600">--</span>
-              </div>
-              <div class="flex justify-between text-sm">
-                <span>Ipertensione</span>
-                <span id="ipertensione" class="font-medium text-red-600">--</span>
-              </div>
-              <div class="flex justify-between text-sm">
-                <span>Attività fisica</span>
-                <span id="attivita-fisica" class="font-medium text-red-600">--</span>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
