@@ -94,8 +94,17 @@ const score2Val = profile.score2_risk !== null && profile.score2_risk !== undefi
 
 // Aggiorna riepilogo in alto
 const score2SummaryEl = document.getElementById("score2-summary-indicator");
-if (score2SummaryEl) score2SummaryEl.textContent = `${score2Val}%`;
-
+if (score2SummaryEl) {
+  score2SummaryEl.textContent = `${score2Val}%`;
+  score2SummaryEl.className = "score-indicator"; // reset classi
+  if (score2Val >= 15) {
+    score2SummaryEl.classList.add("score-high");
+  } else if (score2Val >= 10) {
+    score2SummaryEl.classList.add("score-medium");
+  } else {
+    score2SummaryEl.classList.add("score-low");
+  }
+}
 // Aggiorna banner nella tab Rischi
 const score2BannerEl = document.getElementById("score2-banner-score");
 if (score2BannerEl) score2BannerEl.textContent = `${score2Val}%`;
