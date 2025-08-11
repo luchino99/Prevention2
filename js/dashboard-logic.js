@@ -133,30 +133,42 @@ output.innerHTML = `
   });
 }
 
-    function formatMealPlanProfessional(planText) {
-  const giornoRegex = /^###\s*(Lunedì|Martedì|Mercoledì|Giovedì|Venerdì|Sabato|Domenica):$/i;
+  function formatMealPlanProfessional(planText) {
+  const giornoRegex = /^####\s*(Lunedì|Martedì|Mercoledì|Giovedì|Venerdì|Sabato|Domenica):?/i;
 
   const lines = planText.split("\n").map(l => l.trim()).filter(l => l);
   let currentDay = null;
   let days = {};
 
   lines.forEach(line => {
+    // Riconoscimento giorno
     if (giornoRegex.test(line)) {
-      currentDay = line.replace(/^###\s*/, "").replace(":", "");
+      currentDay = line.replace(/^####\s*/i, "").replace(":", "");
       days[currentDay] = { colazione: "", spuntino_mattina: "", pranzo: "", spuntino_pomeriggio: "", cena: "" };
-    } else if (line.startsWith("- **Colazione**")) {
-      days[currentDay].colazione = line.replace("- **Colazione**: ", "");
-    } else if (line.startsWith("- **Spuntino mattina**")) {
-      days[currentDay].spuntino_mattina = line.replace("- **Spuntino mattina**: ", "");
-    } else if (line.startsWith("- **Pranzo**")) {
-      days[currentDay].pranzo = line.replace("- **Pranzo**: ", "");
-    } else if (line.startsWith("- **Spuntino pomeriggio**")) {
-      days[currentDay].spuntino_pomeriggio = line.replace("- **Spuntino pomeriggio**: ", "");
-    } else if (line.startsWith("- **Cena**")) {
-      days[currentDay].cena = line.replace("- **Cena**: ", "");
+    }
+    // Colazione
+    else if (/^\-\s*\*\*Colazione\*\*/i.test(line)) {
+      days[currentDay].colazione = line.replace(/^\-\s*\*\*Colazione\*\*:\s*/i, "");
+    }
+    // Spuntino mattina o generico
+    else if (/^\-\s*\*\*Spuntino\*\*/i.test(line)) {
+      days[currentDay].spuntino_mattina = line.replace(/^\-\s*\*\*Spuntino\*\*:\s*/i, "");
+    }
+    // Spuntino pomeriggio/pomeridiano
+    else if (/^\-\s*\*\*Spuntino pomeriggio\*\*/i.test(line) || /^\-\s*\*\*Spuntino pomeridiano\*\*/i.test(line)) {
+      days[currentDay].spuntino_pomeriggio = line.replace(/^\-\s*\*\*Spuntino (pomeriggio|pomeridiano)\*\*:\s*/i, "");
+    }
+    // Pranzo
+    else if (/^\-\s*\*\*Pranzo\*\*/i.test(line)) {
+      days[currentDay].pranzo = line.replace(/^\-\s*\*\*Pranzo\*\*:\s*/i, "");
+    }
+    // Cena
+    else if (/^\-\s*\*\*Cena\*\*/i.test(line)) {
+      days[currentDay].cena = line.replace(/^\-\s*\*\*Cena\*\*:\s*/i, "");
     }
   });
 
+  // Costruzione tabella
   let html = `<div class="overflow-x-auto">
     <table class="min-w-full border border-gray-200 rounded-xl shadow-lg">
       <thead class="bg-green-600 text-white">
@@ -187,6 +199,7 @@ output.innerHTML = `
   html += `</tbody></table></div>`;
   return html;
 }
+
 
 
     // Sovrascrivi i dati dinamici con quelli salvati dal DB
