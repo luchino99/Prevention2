@@ -216,7 +216,7 @@ function populatePianoAlimentareForm() {
     pasti: "pasti",
     orari_pasti: "orari_pasti",
     patologie: "patologie",
-    farmaci: "farmaci"
+    farmaci: "farmaci_dettaglio"
   };
 
   Object.keys(mapping).forEach(fieldId => {
