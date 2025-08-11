@@ -422,8 +422,13 @@
       <!-- Contenuto tab nutrizione -->
       <div id="tab-nutritional" class="tab-content">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="p-4 bg-gray-50 rounded-lg">
-            <h3 class="font-semibold mb-3">Fabbisogno Calorico</h3>
+<div class="p-4 bg-gray-50 rounded-lg">
+  <div class="flex justify-between items-center mb-3">
+    <h3 class="font-semibold mb-3">Fabbisogno Calorico</h3>
+    <button class="info-btn text-blue-500 hover:text-blue-700" data-info="caloric-needs" title="Info sul fabbisogno calorico">
+      <i class="fas fa-info-circle"></i>
+    </button>
+  </div>
             <div class="space-y-2 mt-4">
               <div class="flex justify-between">
                 <span class="text-sm text-gray-600" data-tooltip="Il BMR (Basal Metabolic Rate) indica le calorie bruciate a riposo.">BMR</span>
@@ -449,8 +454,13 @@
             </div>
 
           </div>
-          <div class="p-4 bg-gray-50 rounded-lg">
-            <h3 class="font-semibold mb-3">Ripartizione Macronutrienti</h3>
+<div class="p-4 bg-gray-50 rounded-lg">
+  <div class="flex justify-between items-center mb-3">
+    <h3 class="font-semibold mb-3">Ripartizione Macronutrienti</h3>
+    <button class="info-btn text-blue-500 hover:text-blue-700" data-info="macronutrients" title="Info sulla ripartizione dei macronutrienti">
+      <i class="fas fa-info-circle"></i>
+    </button>
+  </div>
             <div class="flex justify-center mb-3">
               <canvas id="macro-chart" width="200" height="200"></canvas>
             </div>
