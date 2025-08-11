@@ -49,6 +49,15 @@ document.addEventListener('DOMContentLoaded', async function () {
               : "success"
     };
 
+    dashboardData.score2Diabetes = {
+      value: parseFloat(userData.score2_diabetes_risk) || 0,
+      hba1c: parseFloat(userData.hba1c) || 0,
+      glicemia: parseFloat(userData.glicemia_valore) || 0,
+      sistolica: parseFloat(userData.pressione_sistolica) || 0,
+      category: (userData.score2_diabetes_category || "").toLowerCase().includes("alto") ? "danger"
+              : (userData.score2_diabetes_category || "").toLowerCase().includes("moderato") ? "warning"
+              : "success"
+    };
 
     dashboardData.fni = {
       value: parseFloat(userData.fli_score) || 0,
@@ -658,25 +667,6 @@ function evaluatePhysicalActivity() {
 }
 
 
-function renderScore2Variables() {
-  const container = document.getElementById('score2-variable-list');
-  if (!container) return;
-
-  const variables = [
-    { label: 'Pressione', value: `${userData.pressione_sistolica || '--'} mmHg`, positive: parseFloat(userData.pressione_sistolica) < 140 },
-    { label: 'Colesterolo Totale', value: `${userData.colesterolo_totale || '--'} mg/dL`, positive: parseFloat(userData.colesterolo_totale) < 200 },
-    { label: 'HDL', value: `${userData.colesterolo_hdl_valore || '--'} mg/dL`, positive: parseFloat(userData.colesterolo_hdl_valore) >= 40 },
-    { label: 'Fumo', value: userData.fumatore || '--', positive: (userData.fumatore || '').toLowerCase() === 'no' },
-    { label: 'Regione rischio', value: userData.regione_rischio_cv || '--', positive: true }
-  ];
-
-  container.innerHTML = variables.map(v => `
-    <div class="badge ${v.positive ? 'badge-success' : 'badge-danger'}">
-      ${v.label}: ${v.value}
-    </div>
-  `).join('');
-}
-
 
 
 // Aggiorna tutti gli elementi della dashboard
@@ -690,12 +680,29 @@ function updateDashboard() {
   if (score2El) score2El.textContent = `${dashboardData.score2?.value || "--"}%`;
   if (score2CategoryEl) score2CategoryEl.textContent = dashboardData.score2?.risk || "--";
 
+  // === Parametri SCORE2 in stile FRAIL ===
+  const score2Vars = [
+    { label: 'Pressione', value: `${userData.pressione_sistolica || '--'} mmHg`, positive: parseFloat(userData.pressione_sistolica) < 140 },
+    { label: 'Colesterolo Totale', value: `${userData.colesterolo_totale || '--'} mg/dL`, positive: parseFloat(userData.colesterolo_totale) < 200 },
+    { label: 'HDL', value: `${userData.colesterolo_hdl_valore || '--'} mg/dL`, positive: parseFloat(userData.colesterolo_hdl_valore) >= 40 },
+    { label: 'Fumo', value: userData.fumatore || '--', positive: (userData.fumatore || '').toLowerCase() === 'no' }
+  ];
+  document.getElementById("score2-variable-list").innerHTML =
+    score2Vars.map(v => `<div class="badge ${v.positive ? 'badge-success' : 'badge-danger'}">${v.label}: ${v.value}</div>`).join('');
 
   // SCORE2-Diabetes
   document.getElementById("score2d-banner-text").textContent = `${dashboardData.score2Diabetes?.value || "--"}%`;
-  document.getElementById("score2d-banner-hba1c").textContent = `${dashboardData.score2Diabetes?.hba1c || "--"} %`;
-  document.getElementById("score2d-banner-glucose").textContent = `${dashboardData.score2Diabetes?.glicemia || "--"} mg/dL`;
-  document.getElementById("score2d-banner-sbp").textContent = `${dashboardData.score2Diabetes?.sistolica || "--"} mmHg`;
+
+  // === Parametri SCORE2-Diabetes in stile FRAIL ===
+  const score2dVars = [
+    { label: 'HbA1c', value: `${userData.hba1c || '--'} %`, positive: parseFloat(userData.hba1c) < 5.7 },
+    { label: 'Glicemia', value: `${userData.glicemia_valore || '--'} mg/dL`, positive: parseFloat(userData.glicemia_valore) < 100 },
+    { label: 'Pressione', value: `${userData.pressione_sistolica || '--'} mmHg`, positive: parseFloat(userData.pressione_sistolica) < 140 },
+    { label: 'Colesterolo Totale', value: `${userData.colesterolo_totale || '--'} mg/dL`, positive: parseFloat(userData.colesterolo_totale) < 200 },
+    { label: 'HDL', value: `${userData.colesterolo_hdl_valore || '--'} mg/dL`, positive: parseFloat(userData.colesterolo_hdl_valore) >= 40 }
+  ];
+  document.getElementById("score2d-variable-list").innerHTML =
+    score2dVars.map(v => `<div class="badge ${v.positive ? 'badge-success' : 'badge-danger'}">${v.label}: ${v.value}</div>`).join('');
 
   // FRAIL
   document.getElementById("frail-banner-score").textContent = `${userData.frail_score || "--"} / 5`;
@@ -706,17 +713,35 @@ function updateDashboard() {
   else if (userData.frail_category === "Pre-Frailty") frailBadge.classList.add("badge-warning");
   else if (userData.frail_category === "Fragile") frailBadge.classList.add("badge-danger");
 
-  // FLI (Fatty Liver Index)
-  document.getElementById("fni-banner-score").textContent = dashboardData.fni?.value || "--";
-  document.getElementById("fni-banner-albumina").textContent = dashboardData.fni?.albumina || "--";
-  document.getElementById("fni-banner-linfociti").textContent = dashboardData.fni?.linfociti || "--";
+  // FIB4
+  const fib4Vars = [
+    { label: 'AST', value: `${dashboardData.fib4.ast || '--'} U/L`, positive: dashboardData.fib4.ast < 40 },
+    { label: 'ALT', value: `${dashboardData.fib4.alt || '--'} U/L`, positive: dashboardData.fib4.alt < 41 },
+    { label: 'Piastrine', value: `${dashboardData.fib4.plt || '--'} x10⁹/L`, positive: dashboardData.fib4.plt >= 150 }
+  ];
+  document.getElementById("fib4-variable-list").innerHTML =
+    fib4Vars.map(v => `<div class="badge ${v.positive ? 'badge-success' : 'badge-danger'}">${v.label}: ${v.value}</div>`).join('');
 
-  // ADA Risk Score
-  document.getElementById("cv-risk-text").textContent = `${dashboardData.diabetesRisk?.score || "--"} / ${dashboardData.diabetesRisk?.maxScore || "8"}`;
-  document.getElementById("cv-age").textContent = `${userData.eta || "--"} anni`;
-  document.getElementById("cv-pressure").textContent = `${userData.pressione_sistolica || "--"} mmHg`;
-  document.getElementById("cv-cholesterol").textContent = `${userData.colesterolo_totale || "--"} mg/dL`;
-  document.getElementById("cv-smoking").textContent = userData.fumatore || "--";
+  // FNI (Fatty Liver Index)
+  const fniVars = [
+    { label: 'Circonferenza vita', value: `${userData.circonferenza_vita || '--'} cm`, positive: parseFloat(userData.circonferenza_vita) < 102 },
+    { label: 'Trigliceridi', value: `${userData.trigliceridi || '--'} mg/dL`, positive: parseFloat(userData.trigliceridi) < 150 },
+    { label: 'Gamma-GT', value: `${userData.ggt || '--'} U/L`, positive: parseFloat(userData.ggt) < 55 },
+    { label: 'Peso', value: `${userData.peso || '--'} kg`, positive: true },
+    { label: 'Altezza', value: `${userData.altezza || '--'} cm`, positive: true }
+  ];
+  document.getElementById("fni-variable-list").innerHTML =
+    fniVars.map(v => `<div class="badge ${v.positive ? 'badge-success' : 'badge-danger'}">${v.label}: ${v.value}</div>`).join('');
+
+  // ADA Diabetes Risk
+  const adaVars = [
+    { label: 'Glicemia', value: `${userData.glicemia_valore || '--'} mg/dL`, positive: parseFloat(userData.glicemia_valore) < 100 },
+    { label: 'Familiarità diabete', value: userData.familiari_diabete || '--', positive: (userData.familiari_diabete || '').toLowerCase() === 'no' },
+    { label: 'Ipertensione', value: userData.pressione_alta || '--', positive: (userData.pressione_alta || '').toLowerCase() === 'no' },
+    { label: 'Attività fisica', value: `${userData.durata_attivita || '--'} min/settimana`, positive: parseInt(userData.durata_attivita) >= 150 }
+  ];
+  document.getElementById("ada-variable-list").innerHTML =
+    adaVars.map(v => `<div class="badge ${v.positive ? 'badge-success' : 'badge-danger'}">${v.label}: ${v.value}</div>`).join('');
 
   updateNewScoreBanners();
   updateHealthSummary();
@@ -728,7 +753,6 @@ function updateDashboard() {
   updateNutritionTab();
   updateActivityTab();
   updateRecommendations();
-  renderScore2Variables();
 
 
   console.log('✅ Dashboard aggiornata');
@@ -1369,40 +1393,28 @@ function initializeCharts() {
 
   if (predimedChart) predimedChart.destroy();
 
-const predimedLabels = [
-  'Olio EVO',     // predimed_1
-  'Olio ≥ 4',    // predimed_2
-  'Verdure',      // predimed_3
-  'Frutta',       // predimed_4
-  'Carne rossa',  // predimed_5
-  'Bevande zuccherate',  // predimed_6
-  'Vino',         // predimed_7
-  'Legumi',       // predimed_8
-  'Pesce',        // predimed_9
-  'Dolci',        // predimed_10
-  'Carni bianche',// predimed_11
-  'Frutta secca', // predimed_12
-  'Soffritti',    // predimed_13
-  'Dieta Mediterranea'    // predimed_14
-];
+  const predimedLabels = [
+    'Olio d’oliva', 'Verdure', 'Frutta', 'Carne rossa', 'Burro/panna', 'Bevande zuccherate',
+    'Vino', 'Legumi', 'Pesce', 'Dolci', 'Frutta secca', 'Pasta integrale',
+    'Soffritti', 'Cucina mediterranea'
+  ];
 
-const predimedTooltips = [
-  'Usare olio extravergine d’oliva come principale fonte di grassi',                          // 1
-  'Consumare più di 4 cucchiai di olio extravergine al giorno',                              // 2
-  'Mangiare verdure almeno 2 volte al giorno',                                               // 3
-  'Mangiare frutta almeno 3 volte al giorno',                                                // 4
-  'Limitare carne rossa o salumi a meno di 1 porzione al giorno',                            // 5
-  'Limitare le bevande zuccherate a meno di una al giorno',                                  // 6
-  'Bere vino in quantità moderate durante i pasti',                                          // 7
-  'Consumare legumi almeno 3 volte a settimana',                                             // 8
-  'Consumare pesce o frutti di mare almeno 3 volte a settimana',                             // 9
-  'Consumare dolci industriali meno di 3 volte a settimana',                                 // 10
-  'Preferire carni bianche rispetto alle carni rosse',                                       // 11
-  'Mangiare frutta secca almeno 3 volte a settimana',                                        // 12
-  'Usare soffritti a base di olio d’oliva e pomodoro almeno 2 volte a settimana',            // 13
-  'Sentire la propria alimentazione vicina al modello mediterraneo'                          // 14
-];
-
+  const predimedTooltips = [
+    'Usare olio extravergine d’oliva come principale fonte di grassi',
+    'Consumare verdure almeno 2 volte al giorno',
+    'Mangiare frutta almeno 1–2 volte al giorno',
+    'Limitare la carne rossa a meno di 1 volta a settimana',
+    'Evitare burro, panna o margarina',
+    'Limitare le bevande zuccherate',
+    'Bere vino moderatamente durante i pasti (se si consuma alcol)',
+    'Consumare legumi almeno 3 volte a settimana',
+    'Consumare pesce almeno 3 volte a settimana',
+    'Limitare dolci e dessert a meno di 3 volte a settimana',
+    'Mangiare frutta secca almeno 3 volte a settimana',
+    'Preferire pasta o pane integrale',
+    'Utilizzare soffritti a base di olio d’oliva e pomodoro',
+    'Preferire una cucina tradizionale mediterranea'
+  ];
 
   // Dati predimed (valori numerici e risposte testuali)
   const predimedNumericalAnswers = [];
@@ -1457,27 +1469,22 @@ const predimedTooltips = [
       plugins: {
         tooltip: {
           callbacks: {
-label: function (context) {
-  // Mostra solo il tooltip per il dataset dell'utente
-  if (context.dataset.label !== 'Risposte utente') {
-    return null; // Ignora gli altri dataset
-  }
+            label: function (context) {
+              const i = context.dataIndex;
+              const risposta = predimedRawAnswers[i];
+              const obiettivo = predimedTooltips[i];
 
-  const i = context.dataIndex;
-  const risposta = predimedRawAnswers[i];
-  const obiettivo = predimedTooltips[i];
+              let messaggioRisposta = 'Risposta utente: ';
+              if (['sì', 'si', '1', 'true'].includes(risposta)) {
+                messaggioRisposta += 'Lo faccio';
+              } else if (['no', '0', 'false'].includes(risposta)) {
+                messaggioRisposta += 'Non lo faccio, ma dovrei';
+              } else {
+                messaggioRisposta += 'Non disponibile';
+              }
 
-  let messaggioRisposta = 'Risposta utente: ';
-  if (['sì', 'si', '1', 'true'].includes(risposta)) {
-    messaggioRisposta += 'Lo faccio';
-  } else if (['no', '0', 'false'].includes(risposta)) {
-    messaggioRisposta += 'Non lo faccio, ma dovrei';
-  } else {
-    messaggioRisposta += 'Non disponibile';
-  }
-
-  return [messaggioRisposta, `Obiettivo: ${obiettivo}`];
-}
+              return [messaggioRisposta, `Obiettivo: ${obiettivo}`];
+            }
           }
         },
         legend: {
