@@ -1704,9 +1704,7 @@ La sindrome metabolica aumenta significativamente il rischio di <strong>infarto,
 📅 <u>Follow-up raccomandato:</u><br>
 Visita di controllo e monitoraggio dei parametri ogni 6-12 mesi, o più frequentemente in caso di peggioramento.
 `
-
-  
-"score2-diabetes": `
+"score2 diabetes": `
 <strong>🏥 SCORE2-Diabetes – Rischio Cardiovascolare nei Diabetici</strong><br><br>
 Lo <strong>SCORE2-Diabetes</strong> è un modello validato per stimare il <em>rischio di eventi cardiovascolari fatali e non fatali a 10 anni</em> nelle persone con <strong>diabete di tipo 2</strong>.
 <br><br>
