@@ -1774,29 +1774,43 @@ Visita di controllo e monitoraggio dei parametri ogni 6-12 mesi, o più frequent
 
 };
 
-// Attiva i listener su tutti i pulsanti Info
 document.querySelectorAll(".info-btn").forEach(btn => {
   btn.addEventListener("click", () => {
     const key = btn.dataset.info;
     const content = infoTexts[key] || "<strong>ℹ️ Informazioni non disponibili</strong>";
-    
-    // Mostra un popup elegante
+
+    // Rileva il tema corrente dalla dashboard
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    const isDark = currentTheme === 'dark';
+
+    // Crea overlay modale
     const modal = document.createElement("div");
     modal.className = "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50";
-modal.innerHTML = `
-  <div class="bg-white rounded-lg shadow-lg max-w-md w-full p-6 max-h-[80vh] flex flex-col">
-    <div class="overflow-y-auto pr-2" style="max-height: calc(80vh - 60px);">
-      ${content}
-    </div>
-    <div class="mt-4 text-right flex-shrink-0">
-      <button class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600" id="close-info-modal">Chiudi</button>
-    </div>
-  </div>
-`;
+
+    modal.innerHTML = `
+      <div class="${isDark ? 'bg-gray-800 text-gray-100' : 'bg-white text-gray-900'} 
+                  rounded-lg shadow-lg max-w-md w-full p-6 max-h-[80vh] flex flex-col">
+
+        <!-- Contenuto scrollabile -->
+        <div class="overflow-y-auto pr-2" style="max-height: calc(80vh - 60px); scrollbar-width: thin;">
+          ${content}
+        </div>
+
+        <!-- Pulsante chiudi -->
+        <div class="mt-4 text-right flex-shrink-0">
+          <button class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded" id="close-info-modal">
+            Chiudi
+          </button>
+        </div>
+      </div>
+    `;
+
     document.body.appendChild(modal);
 
+    // Chiudi modale
     document.getElementById("close-info-modal").addEventListener("click", () => {
       modal.remove();
     });
   });
 });
+
