@@ -1684,27 +1684,8 @@ function setupTabs() {
 // ===== SEZIONE PULSANTI INFO SU OGNI SCORE =====
 const infoTexts = {
 
-  "metabolic-syndrome": `
-<strong>🧩 Sindrome Metabolica – Profilo Metabolico</strong><br><br>
-La <strong>Sindrome Metabolica</strong> è una condizione caratterizzata dalla presenza simultanea di <em>almeno 3 fattori di rischio</em> per malattie cardiovascolari e diabete di tipo 2.<br><br>
-📌 <u>Criteri diagnostici principali:</u><br>
-- <strong>Girovita elevato</strong> (≥102 cm uomo, ≥88 cm donna)<br>
-- <strong>Ipertensione arteriosa</strong> (≥130/85 mmHg o terapia antipertensiva)<br>
-- <strong>Glicemia a digiuno elevata</strong> (≥100 mg/dL o diagnosi di diabete)<br>
-- <strong>HDL basso</strong> (&lt;40 mg/dL uomo, &lt;50 mg/dL donna)<br>
-- <strong>Trigliceridi elevati</strong> (≥150 mg/dL)<br><br>
-📊 <u>Importanza clinica:</u><br>
-La sindrome metabolica aumenta significativamente il rischio di <strong>infarto, ictus e diabete di tipo 2</strong>. È un campanello d’allarme che segnala uno squilibrio del metabolismo e la necessità di interventi mirati.<br><br>
-💡 <u>Strategie preventive:</u><br>
-- Riduzione del peso corporeo (anche un calo del 5-10% migliora i parametri)<br>
-- Attività fisica regolare: ≥150 min/settimana di esercizio aerobico<br>
-- Dieta mediterranea o DASH: ricca di fibre, povera di zuccheri semplici e grassi saturi<br>
-- Controllo regolare della pressione, glicemia e profilo lipidico<br>
-- Limitare il consumo di alcol e abolire il fumo<br><br>
-📅 <u>Follow-up raccomandato:</u><br>
-Visita di controllo e monitoraggio dei parametri ogni 6-12 mesi, o più frequentemente in caso di peggioramento.
-`
-"score2 diabetes": `
+
+"score2-diabetes": `
 <strong>🏥 SCORE2-Diabetes – Rischio Cardiovascolare nei Diabetici</strong><br><br>
 Lo <strong>SCORE2-Diabetes</strong> è un modello validato per stimare il <em>rischio di eventi cardiovascolari fatali e non fatali a 10 anni</em> nelle persone con <strong>diabete di tipo 2</strong>.
 <br><br>
