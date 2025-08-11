@@ -89,8 +89,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // ====== SCORE2 ======
-  const score2El = document.getElementById("score2-indicator");
-  const score2CategoryEl = document.getElementById("score2-category");
+  const score2El = document.getElementById("score2-banner-score");
+  const score2CategoryEl = document.getElementById("score2-indicator-score");
   if (score2El) score2El.textContent = `${profile.score2_risk || "--"}%`;
   if (score2CategoryEl) score2CategoryEl.textContent = profile.score2_category || "--";
 
