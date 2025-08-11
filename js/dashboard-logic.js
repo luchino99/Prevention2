@@ -86,6 +86,41 @@ document.getElementById("salva-dati-piano")?.addEventListener("click", async () 
   }
 });
 
+    document.getElementById("btn-genera-piano")?.addEventListener("click", async () => {
+  const contenitore = document.getElementById("contenitore-piano-ai");
+  contenitore.classList.remove("hidden");
+  contenitore.innerHTML = `<p class="text-gray-500 italic">🧠 Generazione in corso... Attendere qualche secondo.</p>`;
+
+  try {
+    const response = await fetch("https://prevention2.vercel.app/api/openai", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        piano_alimentare: true,
+        ...userData // 🔹 Passiamo tutti i dati utente
+      })
+    });
+
+    const data = await response.json();
+
+    if (!data.piano) {
+      throw new Error("Nessuna risposta dal modello");
+    }
+
+    // 🔹 Mostra il piano alimentare
+    contenitore.innerHTML = data.piano
+      .split("\n")
+      .filter(line => line.trim() !== "")
+      .map(line => `<p>${line}</p>`)
+      .join("");
+
+  } catch (error) {
+    console.error("❌ Errore generazione piano alimentare:", error);
+    contenitore.innerHTML = `<p class="text-red-600">❌ Errore durante la generazione del piano. Riprova più tardi.</p>`;
+  }
+});
+
+
     
 
     // Sovrascrivi i dati dinamici con quelli salvati dal DB
