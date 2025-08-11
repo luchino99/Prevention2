@@ -41,13 +41,15 @@ document.addEventListener('DOMContentLoaded', async function () {
     await loadUserData(emailUtente);
 
     // Sovrascrivi i dati dinamici con quelli salvati dal DB
-    dashboardData.score2 = {
-      value: parseFloat(userData.score2_risk) || 0,
-      risk: userData.score2_category || "Non calcolato",
-      category: (userData.score2_category || "").toLowerCase().includes("alto") ? "danger"
-              : (userData.score2_category || "").toLowerCase().includes("moderato") ? "warning"
-              : "success"
-    };
+dashboardData.score2 = {
+  value: parseFloat(userData.score2_risk) || 0,
+  risk: userData.score2_category || "Non calcolato",
+  category: (userData.score2_category || "").toLowerCase().includes("alto")
+              ? "danger"
+              : (userData.score2_category || "").toLowerCase().includes("moderato")
+                ? "warning"
+                : "success"
+};
 
     dashboardData.score2Diabetes = {
       value: parseFloat(userData.score2_diabetes_risk) || 0,
@@ -68,11 +70,11 @@ document.addEventListener('DOMContentLoaded', async function () {
               : "success"
     };
 
-    dashboardData.diabetesRisk = {
-      score: parseInt(userData.ada_score) || 0,
-      risk: userData.ada_category || "Non calcolato",
-      maxScore: 8
-    };
+dashboardData.diabetesRisk = {
+  score: parseInt(userData.ada_score) || 0,
+  risk: userData.ada_category || "Non calcolato",
+  maxScore: 8
+};
 
     dashboardData.fib4 = {
       value: 0,
@@ -677,9 +679,14 @@ function updateDashboard() {
   // SCORE2
 const score2El = document.getElementById("score2-indicator");
 const score2CategoryEl = document.getElementById("score2-category");
+const score2Badge = document.getElementById("score2-badge");
 
-if (score2El) score2El.textContent = `${userData.score2_risk || "--"}%`;
-if (score2CategoryEl) score2CategoryEl.textContent = userData.score2_category || "--";
+if (score2El) score2El.textContent = `${dashboardData.score2.value || "--"}%`;
+if (score2CategoryEl) score2CategoryEl.textContent = dashboardData.score2.risk || "--";
+if (score2Badge) {
+  score2Badge.className = "badge";
+  score2Badge.classList.add(`badge-${dashboardData.score2.category}`);
+}
 
   // === Parametri SCORE2 in stile FRAIL ===
   const score2Vars = [
