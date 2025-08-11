@@ -42,6 +42,55 @@ document.addEventListener('DOMContentLoaded', async function () {
     populatePianoAlimentareForm();
     fixFloatingLabels();
 
+
+// 🔹 Mappatura campi HTML → colonne DB
+const mapping = {
+  eta: "eta",
+  sesso: "sesso",
+  altezza: "altezza",
+  peso: "peso",
+  obiettivo: "obiettivo",
+  attivita_fisica: "tipo_lavoro",
+  
+  preferenze: "preferenze_alimentari", // ✅ preferenze alimentari per piano
+  intolleranze: "intolleranze",
+  alimenti_esclusi: "alimenti_esclusi",
+  pasti: "numero_pasti",
+  orari_pasti: "orari_pasti",
+  patologie: "patologie",
+  farmaci: "farmaci_dettaglio"
+};
+
+// 🔹 Listener per il pulsante Salva
+document.getElementById("salva-dati-piano")?.addEventListener("click", async () => {
+  const aggiornamenti = {};
+
+  // Cicla la mappatura e crea l’oggetto aggiornamenti
+  Object.keys(mapping).forEach(fieldId => {
+    const dbField = mapping[fieldId];
+    const el = document.getElementById(fieldId);
+    if (el) {
+      aggiornamenti[dbField] = el.value?.trim() || null; // null se vuoto
+    }
+  });
+
+  // Esegui update su Supabase
+  const { error } = await supabase
+    .from("anagrafica_utenti")
+    .update(aggiornamenti)
+    .eq("email", email); // email deve essere la variabile della sessione utente
+
+  if (error) {
+    console.error("❌ Errore nel salvataggio dati piano alimentare:", error.message);
+    alert("❌ Errore nel salvataggio: " + error.message);
+  } else {
+    console.log("✅ Dati piano alimentare salvati:", aggiornamenti);
+    alert("✅ Dati salvati con successo!");
+  }
+});
+
+
+
     
 
     // Sovrascrivi i dati dinamici con quelli salvati dal DB
