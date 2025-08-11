@@ -213,7 +213,7 @@ function populatePianoAlimentareForm() {
     preferenze: "preferenze_alimentari", // ✅ usa la colonna giusta
     intolleranze: "intolleranze",
     alimenti_esclusi: "alimenti_esclusi",
-    pasti: "pasti",
+    pasti: "numero_pasti",
     orari_pasti: "orari_pasti",
     patologie: "patologie",
     farmaci: "farmaci_dettaglio"
