@@ -1783,14 +1783,16 @@ document.querySelectorAll(".info-btn").forEach(btn => {
     // Mostra un popup elegante
     const modal = document.createElement("div");
     modal.className = "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50";
-    modal.innerHTML = `
-      <div class="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
-        ${content}
-        <div class="mt-4 text-right">
-          <button class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600" id="close-info-modal">Chiudi</button>
-        </div>
-      </div>
-    `;
+modal.innerHTML = `
+  <div class="bg-white rounded-lg shadow-lg max-w-md w-full p-6 max-h-[80vh] flex flex-col">
+    <div class="overflow-y-auto pr-2" style="max-height: calc(80vh - 60px);">
+      ${content}
+    </div>
+    <div class="mt-4 text-right flex-shrink-0">
+      <button class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600" id="close-info-modal">Chiudi</button>
+    </div>
+  </div>
+`;
     document.body.appendChild(modal);
 
     document.getElementById("close-info-modal").addEventListener("click", () => {
