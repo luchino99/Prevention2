@@ -1442,22 +1442,27 @@ const predimedTooltips = [
       plugins: {
         tooltip: {
           callbacks: {
-            label: function (context) {
-              const i = context.dataIndex;
-              const risposta = predimedRawAnswers[i];
-              const obiettivo = predimedTooltips[i];
+label: function (context) {
+  // Mostra solo il tooltip per il dataset dell'utente
+  if (context.dataset.label !== 'Risposte utente') {
+    return null; // Ignora gli altri dataset
+  }
 
-              let messaggioRisposta = 'Risposta utente: ';
-              if (['sì', 'si', '1', 'true'].includes(risposta)) {
-                messaggioRisposta += 'Lo faccio';
-              } else if (['no', '0', 'false'].includes(risposta)) {
-                messaggioRisposta += 'Non lo faccio, ma dovrei';
-              } else {
-                messaggioRisposta += 'Non disponibile';
-              }
+  const i = context.dataIndex;
+  const risposta = predimedRawAnswers[i];
+  const obiettivo = predimedTooltips[i];
 
-              return [messaggioRisposta, `Obiettivo: ${obiettivo}`];
-            }
+  let messaggioRisposta = 'Risposta utente: ';
+  if (['sì', 'si', '1', 'true'].includes(risposta)) {
+    messaggioRisposta += 'Lo faccio';
+  } else if (['no', '0', 'false'].includes(risposta)) {
+    messaggioRisposta += 'Non lo faccio, ma dovrei';
+  } else {
+    messaggioRisposta += 'Non disponibile';
+  }
+
+  return [messaggioRisposta, `Obiettivo: ${obiettivo}`];
+}
           }
         },
         legend: {
