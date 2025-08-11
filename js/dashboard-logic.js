@@ -734,21 +734,8 @@ document.getElementById("frail-variable-list").innerHTML =
   document.getElementById("fib4-variable-list").innerHTML =
     fib4Vars.map(v => `<div class="badge ${v.positive ? 'badge-success' : 'badge-danger'}">${v.label}: ${v.value}</div>`).join('');
 
-  // FNI (Fatty Liver Index)
-  document.getElementById("fni-banner-score").textContent = `${userData.fli_score || "--"}`;
+  // FLI (Fatty Liver Index)
 
-// Colore cerchio pieno dietro
-const fliBgCircle = document.getElementById("fni-bg-circle");
-if (fliBgCircle) {
-  fliBgCircle.className = "absolute w-24 h-24 rounded-full z-0"; // reset classi
-  if (userData.fli_score >= 60) {
-    fliBgCircle.classList.add("bg-score-high");   // rosso
-  } else if (userData.fli_score >= 30) {
-    fliBgCircle.classList.add("bg-score-medium"); // giallo
-  } else {
-    fliBgCircle.classList.add("bg-score-low");    // verde
-  }
-}
   const fniVars = [
     { label: 'Circonferenza vita', value: `${userData.circonferenza_vita || '--'} cm`, positive: parseFloat(userData.circonferenza_vita) < 102 },
     { label: 'Trigliceridi', value: `${userData.trigliceridi || '--'} mg/dL`, positive: parseFloat(userData.trigliceridi) < 150 },
