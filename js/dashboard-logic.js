@@ -135,77 +135,6 @@ output.innerHTML = `
 
 
 
-// Funzione per formattare il testo del piano in tabella
-function formatMealPlanProfessional(planText) {
-  const giorniSettimana = [
-    "lunedì", "martedì", "mercoledì", "giovedì",
-    "venerdì", "sabato", "domenica"
-  ];
-
-  // Dividiamo in blocchi per giorno
-  const righe = planText.split("\n").map(r => r.trim()).filter(r => r.length > 0);
-  let giornoCorrente = "";
-  let htmlRows = "";
-
-  righe.forEach(riga => {
-    const lower = riga.toLowerCase();
-
-    // Se la riga è un giorno, aggiorna giorno corrente
-    if (giorniSettimana.some(g => lower.startsWith(g))) {
-      giornoCorrente = riga.charAt(0).toUpperCase() + riga.slice(1);
-      return; // passiamo alla prossima riga
-    }
-
-    // Regex per trovare pasti
-    const match = riga.match(/^(Colazione|Spuntino mattina|Pranzo|Spuntino pomeriggio|Cena)\s*[:\-]?\s*(.*)/i);
-    if (match) {
-      const pasto = match[1];
-      const resto = match[2] || "";
-
-      // Separo eventuali note usando parentesi o trattini
-      let alimenti = resto;
-      let note = "";
-      const notaMatch = resto.match(/(.+?)(?:\s*\(|\s*\-\s*)([^)]+)\)?$/);
-      if (notaMatch) {
-        alimenti = notaMatch[1].trim();
-        note = notaMatch[2].trim();
-      }
-
-      htmlRows += `
-        <tr class="hover:bg-green-50 transition">
-          <td class="px-4 py-3 font-semibold text-green-700">${giornoCorrente}</td>
-          <td class="px-4 py-3">${pasto}</td>
-          <td class="px-4 py-3 text-gray-700">${alimenti}</td>
-          <td class="px-4 py-3 text-sm text-gray-500">${note}</td>
-        </tr>
-      `;
-    }
-  });
-
-  // Costruzione tabella finale
-  return `
-    <div class="overflow-x-auto">
-      <table class="min-w-full border border-gray-200 rounded-xl shadow-lg">
-        <thead class="bg-green-600 text-white">
-          <tr>
-            <th class="px-4 py-3 text-left">📅 Giorno</th>
-            <th class="px-4 py-3 text-left">🍽️ Pasto</th>
-            <th class="px-4 py-3 text-left">🥗 Alimenti & Quantità</th>
-            <th class="px-4 py-3 text-left">📝 Note</th>
-          </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-          ${htmlRows}
-        </tbody>
-      </table>
-    </div>
-  `;
-}
-
-
-
-    
-
     // Sovrascrivi i dati dinamici con quelli salvati dal DB
 dashboardData.score2 = {
   value: parseFloat(userData.score2_risk) || 0,
@@ -2115,4 +2044,60 @@ document.querySelectorAll(".info-btn").forEach(btn => {
     });
   });
 });
+
+
+function formatMealPlanProfessional(planText) {
+  const giornoRegex = /^###\s*(Lunedì|Martedì|Mercoledì|Giovedì|Venerdì|Sabato|Domenica):$/i;
+
+  const lines = planText.split("\n").map(l => l.trim()).filter(l => l);
+  let currentDay = null;
+  let days = {};
+
+  lines.forEach(line => {
+    if (giornoRegex.test(line)) {
+      currentDay = line.replace(/^###\s*/, "").replace(":", "");
+      days[currentDay] = { colazione: "", spuntino_mattina: "", pranzo: "", spuntino_pomeriggio: "", cena: "" };
+    } else if (line.startsWith("- **Colazione**")) {
+      days[currentDay].colazione = line.replace("- **Colazione**: ", "");
+    } else if (line.startsWith("- **Spuntino mattina**")) {
+      days[currentDay].spuntino_mattina = line.replace("- **Spuntino mattina**: ", "");
+    } else if (line.startsWith("- **Pranzo**")) {
+      days[currentDay].pranzo = line.replace("- **Pranzo**: ", "");
+    } else if (line.startsWith("- **Spuntino pomeriggio**")) {
+      days[currentDay].spuntino_pomeriggio = line.replace("- **Spuntino pomeriggio**: ", "");
+    } else if (line.startsWith("- **Cena**")) {
+      days[currentDay].cena = line.replace("- **Cena**: ", "");
+    }
+  });
+
+  let html = `<div class="overflow-x-auto">
+    <table class="min-w-full border border-gray-200 rounded-xl shadow-lg">
+      <thead class="bg-green-600 text-white">
+        <tr>
+          <th class="px-4 py-3">📅 Giorno</th>
+          <th class="px-4 py-3">🥣 Colazione</th>
+          <th class="px-4 py-3">🍏 Spuntino Mattina</th>
+          <th class="px-4 py-3">🍽️ Pranzo</th>
+          <th class="px-4 py-3">🥜 Spuntino Pomeriggio</th>
+          <th class="px-4 py-3">🍲 Cena</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">`;
+
+  Object.keys(days).forEach(day => {
+    html += `
+      <tr class="hover:bg-green-50 transition">
+        <td class="px-4 py-3 font-semibold text-green-700">${day}</td>
+        <td class="px-4 py-3">${days[day].colazione}</td>
+        <td class="px-4 py-3">${days[day].spuntino_mattina}</td>
+        <td class="px-4 py-3">${days[day].pranzo}</td>
+        <td class="px-4 py-3">${days[day].spuntino_pomeriggio}</td>
+        <td class="px-4 py-3">${days[day].cena}</td>
+      </tr>
+    `;
+  });
+
+  html += `</tbody></table></div>`;
+  return html;
+}
 
