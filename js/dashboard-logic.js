@@ -1354,28 +1354,40 @@ function initializeCharts() {
 
   if (predimedChart) predimedChart.destroy();
 
-  const predimedLabels = [
-    'Olio d’oliva', 'Verdure', 'Frutta', 'Carne rossa', 'Burro/panna', 'Bevande zuccherate',
-    'Vino', 'Legumi', 'Pesce', 'Dolci', 'Frutta secca', 'Pasta integrale',
-    'Soffritti', 'Cucina mediterranea'
-  ];
+const predimedLabels = [
+  'Olio EVO come condimento principale',  // predimed_1
+  '≥ 4 cucchiai olio/die',                // predimed_2
+  'Verdure ≥ 2 porzioni/die',             // predimed_3
+  'Frutta ≥ 3 porzioni/die',              // predimed_4
+  'Carne rossa/salumi < 1 porzione/die',  // predimed_5
+  'Bevande zuccherate < 1/die',           // predimed_6
+  'Vino moderato',                        // predimed_7
+  'Legumi ≥ 3 volte/settimana',           // predimed_8
+  'Pesce/frutti di mare ≥ 3 volte/settimana', // predimed_9
+  'Dolci < 3 volte/settimana',            // predimed_10
+  'Carni bianche preferite',              // predimed_11
+  'Frutta secca ≥ 3 volte/settimana',     // predimed_12
+  'Soffritti mediterranei ≥ 2 volte/settimana', // predimed_13
+  'Alimentazione vicina alla dieta mediterranea' // predimed_14
+];
 
-  const predimedTooltips = [
-    'Usare olio extravergine d’oliva come principale fonte di grassi',
-    'Consumare verdure almeno 2 volte al giorno',
-    'Mangiare frutta almeno 1–2 volte al giorno',
-    'Limitare la carne rossa a meno di 1 volta a settimana',
-    'Evitare burro, panna o margarina',
-    'Limitare le bevande zuccherate',
-    'Bere vino moderatamente durante i pasti (se si consuma alcol)',
-    'Consumare legumi almeno 3 volte a settimana',
-    'Consumare pesce almeno 3 volte a settimana',
-    'Limitare dolci e dessert a meno di 3 volte a settimana',
-    'Mangiare frutta secca almeno 3 volte a settimana',
-    'Preferire pasta o pane integrale',
-    'Utilizzare soffritti a base di olio d’oliva e pomodoro',
-    'Preferire una cucina tradizionale mediterranea'
-  ];
+const predimedTooltips = [
+  'Usare olio extravergine d’oliva come principale fonte di grassi',                          // 1
+  'Consumare più di 4 cucchiai di olio extravergine al giorno',                              // 2
+  'Mangiare verdure almeno 2 volte al giorno',                                               // 3
+  'Mangiare frutta almeno 3 volte al giorno',                                                // 4
+  'Limitare carne rossa o salumi a meno di 1 porzione al giorno',                            // 5
+  'Limitare le bevande zuccherate a meno di una al giorno',                                  // 6
+  'Bere vino in quantità moderate durante i pasti',                                          // 7
+  'Consumare legumi almeno 3 volte a settimana',                                             // 8
+  'Consumare pesce o frutti di mare almeno 3 volte a settimana',                             // 9
+  'Consumare dolci industriali meno di 3 volte a settimana',                                 // 10
+  'Preferire carni bianche rispetto alle carni rosse',                                       // 11
+  'Mangiare frutta secca almeno 3 volte a settimana',                                        // 12
+  'Usare soffritti a base di olio d’oliva e pomodoro almeno 2 volte a settimana',            // 13
+  'Sentire la propria alimentazione vicina al modello mediterraneo'                          // 14
+];
+
 
   // Dati predimed (valori numerici e risposte testuali)
   const predimedNumericalAnswers = [];
