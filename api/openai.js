@@ -137,6 +137,75 @@ I consigli devono essere chiari, applicabili nella vita quotidiana e basati su e
 }
 
 
+// 3. PIANO ALIMENTARE PERSONALIZZATO
+if (data.piano_alimentare) {
+  const safe = (v) => v || "Non specificato";
+
+  const prompt = `
+Crea un piano alimentare settimanale personalizzato e sicuro in base ai seguenti dati dell'utente:
+
+📋 **DATI ANAGRAFICI E FISICI**
+- Età: ${safe(data.eta)} anni
+- Sesso: ${safe(data.sesso)}
+- Peso: ${safe(data.peso)} kg
+- Altezza: ${safe(data.altezza)} cm
+
+🎯 **OBIETTIVO NUTRIZIONALE**
+- Obiettivo: ${safe(data.obiettivo)}
+- Livello di attività fisica: ${safe(data.tipo_lavoro)}
+
+🍽 **PREFERENZE E RESTRIZIONI**
+- Preferenze alimentari: ${safe(data.preferenze_alimentari)}
+- Intolleranze o allergie: ${safe(data.intolleranze)}
+- Alimenti da escludere: ${safe(data.alimenti_esclusi)}
+
+🕒 **ORGANIZZAZIONE PASTI**
+- Numero pasti giornalieri: ${safe(data.numero_pasti)}
+- Orari abituali dei pasti: ${safe(data.orari_pasti)}
+
+🏥 **SALUTE**
+- Patologie diagnosticate: ${safe(data.patologie)}
+- Farmaci assunti: ${safe(data.farmaci_dettaglio)}
+
+---
+
+📌 **REQUISITI DEL PIANO**
+1. Il piano deve coprire **7 giorni** (lunedì-domenica).
+2. Ogni giorno deve includere i pasti previsti (colazione, spuntini, pranzo, cena, ecc. in base a ${safe(data.numero_pasti)} pasti).
+3. Includere alimenti variati, equilibrati e facilmente reperibili.
+4. Specificare quantità indicative (in grammi o porzioni) per ogni alimento.
+5. Adattare calorie e macronutrienti all'obiettivo e al livello di attività fisica.
+6. Evitare cibi nelle liste di intolleranze o alimenti esclusi.
+7. Tenere conto di eventuali patologie e farmaci, evitando interazioni alimentari potenzialmente rischiose.
+8. Presentare il piano in **formato tabellare** ordinato, con colonne:
+   - Giorno
+   - Pasto
+   - Alimenti e quantità
+   - Note nutrizionali
+
+💡 **Esempio di formato atteso**
+Giorno | Pasto | Alimenti e Quantità | Note
+Lunedì | Colazione | Yogurt greco 150g + Mirtilli 50g + Avena 40g | Ricco di proteine e fibre
+...
+  `;
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-4-turbo",
+    messages: [
+      { role: "system", content: "Sei un nutrizionista certificato. Genera solo piani alimentari sicuri e bilanciati secondo linee guida internazionali." },
+      { role: "user", content: prompt }
+    ],
+    temperature: 0.7
+  });
+
+  const result = response?.choices?.[0]?.message?.content || null;
+
+  return res.status(200).json({
+    piano: result || "⚠️ Nessuna risposta valida dal modello."
+  });
+}
+
+
 
     // 2. FOLLOW-UP CONTESTUALE
     if (data.contesto_chat) {
