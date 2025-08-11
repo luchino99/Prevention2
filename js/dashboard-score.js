@@ -89,10 +89,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // ====== SCORE2 ======
-  const score2El = document.getElementById("score2-banner-score");
-  const score2CategoryEl = document.getElementById("score2-indicator-score");
-  if (score2El) score2El.textContent = `${profile.score2_risk || "--"}%`;
-  if (score2CategoryEl) score2CategoryEl.textContent = profile.score2_category || "--";
+// Aggiorna il riepilogo in alto
+const score2SummaryEl = document.getElementById("score2-summary-indicator");
+if (score2SummaryEl) score2SummaryEl.textContent = `${profile.score2_risk || "--"}%`;
+
+// Aggiorna il banner nella tab Rischi
+const score2BannerEl = document.getElementById("score2-banner-score");
+if (score2BannerEl) score2BannerEl.textContent = `${profile.score2_risk || "--"}%`;
+
 
   // ====== ADA DIABETES RISK ======
   const adaScoreEl = document.getElementById("ada-banner-score");
