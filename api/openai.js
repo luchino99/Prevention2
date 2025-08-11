@@ -27,6 +27,8 @@ export default async function handler(req, res) {
   const data = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
   const safe = (val) => val ?? "non disponibile";
   const escape = (str) => (str || "").toString().replace(/[`$]/g, "");
+  console.log("📥 Body ricevuto:", req.body);
+console.log("📥 Data parse:", data);
 
   try {
     let prompt = "";
