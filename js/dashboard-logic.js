@@ -666,6 +666,28 @@ function evaluatePhysicalActivity() {
   }
 }
 
+
+function renderScore2Variables() {
+  const container = document.getElementById('score2-variable-list');
+  if (!container) return;
+
+  const variables = [
+    { label: 'Pressione', value: `${userData.pressione_sistolica || '--'} mmHg`, positive: parseFloat(userData.pressione_sistolica) < 140 },
+    { label: 'Colesterolo Totale', value: `${userData.colesterolo_totale || '--'} mg/dL`, positive: parseFloat(userData.colesterolo_totale) < 200 },
+    { label: 'HDL', value: `${userData.colesterolo_hdl_valore || '--'} mg/dL`, positive: parseFloat(userData.colesterolo_hdl_valore) >= 40 },
+    { label: 'Fumo', value: userData.fumatore || '--', positive: (userData.fumatore || '').toLowerCase() === 'no' },
+    { label: 'Regione rischio', value: userData.regione_rischio_cv || '--', positive: true }
+  ];
+
+  container.innerHTML = variables.map(v => `
+    <div class="badge ${v.positive ? 'badge-success' : 'badge-danger'}">
+      ${v.label}: ${v.value}
+    </div>
+  `).join('');
+}
+
+
+
 // Aggiorna tutti gli elementi della dashboard
 function updateDashboard() {
   console.log('🔄 Inizio aggiornamento dashboard...');
@@ -715,6 +737,7 @@ function updateDashboard() {
   updateNutritionTab();
   updateActivityTab();
   updateRecommendations();
+  renderScore2Variables();
 
 
   console.log('✅ Dashboard aggiornata');
