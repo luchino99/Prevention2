@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const email = session.user.email;
 
-  // Recupero tutti i dati in un'unica query
+  // Recupero dati dal DB
   const { data: profile, error: profileError } = await supabase
     .from('anagrafica_utenti')
     .select(`
@@ -27,7 +27,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       score2_risk,
       score2_category,
       ada_score,
-      ada_category
+      ada_category,
+      fli_score
     `)
     .eq('email', email)
     .single();
@@ -37,11 +38,21 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
+  // Funzione per applicare il colore al cerchio pieno
+  function setScoreCircleColor(elementId, value, thresholds = { high: 60, medium: 30 }) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    el.className = "absolute w-24 h-24 rounded-full"; // reset
+    if (value >= thresholds.high) el.classList.add("bg-score-high");
+    else if (value >= thresholds.medium) el.classList.add("bg-score-medium");
+    else el.classList.add("bg-score-low");
+  }
+
   // ====== FRAIL SCALE ======
   const answers = {
     fatigue: profile.stanchezza === "si" ? "yes" : "no",
     resistance: profile.sedia === "si" ? "yes" : "no",
-    ambulation: profile.camminata === "no" ? "yes" : "no", // qui NO è negativo
+    ambulation: profile.camminata === "no" ? "yes" : "no", // NO = negativo
     illnesses: profile.malattie_croniche === "si" ? "yes" : "no",
     loss: profile.perdita_peso === "si" ? "yes" : "no"
   };
@@ -62,13 +73,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     frailBadgeClass = "bg-red-100 text-red-700";
   }
 
-  // Aggiorna banner FRAIL
   document.getElementById("frail-banner-score").textContent = `${frailScore} / 5`;
   const frailBadgeEl = document.getElementById("frail-banner-badge");
   frailBadgeEl.textContent = frailBadgeText;
   frailBadgeEl.className = `badge ${frailBadgeClass}`;
 
-  // Aggiorna dettagli variabili FRAIL
   const frailVarsEl = document.getElementById("frail-variable-list");
   frailVarsEl.innerHTML = "";
   const labelMap = {
@@ -87,89 +96,39 @@ document.addEventListener("DOMContentLoaded", async () => {
     item.innerHTML = `<span>${labelMap[key]}</span><span>${value === "yes" ? "❌ Sì" : "✅ No"}</span>`;
     frailVarsEl.appendChild(item);
   }
-// ====== SCORE2 ======
-const score2Val = profile.score2_risk !== null && profile.score2_risk !== undefined
-  ? parseFloat(profile.score2_risk).toFixed(1)
-  : "--";
 
-// Aggiorna riepilogo in alto
-const score2SummaryEl = document.getElementById("score2-summary-indicator");
-if (score2SummaryEl) {
-  score2SummaryEl.textContent = `${score2Val}%`;
-  score2SummaryEl.className = "score-indicator"; // reset classi
-  if (score2Val >= 15) {
-    score2SummaryEl.classList.add("score-high");
-  } else if (score2Val >= 10) {
-    score2SummaryEl.classList.add("score-medium");
-  } else {
-    score2SummaryEl.classList.add("score-low");
+  // ====== SCORE2 ======
+  const score2Val = profile.score2_risk !== null && profile.score2_risk !== undefined
+    ? parseFloat(profile.score2_risk).toFixed(1)
+    : "--";
+
+  document.getElementById("score2-banner-score").textContent = `${score2Val}%`;
+  setScoreCircleColor("score2-bg-circle", parseFloat(score2Val), { high: 15, medium: 10 });
+
+  // Aggiorna riepilogo in alto
+  const score2SummaryEl = document.getElementById("score2-summary-indicator");
+  if (score2SummaryEl) {
+    score2SummaryEl.textContent = `${score2Val}%`;
+    score2SummaryEl.className = "score-indicator"; // reset classi
+    if (score2Val >= 15) score2SummaryEl.classList.add("score-high");
+    else if (score2Val >= 10) score2SummaryEl.classList.add("score-medium");
+    else score2SummaryEl.classList.add("score-low");
   }
-}
-// Aggiorna banner nella tab Rischi
-const score2BannerEl = document.getElementById("score2-banner-score");
-if (score2BannerEl) score2BannerEl.textContent = `${score2Val}%`;
 
-// Badge colore SCORE2
-let score2ColorClass;
-if (score2Val >= 15) {
-  score2ColorClass = "badge-danger"; // rosso
-} else if (score2Val >= 10) {
-  score2ColorClass = "badge-warning"; // giallo
-} else {
-  score2ColorClass = "badge-success"; // verde
-}
-const score2Badge = document.getElementById("score2-badge");
-if (score2Badge) {
-  score2Badge.className = `badge ${score2ColorClass}`;
-}
+  // ====== ADA Diabetes Risk ======
+  const adaVal = profile.ada_score !== null && profile.ada_score !== undefined
+    ? parseInt(profile.ada_score)
+    : "--";
 
-// Cerchio colore SCORE2
-const score2Circle = document.querySelector("#score2-banner circle.progress-ring__circle");
-if (score2Circle) {
-  if (score2Val >= 15) score2Circle.setAttribute("stroke", "#EA4335"); // rosso
-  else if (score2Val >= 10) score2Circle.setAttribute("stroke", "#FBBC05"); // giallo
-  else score2Circle.setAttribute("stroke", "#34A853"); // verde
-}
+  document.getElementById("ada-banner-score").textContent = `${adaVal}/9`;
+  setScoreCircleColor("ada-bg-circle", adaVal, { high: 5, medium: 3 });
 
-// ====== ADA Diabetes Risk ======
-const adaScore = profile.ada_score !== null && profile.ada_score !== undefined
-  ? parseInt(profile.ada_score)
-  : "--";
+  // ====== Fatty Liver Index (FLI) ======
+  const fliVal = profile.fli_score !== null && profile.fli_score !== undefined
+    ? parseFloat(profile.fli_score).toFixed(1)
+    : "--";
 
-// Testo ADA con massimo 9
-const adaScoreEl = document.getElementById("ada-banner-score");
-if (adaScoreEl) adaScoreEl.textContent = `${adaScore}/9`;
-
-// Badge colore ADA (esempio: >=5 rosso)
-const adaBadgeEl = document.getElementById("ada-badge");
-if (adaBadgeEl) {
-  adaBadgeEl.className = "badge";
-  adaBadgeEl.classList.add(adaScore >= 5 ? "badge-danger" : "badge-success");
-}
-
-// Cerchio colore ADA (opzionale, se vuoi gestirlo)
-const adaCircle = document.querySelector("#ada-banner circle.progress-ring__circle");
-if (adaCircle) {
-  if (adaScore >= 5) adaCircle.setAttribute("stroke", "#EA4335"); // rosso
-  else adaCircle.setAttribute("stroke", "#34A853"); // verde
-}
-
-// ====== Fatty Liver Index (FLI) ======
-const fliScore = profile.fli_score !== null && profile.fli_score !== undefined
-  ? parseFloat(profile.fli_score).toFixed(1)
-  : "--";
-
-// Testo FLI
-const fliScoreEl = document.getElementById("fni-banner-score");
-if (fliScoreEl) fliScoreEl.textContent = fliScore;
-
-// Cerchio colore FLI
-const fliCircle = document.querySelector("#fni-banner circle.progress-ring__circle");
-if (fliCircle) {
-  if (fliScore >= 60) fliCircle.setAttribute("stroke", "#EA4335"); // rosso
-  else if (fliScore >= 30) fliCircle.setAttribute("stroke", "#FBBC05"); // giallo
-  else fliCircle.setAttribute("stroke", "#34A853"); // verde
-}
-
+  document.getElementById("fni-banner-score").textContent = fliVal;
+  setScoreCircleColor("fni-bg-circle", parseFloat(fliVal), { high: 60, medium: 30 });
 
 });
