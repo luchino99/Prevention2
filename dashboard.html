@@ -491,129 +491,134 @@
           </div>
         </div>
 
- <!-- Piano Alimentare Personalizzato -->
-<div class="p-6 bg-gray-50 rounded-lg mt-6 shadow-sm border border-gray-200">
-  <h3 class="text-xl font-semibold mb-4 text-gray-800 flex items-center">
-    <i class="fas fa-utensils text-green-500 mr-2"></i> Piano Alimentare Personalizzato
-  </h3>
+ 
+<!-- Piano Alimentare Personalizzato -->
+<div class="bg-white shadow-lg rounded-xl border border-gray-200 overflow-hidden mt-8">
+  <!-- Header -->
+  <div class="px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-600">
+    <h3 class="text-lg md:text-xl font-semibold text-white flex items-center">
+      <i class="fas fa-utensils mr-2 text-white/90"></i>
+      Piano Alimentare Personalizzato
+    </h3>
+    <p class="text-sm text-green-50/80 mt-1">
+      Configura i tuoi dati e genera un piano alimentare creato su misura.
+    </p>
+  </div>
 
-  <form id="form-piano-alimentare" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <!-- Età -->
-    <div>
-      <label for="eta" class="block text-sm font-medium text-gray-700">Età</label>
-      <input type="number" id="eta" min="1" max="120" class="input-field w-full mt-1 border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
+  <!-- Form -->
+  <form id="form-piano-alimentare" class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50">
+    
+    <!-- Campo con etichetta flottante -->
+    <div class="relative">
+      <input type="number" id="eta" placeholder=" " min="1" max="120"
+        class="peer w-full border border-gray-300 rounded-lg px-3 pt-5 pb-2 text-gray-900 placeholder-transparent focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 transition">
+      <label for="eta" class="absolute left-3 top-2.5 text-gray-500 text-sm transition-all peer-placeholder-shown:top-5 peer-placeholder-shown:text-gray-400 peer-placeholder-shown:text-base peer-focus:top-2.5 peer-focus:text-sm peer-focus:text-green-600">Età</label>
     </div>
 
-    <!-- Sesso -->
-    <div>
-      <label for="sesso" class="block text-sm font-medium text-gray-700">Sesso</label>
-      <select id="sesso" class="input-field w-full mt-1 border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
-        <option value="">Seleziona</option>
+    <div class="relative">
+      <select id="sesso"
+        class="peer w-full border border-gray-300 rounded-lg px-3 pt-5 pb-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 transition">
+        <option value=""></option>
         <option value="maschio">Maschio</option>
         <option value="femmina">Femmina</option>
       </select>
+      <label for="sesso" class="absolute left-3 top-2.5 text-gray-500 text-sm">Sesso</label>
     </div>
 
-    <!-- Altezza -->
-    <div>
-      <label for="altezza" class="block text-sm font-medium text-gray-700">Altezza (cm)</label>
-      <input type="number" id="altezza" min="50" max="250" step="0.1" class="input-field w-full mt-1 border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
+    <div class="relative">
+      <input type="number" id="altezza" placeholder=" " min="50" max="250" step="0.1"
+        class="peer w-full border border-gray-300 rounded-lg px-3 pt-5 pb-2 placeholder-transparent focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400">
+      <label for="altezza" class="absolute left-3 top-2.5 text-gray-500 text-sm peer-placeholder-shown:top-5 peer-placeholder-shown:text-base peer-focus:top-2.5 peer-focus:text-sm peer-focus:text-green-600">Altezza (cm)</label>
     </div>
 
-    <!-- Peso -->
-    <div>
-      <label for="peso" class="block text-sm font-medium text-gray-700">Peso (kg)</label>
-      <input type="number" id="peso" min="20" max="300" step="0.1" class="input-field w-full mt-1 border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
+    <div class="relative">
+      <input type="number" id="peso" placeholder=" " min="20" max="300" step="0.1"
+        class="peer w-full border border-gray-300 rounded-lg px-3 pt-5 pb-2 placeholder-transparent focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400">
+      <label for="peso" class="absolute left-3 top-2.5 text-gray-500 text-sm peer-placeholder-shown:top-5 peer-placeholder-shown:text-base peer-focus:top-2.5 peer-focus:text-sm peer-focus:text-green-600">Peso (kg)</label>
     </div>
 
-    <!-- Obiettivo -->
-    <div>
-      <label for="obiettivo" class="block text-sm font-medium text-gray-700">Obiettivo</label>
-      <select id="obiettivo" class="input-field w-full mt-1 border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
-        <option value="">Seleziona</option>
+    <div class="relative">
+      <select id="obiettivo"
+        class="peer w-full border border-gray-300 rounded-lg px-3 pt-5 pb-2 bg-white focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400">
+        <option value=""></option>
         <option value="dimagrimento">Dimagrimento</option>
         <option value="mantenimento">Mantenimento</option>
         <option value="aumento massa muscolare">Aumento massa muscolare</option>
       </select>
+      <label for="obiettivo" class="absolute left-3 top-2.5 text-gray-500 text-sm">Obiettivo</label>
     </div>
 
-    <!-- Attività fisica -->
-    <div>
-      <label for="attivita_fisica" class="block text-sm font-medium text-gray-700">Attività Fisica</label>
-      <select id="attivita_fisica" class="input-field w-full mt-1 border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
-        <option value="">Seleziona</option>
+    <div class="relative">
+      <select id="attivita_fisica"
+        class="peer w-full border border-gray-300 rounded-lg px-3 pt-5 pb-2 bg-white focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400">
+        <option value=""></option>
         <option value="sedentario">Sedentario</option>
         <option value="leggero">Leggero</option>
         <option value="moderato">Moderato</option>
         <option value="intenso">Intenso</option>
       </select>
+      <label for="attivita_fisica" class="absolute left-3 top-2.5 text-gray-500 text-sm">Attività fisica</label>
     </div>
 
-    <!-- Tipo di lavoro -->
-    <div>
-      <label for="tipo_lavoro" class="block text-sm font-medium text-gray-700">Tipo di Lavoro / Stile di Vita</label>
-      <select id="tipo_lavoro" class="input-field w-full mt-1 border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
-        <option value="">Seleziona</option>
+    <div class="relative">
+      <select id="tipo_lavoro"
+        class="peer w-full border border-gray-300 rounded-lg px-3 pt-5 pb-2 bg-white focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400">
+        <option value=""></option>
         <option value="sedentario">Sedentario</option>
         <option value="leggermente attivo">Leggermente attivo</option>
         <option value="moderatamente attivo">Moderatamente attivo</option>
         <option value="molto attivo">Molto attivo</option>
         <option value="estremamente attivo">Estremamente attivo</option>
       </select>
+      <label for="tipo_lavoro" class="absolute left-3 top-2.5 text-gray-500 text-sm">Tipo di lavoro</label>
     </div>
 
-    <!-- Preferenze alimentari -->
+    <!-- Campi testo larghi -->
     <div class="md:col-span-2">
-      <label for="preferenze" class="block text-sm font-medium text-gray-700">Preferenze Alimentari</label>
-      <input type="text" id="preferenze" placeholder="Es: mediterranea, vegetariana, vegana..." class="input-field w-full mt-1 border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
+      <label for="preferenze" class="block text-sm font-medium text-gray-700 mb-1">Preferenze Alimentari</label>
+      <input type="text" id="preferenze" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400">
     </div>
 
-    <!-- Intolleranze -->
     <div class="md:col-span-2">
-      <label for="intolleranze" class="block text-sm font-medium text-gray-700">Intolleranze o Allergie</label>
-      <input type="text" id="intolleranze" placeholder="Es: glutine, lattosio..." class="input-field w-full mt-1 border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
+      <label for="intolleranze" class="block text-sm font-medium text-gray-700 mb-1">Intolleranze/Allergie</label>
+      <input type="text" id="intolleranze" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400">
     </div>
 
-    <!-- Alimenti esclusi -->
     <div class="md:col-span-2">
-      <label for="alimenti_esclusi" class="block text-sm font-medium text-gray-700">Alimenti da Escludere</label>
-      <input type="text" id="alimenti_esclusi" placeholder="Es: carne rossa, fritti..." class="input-field w-full mt-1 border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
+      <label for="alimenti_esclusi" class="block text-sm font-medium text-gray-700 mb-1">Alimenti da Escludere</label>
+      <input type="text" id="alimenti_esclusi" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400">
     </div>
 
-    <!-- Numero pasti -->
     <div>
-      <label for="pasti" class="block text-sm font-medium text-gray-700">Numero Pasti Giornalieri</label>
-      <input type="number" id="pasti" min="1" max="10" class="input-field w-full mt-1 border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
+      <label for="pasti" class="block text-sm font-medium text-gray-700 mb-1">Numero Pasti</label>
+      <input type="number" id="pasti" min="1" max="10" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400">
     </div>
 
-    <!-- Orari pasti -->
     <div>
-      <label for="orari_pasti" class="block text-sm font-medium text-gray-700">Orari Pasti</label>
-      <input type="text" id="orari_pasti" placeholder="Opzionale" class="input-field w-full mt-1 border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
+      <label for="orari_pasti" class="block text-sm font-medium text-gray-700 mb-1">Orari Pasti</label>
+      <input type="text" id="orari_pasti" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400">
     </div>
 
-    <!-- Patologie -->
     <div class="md:col-span-2">
-      <label for="patologie" class="block text-sm font-medium text-gray-700">Patologie Diagnosticate</label>
-      <input type="text" id="patologie" placeholder="Es: diabete, ipertensione..." class="input-field w-full mt-1 border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
+      <label for="patologie" class="block text-sm font-medium text-gray-700 mb-1">Patologie Diagnosticate</label>
+      <input type="text" id="patologie" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400">
     </div>
 
-    <!-- Farmaci -->
     <div class="md:col-span-2">
-      <label for="farmaci" class="block text-sm font-medium text-gray-700">Farmaci Assunti</label>
-      <input type="text" id="farmaci" placeholder="Opzionale" class="input-field w-full mt-1 border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
+      <label for="farmaci" class="block text-sm font-medium text-gray-700 mb-1">Farmaci Assunti</label>
+      <input type="text" id="farmaci" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400">
     </div>
 
     <!-- Pulsanti -->
-    <div class="md:col-span-2 flex justify-end space-x-3 mt-4">
-      <button type="button" id="salva-dati-piano" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg shadow">💾 Salva Dati</button>
-      <button type="button" id="genera-piano-btn" class="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg shadow">⚡ Genera Piano Alimentare</button>
+    <div class="md:col-span-2 flex justify-end gap-3 mt-4">
+      <button type="button" id="salva-dati-piano" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg shadow-md transition">💾 Salva Dati</button>
+      <button type="button" id="genera-piano-btn" class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg shadow-md transition">⚡ Genera Piano</button>
     </div>
   </form>
 
-  <!-- Output piano alimentare -->
-  <div id="piano-alimentare-output" class="mt-6 p-4 bg-white rounded-lg border border-gray-200 shadow-sm text-sm text-gray-700">
-    <p class="italic text-gray-500">Il piano alimentare generato apparirà qui...</p>
+  <!-- Output -->
+  <div id="piano-alimentare-output" class="p-6 bg-white text-gray-700 text-sm border-t border-gray-200">
+    <p class="italic text-gray-400">Il piano alimentare generato apparirà qui...</p>
   </div>
 </div>
 
