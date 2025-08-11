@@ -676,17 +676,6 @@ function updateDashboard() {
   console.log('🔄 Inizio aggiornamento dashboard...');
   console.log('📊 Dati da visualizzare:', dashboardData);
 
-  // SCORE2
-const score2El = document.getElementById("score2-indicator");
-const score2CategoryEl = document.getElementById("score2-category");
-const score2Badge = document.getElementById("score2-badge");
-
-if (score2El) score2El.textContent = `${dashboardData.score2.value || "--"}%`;
-if (score2CategoryEl) score2CategoryEl.textContent = dashboardData.score2.risk || "--";
-if (score2Badge) {
-  score2Badge.className = "badge";
-  score2Badge.classList.add(`badge-${dashboardData.score2.category}`);
-}
 
   // === Parametri SCORE2 in stile FRAIL ===
   const score2Vars = [
