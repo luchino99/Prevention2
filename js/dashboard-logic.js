@@ -49,15 +49,6 @@ document.addEventListener('DOMContentLoaded', async function () {
               : "success"
     };
 
-    dashboardData.score2Diabetes = {
-      value: parseFloat(userData.score2_diabetes_risk) || 0,
-      hba1c: parseFloat(userData.hba1c) || 0,
-      glicemia: parseFloat(userData.glicemia_valore) || 0,
-      sistolica: parseFloat(userData.pressione_sistolica) || 0,
-      category: (userData.score2_diabetes_category || "").toLowerCase().includes("alto") ? "danger"
-              : (userData.score2_diabetes_category || "").toLowerCase().includes("moderato") ? "warning"
-              : "success"
-    };
 
     dashboardData.fni = {
       value: parseFloat(userData.fli_score) || 0,
