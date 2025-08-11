@@ -209,13 +209,13 @@ function populatePianoAlimentareForm() {
     "obiettivo",
     "attivita_fisica",
     "tipo_lavoro",
-    "preferenze",
+    "preferenze_dieta",
     "intolleranze",
     "alimenti_esclusi",
-    "pasti",
-    "orari_pasti",
+    "numero_pasti",
+    "orario_pasti",
     "patologie",
-    "farmaci"
+    "farmaci_dettaglio"
   ];
 
   campi.forEach(campo => {
