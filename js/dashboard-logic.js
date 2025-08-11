@@ -1680,3 +1680,97 @@ function setupTabs() {
       await supabaseClient.auth.signOut();
       window.location.href = 'login.html';
     });
+
+// ===== SEZIONE PULSANTI INFO SU OGNI SCORE =====
+const infoTexts = {
+  "score2-diabetes": `
+<strong>🏥 SCORE2-Diabetes – Rischio Cardiovascolare nei Diabetici</strong><br><br>
+Lo <strong>SCORE2-Diabetes</strong> è un modello validato per stimare il <em>rischio di eventi cardiovascolari fatali e non fatali a 10 anni</em> nelle persone con <strong>diabete di tipo 2</strong>.
+<br><br>
+📌 <u>Interpretazione:</u><br>
+- <strong>Basso</strong>: &lt;10% → Rischio contenuto.<br>
+- <strong>Intermedio</strong>: 10–20% → Necessario rafforzare la prevenzione.<br>
+- <strong>Alto</strong>: &gt;20% → Richiesto intervento clinico immediato.<br><br>
+💡 <u>Prevenzione:</u> Controllo stretto della glicemia e della pressione, ottimizzazione del profilo lipidico, abolizione del fumo, dieta mediterranea, attività fisica regolare.
+  `,
+
+  "score2": `
+<strong>❤️ SCORE2 – Rischio Cardiovascolare nella Popolazione Generale</strong><br><br>
+Lo <strong>SCORE2</strong> calcola il rischio di <em>malattie cardiovascolari fatali e non fatali</em> a 10 anni nella popolazione adulta senza diagnosi di diabete.
+<br><br>
+📌 <u>Interpretazione:</u><br>
+- <strong>Basso</strong>: &lt;5%<br>
+- <strong>Moderato</strong>: 5–10%<br>
+- <strong>Alto</strong>: &gt;10%<br><br>
+💡 <u>Prevenzione:</u> Monitoraggio periodico di pressione e colesterolo, riduzione del sale, dieta ricca di frutta e verdura, mantenimento del peso forma, cessazione del fumo.
+  `,
+
+  "frail": `
+<strong>🧓 FRAIL Scale – Valutazione della Fragilità nell’Anziano</strong><br><br>
+La <strong>FRAIL Scale</strong> misura lo stato di fragilità dell’individuo, valutando 5 parametri: Affaticamento, Resistenza, Deambulazione, Malattie croniche, Perdita di peso involontaria.
+<br><br>
+📌 <u>Interpretazione:</u><br>
+- <strong>Robusto</strong>: 0 punti<br>
+- <strong>Pre-Frailty</strong>: 1–2 punti<br>
+- <strong>Fragile</strong>: ≥3 punti<br><br>
+💡 <u>Prevenzione:</u> Allenamento di forza e resistenza, fisioterapia, alimentazione proteica adeguata, integrazione di vitamina D e calcio, prevenzione cadute.
+  `,
+
+  "fli": `
+<strong>🧪 FLI – Fatty Liver Index</strong><br><br>
+Il <strong>Fatty Liver Index</strong> è uno strumento non invasivo per stimare la probabilità di <em>steatosi epatica</em> (fegato grasso) basato su circonferenza vita, BMI, trigliceridi e GGT.
+<br><br>
+📌 <u>Interpretazione:</u><br>
+- <strong>Basso rischio</strong>: &lt;30 → Steatosi improbabile<br>
+- <strong>Intermedio</strong>: 30–59 → Indeterminato, approfondire<br>
+- <strong>Alto rischio</strong>: ≥60 → Steatosi probabile<br><br>
+💡 <u>Prevenzione:</u> Ridurre peso corporeo, controllare trigliceridi, limitare alcol e zuccheri semplici, aumentare attività fisica aerobica.
+  `,
+
+  "ada": `
+<strong>🩺 ADA Diabetes Risk Score</strong><br><br>
+Il punteggio <strong>ADA</strong> stima il rischio di sviluppare <em>diabete di tipo 2</em> nei prossimi anni, basandosi su fattori come età, peso, familiarità e stile di vita.
+<br><br>
+📌 <u>Interpretazione:</u><br>
+- <strong>Basso rischio</strong>: 0–2 punti<br>
+- <strong>Moderato</strong>: 3–4 punti<br>
+- <strong>Alto rischio</strong>: ≥5 punti<br><br>
+💡 <u>Prevenzione:</u> Migliorare dieta, aumentare attività fisica, controlli glicemici regolari, riduzione di peso in caso di sovrappeso.
+  `,
+
+  "fib4": `
+<strong>🧬 FIB4 – Indice di Fibrosi Epatica</strong><br><br>
+Il <strong>FIB4</strong> è un indice derivato da età, AST, ALT e conta piastrinica per stimare la probabilità di <em>fibrosi epatica</em>.
+<br><br>
+📌 <u>Interpretazione:</u><br>
+- <strong>Basso rischio</strong>: &lt;1.45<br>
+- <strong>Intermedio</strong>: 1.45–3.25<br>
+- <strong>Alto rischio</strong>: &gt;3.25<br><br>
+💡 <u>Prevenzione:</u> Limitare consumo di alcol, mantenere peso forma, controllare glicemia e lipidi, valutazione epatologica se rischio intermedio/alto.
+  `
+};
+
+// Attiva i listener su tutti i pulsanti Info
+document.querySelectorAll(".info-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const key = btn.dataset.info;
+    const content = infoTexts[key] || "<strong>ℹ️ Informazioni non disponibili</strong>";
+    
+    // Mostra un popup elegante
+    const modal = document.createElement("div");
+    modal.className = "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50";
+    modal.innerHTML = `
+      <div class="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
+        ${content}
+        <div class="mt-4 text-right">
+          <button class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600" id="close-info-modal">Chiudi</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    document.getElementById("close-info-modal").addEventListener("click", () => {
+      modal.remove();
+    });
+  });
+});
