@@ -677,7 +677,7 @@ function updateDashboard() {
   console.log('📊 Dati da visualizzare:', dashboardData);
 
 
-  // === Parametri SCORE2 
+  // === Parametri SCORE2 in stile FRAIL ===
   const score2Vars = [
     { label: 'Pressione', value: `${userData.pressione_sistolica || '--'} mmHg`, positive: parseFloat(userData.pressione_sistolica) < 140 },
     { label: 'Colesterolo Totale', value: `${userData.colesterolo_totale || '--'} mg/dL`, positive: parseFloat(userData.colesterolo_totale) < 200 },
@@ -690,7 +690,7 @@ function updateDashboard() {
   // SCORE2-Diabetes
   document.getElementById("score2d-banner-text").textContent = `${dashboardData.score2Diabetes?.value || "--"}%`;
 
-  // === Parametri SCORE2-Diabetes 
+  // === Parametri SCORE2-Diabetes in stile FRAIL ===
   const score2dVars = [
     { label: 'HbA1c', value: `${userData.hba1c || '--'} %`, positive: parseFloat(userData.hba1c) < 5.7 },
     { label: 'Glicemia', value: `${userData.glicemia_valore || '--'} mg/dL`, positive: parseFloat(userData.glicemia_valore) < 100 },
@@ -1204,7 +1204,25 @@ if (!isNaN(parseFloat(dashboardData.fib4?.value))) {
 
 
 
+  // FNI
+  if (dashboardData.fni?.value > 0) {
+    const scoreEl = document.getElementById('fni-banner-score');
+    const albuminaEl = document.getElementById('fni-banner-albumina');
+    const linfocitiEl = document.getElementById('fni-banner-linfociti');
 
+    if (scoreEl) {
+      const classSuffix = dashboardData.fni.category === 'danger' ? 'high' :
+                          dashboardData.fni.category === 'warning' ? 'low' : 'medium';
+      scoreEl.textContent = dashboardData.fni.value;
+      scoreEl.className = `score-indicator-2 text-2xl score-${classSuffix}`;
+    }
+
+    if (albuminaEl) albuminaEl.textContent = `${dashboardData.fni.albumina || '--'} g/dL`;
+    if (linfocitiEl) linfocitiEl.textContent = `${dashboardData.fni.linfociti || '--'} /mm³`;
+  }
+
+  console.log('✅ Tutti i nuovi score aggiornati');
+}
 
 
 function updateScreeningTab() {
