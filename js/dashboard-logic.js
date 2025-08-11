@@ -61,39 +61,12 @@ const mapping = {
   farmaci: "farmaci_dettaglio"
 };
 
-document.getElementById("salva-dati-piano")?.addEventListener("click", async () => {
-  const aggiornamenti = {};
-
-  Object.keys(mapping).forEach(fieldId => {
-    const dbField = mapping[fieldId];
-    const el = document.getElementById(fieldId);
-    if (el) {
-      aggiornamenti[dbField] = el.value?.trim() || null;
-    }
-  });
-
-  const { error } = await supabaseClient
-    .from("anagrafica_utenti")
-    .update(aggiornamenti)
-    .eq("email", emailUtente); // ✅ uso emailUtente, non email
-
-  if (error) {
-    console.error("❌ Errore nel salvataggio dati piano alimentare:", error.message);
-    alert("❌ Errore nel salvataggio: " + error.message);
-  } else {
-    console.log("✅ Dati piano alimentare salvati:", aggiornamenti);
-    alert("✅ Dati salvati con successo!");
-  }
-});
-
-// Pulsante per generare il piano alimentare
 const btnGeneraPiano = document.getElementById("btn-genera-piano");
 
 if (btnGeneraPiano) {
   btnGeneraPiano.addEventListener("click", async () => {
     const output = document.getElementById("piano-alimentare-output");
 
-    // Mostra messaggio di caricamento
     output.innerHTML = `
       <div class="flex items-center gap-2 text-green-700">
         <i class="fas fa-spinner fa-spin"></i>
@@ -119,10 +92,15 @@ if (btnGeneraPiano) {
         farmaci: userData.farmaci_dettaglio || document.getElementById("farmaci")?.value || ""
       };
 
+      // Controllo valori tipo_lavoro
+      const validi = ["sedentario", "leggermente attivo", "moderatamente attivo", "molto attivo", "estremamente attivo"];
+      if (!validi.includes(datiPiano.tipo_lavoro.toLowerCase())) {
+        output.innerHTML = `<p class="text-red-600">⚠️ Seleziona un livello di attività fisica valido.</p>`;
+        return;
+      }
 
-      console.log("📤 Invio dati per piano alimentare (modalità chatbot):", datiPiano);
+      console.log("📤 Invio dati per piano alimentare:", datiPiano);
 
-      // ✅ Stessa chiamata API del chatbot
       const response = await fetch("https://prevention2.vercel.app/api/openai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -134,9 +112,6 @@ if (btnGeneraPiano) {
         throw new Error("Nessuna risposta dal modello");
       }
 
-      console.log("📥 Risposta grezza API piano alimentare:", data);
-
-      // Mostra il piano
       output.innerHTML = `
         <h4 class="text-lg font-semibold mb-3 text-green-700">🍽️ Il tuo piano alimentare personalizzato</h4>
         <div class="whitespace-pre-wrap text-sm text-gray-700">${data.risposta}</div>
