@@ -216,22 +216,18 @@ function populatePianoAlimentareForm() {
     pasti: "pasti",
     orari_pasti: "orari_pasti",
     patologie: "patologie",
-    farmaci: "farmaci_dettaglio"
+    farmaci: "farmaci"
   };
 
-
-  campi.forEach(campo => {
-    const el = document.getElementById(campo);
-    if (el && userData[campo] !== undefined && userData[campo] !== null) {
-      // Gestione maiuscole/minuscole e valori di select
-      if (el.tagName === "SELECT") {
-        el.value = userData[campo]?.toString().toLowerCase() || "";
-      } else {
-        el.value = userData[campo] || "";
-      }
+  Object.keys(mapping).forEach(fieldId => {
+    const dbField = mapping[fieldId];
+    const el = document.getElementById(fieldId);
+    if (el && userData[dbField] !== undefined && userData[dbField] !== null) {
+      el.value = userData[dbField] || "";
     }
   });
 }
+
 
 function fixFloatingLabels() {
   document.querySelectorAll("#form-piano-alimentare input, #form-piano-alimentare select").forEach(el => {
