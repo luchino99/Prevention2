@@ -108,7 +108,7 @@ if (btnGeneraPiano) {
         altezza: userData.altezza || document.getElementById("altezza")?.value || "",
         peso: userData.peso || document.getElementById("peso")?.value || "",
         obiettivo: userData.obiettivo || document.getElementById("obiettivo")?.value || "",
-        attivita_fisica: userData.attivita_fisica || document.getElementById("attivita_fisica")?.value || "",
+        attivita_fisica: userData.tipo_lavoro || document.getElementById("tipo_lavoro")?.value || "",
         preferenze_alimentari: userData.preferenze_alimentari || document.getElementById("preferenze")?.value || "",
         intolleranze: userData.intolleranze || document.getElementById("intolleranze")?.value || "",
         alimenti_esclusi: userData.alimenti_esclusi || document.getElementById("alimenti_esclusi")?.value || "",
