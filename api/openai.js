@@ -199,9 +199,10 @@ Lunedì | Colazione | Yogurt greco 150g + Mirtilli 50g + Avena 40g | Ricco di pr
     ],
     temperature: 0.7
   });
+  console.log("📤 Risposta grezza GPT:", JSON.stringify(response, null, 2));
 
   const result = response?.choices?.[0]?.message?.content || null;
-  console.log("📤 Risultato GPT:", result);
+  
 
   return res.status(200).json({
     piano: result || "⚠️ Nessuna risposta valida dal modello."
