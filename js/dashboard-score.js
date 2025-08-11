@@ -48,54 +48,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     else el.classList.add("bg-score-low");
   }
 
-  // ====== FRAIL SCALE ======
-  const answers = {
-    fatigue: profile.stanchezza === "si" ? "yes" : "no",
-    resistance: profile.sedia === "si" ? "yes" : "no",
-    ambulation: profile.camminata === "no" ? "yes" : "no", // NO = negativo
-    illnesses: profile.malattie_croniche === "si" ? "yes" : "no",
-    loss: profile.perdita_peso === "si" ? "yes" : "no"
-  };
-
-  const frailScore = Object.values(answers).filter(v => v === "yes").length;
-
-  let frailBadgeText = "";
-  let frailBadgeClass = "";
-
-  if (frailScore === 0) {
-    frailBadgeText = "Robusto";
-    frailBadgeClass = "bg-green-100 text-green-700";
-  } else if (frailScore <= 2) {
-    frailBadgeText = "Pre-Frailty";
-    frailBadgeClass = "bg-yellow-100 text-yellow-700";
-  } else {
-    frailBadgeText = "Fragile";
-    frailBadgeClass = "bg-red-100 text-red-700";
-  }
-
-  document.getElementById("frail-banner-score").textContent = `${frailScore} / 5`;
-  const frailBadgeEl = document.getElementById("frail-banner-badge");
-  frailBadgeEl.textContent = frailBadgeText;
-  frailBadgeEl.className = `badge ${frailBadgeClass}`;
-
-  const frailVarsEl = document.getElementById("frail-variable-list");
-  frailVarsEl.innerHTML = "";
-  const labelMap = {
-    fatigue: "Affaticamento",
-    resistance: "Resistenza",
-    ambulation: "Deambulazione",
-    illnesses: "Malattie Croniche",
-    loss: "Perdita di Peso"
-  };
-
-  for (const [key, value] of Object.entries(answers)) {
-    const item = document.createElement("div");
-    item.className = `text-sm flex justify-between px-2 py-1 rounded ${
-      value === "yes" ? "text-red-600" : "text-green-600"
-    }`;
-    item.innerHTML = `<span>${labelMap[key]}</span><span>${value === "yes" ? "❌ Sì" : "✅ No"}</span>`;
-    frailVarsEl.appendChild(item);
-  }
 
   // ====== SCORE2 ======
   const score2Val = profile.score2_risk !== null && profile.score2_risk !== undefined
