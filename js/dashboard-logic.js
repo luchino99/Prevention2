@@ -134,42 +134,61 @@ output.innerHTML = `
 }
 
   function formatMealPlanProfessional(planText) {
-  const giornoRegex = /^####\s*(Lunedì|Martedì|Mercoledì|Giovedì|Venerdì|Sabato|Domenica):?/i;
+  const giornoRegex = /^####\s*(Lunedì|Martedì|Mercoledì|Giovedì|Venerdì|Sabato|Domenica)/i;
+  const bmrRegex = /BMR.*?:\s*([\d]+)\s*kcal/i;
+  const tdeeRegex = /TDEE.*?:\s*([\d]+)\s*kcal/i;
+
+  const bmrMatch = planText.match(bmrRegex);
+  const tdeeMatch = planText.match(tdeeRegex);
+
+  let bmr = bmrMatch ? bmrMatch[1] : null;
+  let tdee = tdeeMatch ? tdeeMatch[1] : null;
 
   const lines = planText.split("\n").map(l => l.trim()).filter(l => l);
   let currentDay = null;
   let days = {};
+  let spuntinoCounter = 0;
 
   lines.forEach(line => {
-    // Riconoscimento giorno
     if (giornoRegex.test(line)) {
       currentDay = line.replace(/^####\s*/i, "").replace(":", "");
       days[currentDay] = { colazione: "", spuntino_mattina: "", pranzo: "", spuntino_pomeriggio: "", cena: "" };
+      spuntinoCounter = 0;
     }
-    // Colazione
     else if (/^\-\s*\*\*Colazione\*\*/i.test(line)) {
       days[currentDay].colazione = line.replace(/^\-\s*\*\*Colazione\*\*:\s*/i, "");
     }
-    // Spuntino mattina o generico
     else if (/^\-\s*\*\*Spuntino\*\*/i.test(line)) {
-      days[currentDay].spuntino_mattina = line.replace(/^\-\s*\*\*Spuntino\*\*:\s*/i, "");
+      spuntinoCounter++;
+      if (spuntinoCounter === 1) {
+        days[currentDay].spuntino_mattina = line.replace(/^\-\s*\*\*Spuntino\*\*:\s*/i, "");
+      } else {
+        days[currentDay].spuntino_pomeriggio = line.replace(/^\-\s*\*\*Spuntino\*\*:\s*/i, "");
+      }
     }
-    // Spuntino pomeriggio/pomeridiano
-    else if (/^\-\s*\*\*Spuntino pomeriggio\*\*/i.test(line) || /^\-\s*\*\*Spuntino pomeridiano\*\*/i.test(line)) {
-      days[currentDay].spuntino_pomeriggio = line.replace(/^\-\s*\*\*Spuntino (pomeriggio|pomeridiano)\*\*:\s*/i, "");
-    }
-    // Pranzo
     else if (/^\-\s*\*\*Pranzo\*\*/i.test(line)) {
       days[currentDay].pranzo = line.replace(/^\-\s*\*\*Pranzo\*\*:\s*/i, "");
     }
-    // Cena
     else if (/^\-\s*\*\*Cena\*\*/i.test(line)) {
       days[currentDay].cena = line.replace(/^\-\s*\*\*Cena\*\*:\s*/i, "");
     }
   });
 
-  // Costruzione tabella
-  let html = `<div class="overflow-x-auto">
+  let html = "";
+
+  // Box BMR e TDEE
+  if (bmr || tdee) {
+    html += `
+      <div class="mb-4 p-4 bg-green-100 border border-green-300 rounded-lg shadow-sm">
+        <h3 class="text-lg font-semibold text-green-800 mb-2">📊 Fabbisogno Calorico</h3>
+        ${bmr ? `<p class="text-gray-700"><strong>BMR:</strong> ${bmr} kcal/giorno</p>` : ""}
+        ${tdee ? `<p class="text-gray-700"><strong>TDEE:</strong> ${tdee} kcal/giorno</p>` : ""}
+      </div>
+    `;
+  }
+
+  // Tabella pasti
+  html += `<div class="overflow-x-auto">
     <table class="min-w-full border border-gray-200 rounded-xl shadow-lg">
       <thead class="bg-green-600 text-white">
         <tr>
