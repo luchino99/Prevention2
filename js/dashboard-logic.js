@@ -61,7 +61,6 @@ const mapping = {
   farmaci: "farmaci_dettaglio"
 };
 
-// 🔹 Listener per il pulsante Salva
 document.getElementById("salva-dati-piano")?.addEventListener("click", async () => {
   const aggiornamenti = {};
 
@@ -73,10 +72,10 @@ document.getElementById("salva-dati-piano")?.addEventListener("click", async () 
     }
   });
 
-  const { error } = await supabaseClient // ✅ uso il client giusto
+  const { error } = await supabaseClient
     .from("anagrafica_utenti")
     .update(aggiornamenti)
-    .eq("email", email);
+    .eq("email", emailUtente); // ✅ uso emailUtente, non email
 
   if (error) {
     console.error("❌ Errore nel salvataggio dati piano alimentare:", error.message);
@@ -86,8 +85,6 @@ document.getElementById("salva-dati-piano")?.addEventListener("click", async () 
     alert("✅ Dati salvati con successo!");
   }
 });
-
-
 
     
 
