@@ -487,6 +487,134 @@
               </div>
             </div>
 
+
+  <!-- Piano Alimentare Personalizzato -->
+<div class="p-6 bg-gray-50 rounded-lg mt-6 shadow-sm border border-gray-200">
+  <h3 class="text-xl font-semibold mb-4 text-gray-800 flex items-center">
+    <i class="fas fa-utensils text-green-500 mr-2"></i> Piano Alimentare Personalizzato
+  </h3>
+
+  <form id="form-piano-alimentare" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <!-- Età -->
+    <div>
+      <label for="eta" class="block text-sm font-medium text-gray-700">Età</label>
+      <input type="number" id="eta" min="1" max="120" class="input-field w-full mt-1 border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
+    </div>
+
+    <!-- Sesso -->
+    <div>
+      <label for="sesso" class="block text-sm font-medium text-gray-700">Sesso</label>
+      <select id="sesso" class="input-field w-full mt-1 border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
+        <option value="">Seleziona</option>
+        <option value="maschio">Maschio</option>
+        <option value="femmina">Femmina</option>
+      </select>
+    </div>
+
+    <!-- Altezza -->
+    <div>
+      <label for="altezza" class="block text-sm font-medium text-gray-700">Altezza (cm)</label>
+      <input type="number" id="altezza" min="50" max="250" step="0.1" class="input-field w-full mt-1 border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
+    </div>
+
+    <!-- Peso -->
+    <div>
+      <label for="peso" class="block text-sm font-medium text-gray-700">Peso (kg)</label>
+      <input type="number" id="peso" min="20" max="300" step="0.1" class="input-field w-full mt-1 border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
+    </div>
+
+    <!-- Obiettivo -->
+    <div>
+      <label for="obiettivo" class="block text-sm font-medium text-gray-700">Obiettivo</label>
+      <select id="obiettivo" class="input-field w-full mt-1 border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
+        <option value="">Seleziona</option>
+        <option value="dimagrimento">Dimagrimento</option>
+        <option value="mantenimento">Mantenimento</option>
+        <option value="aumento massa muscolare">Aumento massa muscolare</option>
+      </select>
+    </div>
+
+    <!-- Attività fisica -->
+    <div>
+      <label for="attivita_fisica" class="block text-sm font-medium text-gray-700">Attività Fisica</label>
+      <select id="attivita_fisica" class="input-field w-full mt-1 border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
+        <option value="">Seleziona</option>
+        <option value="sedentario">Sedentario</option>
+        <option value="leggero">Leggero</option>
+        <option value="moderato">Moderato</option>
+        <option value="intenso">Intenso</option>
+      </select>
+    </div>
+
+    <!-- Tipo di lavoro -->
+    <div>
+      <label for="tipo_lavoro" class="block text-sm font-medium text-gray-700">Tipo di Lavoro / Stile di Vita</label>
+      <select id="tipo_lavoro" class="input-field w-full mt-1 border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
+        <option value="">Seleziona</option>
+        <option value="sedentario">Sedentario</option>
+        <option value="leggermente attivo">Leggermente attivo</option>
+        <option value="moderatamente attivo">Moderatamente attivo</option>
+        <option value="molto attivo">Molto attivo</option>
+        <option value="estremamente attivo">Estremamente attivo</option>
+      </select>
+    </div>
+
+    <!-- Preferenze alimentari -->
+    <div class="md:col-span-2">
+      <label for="preferenze" class="block text-sm font-medium text-gray-700">Preferenze Alimentari</label>
+      <input type="text" id="preferenze" placeholder="Es: mediterranea, vegetariana, vegana..." class="input-field w-full mt-1 border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
+    </div>
+
+    <!-- Intolleranze -->
+    <div class="md:col-span-2">
+      <label for="intolleranze" class="block text-sm font-medium text-gray-700">Intolleranze o Allergie</label>
+      <input type="text" id="intolleranze" placeholder="Es: glutine, lattosio..." class="input-field w-full mt-1 border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
+    </div>
+
+    <!-- Alimenti esclusi -->
+    <div class="md:col-span-2">
+      <label for="alimenti_esclusi" class="block text-sm font-medium text-gray-700">Alimenti da Escludere</label>
+      <input type="text" id="alimenti_esclusi" placeholder="Es: carne rossa, fritti..." class="input-field w-full mt-1 border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
+    </div>
+
+    <!-- Numero pasti -->
+    <div>
+      <label for="pasti" class="block text-sm font-medium text-gray-700">Numero Pasti Giornalieri</label>
+      <input type="number" id="pasti" min="1" max="10" class="input-field w-full mt-1 border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
+    </div>
+
+    <!-- Orari pasti -->
+    <div>
+      <label for="orari_pasti" class="block text-sm font-medium text-gray-700">Orari Pasti</label>
+      <input type="text" id="orari_pasti" placeholder="Opzionale" class="input-field w-full mt-1 border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
+    </div>
+
+    <!-- Patologie -->
+    <div class="md:col-span-2">
+      <label for="patologie" class="block text-sm font-medium text-gray-700">Patologie Diagnosticate</label>
+      <input type="text" id="patologie" placeholder="Es: diabete, ipertensione..." class="input-field w-full mt-1 border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
+    </div>
+
+    <!-- Farmaci -->
+    <div class="md:col-span-2">
+      <label for="farmaci" class="block text-sm font-medium text-gray-700">Farmaci Assunti</label>
+      <input type="text" id="farmaci" placeholder="Opzionale" class="input-field w-full mt-1 border-gray-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500">
+    </div>
+
+    <!-- Pulsanti -->
+    <div class="md:col-span-2 flex justify-end space-x-3 mt-4">
+      <button type="button" id="salva-dati-piano" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg shadow">💾 Salva Dati</button>
+      <button type="button" id="genera-piano-btn" class="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg shadow">⚡ Genera Piano Alimentare</button>
+    </div>
+  </form>
+
+  <!-- Output piano alimentare -->
+  <div id="piano-alimentare-output" class="mt-6 p-4 bg-white rounded-lg border border-gray-200 shadow-sm text-sm text-gray-700">
+    <p class="italic text-gray-500">Il piano alimentare generato apparirà qui...</p>
+  </div>
+</div>
+
+
           </div>
         </div>
       </div>
