@@ -705,7 +705,7 @@ function updateDashboard() {
 // FRAIL
 document.getElementById("frail-banner-score").textContent = `${userData.frail_score || "--"} / 5`;
 const frailBadge = document.getElementById("frail-banner-badge");
-frailBadge.textContent = userData.frail_category || "--";
+
 frailBadge.className = "badge";
 if (userData.frail_category === "Robusto") frailBadge.classList.add("badge-success");
 else if (userData.frail_category === "Pre-Frailty") frailBadge.classList.add("badge-warning");
