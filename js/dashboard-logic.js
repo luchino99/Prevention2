@@ -705,13 +705,22 @@ function updateDashboard() {
     score2dVars.map(v => `<div class="badge ${v.positive ? 'badge-success' : 'badge-danger'}">${v.label}: ${v.value}</div>`).join('');
 
   // FRAIL
-  document.getElementById("frail-banner-score").textContent = `${userData.frail_score || "--"} / 5`;
-  const frailBadge = document.getElementById("frail-banner-badge");
-  frailBadge.textContent = userData.frail_category || "--";
-  frailBadge.className = "badge";
-  if (userData.frail_category === "Robusto") frailBadge.classList.add("badge-success");
-  else if (userData.frail_category === "Pre-Frailty") frailBadge.classList.add("badge-warning");
-  else if (userData.frail_category === "Fragile") frailBadge.classList.add("badge-danger");
+const frailVarContainer = document.getElementById('frail-variable-list');
+if (frailVarContainer) {
+  const frailVars = [
+    { label: 'Affaticamento', value: userData.frail_affaticamento || '--', positive: (userData.frail_affaticamento || '').toLowerCase() === 'no' },
+    { label: 'Resistenza', value: userData.frail_resistenza || '--', positive: (userData.frail_resistenza || '').toLowerCase() === 'no' },
+    { label: 'Cammino', value: userData.frail_cammino || '--', positive: (userData.frail_cammino || '').toLowerCase() === 'no' },
+    { label: 'Malattie', value: userData.frail_malattie || '--', positive: (userData.frail_malattie || '').toLowerCase() === 'no' },
+    { label: 'Perdita di peso', value: userData.frail_perdita_peso || '--', positive: (userData.frail_perdita_peso || '').toLowerCase() === 'no' }
+  ];
+
+  frailVarContainer.innerHTML = frailVars.map(v => `
+    <div class="badge ${v.positive ? 'badge-success' : 'badge-danger'}">
+      ${v.label}: ${v.value}
+    </div>
+  `).join('');
+
 
   // FIB4
   const fib4Vars = [
