@@ -208,8 +208,8 @@ function populatePianoAlimentareForm() {
     altezza: "altezza",
     peso: "peso",
     obiettivo: "obiettivo",
-    attivita_fisica: "attivita_fisica",
-    tipo_lavoro: "tipo_lavoro",
+    attivita_fisica: "tipo_lavoro",
+    
     preferenze: "preferenze_alimentari", // ✅ usa la colonna giusta
     intolleranze: "intolleranze",
     alimenti_esclusi: "alimenti_esclusi",
