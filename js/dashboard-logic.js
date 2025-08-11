@@ -135,8 +135,8 @@ output.innerHTML = `
 
   function formatMealPlanProfessional(planText) {
   const giornoRegex = /^####\s*(Lunedì|Martedì|Mercoledì|Giovedì|Venerdì|Sabato|Domenica)/i;
-  const bmrRegex = /BMR.*?:\s*([\d]+)\s*kcal/i;
-  const tdeeRegex = /TDEE.*?:\s*([\d]+)\s*kcal/i;
+  const bmrRegex = /BMR.*?(\d+)\s*kcal/i;
+  const tdeeRegex = /TDEE.*?(\d+)\s*kcal/i;
 
   const bmrMatch = planText.match(bmrRegex);
   const tdeeMatch = planText.match(tdeeRegex);
@@ -147,30 +147,26 @@ output.innerHTML = `
   const lines = planText.split("\n").map(l => l.trim()).filter(l => l);
   let currentDay = null;
   let days = {};
-  let spuntinoCounter = 0;
 
   lines.forEach(line => {
     if (giornoRegex.test(line)) {
       currentDay = line.replace(/^####\s*/i, "").replace(":", "");
       days[currentDay] = { colazione: "", spuntino_mattina: "", pranzo: "", spuntino_pomeriggio: "", cena: "" };
-      spuntinoCounter = 0;
     }
-    else if (/^\-\s*\*\*Colazione\*\*/i.test(line)) {
-      days[currentDay].colazione = line.replace(/^\-\s*\*\*Colazione\*\*:\s*/i, "");
+    else if (/^\-\s*\*\*Colazione/i.test(line)) {
+      days[currentDay].colazione = line.replace(/^\-\s*\*\*Colazione.*?:\s*/i, "");
     }
-    else if (/^\-\s*\*\*Spuntino\*\*/i.test(line)) {
-      spuntinoCounter++;
-      if (spuntinoCounter === 1) {
-        days[currentDay].spuntino_mattina = line.replace(/^\-\s*\*\*Spuntino\*\*:\s*/i, "");
-      } else {
-        days[currentDay].spuntino_pomeriggio = line.replace(/^\-\s*\*\*Spuntino\*\*:\s*/i, "");
-      }
+    else if (/^\-\s*\*\*Spuntino mattina/i.test(line)) {
+      days[currentDay].spuntino_mattina = line.replace(/^\-\s*\*\*Spuntino mattina.*?:\s*/i, "");
     }
-    else if (/^\-\s*\*\*Pranzo\*\*/i.test(line)) {
-      days[currentDay].pranzo = line.replace(/^\-\s*\*\*Pranzo\*\*:\s*/i, "");
+    else if (/^\-\s*\*\*Pranzo/i.test(line)) {
+      days[currentDay].pranzo = line.replace(/^\-\s*\*\*Pranzo.*?:\s*/i, "");
     }
-    else if (/^\-\s*\*\*Cena\*\*/i.test(line)) {
-      days[currentDay].cena = line.replace(/^\-\s*\*\*Cena\*\*:\s*/i, "");
+    else if (/^\-\s*\*\*Spuntino pomeriggio/i.test(line)) {
+      days[currentDay].spuntino_pomeriggio = line.replace(/^\-\s*\*\*Spuntino pomeriggio.*?:\s*/i, "");
+    }
+    else if (/^\-\s*\*\*Cena/i.test(line)) {
+      days[currentDay].cena = line.replace(/^\-\s*\*\*Cena.*?:\s*/i, "");
     }
   });
 
