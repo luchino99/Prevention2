@@ -86,10 +86,16 @@ document.getElementById("salva-dati-piano")?.addEventListener("click", async () 
   }
 });
 
-    document.getElementById("btn-genera-piano")?.addEventListener("click", async () => {
-  const contenitore = document.getElementById("contenitore-piano-ai");
-  contenitore.classList.remove("hidden");
-  contenitore.innerHTML = `<p class="text-gray-500 italic">🧠 Generazione in corso... Attendere qualche secondo.</p>`;
+ document.getElementById("btn-genera-piano")?.addEventListener("click", async () => {
+  const output = document.getElementById("piano-alimentare-output");
+
+  // Mostra messaggio di caricamento
+  output.innerHTML = `
+    <div class="flex items-center gap-2 text-green-700">
+      <i class="fas fa-spinner fa-spin"></i>
+      <span>Generazione piano in corso... Attendere qualche secondo</span>
+    </div>
+  `;
 
   try {
     const response = await fetch("https://prevention2.vercel.app/api/openai", {
@@ -97,7 +103,7 @@ document.getElementById("salva-dati-piano")?.addEventListener("click", async () 
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         piano_alimentare: true,
-        ...userData // 🔹 Passiamo tutti i dati utente
+        ...userData // Passiamo tutti i dati salvati nel DB
       })
     });
 
@@ -107,18 +113,56 @@ document.getElementById("salva-dati-piano")?.addEventListener("click", async () 
       throw new Error("Nessuna risposta dal modello");
     }
 
-    // 🔹 Mostra il piano alimentare
-    contenitore.innerHTML = data.piano
-      .split("\n")
-      .filter(line => line.trim() !== "")
-      .map(line => `<p>${line}</p>`)
-      .join("");
+    // Formatta il testo AI in HTML tabellare
+    const formattedPlan = formatMealPlan(data.piano);
+
+    output.innerHTML = `
+      <h4 class="text-lg font-semibold mb-3 text-green-700">🍽️ Il tuo piano alimentare personalizzato</h4>
+      ${formattedPlan}
+    `;
 
   } catch (error) {
     console.error("❌ Errore generazione piano alimentare:", error);
-    contenitore.innerHTML = `<p class="text-red-600">❌ Errore durante la generazione del piano. Riprova più tardi.</p>`;
+    output.innerHTML = `<p class="text-red-600">❌ Errore durante la generazione del piano. Riprova più tardi.</p>`;
   }
 });
+
+/**
+ * Converte il testo generato in una tabella leggibile
+ * Esempio di output AI atteso:
+ * Colazione: ...
+ * Spuntino: ...
+ * Pranzo: ...
+ * Cena: ...
+ */
+function formatMealPlan(planText) {
+  const lines = planText.split("\n").filter(line => line.trim() !== "");
+  const rows = lines.map(line => {
+    const [meal, ...rest] = line.split(":");
+    return `
+      <tr class="border-b border-gray-200">
+        <td class="px-4 py-2 font-medium text-gray-800">${meal || ""}</td>
+        <td class="px-4 py-2 text-gray-600">${rest.join(":").trim() || ""}</td>
+      </tr>
+    `;
+  }).join("");
+
+  return `
+    <div class="overflow-x-auto">
+      <table class="min-w-full bg-white border border-gray-200 rounded-lg shadow">
+        <thead class="bg-green-100">
+          <tr>
+            <th class="px-4 py-2 text-left text-gray-700">Pasto</th>
+            <th class="px-4 py-2 text-left text-gray-700">Descrizione</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
 
 
     
