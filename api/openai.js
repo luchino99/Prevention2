@@ -137,22 +137,24 @@ I consigli devono essere chiari, applicabili nella vita quotidiana e basati su e
 }
 
 
+
 // 3. PIANO ALIMENTARE PERSONALIZZATO
 if (data.piano_alimentare) {
   const safe = (v) => v || "Non specificato";
+  console.log("📥 Richiesta ricevuta per piano alimentare:", data);
 
   const prompt = `
 Crea un piano alimentare settimanale personalizzato e sicuro in base ai seguenti dati dell'utente:
 
 📋 **DATI ANAGRAFICI E FISICI**
-- Età: ${safe(data.eta)} anni
+- Età: ${safe(data.eta)}
 - Sesso: ${safe(data.sesso)}
-- Peso: ${safe(data.peso)} kg
 - Altezza: ${safe(data.altezza)} cm
+- Peso: ${safe(data.peso)} kg
 
 🎯 **OBIETTIVO NUTRIZIONALE**
 - Obiettivo: ${safe(data.obiettivo)}
-- Livello di attività fisica: ${safe(data.tipo_lavoro)}
+- Livello di attività fisica: ${safe(data.attivita_fisica)}
 
 🍽 **PREFERENZE E RESTRIZIONI**
 - Preferenze alimentari: ${safe(data.preferenze_alimentari)}
@@ -165,7 +167,7 @@ Crea un piano alimentare settimanale personalizzato e sicuro in base ai seguenti
 
 🏥 **SALUTE**
 - Patologie diagnosticate: ${safe(data.patologie)}
-- Farmaci assunti: ${safe(data.farmaci_dettaglio)}
+- Farmaci assunti: ${safe(data.farmaci)}
 
 ---
 
@@ -199,6 +201,7 @@ Lunedì | Colazione | Yogurt greco 150g + Mirtilli 50g + Avena 40g | Ricco di pr
   });
 
   const result = response?.choices?.[0]?.message?.content || null;
+  console.log("📤 Risultato GPT:", result);
 
   return res.status(200).json({
     piano: result || "⚠️ Nessuna risposta valida dal modello."
