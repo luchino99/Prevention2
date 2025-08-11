@@ -734,8 +734,7 @@ document.getElementById("frail-variable-list").innerHTML =
   document.getElementById("fib4-variable-list").innerHTML =
     fib4Vars.map(v => `<div class="badge ${v.positive ? 'badge-success' : 'badge-danger'}">${v.label}: ${v.value}</div>`).join('');
 
-  // FLI (Fatty Liver Index)
-
+  // FNI (Fatty Liver Index)
   const fniVars = [
     { label: 'Circonferenza vita', value: `${userData.circonferenza_vita || '--'} cm`, positive: parseFloat(userData.circonferenza_vita) < 102 },
     { label: 'Trigliceridi', value: `${userData.trigliceridi || '--'} mg/dL`, positive: parseFloat(userData.trigliceridi) < 150 },
@@ -1204,6 +1203,28 @@ if (!isNaN(parseFloat(dashboardData.fib4?.value))) {
 
 
 
+
+  // FNI
+  if (dashboardData.fni?.value > 0) {
+    const scoreEl = document.getElementById('fni-banner-score');
+    const albuminaEl = document.getElementById('fni-banner-albumina');
+    const linfocitiEl = document.getElementById('fni-banner-linfociti');
+
+    if (scoreEl) {
+      const classSuffix = dashboardData.fni.category === 'danger' ? 'high' :
+                          dashboardData.fni.category === 'warning' ? 'low' : 'medium';
+      scoreEl.textContent = dashboardData.fni.value;
+      scoreEl.className = `score-indicator-2 text-2xl score-${classSuffix}`;
+    }
+
+    if (albuminaEl) albuminaEl.textContent = `${dashboardData.fni.albumina || '--'} g/dL`;
+    if (linfocitiEl) linfocitiEl.textContent = `${dashboardData.fni.linfociti || '--'} /mm³`;
+  }
+
+  console.log('✅ Tutti i nuovi score aggiornati');
+}
+
+
 function updateScreeningTab() {
   const container = document.querySelector('#tab-screening .space-y-3');
   if (!container) return;
@@ -1636,17 +1657,8 @@ function setupTabs() {
       }
     }, 300000);
 
-    
-  
-  
-  // Gestione logout
+    // Gestione logout
     document.getElementById('logout-btn')?.addEventListener('click', async () => {
       await supabaseClient.auth.signOut();
       window.location.href = 'login.html';
     });
-
-
-
-
-
-  
