@@ -136,54 +136,72 @@ output.innerHTML = `
 
 
 // Funzione per formattare il testo del piano in tabella
-function formatMealPlanStructured(planText, numeroPasti = 5) {
-  const giorniSettimana = ["Lunedì","Martedì","Mercoledì","Giovedì","Venerdì","Sabato","Domenica"];
-  const pastiStandard = ["Colazione", "Spuntino mattina", "Pranzo", "Spuntino pomeriggio", "Cena"];
+function formatMealPlanProfessional(planText) {
+  const giorniSettimana = [
+    "lunedì", "martedì", "mercoledì", "giovedì",
+    "venerdì", "sabato", "domenica"
+  ];
 
-  // Mostra solo i pasti in base al numero selezionato
-  const pastiDaMostrare = pastiStandard.slice(0, numeroPasti);
-
-  // Parsing
+  // Dividiamo in blocchi per giorno
   const righe = planText.split("\n").map(r => r.trim()).filter(r => r.length > 0);
   let giornoCorrente = "";
-  let piano = {};
+  let htmlRows = "";
 
   righe.forEach(riga => {
-    const giornoMatch = giorniSettimana.find(g => riga.toLowerCase().startsWith(g.toLowerCase()));
-    if (giornoMatch) {
-      giornoCorrente = giornoMatch;
-      piano[giornoCorrente] = {};
-      return;
+    const lower = riga.toLowerCase();
+
+    // Se la riga è un giorno, aggiorna giorno corrente
+    if (giorniSettimana.some(g => lower.startsWith(g))) {
+      giornoCorrente = riga.charAt(0).toUpperCase() + riga.slice(1);
+      return; // passiamo alla prossima riga
     }
 
-    const pastoMatch = pastiStandard.find(p => riga.toLowerCase().startsWith(p.toLowerCase()));
-    if (pastoMatch && giornoCorrente) {
-      const contenuto = riga.split(":")[1]?.trim() || "";
-      piano[giornoCorrente][pastoMatch] = contenuto;
+    // Regex per trovare pasti
+    const match = riga.match(/^(Colazione|Spuntino mattina|Pranzo|Spuntino pomeriggio|Cena)\s*[:\-]?\s*(.*)/i);
+    if (match) {
+      const pasto = match[1];
+      const resto = match[2] || "";
+
+      // Separo eventuali note usando parentesi o trattini
+      let alimenti = resto;
+      let note = "";
+      const notaMatch = resto.match(/(.+?)(?:\s*\(|\s*\-\s*)([^)]+)\)?$/);
+      if (notaMatch) {
+        alimenti = notaMatch[1].trim();
+        note = notaMatch[2].trim();
+      }
+
+      htmlRows += `
+        <tr class="hover:bg-green-50 transition">
+          <td class="px-4 py-3 font-semibold text-green-700">${giornoCorrente}</td>
+          <td class="px-4 py-3">${pasto}</td>
+          <td class="px-4 py-3 text-gray-700">${alimenti}</td>
+          <td class="px-4 py-3 text-sm text-gray-500">${note}</td>
+        </tr>
+      `;
     }
   });
 
-  // Costruzione HTML
-  let html = `<div class="overflow-x-auto">
-    <table class="min-w-full border border-gray-200 rounded-xl shadow-lg">
-      <thead class="bg-green-600 text-white">
-        <tr>
-          <th class="px-4 py-3">📅 Giorno</th>`;
-  pastiDaMostrare.forEach(p => html += `<th class="px-4 py-3">${p}</th>`);
-  html += `</tr></thead><tbody class="bg-white divide-y divide-gray-200">`;
-
-  giorniSettimana.forEach(g => {
-    html += `<tr class="hover:bg-green-50 transition">
-      <td class="px-4 py-3 font-semibold text-green-700">${g}</td>`;
-    pastiDaMostrare.forEach(p => {
-      html += `<td class="px-4 py-3 text-gray-700">${piano[g]?.[p] || "-"}</td>`;
-    });
-    html += `</tr>`;
-  });
-
-  html += `</tbody></table></div>`;
-  return html;
+  // Costruzione tabella finale
+  return `
+    <div class="overflow-x-auto">
+      <table class="min-w-full border border-gray-200 rounded-xl shadow-lg">
+        <thead class="bg-green-600 text-white">
+          <tr>
+            <th class="px-4 py-3 text-left">📅 Giorno</th>
+            <th class="px-4 py-3 text-left">🍽️ Pasto</th>
+            <th class="px-4 py-3 text-left">🥗 Alimenti & Quantità</th>
+            <th class="px-4 py-3 text-left">📝 Note</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          ${htmlRows}
+        </tbody>
+      </table>
+    </div>
+  `;
 }
+
 
 
     
