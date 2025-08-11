@@ -676,11 +676,6 @@ function updateDashboard() {
   const score2CategoryEl = document.getElementById("score2-category");
   if (score2El) score2El.textContent = `${dashboardData.score2?.value || "--"}%`;
   if (score2CategoryEl) score2CategoryEl.textContent = dashboardData.score2?.risk || "--";
-  document.getElementById("score2-banner-sbp").textContent = `${userData.pressione_sistolica || "--"} mmHg`;
-document.getElementById("score2-banner-ctot").textContent = `${userData.colesterolo_totale || "--"} mg/dL`;
-document.getElementById("score2-banner-hdl").textContent = `${userData.colesterolo_hdl_valore || "--"} mg/dL`;
-document.getElementById("score2-banner-smoke").textContent = userData.fumatore || "--";
-document.getElementById("score2-banner-region").textContent = userData.regione_rischio_cv || "--";
 
 
   // SCORE2-Diabetes
