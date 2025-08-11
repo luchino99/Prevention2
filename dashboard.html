@@ -336,97 +336,72 @@
       -->
 
       <!-- Contenuto tab stile di vita -->
-      <div id="tab-stile-vita" class="tab-content">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div id="predimed-banner" class="p-4 bg-gray-50 rounded-lg">
-  <div class="flex justify-between items-center mb-3">
-    <h3 class="font-semibold">Valutazione PREDIMED</h3>
-    <button class="info-btn text-blue-500 hover:text-blue-700" data-info="predimed" title="Info sulla valutazione PREDIMED">
-      <i class="fas fa-info-circle"></i>
-    </button>
-  </div>
-            <div class="flex justify-center mb-4">
-              <canvas id="predimed-chart" width="300" height="300"></canvas>
-            </div>
-            <div class="text-center">
-              <p id="predimed-score" class="text-sm text-gray-600">
-                Punteggio attuale: <span class="font-medium">8/14</span>
-              </p>
-              <p id="predimed-adherence" class="text-sm text-gray-600">
-                Aderenza alla dieta mediterranea: <span class="font-medium">Media</span>
-              </p>
-            </div>
-          </div>
-
-
-<!-- Benessere Psicologico -->
-  <div class="p-4 bg-gray-50 rounded-lg">
-  <div class="flex justify-between items-center mb-3">
-    <h3 class="font-semibold">Benessere Psicologico</h3>
-    <button class="info-btn text-blue-500 hover:text-blue-700" data-info="psychological-wellbeing" title="Info sul benessere psicologico">
-      <i class="fas fa-info-circle"></i>
-    </button>
-  </div>
-  <div class="space-y-6">
-
-    <!-- Stress -->
-    <div>
-      <label for="slider-stress" class="text-sm font-medium text-gray-700">Livello di Stress</label>
-      <input type="range" id="slider-stress" min="0" max="10" value="5" class="w-full">
-      <div class="text-xs text-gray-600 mt-1">Valore: <span id="valore-stress" class="font-semibold text-blue-600">5</span>/10</div>
+<div id="tab-stile-vita" class="tab-content">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <!-- Valutazione PREDIMED -->
+    <div class="p-4 bg-gray-50 rounded-lg">
+      <h3 class="font-semibold mb-3">Valutazione PREDIMED</h3>
+      <div class="flex justify-center mb-4">
+        <canvas id="predimed-chart" width="300" height="300"></canvas>
+      </div>
+      <div class="text-center">
+        <p id="predimed-score" class="text-sm text-gray-600">
+          Punteggio attuale: <span class="font-medium">8/14</span>
+        </p>
+        <p id="predimed-adherence" class="text-sm text-gray-600">
+          Aderenza alla dieta mediterranea: <span class="font-medium">Media</span>
+        </p>
+      </div>
     </div>
 
-    <!-- Umore -->
-    <div>
-      <label for="slider-umore" class="text-sm font-medium text-gray-700">Umore Attuale</label>
-      <input type="range" id="slider-umore" min="0" max="10" value="5" class="w-full">
-      <div class="text-xs text-gray-600 mt-1">Valore: <span id="valore-umore" class="font-semibold text-blue-600">5</span>/10</div>
-    </div>
+    <!-- Benessere Psicologico -->
+    <div class="p-4 bg-gray-50 rounded-lg">
+      <h3 class="font-semibold mb-3">Benessere Psicologico</h3>
+      <div class="space-y-6">
+        <!-- Stress -->
+        <div>
+          <label for="slider-stress" class="text-sm font-medium text-gray-700">Livello di Stress</label>
+          <input type="range" id="slider-stress" min="0" max="10" value="5" class="w-full">
+          <div class="text-xs text-gray-600 mt-1">Valore: <span id="valore-stress" class="font-semibold text-blue-600">5</span>/10</div>
+        </div>
 
-    <!-- Sonno -->
-    <div>
-      <label for="slider-sonno" class="text-sm font-medium text-gray-700">Qualità del Sonno</label>
-      <input type="range" id="slider-sonno" min="0" max="10" value="5" class="w-full">
-      <div class="text-xs text-gray-600 mt-1">Valore: <span id="valore-sonno" class="font-semibold text-blue-600">5</span>/10</div>
-    </div>
+        <!-- Umore -->
+        <div>
+          <label for="slider-umore" class="text-sm font-medium text-gray-700">Umore Attuale</label>
+          <input type="range" id="slider-umore" min="0" max="10" value="5" class="w-full">
+          <div class="text-xs text-gray-600 mt-1">Valore: <span id="valore-umore" class="font-semibold text-blue-600">5</span>/10</div>
+        </div>
 
-  </div>
-</div>
-
-
-            </div>
-          </div>
+        <!-- Sonno -->
+        <div>
+          <label for="slider-sonno" class="text-sm font-medium text-gray-700">Qualità del Sonno</label>
+          <input type="range" id="slider-sonno" min="0" max="10" value="5" class="w-full">
+          <div class="text-xs text-gray-600 mt-1">Valore: <span id="valore-sonno" class="font-semibold text-blue-600">5</span>/10</div>
         </div>
       </div>
-
-
-
-
-
-
-<!-- Consigli Benessere Psicologico - Versione con margini perfezionati -->
-<div class="w-full mb-10 mt-6">
-  <div class="bg-purple-50 border-l-4 border-purple-600 p-6 rounded-lg shadow-md">
-    <div class="flex items-center mb-4">
-      <i class="fas fa-brain text-purple-600 text-2xl mr-3"></i>
-      <h3 class="text-xl font-semibold text-gray-800">Consigli per il Benessere Psicologico</h3>
     </div>
-    <p class="text-sm text-gray-700 mb-4">
-      Premi il pulsante per ricevere consigli personalizzati per migliorare i tuoi livelli di stress, umore e qualità del sonno.
-    </p>
-    <button id="btn-consigli-benessere"
-      class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-full font-medium transition duration-200 shadow">
-      🧘‍♂️ Ottieni consigli personalizzati
-    </button>
-    <div id="contenitore-consigli-benessere" class="mt-4 space-y-3 text-sm text-gray-700 hidden italic">
-      Premi il pulsante per ricevere consigli personalizzati per migliorare i tuoi livelli di stress, qualità del sonno e umore.
+  </div>
+
+  <!-- Consigli Benessere Psicologico -->
+  <div class="w-full mb-10 mt-6">
+    <div class="bg-purple-50 border-l-4 border-purple-600 p-6 rounded-lg shadow-md">
+      <div class="flex items-center mb-4">
+        <i class="fas fa-brain text-purple-600 text-2xl mr-3"></i>
+        <h3 class="text-xl font-semibold text-gray-800">Consigli per il Benessere Psicologico</h3>
+      </div>
+      <p class="text-sm text-gray-700 mb-4">
+        Premi il pulsante per ricevere consigli personalizzati per migliorare i tuoi livelli di stress, umore e qualità del sonno.
+      </p>
+      <button id="btn-consigli-benessere"
+        class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-full font-medium transition duration-200 shadow">
+        🧘‍♂️ Ottieni consigli personalizzati
+      </button>
+      <div id="contenitore-consigli-benessere" class="mt-4 space-y-3 text-sm text-gray-700 hidden italic">
+        Premi il pulsante per ricevere consigli personalizzati per migliorare i tuoi livelli di stress, qualità del sonno e umore.
+      </div>
     </div>
   </div>
 </div>
-
-
-
-
 
 
 
