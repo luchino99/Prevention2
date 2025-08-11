@@ -137,73 +137,69 @@ output.innerHTML = `
 
 // Funzione per formattare il testo del piano in tabella
 function formatMealPlanProfessional(planText) {
-  if (!planText || typeof planText !== "string") {
-    return `<p class="text-red-600">⚠️ Nessun piano disponibile.</p>`;
-  }
+  const giorniSettimana = [
+    "lunedì", "martedì", "mercoledì", "giovedì",
+    "venerdì", "sabato", "domenica"
+  ];
 
-  // 🔹 Correzioni di formattazione comuni di GPT
-  planText = planText
-    .replace(/\s-\s/g, " | ") // sostituisce " - " con " | "
-    .replace(/\t/g, " ") // rimuove tab
-    .replace(/ {2,}/g, " "); // rimuove spazi multipli
+  // Dividiamo in blocchi per giorno
+  const righe = planText.split("\n").map(r => r.trim()).filter(r => r.length > 0);
+  let giornoCorrente = "";
+  let htmlRows = "";
 
-  const lines = planText.split("\n").filter(line => line.trim() !== "");
+  righe.forEach(riga => {
+    const lower = riga.toLowerCase();
 
-  let html = `
-    <div class="overflow-x-auto shadow-xl rounded-xl border border-gray-200">
-      <table class="min-w-full border-collapse">
-        <thead class="bg-gradient-to-r from-green-500 to-emerald-600 text-white">
-          <tr>
-            <th class="px-4 py-3 text-left font-semibold">📅 Giorno</th>
-            <th class="px-4 py-3 text-left font-semibold">🍽️ Pasto</th>
-            <th class="px-4 py-3 text-left font-semibold">🥗 Alimenti & Quantità</th>
-            <th class="px-4 py-3 text-left font-semibold">📝 Note</th>
-          </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-100">
-  `;
-
-  lines.forEach(line => {
-    const parts = line.split("|").map(p => p.trim());
-
-    // 🔹 Riga che rappresenta solo il nome del giorno
-    if (parts.length === 1 && /^[A-Za-zÀ-ù]+$/.test(parts[0])) {
-      html += `
-        <tr class="bg-green-100">
-          <td colspan="4" class="px-4 py-2 font-bold text-green-800 uppercase">${parts[0]}</td>
-        </tr>
-      `;
+    // Se la riga è un giorno, aggiorna giorno corrente
+    if (giorniSettimana.some(g => lower.startsWith(g))) {
+      giornoCorrente = riga.charAt(0).toUpperCase() + riga.slice(1);
+      return; // passiamo alla prossima riga
     }
-    // 🔹 Riga con tutti i dati
-    else if (parts.length >= 4) {
-      html += `
-        <tr class="hover:bg-green-50 transition duration-200">
-          <td class="px-4 py-3 font-semibold text-green-700">${parts[0]}</td>
-          <td class="px-4 py-3">${parts[1]}</td>
-          <td class="px-4 py-3 text-gray-700">${parts[2]}</td>
-          <td class="px-4 py-3 text-sm text-gray-500">${parts.slice(3).join(" | ")}</td>
-        </tr>
-      `;
-    }
-    // 🔹 Riga parziale (es. senza note)
-    else if (parts.length === 3) {
-      html += `
-        <tr class="hover:bg-green-50 transition duration-200">
-          <td class="px-4 py-3 font-semibold text-green-700">${parts[0]}</td>
-          <td class="px-4 py-3">${parts[1]}</td>
-          <td class="px-4 py-3 text-gray-700" colspan="2">${parts[2]}</td>
+
+    // Regex per trovare pasti
+    const match = riga.match(/^(Colazione|Spuntino mattina|Pranzo|Spuntino pomeriggio|Cena)\s*[:\-]?\s*(.*)/i);
+    if (match) {
+      const pasto = match[1];
+      const resto = match[2] || "";
+
+      // Separo eventuali note usando parentesi o trattini
+      let alimenti = resto;
+      let note = "";
+      const notaMatch = resto.match(/(.+?)(?:\s*\(|\s*\-\s*)([^)]+)\)?$/);
+      if (notaMatch) {
+        alimenti = notaMatch[1].trim();
+        note = notaMatch[2].trim();
+      }
+
+      htmlRows += `
+        <tr class="hover:bg-green-50 transition">
+          <td class="px-4 py-3 font-semibold text-green-700">${giornoCorrente}</td>
+          <td class="px-4 py-3">${pasto}</td>
+          <td class="px-4 py-3 text-gray-700">${alimenti}</td>
+          <td class="px-4 py-3 text-sm text-gray-500">${note}</td>
         </tr>
       `;
     }
   });
 
-  html += `
+  // Costruzione tabella finale
+  return `
+    <div class="overflow-x-auto">
+      <table class="min-w-full border border-gray-200 rounded-xl shadow-lg">
+        <thead class="bg-green-600 text-white">
+          <tr>
+            <th class="px-4 py-3 text-left">📅 Giorno</th>
+            <th class="px-4 py-3 text-left">🍽️ Pasto</th>
+            <th class="px-4 py-3 text-left">🥗 Alimenti & Quantità</th>
+            <th class="px-4 py-3 text-left">📝 Note</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          ${htmlRows}
         </tbody>
       </table>
     </div>
   `;
-
-  return html;
 }
 
 
