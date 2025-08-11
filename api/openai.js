@@ -211,6 +211,10 @@ Dati da utilizzare per programmare la dieta in base ai vari dati forniti dall'ut
 - Intolleranze/allergie: ${data.intolleranze}
 - Alimenti esclusi: ${data.alimenti_esclusi}
 - Patologie: ${data.patologie}
+- Preferenze alimentari: ${data.preferenze_alimentari}
+- Numero pasti: ${data.numero_pasti}
+- Orari pasti: ${data.orari_pasti}
+- Patologie: ${data.patologie}
 
 inoltre devi creare il programma alimentare consigliando piatti non troppo complessi, e che permettano di evitare sprechi, quindi anche alimenti che si possono combinare fra loro se mai in giorni diversi, per creare piatti diversi ma che evitano sprechi.
 Il piano sarà usato per essere trasformato in PDF.`;
