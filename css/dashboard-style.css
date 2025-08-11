@@ -216,6 +216,12 @@ body {
   display: block;
 }
 
+#form-piano-alimentare .has-value ~ label {
+  top: 0.65rem !important;
+  font-size: 0.75rem !important;
+  color: #059669 !important; /* verde elegante */
+}
+
 /* Personalizzazioni per grafici e indicatori */
 .progress-ring {
   transform: rotate(-90deg);
