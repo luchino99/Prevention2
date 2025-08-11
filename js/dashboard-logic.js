@@ -65,20 +65,18 @@ const mapping = {
 document.getElementById("salva-dati-piano")?.addEventListener("click", async () => {
   const aggiornamenti = {};
 
-  // Cicla la mappatura e crea l’oggetto aggiornamenti
   Object.keys(mapping).forEach(fieldId => {
     const dbField = mapping[fieldId];
     const el = document.getElementById(fieldId);
     if (el) {
-      aggiornamenti[dbField] = el.value?.trim() || null; // null se vuoto
+      aggiornamenti[dbField] = el.value?.trim() || null;
     }
   });
 
-  // Esegui update su Supabase
-  const { error } = await supabase
+  const { error } = await supabaseClient // ✅ uso il client giusto
     .from("anagrafica_utenti")
     .update(aggiornamenti)
-    .eq("email", email); // email deve essere la variabile della sessione utente
+    .eq("email", email);
 
   if (error) {
     console.error("❌ Errore nel salvataggio dati piano alimentare:", error.message);
