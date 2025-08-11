@@ -735,6 +735,7 @@ document.getElementById("frail-variable-list").innerHTML =
     fib4Vars.map(v => `<div class="badge ${v.positive ? 'badge-success' : 'badge-danger'}">${v.label}: ${v.value}</div>`).join('');
 
   // FNI (Fatty Liver Index)
+  document.getElementById("fni-banner-score").textContent = `${userData.fli_score || "--"}`;
   const fniVars = [
     { label: 'Circonferenza vita', value: `${userData.circonferenza_vita || '--'} cm`, positive: parseFloat(userData.circonferenza_vita) < 102 },
     { label: 'Trigliceridi', value: `${userData.trigliceridi || '--'} mg/dL`, positive: parseFloat(userData.trigliceridi) < 150 },
