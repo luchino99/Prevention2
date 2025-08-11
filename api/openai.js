@@ -215,8 +215,18 @@ Dati da utilizzare per programmare la dieta in base ai vari dati forniti dall'ut
 - Numero pasti: ${data.numero_pasti}
 - Orari pasti: ${data.orari_pasti}
 - Patologie: ${data.patologie}
-
-inoltre devi creare il programma alimentare consigliando piatti non troppo complessi, e che permettano di evitare sprechi, quindi anche alimenti che si possono combinare fra loro se mai in giorni diversi, per creare piatti diversi ma che evitano sprechi.
+📌 **ISTRUZIONI DI FORMATTAZIONE OBBLIGATORIE**
+1. Il piano alimentare deve essere in formato tabellare strutturato come segue:
+   Giorno | Colazione | Spuntino mattina | Pranzo | Spuntino pomeriggio | Cena
+2. Ogni cella deve contenere:
+   - Alimenti e quantità (in grammi o porzioni)
+   - Eventuali note brevi tra parentesi
+3. Non aggiungere altre colonne alla tabella.
+4. Se il numero di pasti indicato dall’utente è inferiore a 5, lascia vuote le celle corrispondenti.
+5. Dopo la tabella, aggiungi in un paragrafo separato:
+   - **Fabbisogno calorico giornaliero stimato (BMR e TDEE)**
+   - **Suggerimenti nutrizionali generali** (max 5 punti)
+Inoltre devi creare il programma alimentare consigliando piatti non troppo complessi, e che permettano di evitare sprechi, quindi anche alimenti che si possono combinare fra loro se mai in giorni diversi, per creare piatti diversi ma che evitano sprechi.
 Il piano sarà usato per essere trasformato in PDF.`;
     } else if (data.allenamento) {
       prompt = `Sei un personal trainer certificato NSCA, ACSM e NASM. In base ai dati raccolti crea un programma di allenamento settimanale altamente personalizzato.
