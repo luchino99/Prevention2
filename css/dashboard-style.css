@@ -171,15 +171,12 @@ body {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
-.bg-score-high {
-  background-color: #EA4335; /* rosso */
+.banner-circle {
+  margin-bottom: 1.5rem; /* distanza uniforme tra cerchio e lista parametri */
 }
-.bg-score-medium {
-  background-color: #FBBC05; /* giallo */
-}
-.bg-score-low {
-  background-color: #34A853; /* verde */
-}
+.bg-score-high { background-color: #EA4335; }   /* rosso */
+.bg-score-medium { background-color: #FBBC05; } /* giallo */
+.bg-score-low { background-color: #34A853; }    /* verde */
 
 .score-low {
   background-color: var(--score-low-bg);
