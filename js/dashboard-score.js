@@ -160,11 +160,11 @@ const fliScore = profile.fli_score !== null && profile.fli_score !== undefined
   : "--";
 
 // Testo FLI
-const fliScoreEl = document.getElementById("fli-banner-score");
+const fliScoreEl = document.getElementById("fni-banner-score");
 if (fliScoreEl) fliScoreEl.textContent = fliScore;
 
 // Cerchio colore FLI
-const fliCircle = document.querySelector("#fli-banner circle.progress-ring__circle");
+const fliCircle = document.querySelector("#fni-banner circle.progress-ring__circle");
 if (fliCircle) {
   if (fliScore >= 60) fliCircle.setAttribute("stroke", "#EA4335"); // rosso
   else if (fliScore >= 30) fliCircle.setAttribute("stroke", "#FBBC05"); // giallo
