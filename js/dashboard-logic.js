@@ -735,6 +735,20 @@ document.getElementById("frail-variable-list").innerHTML =
     fib4Vars.map(v => `<div class="badge ${v.positive ? 'badge-success' : 'badge-danger'}">${v.label}: ${v.value}</div>`).join('');
 
   // FNI (Fatty Liver Index)
+  document.getElementById("fni-banner-score").textContent = `${userData.fli_score || "--"}`;
+
+// Colore cerchio pieno dietro
+const fliBgCircle = document.getElementById("fni-bg-circle");
+if (fliBgCircle) {
+  fliBgCircle.className = "absolute w-24 h-24 rounded-full z-0"; // reset classi
+  if (userData.fli_score >= 60) {
+    fliBgCircle.classList.add("bg-score-high");   // rosso
+  } else if (userData.fli_score >= 30) {
+    fliBgCircle.classList.add("bg-score-medium"); // giallo
+  } else {
+    fliBgCircle.classList.add("bg-score-low");    // verde
+  }
+}
   const fniVars = [
     { label: 'Circonferenza vita', value: `${userData.circonferenza_vita || '--'} cm`, positive: parseFloat(userData.circonferenza_vita) < 102 },
     { label: 'Trigliceridi', value: `${userData.trigliceridi || '--'} mg/dL`, positive: parseFloat(userData.trigliceridi) < 150 },
@@ -1201,28 +1215,6 @@ if (!isNaN(parseFloat(dashboardData.fib4?.value))) {
 }
 
 
-
-
-
-  // FNI
-  if (dashboardData.fni?.value > 0) {
-    const scoreEl = document.getElementById('fni-banner-score');
-    const albuminaEl = document.getElementById('fni-banner-albumina');
-    const linfocitiEl = document.getElementById('fni-banner-linfociti');
-
-    if (scoreEl) {
-      const classSuffix = dashboardData.fni.category === 'danger' ? 'high' :
-                          dashboardData.fni.category === 'warning' ? 'low' : 'medium';
-      scoreEl.textContent = dashboardData.fni.value;
-      scoreEl.className = `score-indicator-2 text-2xl score-${classSuffix}`;
-    }
-
-    if (albuminaEl) albuminaEl.textContent = `${dashboardData.fni.albumina || '--'} g/dL`;
-    if (linfocitiEl) linfocitiEl.textContent = `${dashboardData.fni.linfociti || '--'} /mm³`;
-  }
-
-  console.log('✅ Tutti i nuovi score aggiornati');
-}
 
 
 function updateScreeningTab() {
