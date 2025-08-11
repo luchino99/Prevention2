@@ -693,7 +693,7 @@ function updateDashboard() {
   else if (userData.frail_category === "Pre-Frailty") frailBadge.classList.add("badge-warning");
   else if (userData.frail_category === "Fragile") frailBadge.classList.add("badge-danger");
 
-  // FNI (Fatty Liver Index)
+  // FLI (Fatty Liver Index)
   document.getElementById("fni-banner-score").textContent = dashboardData.fni?.value || "--";
   document.getElementById("fni-banner-albumina").textContent = dashboardData.fni?.albumina || "--";
   document.getElementById("fni-banner-linfociti").textContent = dashboardData.fni?.linfociti || "--";
