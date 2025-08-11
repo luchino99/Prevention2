@@ -88,6 +88,7 @@ document.getElementById("salva-dati-piano")?.addEventListener("click", async () 
 
 // Pulsante per generare il piano alimentare
 const btnGeneraPiano = document.getElementById("btn-genera-piano");
+
 if (btnGeneraPiano) {
   btnGeneraPiano.addEventListener("click", async () => {
     const output = document.getElementById("piano-alimentare-output");
@@ -101,14 +102,15 @@ if (btnGeneraPiano) {
     `;
 
     try {
-      // Estrazione solo dei campi necessari
+      // ✅ Ricrea il payload come fa il chatbot in modalità pianoalimentare
       const datiPiano = {
+        dieta: true, // <-- come nel chatbot
         eta: userData.eta || document.getElementById("eta")?.value || "",
         sesso: userData.sesso || document.getElementById("sesso")?.value || "",
         altezza: userData.altezza || document.getElementById("altezza")?.value || "",
         peso: userData.peso || document.getElementById("peso")?.value || "",
         obiettivo: userData.obiettivo || document.getElementById("obiettivo")?.value || "",
-        attivita_fisica: userData.tipo_lavoro || document.getElementById("tipo_lavoro")?.value || "",
+        attivita_fisica: userData.tipo_lavoro || document.getElementById("attivita_fisica")?.value || "",
         preferenze_alimentari: userData.preferenze_alimentari || document.getElementById("preferenze")?.value || "",
         intolleranze: userData.intolleranze || document.getElementById("intolleranze")?.value || "",
         alimenti_esclusi: userData.alimenti_esclusi || document.getElementById("alimenti_esclusi")?.value || "",
@@ -118,27 +120,26 @@ if (btnGeneraPiano) {
         farmaci: userData.farmaci_dettaglio || document.getElementById("farmaci")?.value || ""
       };
 
-      // Chiamata API per generare il piano
+      console.log("📤 Invio dati per piano alimentare (modalità chatbot):", datiPiano);
+
+      // ✅ Stessa chiamata API del chatbot
       const response = await fetch("https://prevention2.vercel.app/api/openai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          piano_alimentare: true,
-          ...datiPiano
-        })
+        body: JSON.stringify(datiPiano)
       });
 
       const data = await response.json();
-      if (!data.piano) {
+      if (!data.risposta) {
         throw new Error("Nessuna risposta dal modello");
       }
 
       console.log("📥 Risposta grezza API piano alimentare:", data);
 
-      // Mostra il piano formattato
+      // Mostra il piano
       output.innerHTML = `
         <h4 class="text-lg font-semibold mb-3 text-green-700">🍽️ Il tuo piano alimentare personalizzato</h4>
-        ${formatMealPlan(data.piano)}
+        <div class="whitespace-pre-wrap text-sm text-gray-700">${data.risposta}</div>
       `;
 
     } catch (error) {
@@ -147,6 +148,7 @@ if (btnGeneraPiano) {
     }
   });
 }
+
 
 // Funzione per formattare il testo del piano in tabella
 function formatMealPlan(planText) {
