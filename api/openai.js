@@ -194,9 +194,6 @@ Ricorda che la tua risposta **non sostituisce una valutazione medica professiona
     } else if (data.dieta) {
       prompt = `Sei un nutrizionista clinico esperto in nutrizione personalizzata. In base ai dati forniti di seguito, calcola il fabbisogno calorico giornaliero (BMR e TDEE) del paziente secondo le formule Mifflin-St Jeor e le linee guida LARN/SINU, non scrivere i vari calcoli nella risposta, ma mostra soltando il risultato. Successivamente, crea un piano alimentare settimanale variabile per ogni giorno della settimana dal lunedi fino alla domenica compresa.
 Che sia completo, bilanciato basandoti sul risulatato di questi score e sugli obbiettivi del paziente (dimagrimento, mantenimento, massa), eventuali patologie, preferenze, allergie. 
-Ogni giorno deve contenere:
-- Colazione, spuntino mattina, pranzo, spuntino pomeriggio, cena
-- Grammature indicative degli alimenti
 Per il TDEE, calcola il TDEE moltiplicando il BMR per il coefficiente ${tdeeFactor} in base all'obiettivo: ${safe(data.obiettivo)}.
 In fondo, includi: 
 - Suggerimenti per l’idratazione, attività fisica e stile di vita
@@ -215,14 +212,14 @@ Dati da utilizzare per programmare la dieta in base ai vari dati forniti dall'ut
 - Numero pasti: ${data.numero_pasti}
 - Orari pasti: ${data.orari_pasti}
 - Patologie: ${data.patologie}
- ISTRUZIONI DI FORMATTAZIONE OBBLIGATORIE
+
+ISTRUZIONI DI FORMATTAZIONE 
 1. Il piano alimentare deve essere in formato tabellare strutturato come segue:
    Giorno | Colazione | Spuntino mattina | Pranzo | Spuntino pomeriggio | Cena
 2. Ogni cella deve contenere:
    - Alimenti e quantità (in grammi o porzioni)
    - Eventuali note brevi tra parentesi
-3. Non aggiungere altre colonne alla tabella.
-4. Se il numero di pasti indicato dall’utente è inferiore a 5, lascia vuote le celle corrispondenti.
+
 
 Inoltre devi creare il programma alimentare consigliando piatti non troppo complessi, e che permettano di evitare sprechi, quindi anche alimenti che si possono combinare fra loro se mai in giorni diversi, per creare piatti diversi ma che evitano sprechi.
 Il piano sarà usato per essere trasformato in PDF.`;
