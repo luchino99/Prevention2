@@ -173,15 +173,17 @@ output.innerHTML = `
   let html = "";
 
   // Box BMR e TDEE
-  if (bmr || tdee) {
-    html += `
-      <div class="mb-4 p-4 bg-green-100 border border-green-300 rounded-lg shadow-sm">
-        <h3 class="text-lg font-semibold text-green-800 mb-2">📊 Fabbisogno Calorico</h3>
-        ${bmr ? `<p class="text-gray-700"><strong>BMR:</strong> ${bmr} kcal/giorno</p>` : ""}
-        ${tdee ? `<p class="text-gray-700"><strong>TDEE:</strong> ${tdee} kcal/giorno</p>` : ""}
-      </div>
-    `;
-  }
+if (bmr || tdee) {
+  html += `
+    <div class="mb-4 p-4 bg-green-100 border border-green-300 rounded-lg shadow-sm">
+      <h3 class="text-lg font-semibold text-green-800 mb-2">📊 Fabbisogno Calorico</h3>
+      ${bmr ? `<p class="text-gray-700"><strong>BMR:</strong> ${bmr} kcal/giorno</p>` : ""}
+      ${tdee ? `<p class="text-gray-700"><strong>TDEE:</strong> ${tdee} kcal/giorno</p>` : ""}
+      ${dashboardData.nutrition?.target ? `<p class="text-gray-700"><strong>Calorie suggerite (in base all'obiettivo):</strong> ${dashboardData.nutrition.target} kcal/giorno</p>` : ""}
+    </div>
+  `;
+}
+
 
   // Tabella pasti
   html += `<div class="overflow-x-auto">
