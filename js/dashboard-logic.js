@@ -102,7 +102,8 @@ if (btnGeneraPiano) {
         numero_pasti: userData.numero_pasti || document.getElementById("pasti")?.value || "",
         orari_pasti: userData.orari_pasti || document.getElementById("orari_pasti")?.value || "",
         patologie: userData.patologie || document.getElementById("patologie")?.value || "",
-        farmaci: userData.farmaci_dettaglio || document.getElementById("farmaci")?.value || ""
+        farmaci: userData.farmaci_dettaglio || document.getElementById("farmaci")?.value || "",
+        calorie_target: dashboardData?.nutrition?.target || null
       };
 
       console.log("📤 Invio payload dieta (dashboard):", payload);
