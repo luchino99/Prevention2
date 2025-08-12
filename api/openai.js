@@ -198,6 +198,7 @@ Ogni giorno deve contenere:
 - Colazione, spuntino mattina, pranzo, spuntino pomeriggio, cena
 - Grammature indicative degli alimenti
 Per il TDEE, calcola il TDEE moltiplicando il BMR per il coefficiente ${tdeeFactor} in base all'obiettivo: ${safe(data.obiettivo)}.
+Inoltre Il fabbisogno calorico giornaliero del paziente è già stato calcolato ed è di **${data.calorie_target} kcal al giorno**. Utilizza questo valore per la pianificazione del piano alimentare che abbia calorie giornaliere corrispondenti a **${data.calorie_target} kcal al giorno**.
 In fondo, includi: 
 - Suggerimenti per l’idratazione, attività fisica e stile di vita
 Dati da utilizzare per programmare la dieta in base ai vari dati forniti dall'utente e  anche in base al risultato del TDEE:
