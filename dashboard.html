@@ -620,46 +620,36 @@
 
       
 <!-- ================= SEZIONE ATTIVITÀ FISICA ================= -->
-<div class="space-y-8">
+<div id="tab-attivita" class="tab-content hidden space-y-8">
 
-  <!-- ===== Attività fisica attuale ===== -->
+  <!-- ===== Sezione 1: Attività fisica attuale ===== -->
   <section class="p-6 rounded-lg shadow-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900">
-    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Attività fisica attuale</h3>
+    <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Attività fisica attuale</h3>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       
-      <!-- Frequenza -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Frequenza allenamenti (volte/settimana)
-        </label>
-        <input type="range" id="frequenza_attivita_fisica" min="0" max="15" step="1"
-               class="w-full accent-blue-500">
-        <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+        <label class="block text-sm font-medium">Frequenza (volte/settimana)</label>
+        <input type="range" id="frequenza_attivita_fisica" min="0" max="15" step="1" class="w-full accent-blue-500">
+        <div class="text-sm mt-1 text-gray-600 dark:text-gray-400">
           <span id="frequenza_value">0</span> volte/settimana
         </div>
       </div>
 
-      <!-- Tipo attività -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Tipo di attività
-        </label>
-        <select id="tipo_attivita" class="w-full border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200">
+        <label class="block text-sm font-medium">Tipo attività</label>
+        <select id="tipo_attivita" class="input-field">
           <option value="">Seleziona</option>
           <option value="aerobica">Aerobica</option>
-          <option value="palestra">Palestra / Potenziamento</option>
+          <option value="palestra">Palestra</option>
           <option value="yoga">Yoga / Pilates</option>
           <option value="sport">Sport di squadra</option>
           <option value="altro">Altro</option>
         </select>
       </div>
 
-      <!-- Intensità -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Intensità
-        </label>
-        <select id="tipo_lavoro" class="w-full border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200">
+        <label class="block text-sm font-medium">Intensità</label>
+        <select id="tipo_lavoro" class="input-field">
           <option value="">Seleziona</option>
           <option value="sedentario">Sedentario</option>
           <option value="leggermente attivo">Leggermente attivo</option>
@@ -669,36 +659,36 @@
         </select>
       </div>
 
-      <!-- Minuti/settimana -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Minuti totali a settimana
-        </label>
-        <input type="number" id="durata_attivita" min="0"
-               class="w-full border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200">
+        <label class="block text-sm font-medium">Minuti/settimana</label>
+        <input type="number" id="durata_attivita" class="input-field">
       </div>
+    </div>
+
+    <div class="mt-6 text-right">
+      <button id="salva-attivita-attuale" class="btn-primary">Salva attività attuale</button>
     </div>
   </section>
 
-  <!-- ===== Dati per piano di allenamento ===== -->
+  <!-- ===== Sezione 2: Dati per piano di allenamento ===== -->
   <section class="p-6 rounded-lg shadow-md border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Dati per piano di allenamento</h3>
+    <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Dati per piano di allenamento</h3>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
       <div>
-        <label class="block text-sm font-medium">Obiettivo di allenamento</label>
-        <select id="obiettivo_allenamento" class="w-full border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800">
+        <label class="block text-sm font-medium">Obiettivo</label>
+        <select id="obiettivo_allenamento" class="input-field">
           <option value="">Seleziona</option>
           <option value="dimagrimento">Dimagrimento</option>
-          <option value="massa">Aumento massa muscolare</option>
-          <option value="resistenza">Aumento resistenza</option>
+          <option value="massa">Massa muscolare</option>
+          <option value="resistenza">Resistenza</option>
           <option value="benessere">Benessere generale</option>
         </select>
       </div>
 
       <div>
-        <label class="block text-sm font-medium">Livello di esperienza</label>
-        <select id="livello_esperienza" class="w-full border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800">
+        <label class="block text-sm font-medium">Esperienza</label>
+        <select id="livello_esperienza" class="input-field">
           <option value="">Seleziona</option>
           <option value="principiante">Principiante</option>
           <option value="intermedio">Intermedio</option>
@@ -708,12 +698,12 @@
 
       <div>
         <label class="block text-sm font-medium">Durata sessione (min)</label>
-        <input type="number" id="durata_sessione" min="0" class="w-full border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800">
+        <input type="number" id="durata_sessione" class="input-field">
       </div>
 
       <div>
-        <label class="block text-sm font-medium">Luogo di allenamento</label>
-        <select id="luogo_allenamento" class="w-full border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800">
+        <label class="block text-sm font-medium">Luogo</label>
+        <select id="luogo_allenamento" class="input-field">
           <option value="">Seleziona</option>
           <option value="casa">Casa</option>
           <option value="palestra">Palestra</option>
@@ -723,59 +713,47 @@
 
       <div>
         <label class="block text-sm font-medium">Attrezzatura disponibile</label>
-        <input type="text" id="attrezzatura_disponibile" placeholder="Esempio: manubri, elastici..." 
-               class="w-full border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800">
+        <input type="text" id="attrezzatura_disponibile" class="input-field">
       </div>
 
       <div>
         <label class="block text-sm font-medium">Focus principale</label>
-        <input type="text" id="focus_principale" placeholder="Esempio: gambe, core, forza..."
-               class="w-full border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800">
+        <input type="text" id="focus_principale" class="input-field">
       </div>
 
       <div>
-        <label class="block text-sm font-medium">Infortuni o limitazioni</label>
-        <input type="text" id="infortuni_limitazioni"
-               class="w-full border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800">
+        <label class="block text-sm font-medium">Infortuni/limitazioni</label>
+        <input type="text" id="infortuni_limitazioni" class="input-field">
       </div>
 
       <div>
         <label class="block text-sm font-medium">Piegamenti consecutivi</label>
-        <input type="number" id="piegamenti_consecutivi" min="0"
-               class="w-full border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800">
+        <input type="number" id="piegamenti_consecutivi" class="input-field">
       </div>
 
       <div>
-        <label class="block text-sm font-medium">Squat corpo libero consecutivi</label>
-        <input type="number" id="squat_corpo_libero" min="0"
-               class="w-full border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800">
+        <label class="block text-sm font-medium">Squat corpo libero</label>
+        <input type="number" id="squat_corpo_libero" class="input-field">
       </div>
 
       <div>
-        <label class="block text-sm font-medium">Tempo plank (secondi)</label>
-        <input type="number" id="tempo_plank_secondi" min="0"
-               class="w-full border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800">
+        <label class="block text-sm font-medium">Plank (sec)</label>
+        <input type="number" id="tempo_plank_secondi" class="input-field">
       </div>
 
       <div>
-        <label class="block text-sm font-medium">Battito dopo 3 min step</label>
-        <input type="number" id="battito_post_step" min="0"
-               class="w-full border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800">
+        <label class="block text-sm font-medium">Battito post-step</label>
+        <input type="number" id="battito_post_step" class="input-field">
       </div>
 
     </div>
 
     <div class="mt-6 flex justify-between">
-      <button id="salva-attivita-fisica" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-        Salva dati
-      </button>
-      <button id="genera-piano-allenamento" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
-        Genera piano di allenamento
-      </button>
+      <button id="salva-piano-allenamento" class="btn-primary">Salva dati allenamento</button>
+      <button id="genera-piano-allenamento" class="btn-secondary">Genera piano AI</button>
     </div>
   </section>
 </div>
-
 
 
 
