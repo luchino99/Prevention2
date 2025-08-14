@@ -621,71 +621,72 @@
       
 
       <!-- Contenuto tab attività fisica -->
- <div id="form-attivita-fisica" class="p-6 bg-gradient-to-br from-green-50 to-green-100 dark:from-gray-800 dark:to-gray-900 rounded-2xl shadow-lg space-y-8 max-w-3xl mx-auto">
+<div id="form-attivita-fisica" class="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6 space-y-8">
 
   <!-- Titolo -->
-  <div class="text-center">
-    <h2 class="text-2xl font-bold text-green-800 dark:text-green-300">🏋️‍♂️ Profilo Attività Fisica</h2>
-    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Aggiorna i tuoi dati per ricevere analisi e suggerimenti personalizzati</p>
-  </div>
+  <header class="border-b border-gray-200 dark:border-gray-700 pb-3">
+    <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Attività Fisica</h2>
+    <p class="text-sm text-gray-500 dark:text-gray-400">Aggiorna i tuoi dati per un'analisi accurata e suggerimenti personalizzati.</p>
+  </header>
 
   <!-- Frequenza -->
-  <div class="space-y-3">
-    <label class="flex justify-between items-center text-sm font-semibold text-gray-700 dark:text-gray-300">
-      <span>📅 Frequenza settimanale</span>
-      <span class="text-green-700 dark:text-green-400" id="val-frequenza">0</span>
-    </label>
-    <input type="range" id="frequenza_attivita" min="0" max="15" step="1"
-           class="w-full accent-green-600 cursor-pointer transition-all duration-200 hover:scale-[1.01]">
-    <p class="text-xs text-gray-500 dark:text-gray-400">Numero di sessioni di allenamento alla settimana (0–15)</p>
-  </div>
+  <section>
+    <label for="frequenza_attivita" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Frequenza settimanale</label>
+    <div class="flex items-center gap-4">
+      <input type="range" id="frequenza_attivita" min="0" max="15" step="1"
+             class="flex-1 accent-blue-600 dark:accent-blue-400">
+      <span id="val-frequenza" class="w-10 text-right font-medium text-gray-800 dark:text-gray-200">0</span>
+    </div>
+    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Numero di sessioni a settimana (0–15)</p>
+  </section>
 
   <!-- Tipo attività -->
-  <div class="space-y-2">
-    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">🏃‍♀️ Tipo attività</label>
+  <section>
+    <label for="tipo_attivita" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tipo di attività</label>
     <select id="tipo_attivita"
-            class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-green-500 outline-none transition">
-      <option value="">-- Seleziona il tipo di attività --</option>
+            class="w-full p-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 outline-none">
+      <option value="">-- Seleziona --</option>
       <option value="aerobica">Attività aerobica (corsa, bici, nuoto)</option>
       <option value="palestra">Potenziamento muscolare / Palestra</option>
       <option value="misto">Allenamento misto</option>
       <option value="sport">Sport di squadra o individuale</option>
       <option value="altro">Altro</option>
     </select>
-  </div>
+  </section>
 
   <!-- Intensità -->
-  <div class="space-y-2">
-    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">🔥 Intensità</label>
+  <section>
+    <label for="intensita_attivita" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Intensità</label>
     <select id="intensita_attivita"
-            class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-green-500 outline-none transition">
-      <option value="">-- Seleziona il livello di intensità --</option>
+            class="w-full p-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 outline-none">
+      <option value="">-- Seleziona --</option>
       <option value="sedentario">Sedentario</option>
       <option value="leggermente attivo">Leggermente attivo</option>
       <option value="moderatamente attivo">Moderatamente attivo</option>
       <option value="molto attivo">Molto attivo</option>
       <option value="estremamente attivo">Estremamente attivo</option>
     </select>
-  </div>
+  </section>
 
   <!-- Minuti settimana -->
-  <div class="space-y-2">
-    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">⏱️ Minuti totali a settimana</label>
+  <section>
+    <label for="minuti_settimana" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Minuti totali a settimana</label>
     <input type="number" id="minuti_settimana" min="0" max="2000" step="5"
            placeholder="Es. 150"
-           class="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-green-500 outline-none transition">
-    <p class="text-xs text-gray-500 dark:text-gray-400">Totale di minuti di allenamento cumulativi a settimana</p>
-  </div>
+           class="w-full p-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 outline-none">
+    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Somma dei minuti di allenamento a settimana</p>
+  </section>
 
   <!-- Pulsante Salva -->
-  <div class="text-center pt-4">
+  <div class="pt-4 border-t border-gray-200 dark:border-gray-700 text-right">
     <button id="salva-attivita-fisica"
-            class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-full shadow-lg transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
-      💾 Salva Attività Fisica
+            class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm transition">
+      Salva
     </button>
   </div>
 
 </div>
+
 
 
 
