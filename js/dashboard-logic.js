@@ -423,7 +423,7 @@ document.getElementById('genera-piano-allenamento')?.addEventListener('click', a
 });
 
  function formatWorkoutPlan(planText) {
-  // Rimuove markdown inutile
+  // Pulizia del testo
   planText = planText.replace(/\*\*/g, "")
                      .replace(/^###\s*/gm, "")
                      .replace(/^\-\s*/gm, "")
@@ -437,8 +437,9 @@ document.getElementById('genera-piano-allenamento')?.addEventListener('click', a
 
   let currentDay = null;
   let currentExercises = [];
-
   let parsingDays = false;
+  let currentExtra = null;
+  let currentExtraContent = [];
 
   const flushDay = () => {
     if (currentDay) {
@@ -451,31 +452,56 @@ document.getElementById('genera-piano-allenamento')?.addEventListener('click', a
     currentExercises = [];
   };
 
+  const flushExtra = () => {
+    if (currentExtra) {
+      extras.push({
+        title: currentExtra,
+        content: [...currentExtraContent]
+      });
+    }
+    currentExtra = null;
+    currentExtraContent = [];
+  };
+
   lines.forEach(line => {
     // Giorni
     if (/^(Giorno\s*\d+|Lunedì|Martedì|Mercoledì|Giovedì|Venerdì|Sabato|Domenica)/i.test(line)) {
+      flushExtra();
       parsingDays = true;
       flushDay();
       currentDay = line;
     }
-    // Sezioni extra
+    // Sezione extra
     else if (/consigli di progressione|modifiche per infortuni|note|programmazione cardio/i.test(line)) {
       flushDay();
-      extras.push(line);
+      flushExtra();
+      currentExtra = line.replace(/:$/, "").trim();
+    }
+    // Contenuto di extra
+    else if (currentExtra) {
+      currentExtraContent.push(line);
     }
     // Introduzione
     else if (!parsingDays) {
       introduction.push(line);
     }
-    // Esercizi
+    // Esercizi del giorno
     else {
       currentExercises.push(line);
     }
   });
 
   flushDay();
+  flushExtra();
 
-  // Genera HTML
+  // Ordina i giorni per numero
+  days.sort((a, b) => {
+    const numA = parseInt(a.title.match(/\d+/)?.[0] || 0, 10);
+    const numB = parseInt(b.title.match(/\d+/)?.[0] || 0, 10);
+    return numA - numB;
+  });
+
+  // HTML
   let html = `
     <h4 class="text-lg font-bold mb-4 text-blue-700 dark:text-blue-400">🏋️ Piano di allenamento personalizzato</h4>
   `;
@@ -521,9 +547,12 @@ document.getElementById('genera-piano-allenamento')?.addEventListener('click', a
     html += `
       <div class="p-4 border border-yellow-300 dark:border-yellow-600 rounded-lg bg-yellow-50 dark:bg-gray-900 shadow-sm">
         <h5 class="text-md font-semibold mb-2 text-yellow-800 dark:text-yellow-300">📌 Consigli aggiuntivi</h5>
-        <ul class="list-disc list-inside space-y-1 text-gray-700 dark:text-gray-300">
-          ${extras.map(ex => `<li>${ex}</li>`).join("")}
-        </ul>
+        ${extras.map(ex => `
+          <div class="mb-3">
+            <h6 class="font-semibold">${ex.title}</h6>
+            <p class="text-gray-700 dark:text-gray-300">${ex.content.join(" ")}</p>
+          </div>
+        `).join("")}
       </div>
     `;
   }
