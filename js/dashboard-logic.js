@@ -40,9 +40,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Carica dati dal database
     await loadUserData(emailUtente);
     populatePianoAlimentareForm();
-populateCurrentActivity();
-populateTrainingPlan();
-
+    populateCurrentActivity();
+    populateTrainingPlan();
     fixFloatingLabels();
     
 
@@ -378,56 +377,78 @@ document.getElementById('salva-piano-allenamento')?.addEventListener('click', as
 
 /* ===== GENERA PIANO ALLENAMENTO (STILE CHATBOT) ===== */
 document.getElementById('genera-piano-allenamento')?.addEventListener('click', async () => {
-  try {
-    const container = document.getElementById('output-piano-allenamento');
-    if (container) {
-      container.innerHTML = '<p class="text-gray-500">⏳ Generazione piano in corso...</p>';
-    }
+  const container = document.getElementById('output-piano-allenamento');
 
+  container.innerHTML = `
+    <div class="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+      <i class="fas fa-spinner fa-spin"></i>
+      <span>Generazione piano di allenamento in corso... Attendere qualche secondo</span>
+    </div>
+  `;
+
+  try {
     const payload = {
       allenamento: true,
       email: userData.email,
-      ...{
-        obiettivo: document.getElementById('obiettivo_allenamento').value,
-        esperienza: document.getElementById('livello_esperienza').value,
-        frequenza: document.getElementById('frequenza_allenamenti').value,
-        durata: document.getElementById('durata_sessione').value,
-        luogo: document.getElementById('luogo_allenamento').value,
-        attrezzatura: document.getElementById('attrezzatura_disponibile').value,
-        cardio: document.getElementById('cardio_preferiti').value,
-        focus: document.getElementById('focus_principale').value,
-        infortuni: document.getElementById('infortuni').value,
-        pushups: document.getElementById('pushups').value,
-        squats: document.getElementById('squats').value,
-        plank: document.getElementById('plank').value,
-        step_test: document.getElementById('step_test').value
-      }
+      obiettivo: document.getElementById('obiettivo_allenamento').value,
+      esperienza: document.getElementById('livello_esperienza').value,
+      frequenza: document.getElementById('frequenza_allenamenti').value,
+      durata: document.getElementById('durata_sessione').value,
+      luogo: document.getElementById('luogo_allenamento').value,
+      attrezzatura: document.getElementById('attrezzatura_disponibile').value,
+      cardio: document.getElementById('cardio_preferiti').value,
+      focus: document.getElementById('focus_principale').value,
+      infortuni: document.getElementById('infortuni').value,
+      pushups: document.getElementById('pushups').value,
+      squats: document.getElementById('squats').value,
+      plank: document.getElementById('plank').value,
+      step_test: document.getElementById('step_test').value
     };
 
-    const response = await fetch("https://prevention2.vercel.app/api/openai", {
+    const res = await fetch("https://prevention2.vercel.app/api/openai", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
 
-    const data = await response.json();
+    const data = await res.json();
     if (!data.risposta) throw new Error("Nessuna risposta dal modello");
 
-    if (container) {
-      container.innerHTML = `<div class="p-4 border rounded bg-gray-50 dark:bg-gray-800">${data.risposta}</div>`;
-    } else {
-      alert("✅ Piano generato:\n" + data.risposta);
-    }
+    container.innerHTML = formatWorkoutPlan(data.risposta);
+
   } catch (error) {
     console.error(error);
-    if (document.getElementById('output-piano-allenamento')) {
-      document.getElementById('output-piano-allenamento').innerHTML =
-        '<p class="text-red-500">❌ Errore durante la generazione del piano</p>';
-    } else {
-      alert('❌ Errore durante la generazione del piano');
-    }
+    container.innerHTML = `<p class="text-red-600 dark:text-red-400">❌ Errore durante la generazione del piano. Riprova più tardi.</p>`;
   }
 });
+
+    function formatWorkoutPlan(planText) {
+  const lines = planText.split("\n").map(l => l.trim()).filter(l => l);
+  let html = `
+    <h4 class="text-lg font-semibold mb-3 text-blue-700 dark:text-blue-400">💪 Il tuo piano di allenamento personalizzato</h4>
+    <div class="space-y-4">
+  `;
+
+  let currentSection = null;
+
+  lines.forEach(line => {
+    if (/^(Giorno|Day|Lunedì|Martedì|Mercoledì|Giovedì|Venerdì|Sabato|Domenica)/i.test(line)) {
+      if (currentSection) html += "</ul>";
+      html += `<h5 class="mt-4 font-bold text-gray-800 dark:text-gray-200">${line}</h5><ul class="list-disc list-inside space-y-1">`;
+      currentSection = line;
+    } else {
+      html += `<li class="text-gray-700 dark:text-gray-300">${line}</li>`;
+    }
+  });
+
+  if (currentSection) html += "</ul>";
+  html += "</div>";
+  return html;
+}
+
+
+
+
 
 
 
