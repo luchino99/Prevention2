@@ -221,6 +221,62 @@ if (bmr || tdee) {
   return html;
 }
 
+    // === LISTENER: Salva Dati Piano Alimentare ===
+const btnSalvaPiano = document.getElementById("salva-dati-piano");
+
+if (btnSalvaPiano) {
+  btnSalvaPiano.addEventListener("click", async () => {
+    console.log("💾 [Salva Dati Piano] Click rilevato");
+
+    const mapping = {
+      eta: "eta",
+      sesso: "sesso",
+      altezza: "altezza",
+      peso: "peso",
+      obiettivo: "obiettivo",
+      attivita_fisica: "tipo_lavoro",
+      preferenze: "preferenze_alimentari",
+      intolleranze: "intolleranze",
+      alimenti_esclusi: "alimenti_esclusi",
+      pasti: "numero_pasti",
+      orari_pasti: "orari_pasti",
+      patologie: "patologie",
+      farmaci: "farmaci_dettaglio"
+    };
+
+    const aggiornamenti = {};
+    for (const [fieldId, dbField] of Object.entries(mapping)) {
+      const el = document.getElementById(fieldId);
+      if (el) {
+        aggiornamenti[dbField] = el.value.trim();
+      }
+    }
+
+    console.log("📦 Dati da salvare su Supabase:", aggiornamenti);
+
+    try {
+      const { error } = await supabaseClient
+        .from("anagrafica_utenti")
+        .update(aggiornamenti)
+        .eq("email", userData.email);
+
+      if (error) throw error;
+
+      Object.assign(userData, aggiornamenti);
+
+      console.log("✅ Salvataggio completato con successo");
+      showNotification("Dati salvati con successo!", "success");
+
+    } catch (err) {
+      console.error("❌ Errore durante il salvataggio:", err);
+      showNotification("Errore durante il salvataggio. Riprova.", "error");
+    }
+  });
+} else {
+  console.warn("⚠️ Bottone #salva-dati-piano non trovato nel DOM");
+}
+
+
 
 
     // Sovrascrivi i dati dinamici con quelli salvati dal DB
