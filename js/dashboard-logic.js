@@ -423,30 +423,52 @@ document.getElementById('genera-piano-allenamento')?.addEventListener('click', a
 });
 
     function formatWorkoutPlan(planText) {
+  // Rimuove asterischi e formattazione markdown
+  planText = planText.replace(/\*\*/g, "").replace(/^\-\s*/gm, "").trim();
+
+  // Divide il testo in righe
   const lines = planText.split("\n").map(l => l.trim()).filter(l => l);
+
   let html = `
-    <h4 class="text-lg font-semibold mb-3 text-blue-700 dark:text-blue-400">💪 Il tuo piano di allenamento personalizzato</h4>
-    <div class="space-y-4">
+    <h4 class="text-lg font-bold mb-4 text-blue-700 dark:text-blue-400">
+      🏋️ Piano di allenamento personalizzato
+    </h4>
+    <div class="space-y-6">
   `;
 
-  let currentSection = null;
+  let currentDay = null;
+  let exercises = [];
+
+  const flushDay = () => {
+    if (currentDay) {
+      html += `
+        <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 shadow-sm">
+          <h5 class="text-md font-semibold mb-2 text-gray-800 dark:text-gray-200">${currentDay}</h5>
+          <ul class="list-disc list-inside space-y-1 text-gray-700 dark:text-gray-300">
+            ${exercises.map(ex => `<li>${ex}</li>`).join("")}
+          </ul>
+        </div>
+      `;
+    }
+    exercises = [];
+  };
 
   lines.forEach(line => {
-    if (/^(Giorno|Day|Lunedì|Martedì|Mercoledì|Giovedì|Venerdì|Sabato|Domenica)/i.test(line)) {
-      if (currentSection) html += "</ul>";
-      html += `<h5 class="mt-4 font-bold text-gray-800 dark:text-gray-200">${line}</h5><ul class="list-disc list-inside space-y-1">`;
-      currentSection = line;
+    if (/^(Giorno\s*\d+|Lunedì|Martedì|Mercoledì|Giovedì|Venerdì|Sabato|Domenica)/i.test(line)) {
+      flushDay();
+      currentDay = line;
+    } else if (/programma settimanale/i.test(line)) {
+      // Titolo speciale per il programma
+      html += `<p class="text-sm italic text-gray-600 dark:text-gray-400">${line}</p>`;
     } else {
-      html += `<li class="text-gray-700 dark:text-gray-300">${line}</li>`;
+      exercises.push(line);
     }
   });
 
-  if (currentSection) html += "</ul>";
-  html += "</div>";
+  flushDay();
+  html += `</div>`;
   return html;
 }
-
-
 
 
 
