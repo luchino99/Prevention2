@@ -40,8 +40,9 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Carica dati dal database
     await loadUserData(emailUtente);
     populatePianoAlimentareForm();
-    populateCurrentActivity();
-    populateTrainingPlan();
+populateCurrentActivity();
+populateTrainingPlan();
+
     fixFloatingLabels();
     
 
@@ -280,31 +281,153 @@ if (btnSalvaPiano) {
 }
 
 // === POPOLA FORM ATTIVITÀ FISICA DA DB ===
-// Popola campi Attività Attuale
+/* ===== POPOLAMENTO CAMPI ===== */
 function populateCurrentActivity() {
   document.getElementById('frequenza_attuale').value = userData.frequenza_attivita_fisica || 0;
-  document.getElementById('frequenza_attuale_label').textContent = `${userData.frequenza_attivita_fisica || 0} volte a settimana`;
+  document.getElementById('frequenza_attuale_label').textContent =
+    `${userData.frequenza_attivita_fisica || 0} volte a settimana`;
   document.getElementById('tipo_attivita_attuale').value = userData.tipo_attivita || "";
   document.getElementById('intensita_attuale').value = userData.tipo_lavoro || "";
   document.getElementById('minuti_settimana_attuale').value = userData.durata_attivita || "";
 }
 
-// Popola campi Piano Allenamento
 function populateTrainingPlan() {
-  document.getElementById('obiettivo_allenamento').value = userData.obiettivo_allenamento || "";
-  document.getElementById('livello_esperienza').value = userData.livello_esperienza || "";
-  document.getElementById('frequenza_allenamenti').value = userData.frequenza_allenamenti || "";
-  document.getElementById('durata_sessione').value = userData.durata_sessione || "";
-  document.getElementById('luogo_allenamento').value = userData.luogo_allenamento || "";
-  document.getElementById('attrezzatura_disponibile').value = userData.attrezzatura_disponibile || "";
-  document.getElementById('cardio_preferiti').value = userData.cardio_preferiti || "";
-  document.getElementById('focus_principale').value = userData.focus_principale || "";
-  document.getElementById('infortuni').value = userData.infortuni || "";
-  document.getElementById('pushups').value = userData.pushups || "";
-  document.getElementById('squats').value = userData.squats || "";
-  document.getElementById('plank').value = userData.plank || "";
-  document.getElementById('step_test').value = userData.step_test || "";
+  const mapping = {
+    obiettivo_allenamento: "obiettivo",
+    livello_esperienza: "esperienza",
+    frequenza_allenamenti: "frequenza",
+    durata_sessione: "durata",
+    luogo_allenamento: "luogo",
+    attrezzatura_disponibile: "attrezzatura",
+    cardio_preferiti: "cardio",
+    focus_principale: "focus",
+    infortuni: "infortuni",
+    pushups: "pushups",
+    squats: "squats",
+    plank: "plank",
+    step_test: "step_test"
+  };
+
+  for (const [id, dbField] of Object.entries(mapping)) {
+    const el = document.getElementById(id);
+    if (el) el.value = userData[dbField] || "";
+  }
 }
+
+/* ===== SLIDER DINAMICO ===== */
+document.getElementById('frequenza_attuale')?.addEventListener('input', function () {
+  document.getElementById('frequenza_attuale_label').textContent = `${this.value} volte a settimana`;
+});
+
+/* ===== SALVATAGGIO ATTIVITÀ ATTUALE ===== */
+document.getElementById('salva-attivita-attuale')?.addEventListener('click', async () => {
+  try {
+    const payload = {
+      frequenza_attivita_fisica: document.getElementById('frequenza_attuale').value,
+      tipo_attivita: document.getElementById('tipo_attivita_attuale').value,
+      tipo_lavoro: document.getElementById('intensita_attuale').value,
+      durata_attivita: document.getElementById('minuti_settimana_attuale').value
+    };
+
+    const { error } = await supabaseClient
+      .from('anagrafica_utenti')
+      .update(payload)
+      .eq('email', userData.email);
+
+    if (error) throw error;
+    Object.assign(userData, payload);
+    showNotification('✅ Attività attuale salvata con successo!', 'success');
+  } catch (err) {
+    console.error(err);
+    showNotification('❌ Errore salvataggio attività attuale', 'error');
+  }
+});
+
+/* ===== SALVATAGGIO PIANO ALLENAMENTO ===== */
+document.getElementById('salva-piano-allenamento')?.addEventListener('click', async () => {
+  try {
+    const payload = {
+      obiettivo: document.getElementById('obiettivo_allenamento').value,
+      esperienza: document.getElementById('livello_esperienza').value,
+      frequenza: document.getElementById('frequenza_allenamenti').value,
+      durata: document.getElementById('durata_sessione').value,
+      luogo: document.getElementById('luogo_allenamento').value,
+      attrezzatura: document.getElementById('attrezzatura_disponibile').value,
+      cardio: document.getElementById('cardio_preferiti').value,
+      focus: document.getElementById('focus_principale').value,
+      infortuni: document.getElementById('infortuni').value,
+      pushups: document.getElementById('pushups').value,
+      squats: document.getElementById('squats').value,
+      plank: document.getElementById('plank').value,
+      step_test: document.getElementById('step_test').value
+    };
+
+    const { error } = await supabaseClient
+      .from('anagrafica_utenti')
+      .update(payload)
+      .eq('email', userData.email);
+
+    if (error) throw error;
+    Object.assign(userData, payload);
+    showNotification('✅ Dati per piano allenamento salvati con successo!', 'success');
+  } catch (err) {
+    console.error(err);
+    showNotification('❌ Errore salvataggio piano allenamento', 'error');
+  }
+});
+
+/* ===== GENERA PIANO ALLENAMENTO (STILE CHATBOT) ===== */
+document.getElementById('genera-piano-allenamento')?.addEventListener('click', async () => {
+  try {
+    const container = document.getElementById('output-piano-allenamento');
+    if (container) {
+      container.innerHTML = '<p class="text-gray-500">⏳ Generazione piano in corso...</p>';
+    }
+
+    const payload = {
+      allenamento: true,
+      email: userData.email,
+      ...{
+        obiettivo: document.getElementById('obiettivo_allenamento').value,
+        esperienza: document.getElementById('livello_esperienza').value,
+        frequenza: document.getElementById('frequenza_allenamenti').value,
+        durata: document.getElementById('durata_sessione').value,
+        luogo: document.getElementById('luogo_allenamento').value,
+        attrezzatura: document.getElementById('attrezzatura_disponibile').value,
+        cardio: document.getElementById('cardio_preferiti').value,
+        focus: document.getElementById('focus_principale').value,
+        infortuni: document.getElementById('infortuni').value,
+        pushups: document.getElementById('pushups').value,
+        squats: document.getElementById('squats').value,
+        plank: document.getElementById('plank').value,
+        step_test: document.getElementById('step_test').value
+      }
+    };
+
+    const response = await fetch("https://prevention2.vercel.app/api/openai", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await response.json();
+    if (!data.risposta) throw new Error("Nessuna risposta dal modello");
+
+    if (container) {
+      container.innerHTML = `<div class="p-4 border rounded bg-gray-50 dark:bg-gray-800">${data.risposta}</div>`;
+    } else {
+      alert("✅ Piano generato:\n" + data.risposta);
+    }
+  } catch (error) {
+    console.error(error);
+    if (document.getElementById('output-piano-allenamento')) {
+      document.getElementById('output-piano-allenamento').innerHTML =
+        '<p class="text-red-500">❌ Errore durante la generazione del piano</p>';
+    } else {
+      alert('❌ Errore durante la generazione del piano');
+    }
+  }
+});
 
 
 
@@ -1860,97 +1983,6 @@ const predimedTooltips = [
     }
   });
 }
-
-
-// Slider dinamico frequenza attività fisica
-document.getElementById('frequenza_attuale')?.addEventListener('input', function () {
-  const val = this.value;
-  document.getElementById('frequenza_attuale_label').textContent = `${val} volte a settimana`;
-});
-
-// Salvataggio Attività Attuale
-document.getElementById('salva-attivita-attuale')?.addEventListener('click', async () => {
-  try {
-    const payload = {
-      frequenza_attivita_fisica: document.getElementById('frequenza_attuale').value,
-      tipo_attivita: document.getElementById('tipo_attivita_attuale').value,
-      tipo_lavoro: document.getElementById('intensita_attuale').value,
-      durata_attivita: document.getElementById('minuti_settimana_attuale').value
-    };
-
-    const { error } = await supabaseClient
-      .from('anagrafica_utenti')
-      .update(payload)
-      .eq('email', userData.email);
-
-    if (error) throw error;
-    showNotification('✅ Attività attuale salvata con successo!', 'success');
-  } catch (err) {
-    console.error(err);
-    showNotification('❌ Errore salvataggio attività attuale', 'error');
-  }
-});
-
-// Salvataggio Dati Piano Allenamento
-document.getElementById('salva-piano-allenamento')?.addEventListener('click', async () => {
-  try {
-    const payload = {
-      obiettivo_allenamento: document.getElementById('obiettivo_allenamento').value,
-      livello_esperienza: document.getElementById('livello_esperienza').value,
-      frequenza_allenamenti: document.getElementById('frequenza_allenamenti').value,
-      durata_sessione: document.getElementById('durata_sessione').value,
-      luogo_allenamento: document.getElementById('luogo_allenamento').value,
-      attrezzatura_disponibile: document.getElementById('attrezzatura_disponibile').value,
-      cardio_preferiti: document.getElementById('cardio_preferiti').value,
-      focus_principale: document.getElementById('focus_principale').value,
-      infortuni: document.getElementById('infortuni').value,
-      pushups: document.getElementById('pushups').value,
-      squats: document.getElementById('squats').value,
-      plank: document.getElementById('plank').value,
-      step_test: document.getElementById('step_test').value
-    };
-
-    const { error } = await supabaseClient
-      .from('anagrafica_utenti')
-      .update(payload)
-      .eq('email', userData.email);
-
-    if (error) throw error;
-    showNotification('✅ Dati per piano allenamento salvati con successo!', 'success');
-  } catch (err) {
-    console.error(err);
-    showNotification('❌ Errore salvataggio piano allenamento', 'error');
-  }
-});
-
-document.getElementById('genera-piano-allenamento')?.addEventListener('click', async () => {
-  try {
-    const container = document.getElementById('output-piano-allenamento');
-    container.innerHTML = '<p class="text-gray-500">⏳ Generazione piano in corso...</p>';
-
-    const payload = {
-      allenamento: true,
-      ...userData
-    };
-
-    const response = await fetch("https://prevention2.vercel.app/api/openai", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    const data = await response.json();
-    if (!data.risposta) throw new Error("Nessuna risposta dal modello");
-
-    container.innerHTML = `<div class="p-4 border rounded bg-gray-50 dark:bg-gray-800">${data.risposta}</div>`;
-  } catch (error) {
-    console.error(error);
-    document.getElementById('output-piano-allenamento').innerHTML =
-      '<p class="text-red-500">❌ Errore durante la generazione del piano</p>';
-  }
-});
-
-
 
 
 
