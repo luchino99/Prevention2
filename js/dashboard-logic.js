@@ -62,9 +62,11 @@ const mapping = {
 };
 
 const btnGeneraPiano = document.getElementById("btn-genera-piano");
+console.log("🔍 Bottone trovato:", btnGeneraPiano);
 
 if (btnGeneraPiano) {
   btnGeneraPiano.addEventListener("click", async () => {
+    console.log("✅ Bottone cliccato");
     const output = document.getElementById("piano-alimentare-output");
 
     // Messaggio di caricamento
@@ -78,6 +80,7 @@ if (btnGeneraPiano) {
     try {
       // Normalizza tipo_lavoro
       let tipoLavoroVal = userData.tipo_lavoro || document.getElementById("attivita_fisica")?.value || "";
+      console.log("📊 tipo_lavoro letto:", tipoLavoroVal);
       tipoLavoroVal = tipoLavoroVal.trim().toLowerCase();
 
       const validi = ["sedentario", "leggermente attivo", "moderatamente attivo", "molto attivo", "estremamente attivo"];
