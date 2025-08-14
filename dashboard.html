@@ -746,19 +746,25 @@
     <input id="step_test" type="number" min="0"
       class="w-full p-2 rounded border dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200">
 
-    <!-- Pulsanti -->
-    <div class="mt-6 flex space-x-3">
-      <button id="salva-piano-allenamento" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
-        💾 Salva dati piano allenamento
-      </button>
-      <button id="genera-piano-allenamento" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-        ⚡ Genera piano con AI
-      </button>
-      <div id="output-piano-allenamento" class="mt-4 p-4 border rounded bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-200">
-  📋 Il piano di allenamento generato apparirà qui…
+<div class="mt-6 flex flex-wrap gap-3">
+  <button id="salva-piano-allenamento" 
+    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium shadow-sm transition">
+    💾 Salva dati piano allenamento
+  </button>
+  <button id="genera-piano-allenamento" 
+    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium shadow-sm transition">
+    ⚡ Genera piano con AI
+  </button>
 </div>
-    </div>
-  </section>
+
+<!-- Output piano di allenamento -->
+<div id="output-piano-allenamento" 
+  class="mt-4 p-5 border border-blue-300 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-200 shadow-md">
+  <p class="text-blue-700 dark:text-blue-400 font-semibold">
+    📋 Il piano di allenamento generato apparirà qui…
+  </p>
+</div>
+    </section>
 </div>
 
 
