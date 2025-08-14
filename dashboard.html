@@ -621,54 +621,59 @@
       
 
       <!-- Contenuto tab attività fisica -->
-      <div id="tab-attivita" class="tab-content">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="p-4 bg-gray-50 rounded-lg">
-            <h3 class="font-semibold mb-3">Attività Attuale</h3>
-            <div class="space-y-3">
-              <div class="flex justify-between">
-                <span class="text-sm text-gray-600">Frequenza</span>
-                <span class="font-medium">2 volte/settimana</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-sm text-gray-600">Tipo</span>
-                <span class="font-medium">Camminata veloce</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-sm text-gray-600">Durata</span>
-                <span class="font-medium">30 minuti</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-sm text-gray-600">Intensità</span>
-                <span class="font-medium text-yellow-600">Moderata</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-sm text-gray-600">Minuti/settimana</span>
-                <span class="font-medium text-red-600">60 (< 150 min)</span>
-              </div>
-            </div>
-          </div>
-          <div class="p-4 bg-gray-50 rounded-lg">
-            <h3 class="font-semibold mb-3">Suggerimenti Personalizzati</h3>
-            <div class="space-y-3">
-              <div class="p-3  rounded-lg border-l-4 border-blue-500">
-                <h4 class="font-medium">Obiettivo Principale</h4>
-                <p class="text-sm text-gray-600">Aumentare l'attività aerobica a 150 min/settimana</p>
-              </div>
-              <div class="p-3  rounded-lg border-l-4 border-green-500">
-                <h4 class="font-medium">Tipo di Allenamento</h4>
-                <p class="text-sm text-gray-600">Combinare cardio (60%) e forza (40%)</p>
-              </div>
-              <div class="p-3  rounded-lg border-l-4 border-yellow-500">
-                <h4 class="font-medium">Progressione</h4>
-                <p class="text-sm text-gray-600">Aumentare di 10 min/settimana fino a 150 min</p>
-              </div>
-            </div>
+  <div id="form-attivita-fisica" class="space-y-6 p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+  
+  <!-- Frequenza -->
+  <div>
+    <label class="block text-sm font-medium mb-1">📅 Frequenza attività (volte/settimana)</label>
+    <input type="range" id="frequenza_attivita" min="0" max="15" step="1" 
+           class="w-full accent-green-600">
+    <div class="text-right text-sm text-gray-500">Valore: <span id="val-frequenza">0</span></div>
+  </div>
 
-          </div>
-        </div>
-      </div>
-    </div>
+  <!-- Tipo attività -->
+  <div>
+    <label class="block text-sm font-medium mb-1">🏋️‍♂️ Tipo attività</label>
+    <select id="tipo_attivita" class="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
+      <option value="">-- Seleziona --</option>
+      <option value="aerobica">Attività aerobica (corsa, bici, nuoto)</option>
+      <option value="palestra">Potenziamento muscolare / Palestra</option>
+      <option value="misto">Allenamento misto</option>
+      <option value="sport">Sport di squadra o individuale</option>
+      <option value="altro">Altro</option>
+    </select>
+  </div>
+
+  <!-- Intensità -->
+  <div>
+    <label class="block text-sm font-medium mb-1">🔥 Intensità</label>
+    <select id="intensita_attivita" class="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
+      <option value="">-- Seleziona --</option>
+      <option value="sedentario">Sedentario</option>
+      <option value="leggermente attivo">Leggermente attivo</option>
+      <option value="moderatamente attivo">Moderatamente attivo</option>
+      <option value="molto attivo">Molto attivo</option>
+      <option value="estremamente attivo">Estremamente attivo</option>
+    </select>
+  </div>
+
+  <!-- Minuti settimana -->
+  <div>
+    <label class="block text-sm font-medium mb-1">⏱️ Minuti totali a settimana</label>
+    <input type="number" id="minuti_settimana" min="0" max="2000" step="5" 
+           class="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
+  </div>
+
+  <!-- Pulsante Salva -->
+  <div class="text-right">
+    <button id="salva-attivita-fisica"
+            class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition">
+      💾 Salva Attività Fisica
+    </button>
+  </div>
+
+</div>
+
 
 <!-- Suggerimenti Prioritari -->
 <div class="card p-4">
