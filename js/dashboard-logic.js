@@ -41,6 +41,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     await loadUserData(emailUtente);
     populatePianoAlimentareForm();
     fixFloatingLabels();
+    populateAttivitaFisicaForm();
 
 
 // 🔹 Mappatura campi HTML → colonne DB
@@ -276,6 +277,49 @@ if (btnSalvaPiano) {
   console.warn("⚠️ Bottone #salva-dati-piano non trovato nel DOM");
 }
 
+// === POPOLA FORM ATTIVITÀ FISICA DA DB ===
+function populateAttivitaFisicaForm() {
+  document.getElementById("frequenza_attivita").value = userData.frequenza_attivita_fisica || 0;
+  document.getElementById("val-frequenza").textContent = userData.frequenza_attivita_fisica || 0;
+
+  document.getElementById("tipo_attivita").value = userData.tipo_attivita || "";
+  document.getElementById("intensita_attivita").value = userData.tipo_lavoro || "";
+  document.getElementById("minuti_settimana").value = userData.durata_attivita || "";
+}
+
+// === GESTIONE SLIDER FREQUENZA ===
+document.getElementById("frequenza_attivita")?.addEventListener("input", e => {
+  document.getElementById("val-frequenza").textContent = e.target.value;
+});
+
+// === SALVATAGGIO NEL DB ===
+document.getElementById("salva-attivita-fisica")?.addEventListener("click", async () => {
+  const aggiornamenti = {
+    frequenza_attivita_fisica: parseInt(document.getElementById("frequenza_attivita").value, 10),
+    tipo_attivita: document.getElementById("tipo_attivita").value,
+    tipo_lavoro: document.getElementById("intensita_attivita").value,
+    durata_attivita: parseInt(document.getElementById("minuti_settimana").value, 10)
+  };
+
+  console.log("📦 Salvataggio Attività Fisica:", aggiornamenti);
+
+  try {
+    const { error } = await supabaseClient
+      .from("anagrafica_utenti")
+      .update(aggiornamenti)
+      .eq("email", userData.email);
+
+    if (error) throw error;
+
+    // Aggiorna userData in memoria
+    Object.assign(userData, aggiornamenti);
+
+    showNotification("Attività fisica aggiornata con successo!", "success");
+  } catch (err) {
+    console.error("❌ Errore salvataggio attività fisica:", err);
+    showNotification("Errore durante il salvataggio attività fisica", "error");
+  }
+});
 
 
 
