@@ -40,8 +40,10 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Carica dati dal database
     await loadUserData(emailUtente);
     populatePianoAlimentareForm();
+    populateAttivitaAttuale();
+    populatePianoAllenamento();
     fixFloatingLabels();
-    populateAttivitaFisicaForm();
+    
 
 
 // 🔹 Mappatura campi HTML → colonne DB
@@ -278,47 +280,64 @@ if (btnSalvaPiano) {
 }
 
 // === POPOLA FORM ATTIVITÀ FISICA DA DB ===
-function populateAttivitaFisicaForm() {
-  document.getElementById("frequenza_attivita").value = userData.frequenza_attivita_fisica || 0;
-  document.getElementById("val-frequenza").textContent = userData.frequenza_attivita_fisica || 0;
-
-  document.getElementById("tipo_attivita").value = userData.tipo_attivita || "";
-  document.getElementById("intensita_attivita").value = userData.tipo_lavoro || "";
-  document.getElementById("minuti_settimana").value = userData.durata_attivita || "";
+// Popola Attività attuale
+function populateAttivitaAttuale() {
+  ["frequenza_attivita_fisica", "tipo_attivita", "tipo_lavoro", "durata_attivita"].forEach(f => {
+    const el = document.getElementById(f);
+    if (el && userData[f] !== undefined) el.value = userData[f];
+  });
 }
 
-// === GESTIONE SLIDER FREQUENZA ===
-document.getElementById("frequenza_attivita")?.addEventListener("input", e => {
-  document.getElementById("val-frequenza").textContent = e.target.value;
+// Popola Piano allenamento
+function populatePianoAllenamento() {
+  ["obiettivo_allenamento","livello_esperienza","durata_sessione","luogo_allenamento",
+   "attrezzatura_disponibile","focus_principale","infortuni_limitazioni",
+   "piegamenti_consecutivi","squat_corpo_libero","tempo_plank_secondi","battito_post_step"
+  ].forEach(f => {
+    const el = document.getElementById(f);
+    if (el && userData[f] !== undefined) el.value = userData[f];
+  });
+}
+
+// Salva attività attuale
+document.getElementById("salva-attivita-attuale")?.addEventListener("click", async () => {
+  const updateData = {};
+  ["frequenza_attivita_fisica", "tipo_attivita", "tipo_lavoro", "durata_attivita"].forEach(f => {
+    updateData[f] = document.getElementById(f)?.value || "";
+  });
+  await supabaseClient.from("anagrafica_utenti").update(updateData).eq("email", userData.email);
+  Object.assign(userData, updateData);
+  alert("✅ Attività attuale salvata");
 });
 
-// === SALVATAGGIO NEL DB ===
-document.getElementById("salva-attivita-fisica")?.addEventListener("click", async () => {
-  const aggiornamenti = {
-    frequenza_attivita_fisica: parseInt(document.getElementById("frequenza_attivita").value, 10),
-    tipo_attivita: document.getElementById("tipo_attivita").value,
-    tipo_lavoro: document.getElementById("intensita_attivita").value,
-    durata_attivita: parseInt(document.getElementById("minuti_settimana").value, 10)
-  };
+// Salva piano allenamento
+document.getElementById("salva-piano-allenamento")?.addEventListener("click", async () => {
+  const updateData = {};
+  ["obiettivo_allenamento","livello_esperienza","durata_sessione","luogo_allenamento",
+   "attrezzatura_disponibile","focus_principale","infortuni_limitazioni",
+   "piegamenti_consecutivi","squat_corpo_libero","tempo_plank_secondi","battito_post_step"
+  ].forEach(f => {
+    updateData[f] = document.getElementById(f)?.value || "";
+  });
+  await supabaseClient.from("anagrafica_utenti").update(updateData).eq("email", userData.email);
+  Object.assign(userData, updateData);
+  alert("✅ Dati piano allenamento salvati");
+});
 
-  console.log("📦 Salvataggio Attività Fisica:", aggiornamenti);
+// Genera piano AI
+document.getElementById("genera-piano-allenamento")?.addEventListener("click", async () => {
+  const payload = { allenamento: true, email: userData.email };
+  ["obiettivo_allenamento","livello_esperienza","durata_sessione","luogo_allenamento",
+   "attrezzatura_disponibile","focus_principale","infortuni_limitazioni",
+   "piegamenti_consecutivi","squat_corpo_libero","tempo_plank_secondi","battito_post_step"
+  ].forEach(f => payload[f] = document.getElementById(f)?.value || "");
 
-  try {
-    const { error } = await supabaseClient
-      .from("anagrafica_utenti")
-      .update(aggiornamenti)
-      .eq("email", userData.email);
-
-    if (error) throw error;
-
-    // Aggiorna userData in memoria
-    Object.assign(userData, aggiornamenti);
-
-    showNotification("Attività fisica aggiornata con successo!", "success");
-  } catch (err) {
-    console.error("❌ Errore salvataggio attività fisica:", err);
-    showNotification("Errore durante il salvataggio attività fisica", "error");
-  }
+  const res = await fetch("/api/openai", {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload)
+  });
+  const data = await res.json();
+  console.log("📄 Piano AI:", data);
+  alert("📄 Piano di allenamento generato");
 });
 
 
