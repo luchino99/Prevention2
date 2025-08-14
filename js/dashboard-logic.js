@@ -422,91 +422,112 @@ document.getElementById('genera-piano-allenamento')?.addEventListener('click', a
   }
 });
 
-  function formatWorkoutPlan(planText) {
+ function formatWorkoutPlan(planText) {
   // Rimuove markdown inutile
-  planText = planText.replace(/\*\*/g, "").replace(/^\-\s*/gm, "").trim();
+  planText = planText.replace(/\*\*/g, "")
+                     .replace(/^###\s*/gm, "")
+                     .replace(/^\-\s*/gm, "")
+                     .trim();
 
   const lines = planText.split("\n").map(l => l.trim()).filter(l => l);
 
-  let html = `
-    <h4 class="text-lg font-bold mb-4 text-blue-700 dark:text-blue-400">
-      🏋️ Piano di allenamento personalizzato
-    </h4>
-    <div class="space-y-6">
-  `;
-
   let introduction = [];
+  let days = [];
+  let extras = [];
+
   let currentDay = null;
-  let exercises = [];
-  let extraSections = [];
+  let currentExercises = [];
+
   let parsingDays = false;
 
   const flushDay = () => {
     if (currentDay) {
-      html += `
-        <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 shadow-sm">
-          <h5 class="text-md font-semibold mb-2 text-gray-800 dark:text-gray-200">${currentDay}</h5>
-          <ul class="list-disc list-inside space-y-1 text-gray-700 dark:text-gray-300">
-            ${exercises.map(ex => `<li>${ex}</li>`).join("")}
-          </ul>
-        </div>
-      `;
+      days.push({
+        title: currentDay,
+        exercises: [...currentExercises]
+      });
     }
-    exercises = [];
+    currentDay = null;
+    currentExercises = [];
   };
 
   lines.forEach(line => {
-    // Riconosce i giorni
+    // Giorni
     if (/^(Giorno\s*\d+|Lunedì|Martedì|Mercoledì|Giovedì|Venerdì|Sabato|Domenica)/i.test(line)) {
       parsingDays = true;
       flushDay();
       currentDay = line;
     }
-    // Riconosce le sezioni extra
-    else if (/consigli di progressione|modifiche per eventuali infortuni|programmazione cardio/i.test(line)) {
-      // Salva eventuale giorno in corso
+    // Sezioni extra
+    else if (/consigli di progressione|modifiche per infortuni|note|programmazione cardio/i.test(line)) {
       flushDay();
-      currentDay = null;
-      extraSections.push(line);
+      extras.push(line);
     }
-    // Prima parte: introduzione
+    // Introduzione
     else if (!parsingDays) {
       introduction.push(line);
     }
-    // Durante i giorni
+    // Esercizi
     else {
-      exercises.push(line);
+      currentExercises.push(line);
     }
   });
 
-  // Flush ultimo giorno
   flushDay();
 
-  // Aggiunge introduzione se esiste
+  // Genera HTML
+  let html = `
+    <h4 class="text-lg font-bold mb-4 text-blue-700 dark:text-blue-400">🏋️ Piano di allenamento personalizzato</h4>
+  `;
+
+  // Introduzione
   if (introduction.length) {
-    html = `
-      <h4 class="text-lg font-bold mb-4 text-blue-700 dark:text-blue-400">🏋️ Piano di allenamento personalizzato</h4>
-      <div class="p-4 border border-blue-200 dark:border-blue-700 rounded-lg bg-blue-50 dark:bg-gray-800 shadow-sm">
+    html += `
+      <div class="p-4 mb-6 border border-blue-300 dark:border-blue-600 rounded-lg bg-blue-50 dark:bg-gray-800 shadow-sm">
         <h5 class="text-md font-semibold mb-2 text-blue-800 dark:text-blue-300">Introduzione</h5>
         <p class="text-gray-700 dark:text-gray-300 leading-relaxed">${introduction.join(" ")}</p>
       </div>
-      <div class="space-y-6 mt-4">
-    ` + html.replace(/.*?<div class="space-y-6">/s, ""); // Mantiene i giorni già formattati
+    `;
   }
 
-  // Aggiunge eventuali sezioni extra
-  if (extraSections.length) {
+  // Giorni
+  days.forEach(day => {
+    html += `
+      <div class="p-4 mb-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 shadow-sm">
+        <h5 class="text-md font-semibold mb-2 text-gray-800 dark:text-gray-200">${day.title}</h5>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm border-collapse">
+            <tbody>
+              ${day.exercises.map(ex => {
+                const parts = ex.split(":");
+                if (parts.length === 2) {
+                  return `<tr class="border-b border-gray-100 dark:border-gray-700">
+                            <td class="py-1 pr-3 font-medium">${parts[0]}</td>
+                            <td class="py-1 text-gray-600 dark:text-gray-300">${parts[1]}</td>
+                          </tr>`;
+                } else {
+                  return `<tr><td colspan="2" class="py-1">${ex}</td></tr>`;
+                }
+              }).join("")}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  });
+
+  // Extra
+  if (extras.length) {
     html += `
       <div class="p-4 border border-yellow-300 dark:border-yellow-600 rounded-lg bg-yellow-50 dark:bg-gray-900 shadow-sm">
         <h5 class="text-md font-semibold mb-2 text-yellow-800 dark:text-yellow-300">📌 Consigli aggiuntivi</h5>
         <ul class="list-disc list-inside space-y-1 text-gray-700 dark:text-gray-300">
-          ${extraSections.map(ex => `<li>${ex}</li>`).join("")}
+          ${extras.map(ex => `<li>${ex}</li>`).join("")}
         </ul>
       </div>
     `;
   }
 
-  html += `</div>`;
   return html;
 }
 
