@@ -140,6 +140,29 @@ body {
   transition: transform var(--animation-speed), box-shadow var(--animation-speed), border-color var(--animation-speed);
 }
 
+.input-field {
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--border-color, #ccc);
+  background-color: var(--bg-color, #fff);
+}
+.btn-primary {
+  background-color: #2563eb;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+}
+.btn-secondary {
+  background-color: #059669;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+}
+
+
+
+
 .primary-gradient {
   background: var(--gradient-primary);
 }
