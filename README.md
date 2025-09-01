@@ -7,7 +7,7 @@ migliorare  estetica generale dashboard,
 migliorare formattazione risultato consigli  screening, e qualità risposta consigli psicologici,
 mettere pulsante domanda precedente o successiva,
 accesso con google,
-sistemare sito, con dominio e tutto.
+sistemare sito, con dominio e tutto, funzione fai lista della spesa basata su dieta generata.
 
 supporto psicologico con gamification, più parlare con qualcuno,
 funzione interpreta referto,
