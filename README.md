@@ -1,6 +1,7 @@
 Link sito formule corrette score: https://www.mdcalc.com/calc/10510/score2-diabetes#evidence
 connettere nuova ai gratis,
 migliorare dinamica  iniziale,
+togliere visualizzazione score 2 diabete in persone che non hanno diabete e frail per persone non anziane,
 funzione salva report sia su webapp che scaricata,
 migliorare  estetica generale dashboard,
 migliorare formattazione risultato consigli  screening, e qualità risposta consigli psicologici,
