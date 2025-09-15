@@ -37,6 +37,12 @@
     overflow-x: hidden;
   }
 
+  section {
+    padding: 80px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    position: relative;
+  }
 
   h1, h2, h3 {
     font-weight: 500;
@@ -122,12 +128,14 @@
     transform: translateY(-7px);
   }
 
-
+  .text-center {
+    text-align: center;
+  }
 
   header {
     padding: 20px;
     display: flex;
-    justify-content: center; /* centrato */
+    justify-content: space-between;
     align-items: center;
     position: fixed;
     width: 100%;
@@ -135,14 +143,6 @@
     transition: all var(--anim-time) ease;
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
-  }
-
-  header .logo {
-    margin-right: auto; /* logo a sinistra */
-  }
-
-  nav {
-    margin-left: auto; /* menu spostato a destra */
   }
 
   header.scrolled {
@@ -171,7 +171,7 @@
     display: flex;
     list-style: none;
     align-items: center;
-    margin-right: 40px;
+    margin-right: 20px;
   }
 
   nav ul li {
@@ -224,12 +224,23 @@
   .hero {
     height: 100vh;
     display: flex;
-    flex-direction: column; /* CAMBIATO da space-between */
     align-items: center;
-    justify-content: center; /* CAMBIATO da space-between */
+    justify-content: space-between;
     overflow: hidden;
     padding-top: 100px;
-    text-align: center; /* AGGIUNTO */
+  }
+
+  .hero-content {
+    flex: 1;
+    z-index: 2;
+  }
+
+  .hero-image {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
   }
 
   .hero-illustration {
@@ -347,7 +358,6 @@
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 40px;
   }
-
 
   .footer-column h3 {
     margin-bottom: 20px;
@@ -496,17 +506,6 @@
     60% {
       transform: translateY(-10px) translateX(-50%);
     }
-  }
-
-  #contact-form input:focus,
-  #contact-form textarea:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.1);
-  }
-
-  #contact-form input[type="submit"]:hover {
-    transform: translateY(-2px);
   }
 
   .animate-up {
@@ -671,13 +670,8 @@
     }
 
     section {
-      padding: 80px 20px;
-      width: 100%;   /* aggiunto */
-      max-width: none;   /* rimuove la limitazione */
-      margin: 0;   /* elimina il centraggio */
-      position: relative;
+      padding: 60px 20px;
     }
-
 
     .problem-solution {
       grid-template-columns: 1fr;
@@ -758,27 +752,13 @@
     }
   }
 
-  .video-container iframe {
-    aspect-ratio: 16/9;
-    width: 100%;
-    height: auto;
-    min-height: 300px;
-  }
-
-  @media (max-width: 768px) {
-    .video-container iframe {
-      min-height: 200px;
-    }
-  }
 
   </style>
 </head>
 <body>
   <header id="header">
-    <a href="#" class="logo">
-      <img src="images/logo.png" alt="HealthAI logo" style="height:40px; margin-right:10px;">
-        <span>HealthAI</span>
-      </a><button class="hamburger" id="hamburger">
+    <a href="#" class="logo"><i class="fas fa-heartbeat" style="color: var(--primary); margin-right: 10px;"></i>Health<span>AI</span></a>
+    <button class="hamburger" id="hamburger">
       <i class="fas fa-bars"></i>
     </button>
     <nav id="nav">
@@ -787,6 +767,7 @@
         <li><a href="#how-it-works">Come funziona</a></li>
         <li><a href="#features">Funzionalità</a></li>
         <li><a href="#values">Valori</a></li>
+        <li><a href="#testimonials">Testimonianze</a></li>
         <li><a href="#contact">Contatti</a></li>
       </ul>
       <a href="login.html" class="login-btn">Accedi</a>
@@ -795,7 +776,7 @@
   </header>
 
   <section class="hero" id="hero">
-    <div class="animate-up">
+    <div class="hero-content animate-up">
       <h1>La tua salute, guidata dall'<span class="highlight">intelligenza artificiale</span></h1>
       <p class="subtitle">HealthAI analizza scientificamente i tuoi dati e ti guida nella prevenzione con piani personalizzati, score clinici e consigli mirati.</p>
       <div>
@@ -803,6 +784,16 @@
       </div>
     </div>
     <div id="canvas-container"></div>
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.154.0/build/three.module.js",
+        "GLTFLoader": "https://unpkg.com/three@0.154.0/examples/jsm/loaders/GLTFLoader.js"
+      }
+    }
+    </script>
+    <div id="device-3d-viewer" style="width: 50%; height: 400px; position: relative; z-index: 3; margin: 0 auto;"></div>
+    <script type="module" src="./build/3Drenderer.js"></script>
     <div class="scroll-down" id="scroll-down">
       <i class="fas fa-chevron-down"></i>
     </div>
@@ -1050,17 +1041,6 @@ window.addEventListener('pageshow', function (event) {
   }
 });
 
-// Gestione form contatti
-document.getElementById('contact-form').addEventListener('submit', function(e) {
-  e.preventDefault();
-
-  // Qui puoi aggiungere la logica per inviare i dati
-  // Ad esempio a un servizio come Netlify Forms, Formspree, ecc.
-
-  alert('Grazie per il tuo interesse! Ti ricontatteremo presto.');
-  this.reset();
-});
-
 </script>
 
 <section id="about" class="text-center">
@@ -1102,19 +1082,10 @@ document.getElementById('contact-form').addEventListener('submit', function(e) {
     </div>
   </div>
 
-  <div class="video-container animate-up" style="
-    width: 100%;
-    margin: 0;
-    border-radius: 0;
-    overflow: hidden;
-    box-shadow: none;">
-    <iframe src="https://www.youtube.com/embed/YOUR_VIDEO_ID"
-            frameborder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowfullscreen
-            style="width:100%; height:calc(100vh - 120px);">
-    </iframe>
+  <div class="mockup-container animate-up">
+    <img src="/api/placeholder/300/600" alt="HealthAI App Screenshot" class="mockup-phone">
   </div>
+</section>
 
 
 <section id="features" class="text-center animate-up">
@@ -1220,6 +1191,23 @@ document.getElementById('contact-form').addEventListener('submit', function(e) {
   </div>
 </section>
 
+<section id="testimonials" class="text-center">
+  <h2 class="animate-up">Cosa dicono i nostri utenti</h2>
+  <p class="animate-up">Esperienze reali con HealthAI</p>
+
+  <div class="testimonial animate-up">
+    <div class="testimonial-text">
+      HealthAI mi ha fatto scoprire un'intolleranza che non sapevo di avere. Grazie al piano alimentare personalizzato, ho risolto problemi che mi affliggevano da anni. La prevenzione è davvero la chiave per una vita migliore!
+    </div>
+    <div class="testimonial-author">
+      <img src="/api/placeholder/60/60" alt="Maria">
+      <div class="testimonial-info">
+        <h4>Maria L.</h4>
+        <p>42 anni, insegnante</p>
+      </div>
+    </div>
+  </div>
+</section>
 
 <div class="cta-section animate-up">
   <h2>Prevenire è vivere meglio</h2>
@@ -1228,41 +1216,17 @@ document.getElementById('contact-form').addEventListener('submit', function(e) {
 </div>
 
 <section id="contact" class="text-center animate-up">
-  <h2>Sei interessato?</h2>
-  <p class="subtitle">Lascia i tuoi dati e ti ricontatteremo per una demo personalizzata di HealthAI</p>
+  <h2>Hai domande?</h2>
+  <p class="subtitle">Siamo qui per aiutarti a iniziare il tuo percorso di prevenzione personalizzata</p>
 
   <div class="card" style="max-width: 600px; margin: 0 auto; padding: 40px;">
-    <!-- Modulo Formspree con stile personalizzato -->
-    <form action="https://formspree.io/f/xnnbyvlp" method="POST" style="text-align: left;">
-      <div style="margin-bottom: 20px;">
-        <label for="name" style="display: block; margin-bottom: 5px; font-weight: 500;">Nome e Cognome*</label>
-        <input type="text" id="name" name="name" required
-               style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 16px; transition: border-color 0.3s ease;">
-      </div>
-      <div style="margin-bottom: 20px;">
-        <label for="email" style="display: block; margin-bottom: 5px; font-weight: 500;">Email*</label>
-        <input type="email" id="email" name="email" required
-               style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 16px; transition: border-color 0.3s ease;">
-      </div>
-      <div style="margin-bottom: 20px;">
-        <label for="phone" style="display: block; margin-bottom: 5px; font-weight: 500;">Telefono</label>
-        <input type="tel" id="phone" name="phone"
-               style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 16px; transition: border-color 0.3s ease;">
-      </div>
-      <div style="margin-bottom: 30px;">
-        <label for="message" style="display: block; margin-bottom: 5px; font-weight: 500;">Messaggio</label>
-        <textarea id="message" name="message" rows="4" placeholder="Raccontaci brevemente delle tue esigenze..."
-                  style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 16px; resize: vertical; transition: border-color 0.3s ease;"></textarea>
-      </div>
-
-      <!-- Campi nascosti opzionali di Formspree -->
-      <input type="hidden" name="_subject" value="Nuova richiesta demo HealthAI">
-      <input type="hidden" name="_replyto" value="">
-
-      <button type="submit" class="btn" style="width: 100%;">Invia richiesta</button>
-    </form>
+    <div class="feature-icon" style="margin: 0 auto 20px;">
+      <i class="fas fa-envelope"></i>
+    </div>
+    <h3>Contattaci</h3>
+    <p>Il nostro team è disponibile per rispondere a qualsiasi domanda tu possa avere su HealthAI</p>
+    <a href="mailto:info@healthai.com" class="btn">Scrivici</a>
   </div>
-
 </section>
 
 <footer>
@@ -1270,6 +1234,12 @@ document.getElementById('contact-form').addEventListener('submit', function(e) {
     <div class="footer-column">
       <h3>HealthAI</h3>
       <p>Il tuo assistente digitale per la prevenzione personalizzata della salute.</p>
+      <div class="social-icons">
+        <a href="#"><i class="fab fa-facebook-f"></i></a>
+        <a href="#"><i class="fab fa-twitter"></i></a>
+        <a href="#"><i class="fab fa-instagram"></i></a>
+        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+      </div>
     </div>
     <div class="footer-column">
       <h3>Navigazione</h3>
@@ -1278,6 +1248,15 @@ document.getElementById('contact-form').addEventListener('submit', function(e) {
         <li><a href="#about">Chi siamo</a></li>
         <li><a href="#how-it-works">Come funziona</a></li>
         <li><a href="#features">Funzionalità</a></li>
+      </ul>
+    </div>
+    <div class="footer-column">
+      <h3>Risorse</h3>
+      <ul>
+        <li><a href="#">Blog</a></li>
+        <li><a href="#">FAQ</a></li>
+        <li><a href="#">Studi clinici</a></li>
+        <li><a href="#">Testimonianze</a></li>
       </ul>
     </div>
     <div class="footer-column">
