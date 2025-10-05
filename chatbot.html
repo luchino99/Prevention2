@@ -4,16 +4,34 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HealthAI - Il tuo assistente di salute</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="css/chatbot-style.css">
-</head>
-<body>
-  <iframe id="frail-frame" src="FRAIL.html" style="display:none;"></iframe>
-  <iframe id="score2-frame" src="score2.html" style="display: none;"></iframe>
-  <iframe id="score2-diabetes-frame" src="score2-diabetes.html" style="display:none;"></iframe>
-  <iframe id="fli-frame" src="FLI.html" style="display:none;"></iframe>
-  <iframe id="ada-frame" src="ADA-score.html" style="display:none;"></iframe>
 
+  <!-- Import map ESM (Supabase) -->
+  <script type="importmap">
+  {
+    "imports": {
+      "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2"
+    }
+  }
+  </script>
+
+  <!-- Variabili pubbliche per il frontend -->
+  <script>
+    window.env = {
+      SUPABASE_URL: "https://lwuhdgrkaoyvejmzfbtx.supabase.co",
+      SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3dWhkZ3JrYW95dmVqbXpmYnR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2NzU1MDcsImV4cCI6MjA2MTI1MTUwN30.1c5iH4PYW-HeigfXkPSgnVK3t02Gv3krSeo7dDSqqsk",
+      POLICY_VERSION: "1.0.0"
+    };
+  </script>
+
+  <!-- Client Supabase centralizzato, esposto in window.supabaseClient -->
+  <script type="module">
+    import { supabase } from "/web-snippets/supabase-client.js";
+    window.supabaseClient = supabase;
+  </script>
+</head>
+
+<body>
 
 
 
@@ -101,25 +119,31 @@
   src="chat.html"
   style="width: 100%; height: 100%; border: none;"
   title="Chat HealthAI"
-  loading="lazy">
+  loading="lazy"
+  sandbox="allow-scripts allow-same-origin"
+  referrerpolicy="no-referrer">
 </iframe>
 </div>
 </div>
 </div>
 
 <script>
-// Ascolta i messaggi dall’iframe
-window.addEventListener('message', function(event) {
-  if (event.data && event.data.type === 'theme') {
-    const html = document.documentElement;
-    if (event.data.theme === 'dark') {
-      html.setAttribute('data-theme', 'dark');
-    } else {
-      html.setAttribute('data-theme', 'light');
+  // 🔒 Origini consentite: dominio dell’app e varianti (http/https, www)
+  const ALLOWED_ORIGINS = [window.location.origin, "https://uelfy.it", "https://www.uelfy.it"];
+
+  // Ascolta messaggi solo da origini consentite
+  window.addEventListener('message', function(event) {
+    if (!ALLOWED_ORIGINS.includes(event.origin)) return;
+
+    if (event.data && event.data.type === 'theme') {
+      const html = document.documentElement;
+      const theme = event.data.theme === 'dark' ? 'dark' : 'light';
+      html.setAttribute('data-theme', theme);
     }
-  }
-});
+  });
 </script>
+
+
 
   <script type="module">
   import { calcolaEFissaFrail } from './frail-score.js';
@@ -128,16 +152,10 @@ window.addEventListener('message', function(event) {
   import { calcolaEFissaFLI } from './fli-score.js';
   import { calcolaEFissaADAScore } from './ada-score.js';
 
-
-  const supabaseUrl = 'https://nkkaxbmzacaxkwgtfmds.supabase.co';
-  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ra2F4Ym16YWNheGt3Z3RmbWRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM4Nzc3NzQsImV4cCI6MjA2OTQ1Mzc3NH0.k36sBT3jILmLXc9jcLz843uLDCHrnuvhuMmMvBNzEPo';
-  const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
-  window.supabaseClient = supabaseClient;
-
   document.addEventListener('DOMContentLoaded', function () {
-    const mainFrame = document.getElementById('main-frame'); // iframe principale visibile
-    const frailFrame = document.getElementById('frail-frame'); // iframe nascosto per calcolo frailty
-    const menuItems = document.querySelectorAll('.menu-item'); // elementi menu sidebar
+    const mainFrame = document.getElementById('main-frame');
+    
+    const menuItems = document.querySelectorAll('.menu-item');
 
     const pageMap = {
       'Chat': 'chat.html',
@@ -150,76 +168,48 @@ window.addEventListener('message', function(event) {
     menuItems.forEach(item => {
       item.addEventListener('click', async function (e) {
         e.preventDefault();
-
-        // Rimuove classe attiva da tutti
         menuItems.forEach(i => i.classList.remove('active'));
         this.classList.add('active');
 
-        // Ottieni il nome del link cliccato
         const label = this.querySelector('.menu-text')?.textContent?.trim();
         const newPage = pageMap[label];
-
         if (!newPage) return;
 
-        // ⚙️ Prima del cambio pagina → se è Dashboard, esegui il calcolo frailty
         if (label === "Dashboard") {
           try {
-            await calcolaEFissaFrail(); // esegue script frail in iframe
+            await calcolaEFissaFrail();
             await calcolaEFissaSCORE2();
             await calcolaEFissaSCORE2Diabetes();
             await calcolaEFissaFLI();
             await calcolaEFissaADAScore();
-
           } catch (err) {
-            console.error("❌ Errore calcolo frailty:", err);
+            console.error("❌ Errore calcolo score:", err);
           }
         }
 
         const currentTheme = document.documentElement.getAttribute('data-theme');
-
-        // Anima uscita e cambio pagina
         mainFrame.classList.add('hidden');
         mainFrame.src = newPage;
 
         mainFrame.onload = () => {
-          mainFrame.contentWindow.postMessage({
-            type: 'theme',
-            theme: currentTheme
-          }, '*');
-          setTimeout(() => {
-            mainFrame.classList.remove('hidden');
-          }, 100); // animazione fade-in
+          const targetOrigin = new URL(mainFrame.src, window.location.href).origin;
+          mainFrame.contentWindow.postMessage({ type: 'theme', theme: currentTheme }, targetOrigin);
+          setTimeout(() => mainFrame.classList.remove('hidden'), 100);
         };
       });
     });
 
-
-
-
     document.getElementById("logout-btn").addEventListener("click", async () => {
-      await supabaseClient.auth.signOut();
+      await window.supabaseClient.auth.signOut();
       window.location.href = "login.html";
     });
   });
 </script>
 
-<!-- === Supabase import map === -->
-<script type="importmap">
-{
-  "imports": {
-    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2"
-  }
-}
-</script>
 
-<!-- === Variabili pubbliche per il frontend === -->
-<script>
-  window.env = {
-    SUPABASE_URL: "https://lwuhdgrkaoyvejmzfbtx.supabase.co",
-    SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3dWhkZ3JrYW95dmVqbXpmYnR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2NzU1MDcsImV4cCI6MjA2MTI1MTUwN30.1c5iH4PYW-HeigfXkPSgnVK3t02Gv3krSeo7dDSqqsk",
-    POLICY_VERSION: "1.0.0"
-  };
-</script>
+
+
+
 
 <!-- === CONSENT MODAL === -->
 <div id="consentModal" class="consent-modal hidden" role="dialog" aria-modal="true" aria-labelledby="consentTitle">
@@ -267,7 +257,6 @@ window.addEventListener('message', function(event) {
     await ensureConsentFlow();
   });
 </script>
-
 
 
 
