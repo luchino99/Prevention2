@@ -1148,33 +1148,5 @@ regione_rischio_cv: document.getElementById('profilo-regione_rischio_cv').value 
 
 
 </script>
-
-  <!-- === Supabase import map === -->
-<script type="importmap">
-{
-  "imports": {
-    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2"
-  }
-}
-</script>
-
-<!-- === Variabili pubbliche per il frontend === -->
-<script>
-  window.env = {
-    SUPABASE_URL: "https://lwuhdgrkaoyvejmzfbtx.supabase.co",
-    SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3dWhkZ3JrYW95dmVqbXpmYnR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2NzU1MDcsImV4cCI6MjA2MTI1MTUwN30.1c5iH4PYW-HeigfXkPSgnVK3t02Gv3krSeo7dDSqqsk",
-    POLICY_VERSION: "1.0.0"
-  };
-</script>
-
-<!-- (Opzionale) Puoi includere il modale anche qui per coerenza UX -->
-<script type="module" src="/web-snippets/consent-modal.js"></script>
-<script type="module">
-  import { ensureConsentFlow } from "/web-snippets/consent-modal.js";
-  document.addEventListener("DOMContentLoaded", async () => {
-    await ensureConsentFlow();
-  });
-</script>
-
 </body>
 </html>
