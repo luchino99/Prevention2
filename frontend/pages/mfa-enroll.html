@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Enable Two-Factor Authentication — Uelfy Clinical</title>
+  <link rel="stylesheet" href="../assets/css/app.css" />
+</head>
+<body style="display:flex; align-items:center; justify-content:center; min-height:100vh;">
+  <main class="card" style="max-width:520px; width:100%;">
+    <h1 style="margin-bottom:4px;">Two-factor authentication</h1>
+    <p class="muted" style="margin-top:0; margin-bottom:18px; font-size:13px;">
+      Clinical accounts must be protected with a time-based one-time password
+      (TOTP) app such as Google Authenticator, 1Password, Authy, or Microsoft
+      Authenticator.
+    </p>
+
+    <div id="error-banner" class="inline-alert danger hidden"></div>
+    <div id="success-banner" class="inline-alert success hidden"></div>
+
+    <!-- ============================================================== -->
+    <!-- Step 1: show enroll QR                                           -->
+    <!-- ============================================================== -->
+    <section id="step-enroll">
+      <h2 style="font-size:16px; margin-bottom:10px;">Step 1 — Scan the QR code</h2>
+      <div id="qr-wrapper" style="display:flex; justify-content:center; margin-bottom:12px;">
+        <div id="qr-loading" class="muted">Generating enrolment QR…</div>
+        <img id="qr-image" alt="TOTP QR code" style="max-width:220px; display:none;" />
+      </div>
+      <details style="margin-bottom:12px;">
+        <summary class="muted" style="cursor:pointer; font-size:13px;">Cannot scan? Enter the secret manually</summary>
+        <pre id="qr-secret" style="background:#f4f4f4; padding:10px; border-radius:6px; font-size:12px; overflow-x:auto;"></pre>
+      </details>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- Step 2: challenge + verify                                      -->
+    <!-- ============================================================== -->
+    <section id="step-verify">
+      <h2 style="font-size:16px; margin-bottom:10px;">Step 2 — Enter the 6-digit code</h2>
+      <form id="verify-form" autocomplete="off">
+        <div class="field">
+          <label for="code">Verification code</label>
+          <input
+            type="text"
+            inputmode="numeric"
+            pattern="[0-9]{6}"
+            maxlength="6"
+            id="code"
+            name="code"
+            autocomplete="one-time-code"
+            required
+          />
+        </div>
+        <button type="submit" class="btn" style="width:100%;" id="verify-btn">
+          Verify and enable
+        </button>
+      </form>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- Step 3: done                                                     -->
+    <!-- ============================================================== -->
+    <section id="step-done" class="hidden">
+      <h2 style="font-size:16px; margin-bottom:10px;">Two-factor authentication enabled</h2>
+      <p class="muted" style="font-size:13px;">
+        From now on you will be asked for a TOTP code every time you sign in.
+        Keep your authenticator app synchronised and backed up.
+      </p>
+      <a href="./dashboard.html" class="btn" style="display:inline-block; margin-top:12px;">
+        Go to dashboard
+      </a>
+    </section>
+
+    <p class="muted mt-16" style="font-size:11px; text-align:center;">
+      Losing access to your authenticator means losing access to your account.
+      Please contact your tenant administrator if this happens — they can
+      initiate a secure reset.
+    </p>
+  </main>
+
+  <!-- Public env config -->
+  <script>
+    window.__UELFY_CONFIG__ = {
+      supabaseUrl: window.location.origin.includes('localhost')
+        ? 'http://localhost:54321'
+        : '__PUBLIC_SUPABASE_URL__',
+      supabaseAnonKey: '__PUBLIC_SUPABASE_ANON_KEY__'
+    };
+  </script>
+
+  <script type="module">
+    import { supabase } from '../assets/js/api-client.js';
+
+    // ---------------------------------------------------------------------
+    // Helpers
+    // ---------------------------------------------------------------------
+    const $ = (id) => document.getElementById(id);
+
+    function showError(msg) {
+      const el = $('error-banner');
+      el.textContent = msg;
+      el.classList.remove('hidden');
+    }
+    function clearError() {
+      $('error-banner').classList.add('hidden');
+    }
+    function showSuccess(msg) {
+      const el = $('success-banner');
+      el.textContent = msg;
+      el.classList.remove('hidden');
+    }
+
+    // ---------------------------------------------------------------------
+    // Guard: must be authenticated
+    // ---------------------------------------------------------------------
+    const { data: sessionData, error: sessErr } = await supabase.auth.getSession();
+    if (sessErr || !sessionData.session) {
+      window.location.replace('./login.html');
+      throw new Error('not-authenticated');
+    }
+
+    // ---------------------------------------------------------------------
+    // If TOTP is already enrolled → skip to step 3
+    // ---------------------------------------------------------------------
+    let factorId = null;
+    let challengeId = null;
+    try {
+      const { data: factors } = await supabase.auth.mfa.listFactors();
+      const verified = (factors?.totp ?? []).find((f) => f.status === 'verified');
+      if (verified) {
+        $('step-enroll').classList.add('hidden');
+        $('step-verify').classList.add('hidden');
+        $('step-done').classList.remove('hidden');
+        showSuccess('Two-factor authentication is already active on this account.');
+        throw new Error('already-enrolled');
+      }
+
+      // ---------------------------------------------------------------------
+      // Step 1: enroll a new TOTP factor
+      // ---------------------------------------------------------------------
+      const { data: enrollData, error: enrollErr } = await supabase.auth.mfa.enroll({
+        factorType: 'totp',
+        friendlyName: 'Uelfy Clinical TOTP',
+      });
+      if (enrollErr) throw enrollErr;
+
+      factorId = enrollData.id;
+      const totpUri = enrollData.totp?.uri;
+      const totpSecret = enrollData.totp?.secret;
+
+      // Supabase already returns the QR as a data URI (svg xml) via totp.qr_code.
+      // If the SDK doesn't return the rendered QR, render via an open-source
+      // CDN fallback. The URI contains issuer + label + secret — no extra PII.
+      const qrData = enrollData.totp?.qr_code;
+      if (qrData) {
+        $('qr-image').src = qrData;
+        $('qr-image').style.display = 'block';
+        $('qr-loading').style.display = 'none';
+      } else if (totpUri) {
+        const svgUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(totpUri)}&size=220x220`;
+        $('qr-image').src = svgUrl;
+        $('qr-image').style.display = 'block';
+        $('qr-loading').style.display = 'none';
+      }
+      if (totpSecret) {
+        $('qr-secret').textContent = totpSecret;
+      }
+    } catch (e) {
+      if (String(e?.message) !== 'already-enrolled') {
+        showError(e?.message ?? 'Failed to start MFA enrolment');
+      }
+    }
+
+    // ---------------------------------------------------------------------
+    // Step 2: verify with a 6-digit code
+    // ---------------------------------------------------------------------
+    $('verify-form').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      clearError();
+      const code = String($('code').value ?? '').trim();
+      if (!/^[0-9]{6}$/.test(code)) {
+        showError('Code must be 6 digits.');
+        return;
+      }
+      if (!factorId) {
+        showError('Enrolment not initialised. Please refresh and try again.');
+        return;
+      }
+      $('verify-btn').disabled = true;
+      try {
+        const { data: challengeData, error: challengeErr } = await supabase.auth.mfa.challenge({
+          factorId,
+        });
+        if (challengeErr) throw challengeErr;
+        challengeId = challengeData.id;
+
+        const { error: verifyErr } = await supabase.auth.mfa.verify({
+          factorId,
+          challengeId,
+          code,
+        });
+        if (verifyErr) throw verifyErr;
+
+        $('step-enroll').classList.add('hidden');
+        $('step-verify').classList.add('hidden');
+        $('step-done').classList.remove('hidden');
+        showSuccess('Two-factor authentication enabled for your account.');
+      } catch (e) {
+        showError(e?.message ?? 'Verification failed. Please try again.');
+      } finally {
+        $('verify-btn').disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

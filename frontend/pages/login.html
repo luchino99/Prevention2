@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Sign in — Uelfy Clinical</title>
+  <link rel="stylesheet" href="../assets/css/app.css" />
+</head>
+<body style="display:flex; align-items:center; justify-content:center; min-height:100vh;">
+  <main class="card" style="max-width:380px; width:100%;">
+    <h1 style="margin-bottom:6px;">Uelfy Clinical</h1>
+    <p class="muted" style="margin-top:0; margin-bottom:18px; font-size:13px;">
+      Sign in with your professional account
+    </p>
+
+    <div id="error-banner" class="inline-alert danger hidden"></div>
+
+    <form id="login-form" autocomplete="off">
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required autocomplete="username" />
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required autocomplete="current-password" />
+      </div>
+      <button type="submit" class="btn" style="width:100%;" id="submit-btn">Sign in</button>
+    </form>
+
+    <p class="muted mt-16" style="font-size:12px; text-align:center;">
+      By signing in you agree to the clinical data processing policy.
+    </p>
+  </main>
+
+  <!-- Public env config (anon key + project URL only — never service role) -->
+  <script>
+    window.__UELFY_CONFIG__ = {
+      supabaseUrl: window.location.origin.includes('localhost')
+        ? 'http://localhost:54321'
+        : '__PUBLIC_SUPABASE_URL__',
+      supabaseAnonKey: '__PUBLIC_SUPABASE_ANON_KEY__'
+    };
+  </script>
+  <script type="module">
+    import { api, supabase } from '../assets/js/api-client.js';
+
+    const form    = document.getElementById('login-form');
+    const banner  = document.getElementById('error-banner');
+    const button  = document.getElementById('submit-btn');
+
+    // If already authenticated, send them to the dashboard
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data?.session) window.location.href = './dashboard.html';
+    })();
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      banner.classList.add('hidden');
+      button.disabled = true;
+      button.textContent = 'Signing in...';
+      try {
+        await api.signIn(
+          form.email.value.trim(),
+          form.password.value
+        );
+        window.location.href = './dashboard.html';
+      } catch (err) {
+        banner.textContent = err?.message || 'Sign-in failed';
+        banner.classList.remove('hidden');
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Sign in';
+      }
+    });
+  </script>
+</body>
+</html>

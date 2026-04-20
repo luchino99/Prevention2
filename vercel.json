@@ -1,7 +1,31 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
-    "api/openai.js": {
-      "maxDuration": 30
+    "api/v1/assessments/[id]/report.ts": { "maxDuration": 30 },
+    "api/v1/patients/[id]/export.ts": { "maxDuration": 30 },
+    "api/v1/internal/retention.ts": { "maxDuration": 60 },
+    "api/v1/internal/anonymize.ts": { "maxDuration": 60 },
+    "api/openai.js": { "maxDuration": 30 }
+  },
+  "crons": [
+    {
+      "path": "/api/v1/internal/retention",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/v1/internal/anonymize",
+      "schedule": "0 4 * * *"
     }
-  }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" }
+      ]
+    }
+  ]
 }

@@ -1,0 +1,245 @@
+/**
+ * GET /api/v1/patients/[id]/export
+ *
+ * GDPR Art.15 (access) + Art.20 (portability) — returns the full, machine-
+ * readable record of a patient in a structured JSON envelope.
+ *
+ * Who can call:
+ *   - Tenant admins and clinicians linked to the patient
+ *   - NOT assistant_staff (they have limited clinical access)
+ *   - Platform admins cross-tenant
+ *
+ * What is returned:
+ *   - patient demographics (what the tenant stored about them)
+ *   - clinical profile
+ *   - every assessment with its full input snapshot + computed snapshots
+ *   - all alerts ever raised
+ *   - all follow-up plans
+ *   - consent records (immutable versioned rows)
+ *   - recent audit trail of actions TAKEN ON the patient's data
+ *
+ * What is NOT returned:
+ *   - other tenants' data (hard impossible via RLS + tenant filter)
+ *   - raw pdf report bytes (we return metadata + a signed URL if requested)
+ *   - IP hashes of actors (we keep actors' identity, redact IPs)
+ *
+ * Auditing: every export is logged as `patient.export` in audit_events and a
+ * `data_subject_request` row is created with kind='access' for SLA tracking.
+ */
+
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { withAuth } from '../../../../backend/src/middleware/auth-middleware';
+import { requireTenantMember } from '../../../../backend/src/middleware/rbac';
+import { applySecurityHeaders } from '../../../../backend/src/middleware/security-headers';
+import { checkRateLimitAsync, applyRateLimitHeaders } from '../../../../backend/src/middleware/rate-limit';
+import { supabaseAdmin } from '../../../../backend/src/config/supabase';
+import { recordAudit } from '../../../../backend/src/audit/audit-logger';
+
+const UUID_RX = /^[0-9a-fA-F-]{36}$/;
+
+function getPatientId(req: VercelRequest): string | null {
+  const id = req.query.id;
+  if (typeof id !== 'string' || !UUID_RX.test(id)) return null;
+  return id;
+}
+
+async function handleExport(req: any, res: VercelResponse, patientId: string): Promise<void> {
+  // ----- Authorization: patient must exist + be in caller's tenant -----
+  const { data: patient, error: patientErr } = await supabaseAdmin
+    .from('patients')
+    .select(
+      'id, tenant_id, display_name, first_name, last_name, sex, birth_year, birth_date, external_code, contact_email, contact_phone, consent_status, is_active, created_at, updated_at, deleted_at, anonymized_at',
+    )
+    .eq('id', patientId)
+    .maybeSingle();
+
+  if (patientErr) {
+    res.status(500).json({ error: { code: 'DB_ERROR', message: patientErr.message } });
+    return;
+  }
+  if (!patient) {
+    res.status(404).json({ error: { code: 'PATIENT_NOT_FOUND', message: '' } });
+    return;
+  }
+  if (req.auth.role !== 'platform_admin' && patient.tenant_id !== req.auth.tenantId) {
+    res.status(403).json({ error: { code: 'CROSS_TENANT_FORBIDDEN', message: '' } });
+    return;
+  }
+
+  // Role gate — assistant_staff excluded from export even if tenant-matched
+  if (req.auth.role === 'assistant_staff' || req.auth.role === 'patient') {
+    res.status(403).json({ error: { code: 'INSUFFICIENT_ROLE', message: '' } });
+    return;
+  }
+
+  // For clinicians, require an active professional-patient link
+  if (req.auth.role === 'clinician') {
+    const { data: link } = await supabaseAdmin
+      .from('professional_patient_links')
+      .select('id')
+      .eq('professional_user_id', req.auth.userId)
+      .eq('patient_id', patientId)
+      .eq('is_active', true)
+      .maybeSingle();
+    if (!link) {
+      res.status(403).json({ error: { code: 'NO_PATIENT_LINK', message: '' } });
+      return;
+    }
+  }
+
+  // ----- Gather all related data (parallel reads) -----
+  const [
+    clinicalProfile,
+    assessments,
+    scoreResults,
+    riskProfiles,
+    measurements,
+    nutritionSnapshots,
+    activitySnapshots,
+    followupPlans,
+    alerts,
+    consents,
+    reportExports,
+    auditEvents,
+  ] = await Promise.all([
+    supabaseAdmin.from('patient_clinical_profiles').select('*').eq('patient_id', patientId).maybeSingle(),
+    supabaseAdmin
+      .from('assessments')
+      .select('id, patient_id, tenant_id, assessed_by, assessment_date, status, notes, engine_version, created_at, completed_at, reviewed_at, reviewed_by, clinical_input_snapshot, anonymized_at')
+      .eq('patient_id', patientId)
+      .order('created_at', { ascending: false }),
+    supabaseAdmin
+      .from('score_results')
+      .select('*, assessment:assessments!inner(patient_id)')
+      .eq('assessments.patient_id', patientId),
+    supabaseAdmin
+      .from('risk_profiles')
+      .select('*, assessment:assessments!inner(patient_id)')
+      .eq('assessments.patient_id', patientId),
+    supabaseAdmin
+      .from('assessment_measurements')
+      .select('*, assessment:assessments!inner(patient_id)')
+      .eq('assessments.patient_id', patientId),
+    supabaseAdmin
+      .from('nutrition_snapshots')
+      .select('*, assessment:assessments!inner(patient_id)')
+      .eq('assessments.patient_id', patientId),
+    supabaseAdmin
+      .from('activity_snapshots')
+      .select('*, assessment:assessments!inner(patient_id)')
+      .eq('assessments.patient_id', patientId),
+    supabaseAdmin.from('followup_plans').select('*').eq('patient_id', patientId),
+    supabaseAdmin.from('alerts').select('*').eq('patient_id', patientId),
+    supabaseAdmin
+      .from('consent_records')
+      .select('*')
+      .eq('subject_type', 'patient')
+      .eq('subject_id', patientId)
+      .order('created_at', { ascending: false }),
+    supabaseAdmin
+      .from('report_exports')
+      .select('id, assessment_id, storage_bucket, storage_path, file_size_bytes, content_type, created_at, generated_by_user_id')
+      .eq('patient_id', patientId)
+      .order('created_at', { ascending: false }),
+    supabaseAdmin
+      .from('audit_events')
+      .select('id, actor_user_id, action, entity_type, entity_id, metadata, created_at')
+      .eq('entity_type', 'patient')
+      .eq('entity_id', patientId)
+      .order('created_at', { ascending: false })
+      .limit(500),
+  ]);
+
+  // ----- Record a data_subject_request for SLA tracking -----
+  const { data: dsrRow } = await supabaseAdmin
+    .from('data_subject_requests')
+    .insert({
+      tenant_id: patient.tenant_id,
+      subject_patient_id: patientId,
+      kind: 'access',
+      status: 'fulfilled',
+      requested_by_user_id: req.auth.userId,
+      fulfilled_by_user_id: req.auth.userId,
+      fulfilled_at: new Date().toISOString(),
+      notes: 'Self-service export via /api/v1/patients/[id]/export',
+    })
+    .select('id')
+    .maybeSingle();
+
+  // ----- Audit -----
+  await recordAudit(req.auth, {
+    action: 'patient.export',
+    resourceType: 'patient',
+    resourceId: patientId,
+    metadata: {
+      dsr_id: dsrRow?.id ?? null,
+      assessments_count: assessments.data?.length ?? 0,
+      alerts_count: alerts.data?.length ?? 0,
+      consents_count: consents.data?.length ?? 0,
+      reports_count: reportExports.data?.length ?? 0,
+    },
+  });
+
+  // ----- Envelope -----
+  const envelope = {
+    format: 'uelfy.patient-export/v1',
+    generatedAt: new Date().toISOString(),
+    generatedBy: {
+      userId: req.auth.userId,
+      role: req.auth.role,
+    },
+    tenantId: patient.tenant_id,
+    patient,
+    clinicalProfile: clinicalProfile.data ?? null,
+    assessments: assessments.data ?? [],
+    scoreResults: scoreResults.data ?? [],
+    riskProfiles: riskProfiles.data ?? [],
+    measurements: measurements.data ?? [],
+    nutritionSnapshots: nutritionSnapshots.data ?? [],
+    activitySnapshots: activitySnapshots.data ?? [],
+    followupPlans: followupPlans.data ?? [],
+    alerts: alerts.data ?? [],
+    consents: consents.data ?? [],
+    reportExports: reportExports.data ?? [],
+    auditTrail: auditEvents.data ?? [],
+    gdpr: {
+      dataSubjectRequestId: dsrRow?.id ?? null,
+      basis: ['Art.15', 'Art.20'],
+      retentionPolicyNote:
+        'Raw report PDF bytes are not included; request a signed URL via /api/v1/assessments/[id]/report?download=1. Audit IP hashes are omitted from this export for privacy.',
+    },
+  };
+
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader(
+    'Content-Disposition',
+    `attachment; filename="patient-${patientId}-export-${Date.now()}.json"`,
+  );
+  res.status(200).send(JSON.stringify(envelope, null, 2));
+}
+
+export default withAuth(async (req, res: VercelResponse) => {
+  applySecurityHeaders(res);
+
+  if (req.method !== 'GET') {
+    res.setHeader('Allow', 'GET');
+    res.status(405).json({ error: { code: 'METHOD_NOT_ALLOWED', message: '' } });
+    return;
+  }
+
+  const patientId = getPatientId(req);
+  if (!patientId) {
+    res.status(400).json({ error: { code: 'INVALID_ID', message: '' } });
+    return;
+  }
+
+  // Low rate-limit: export is an expensive DB read; 5/min is plenty for legit
+  const rl = await checkRateLimitAsync(req, { routeId: 'patient.export', max: 5, windowMs: 60_000 });
+  applyRateLimitHeaders(res, rl);
+  if (!rl.allowed) {
+    res.status(429).json({ error: { code: 'RATE_LIMITED', message: '' } });
+    return;
+  }
+
+  await requireTenantMember((r, s) => handleExport(r, s, patientId))(req as any, res);
+});

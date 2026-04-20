@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Dashboard — Uelfy Clinical</title>
+  <link rel="stylesheet" href="../assets/css/app.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="app-sidebar">
+      <div class="brand">Uelfy Clinical</div>
+      <nav>
+        <a href="./dashboard.html" class="active">Dashboard</a>
+        <a href="./patients.html">Patients</a>
+        <a href="./alerts.html">Alerts</a>
+        <a href="./audit.html" id="nav-audit" class="hidden">Audit log</a>
+        <a href="#" id="signout-link">Sign out</a>
+      </nav>
+    </aside>
+
+    <main class="app-main">
+      <div class="topbar">
+        <div>
+          <h1 style="margin-bottom:2px;">Dashboard</h1>
+          <div class="muted" id="tenant-label">Loading…</div>
+        </div>
+        <div class="user-meta" id="user-meta"></div>
+      </div>
+
+      <div id="kpi-row" class="flex gap-8" style="flex-wrap:wrap;"></div>
+
+      <section class="card mt-16">
+        <div class="flex between">
+          <h3 style="margin:0;">Recent patients</h3>
+          <a href="./patients.html" class="btn secondary">View all</a>
+        </div>
+        <div id="patients-table-wrap" class="mt-16"></div>
+      </section>
+
+      <section class="card">
+        <h3>Open high-severity alerts</h3>
+        <div id="alerts-wrap"></div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    window.__UELFY_CONFIG__ = {
+      supabaseUrl: window.location.origin.includes('localhost')
+        ? 'http://localhost:54321'
+        : '__PUBLIC_SUPABASE_URL__',
+      supabaseAnonKey: '__PUBLIC_SUPABASE_ANON_KEY__'
+    };
+  </script>
+  <script type="module">
+    import { api, requireAuth } from '../assets/js/api-client.js';
+
+    await requireAuth();
+
+    // Hydrate user + tenant
+    try {
+      const { user, tenant } = await api.me();
+      document.getElementById('user-meta').textContent = `${user.full_name || user.email} · ${user.role}`;
+      document.getElementById('tenant-label').textContent = tenant?.name || '—';
+      if (user.role === 'tenant_admin' || user.role === 'platform_admin') {
+        document.getElementById('nav-audit').classList.remove('hidden');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+
+    // KPIs: total patients, open alerts
+    try {
+      const [{ patients, pagination }, alertsResp] = await Promise.all([
+        api.listPatients({ page: 1, pageSize: 5 }),
+        // Cheap approximation — would be a dedicated endpoint in production
+        Promise.resolve({ pagination: { total: null } }),
+      ]);
+
+      document.getElementById('kpi-row').innerHTML = `
+        <div class="card" style="flex:1 1 220px; margin:0;">
+          <div class="muted" style="font-size:12px; text-transform:uppercase;">Total patients</div>
+          <div style="font-size:26px; font-weight:600;">${pagination.total ?? '—'}</div>
+        </div>
+        <div class="card" style="flex:1 1 220px; margin:0;">
+          <div class="muted" style="font-size:12px; text-transform:uppercase;">Last sign-in</div>
+          <div style="font-size:14px;">${new Date().toLocaleString()}</div>
+        </div>
+      `;
+
+      const rows = (patients || []).map(p => `
+        <tr>
+          <td class="mono">${p.display_ref ?? p.id.substring(0, 8)}</td>
+          <td>${p.first_name ?? ''} ${p.last_name ?? ''}</td>
+          <td>${p.date_of_birth ?? '—'}</td>
+          <td>${p.sex ?? '—'}</td>
+          <td><a href="./patient-detail.html?id=${encodeURIComponent(p.id)}">Open</a></td>
+        </tr>
+      `).join('');
+
+      document.getElementById('patients-table-wrap').innerHTML = patients?.length ? `
+        <table class="table">
+          <thead>
+            <tr><th>Ref</th><th>Name</th><th>DOB</th><th>Sex</th><th></th></tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      ` : `<p class="muted">No patients yet.</p>`;
+
+      document.getElementById('alerts-wrap').innerHTML = `
+        <p class="muted">Open-alerts summary will appear here (bind to /api/v1/alerts/high in a follow-up task).</p>
+      `;
+    } catch (e) {
+      console.error(e);
+      document.getElementById('patients-table-wrap').innerHTML =
+        `<div class="inline-alert danger">Failed to load patients: ${e.message}</div>`;
+    }
+
+    document.getElementById('signout-link').addEventListener('click', async (e) => {
+      e.preventDefault();
+      await api.signOut();
+      window.location.href = './login.html';
+    });
+  </script>
+</body>
+</html>
