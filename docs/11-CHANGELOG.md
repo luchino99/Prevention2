@@ -71,6 +71,34 @@ executed per the project blueprint.
   - `patient-input.ts` exports camelCase aliases `createPatientSchema` / `updatePatientSchema` to match route-layer import convention.
 - Types: added repo-level `types/ambient.d.ts` that shims `@vercel/node`, `zod`, `@supabase/supabase-js`, `pdf-lib`, `vitest`, and Node built-ins — **only consumed by `tsconfig.{prod.,}check.json`**; real `@types/node` etc. take precedence under `npm ci`.
 
+#### Dependency manifest hotfix (Vercel deployment blocker)
+
+Resolves the user-reported Vercel build failure chain:
+
+```
+Using built-in TypeScript 5.9.3 since "typescript" is missing from "devDependencies"
+api/v1/internal/anonymize.ts(25,52): error TS2307: Cannot find module '@vercel/node' …
+api/v1/patients/index.ts(11,19): error TS2307: Cannot find module 'zod' …
+api/v1/me.ts(14,11):            error TS2339: Property 'method' does not exist on type 'AuthenticatedRequest'.
+```
+
+Root cause: the legacy consumer-app `package.json` had no clinical-platform runtime/tooling dependencies declared; Vercel was falling back to its built-in TS 5.9 without any of our imports resolvable, so every `@vercel/node`/`zod` import reported `TS2307` and the cascade collapsed the `AuthenticatedRequest` type synthesis.
+
+- `package.json` — **rewritten** for the B2B clinical identity:
+  - Pinned `typescript@5.5.4` in `devDependencies` (eliminates the "built-in TypeScript 5.9.3" warning and guarantees the build uses the same compiler developers test against).
+  - Added runtime deps: `@supabase/supabase-js@^2.45.0`, `zod@^3.23.8`, `pdf-lib@^1.17.1`, `openai@^4.0.0` (bounded/non-authoritative AI commentary only).
+  - Added dev deps: `@vercel/node@^3.2.0` (for `VercelRequest` / `VercelResponse` type declarations consumed by every `api/v1/*` handler), `@types/node@^20.14.0`, `vitest@^1.6.0`.
+  - `engines.node ≥20.0.0` — aligns with Vercel Node 20 runtime and our `ES2022` target.
+  - Scripts: `dev` (vercel dev), `typecheck` (main config), `typecheck:prod` (strict prod-only config), `build` (noEmit prod check).
+  - Replaced legacy consumer-app identity (`name`, `description`, `keywords`) with B2B clinical positioning.
+- `tsconfig.json` — added `tests/**/*.ts` and `types/**/*.d.ts` to `exclude` so Vercel's auto-detected root typecheck sees only production code (48 files across `backend/`, `shared/`, `api/`). Test-fixture type debt is now v0.2.2 work and does not gate deployment.
+- `tsconfig.check.json` + `tsconfig.prod.check.json` — added explicit `exclude` arrays to override the parent's `types/**` exclusion; this is required for offline sandbox typechecks where the ambient shim stands in for real `@types/*` packages. In a hosted `npm ci` environment the shim is bypassed and real types take over.
+
+Validation (pre-deploy):
+- `tsc --noEmit --project tsconfig.prod.check.json` → **EXIT 0** (offline sandbox, full ambient shim in play).
+- `tsc --noEmit --project tsconfig.json` → **EXIT 0** on the 48 production files that Vercel will compile.
+- `tsc --noEmit --project tsconfig.check.json` → 25 errors, all inside `tests/**/*.ts` (v0.2.2 debt, tracked separately).
+
 ### Security notes
 
 - Immutable snapshots: `trg_assessments_snapshot_immutable` rejects any attempt to mutate `clinical_input_snapshot` after its initial write (anonymization is the only allowed writer, via SECURITY DEFINER function).

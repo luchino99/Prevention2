@@ -33,13 +33,14 @@
   "include": [
     "backend/**/*.ts",
     "shared/**/*.ts",
-    "api/**/*.ts",
-    "tests/**/*.ts"
+    "api/**/*.ts"
   ],
   "exclude": [
     "node_modules",
     ".build",
     "_legacy_archive",
-    "engine/**/*.js"
+    "engine/**/*.js",
+    "tests/**/*.ts",
+    "types/**/*.d.ts"
   ]
 }

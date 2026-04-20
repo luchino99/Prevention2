@@ -1,14 +1,36 @@
 {
-  "name": "chatbot-sanitario",
-  "version": "1.0.0",
-  "description": "Chatbot sanitario per prevenzione con AI",
+  "name": "uelfy-clinical",
+  "version": "0.2.1",
+  "private": true,
+  "description": "Uelfy — B2B cardio-nephro-metabolic clinical risk assessment and longitudinal patient monitoring platform.",
   "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
-    "dev": "vercel dev"
+    "dev": "vercel dev",
+    "typecheck": "tsc --noEmit --project tsconfig.json",
+    "typecheck:prod": "tsc --noEmit --project tsconfig.prod.check.json",
+    "build": "tsc --noEmit --project tsconfig.json"
   },
   "dependencies": {
-    "openai": "^4.0.0"
+    "@supabase/supabase-js": "^2.45.0",
+    "openai": "^4.0.0",
+    "pdf-lib": "^1.17.1",
+    "zod": "^3.23.8"
   },
-  "keywords": ["chatbot", "sanità", "prevenzione", "openai", "vercel"],
-  "license": "MIT"
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@vercel/node": "^3.2.0",
+    "typescript": "5.5.4",
+    "vitest": "^1.6.0"
+  },
+  "keywords": [
+    "clinical",
+    "cardiometabolic",
+    "risk-assessment",
+    "supabase",
+    "b2b"
+  ],
+  "license": "UNLICENSED"
 }

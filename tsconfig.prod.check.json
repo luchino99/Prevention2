@@ -10,5 +10,12 @@
     "backend/**/*.ts",
     "shared/**/*.ts",
     "api/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".build",
+    "_legacy_archive",
+    "engine/**/*.js",
+    "tests/**/*.ts"
   ]
 }
