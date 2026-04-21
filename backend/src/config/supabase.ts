@@ -61,16 +61,18 @@ export function setClientSession(
   accessToken: string,
   refreshToken?: string
 ): void {
-  client.auth.setSession({
-    access_token: accessToken,
-    refresh_token: refreshToken || '',
-    token_type: 'bearer',
-    expires_in: 3600,
-    expires_at: Math.floor(Date.now() / 1000) + 3600,
-    user: null as any,
-  }).catch((error: unknown) => {
-    console.error('Failed to set client session:', error);
-  });
+  // supabase-js v2 `setSession()` accepts only `{ access_token, refresh_token }`.
+  // All other fields (token_type, expires_in/at, user) are derived server-side
+  // by GoTrue from the JWT itself — passing them here is rejected by the
+  // compiler in recent @supabase/supabase-js releases.
+  client.auth
+    .setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken ?? '',
+    })
+    .catch((error: unknown) => {
+      console.error('Failed to set client session:', error);
+    });
 }
 
 /**

@@ -77,20 +77,31 @@ COMMENT ON COLUMN assessments.anonymized_at IS
 -- (d) data_subject_requests  (GDPR Art.15/17/20 ledger)
 -- ------------------------------------------------------------
 
-CREATE TYPE IF NOT EXISTS dsr_kind AS ENUM (
-  'access',     -- Art.15 - right to access (export)
-  'erasure',    -- Art.17 - right to be forgotten (anonymization)
-  'portability',-- Art.20 - data portability (export)
-  'rectification' -- Art.16
-);
+-- PostgreSQL non supporta `CREATE TYPE IF NOT EXISTS`. Usiamo il blocco
+-- DO ... EXCEPTION WHEN duplicate_object: è l'idioma idempotente canonico
+-- per le migration PostgreSQL che creano ENUM.
+DO $$ BEGIN
+  CREATE TYPE dsr_kind AS ENUM (
+    'access',       -- Art.15 - right to access (export)
+    'erasure',      -- Art.17 - right to be forgotten (anonymization)
+    'portability',  -- Art.20 - data portability (export)
+    'rectification' -- Art.16
+  );
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TYPE IF NOT EXISTS dsr_status AS ENUM (
-  'received',
-  'in_progress',
-  'fulfilled',
-  'rejected',
-  'cancelled'
-);
+DO $$ BEGIN
+  CREATE TYPE dsr_status AS ENUM (
+    'received',
+    'in_progress',
+    'fulfilled',
+    'rejected',
+    'cancelled'
+  );
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
 CREATE TABLE IF NOT EXISTS data_subject_requests (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -126,6 +137,10 @@ CREATE INDEX IF NOT EXISTS idx_dsr_deadline
 ALTER TABLE data_subject_requests ENABLE ROW LEVEL SECURITY;
 
 -- Only tenant admins can see their tenant's DSRs. Platform admins see all.
+-- PostgreSQL 15 non supporta `CREATE POLICY IF NOT EXISTS` (arrivato in PG 16).
+-- Usiamo `DROP POLICY IF EXISTS ... ; CREATE POLICY ...` per rendere la
+-- migration ri-eseguibile senza errori di duplicato.
+DROP POLICY IF EXISTS dsr_tenant_read ON data_subject_requests;
 CREATE POLICY dsr_tenant_read ON data_subject_requests
   FOR SELECT
   USING (
@@ -133,6 +148,7 @@ CREATE POLICY dsr_tenant_read ON data_subject_requests
     OR get_current_user_role() = 'platform_admin'
   );
 
+DROP POLICY IF EXISTS dsr_tenant_insert ON data_subject_requests;
 CREATE POLICY dsr_tenant_insert ON data_subject_requests
   FOR INSERT
   WITH CHECK (
@@ -140,6 +156,7 @@ CREATE POLICY dsr_tenant_insert ON data_subject_requests
     AND get_current_user_role() IN ('tenant_admin', 'platform_admin')
   );
 
+DROP POLICY IF EXISTS dsr_tenant_update ON data_subject_requests;
 CREATE POLICY dsr_tenant_update ON data_subject_requests
   FOR UPDATE
   USING (

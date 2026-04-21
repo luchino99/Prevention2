@@ -99,6 +99,55 @@ Validation (pre-deploy):
 - `tsc --noEmit --project tsconfig.json` → **EXIT 0** on the 48 production files that Vercel will compile.
 - `tsc --noEmit --project tsconfig.check.json` → 25 errors, all inside `tests/**/*.ts` (v0.2.2 debt, tracked separately).
 
+#### Real-types realignment (second-pass Vercel hotfix)
+
+With the correct packages installed on Vercel, real `@supabase/supabase-js`,
+`zod`, and `@vercel/node` narrow types replaced the ambient-shim `any`s and
+surfaced five latent type-shape issues. All fixed without touching any
+clinical math or changing runtime semantics:
+
+- `shared/schemas/assessment-input.ts` — wrapped the root `z.object({…}).strict()`
+  in a trailing `.transform((v): AssessmentInput => ({…}))` that strips
+  `null` → `undefined` for every `.optional().nullable()` field in
+  `labs`, `clinicalContext`, `lifestyle`, and `frailty`. The canonical
+  `AssessmentInput` interface uses `T | undefined` only; the JSON wire
+  format still accepts explicit `null` from form UIs. The transform also
+  makes `ValidatedAssessmentInput` structurally equal to `AssessmentInput`,
+  removing the need for casts at call sites. No score formula is touched.
+- `api/v1/patients/index.ts` (POST) — the route previously read flat
+  `payload.firstName` / `payload.email` / `payload.displayRef` from a
+  Zod schema that nests those fields under `demographics` and `contact`.
+  Now correctly unpacks `payload.demographics.{firstName,lastName,dateOfBirth,sex,externalCode}`
+  and `payload.contact?.{email,phoneNumber}` into the flat DB column
+  layout. `display_ref` is now sourced from `demographics.externalCode`
+  (a single source of truth for the patient's external MRN/ID).
+- `api/v1/patients/[id]/index.ts` (PATCH) — identical fix for the
+  partial-update path. Handles `p.demographics` being optional (since
+  `PatientUpdateSchema.demographics = PatientDemographicsSchema.partial().optional()`)
+  and maps `externalCode → display_ref`, `phoneNumber → phone`.
+  `dateOfBirth` is converted from `Date` to `YYYY-MM-DD` string at the
+  DB boundary on both routes.
+- `backend/src/config/supabase.ts` — `setSession()` call simplified to
+  `{ access_token, refresh_token }` only. Recent `@supabase/supabase-js`
+  releases derive `token_type`, `expires_in`, `expires_at`, and `user`
+  from the JWT itself, and their declared `SetSessionParams` type
+  rejects extra keys (`TS2353`).
+- `backend/src/services/assessment-service.ts` — `bestEffort`'s `fn`
+  parameter relaxed from `() => Promise<unknown>` to
+  `() => PromiseLike<unknown>`. PostgREST's `PostgrestFilterBuilder`
+  returned by `.from(…).insert(…)` is thenable but not a full `Promise`
+  (no `.catch`, `.finally`, `Symbol.toStringTag`). The helper wraps the
+  result with `Promise.resolve(fn())` so the downstream `.then(...)`
+  chain returns a real `Promise<void>`. Zero behavioural change; all
+  seven best-effort call sites (`assessment_measurements`,
+  `score_results`, `risk_profiles`, `nutrition_snapshots`,
+  `activity_snapshots`, `followup_plans`, `alerts`) keep the same
+  non-fatal error-logging contract.
+
+All five touch points are type-system repairs only. No score engine
+math, no clinical thresholds, no DB schema, no RLS policy, no audit
+semantics, no security posture was modified by this pass.
+
 ### Security notes
 
 - Immutable snapshots: `trg_assessments_snapshot_immutable` rejects any attempt to mutate `clinical_input_snapshot` after its initial write (anonymization is the only allowed writer, via SECURITY DEFINER function).

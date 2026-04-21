@@ -5,6 +5,7 @@
 
 import { z } from 'zod';
 import { CLINICAL_RANGES } from '../constants/clinical-ranges';
+import type { AssessmentInput } from '../types/clinical';
 
 /**
  * Demographics section - required information about the patient
@@ -227,7 +228,7 @@ const FrailtySchema = z.object({
  * The strict() modifier rejects unknown keys so callers can't smuggle
  * additional attributes through the validator and into persistence.
  */
-export const AssessmentInputSchema = z.object({
+const RawAssessmentInputSchema = z.object({
   demographics: DemographicsSchema,
   vitals: VitalsSchema,
   labs: LabsSchema,
@@ -235,6 +236,62 @@ export const AssessmentInputSchema = z.object({
   lifestyle: LifestyleSchema.optional().default({}),
   frailty: FrailtySchema,
 }).strict();
+
+/**
+ * Clinical-engine boundary normalisation.
+ *
+ * The JSON wire format accepts `null` for optional fields (many form UIs
+ * send explicit null for "unset"), but the canonical `AssessmentInput`
+ * type in `shared/types/clinical.ts` uses only `T | undefined`. The
+ * transform below strips `null` → `undefined` for every optional leaf so
+ * the validated value is byte-safe for direct hand-off to
+ * `computeAllScores()` / `createAssessment()`. Non-optional fields are
+ * passed through untouched.
+ *
+ * No clinical math is affected — this only reshapes the envelope.
+ */
+export const AssessmentInputSchema = RawAssessmentInputSchema.transform(
+  (v): AssessmentInput => ({
+    demographics: v.demographics,
+    vitals: v.vitals,
+    labs: {
+      totalCholMgDl: v.labs.totalCholMgDl ?? undefined,
+      hdlMgDl: v.labs.hdlMgDl ?? undefined,
+      ldlMgDl: v.labs.ldlMgDl ?? undefined,
+      triglyceridesMgDl: v.labs.triglyceridesMgDl ?? undefined,
+      glucoseMgDl: v.labs.glucoseMgDl ?? undefined,
+      hba1cPct: v.labs.hba1cPct ?? undefined,
+      eGFR: v.labs.eGFR ?? undefined,
+      creatinineMgDl: v.labs.creatinineMgDl ?? undefined,
+      ggtUL: v.labs.ggtUL ?? undefined,
+      astUL: v.labs.astUL ?? undefined,
+      altUL: v.labs.altUL ?? undefined,
+      plateletsGigaL: v.labs.plateletsGigaL ?? undefined,
+      albuminCreatinineRatio: v.labs.albuminCreatinineRatio ?? undefined,
+    },
+    clinicalContext: {
+      smoking: v.clinicalContext.smoking,
+      hasDiabetes: v.clinicalContext.hasDiabetes,
+      ageAtDiabetesDiagnosis: v.clinicalContext.ageAtDiabetesDiagnosis ?? undefined,
+      hypertension: v.clinicalContext.hypertension,
+      familyHistoryDiabetes: v.clinicalContext.familyHistoryDiabetes,
+      familyHistoryCvd: v.clinicalContext.familyHistoryCvd,
+      gestationalDiabetes: v.clinicalContext.gestationalDiabetes,
+      cvRiskRegion: v.clinicalContext.cvRiskRegion,
+      medications: v.clinicalContext.medications,
+      diagnoses: v.clinicalContext.diagnoses,
+    },
+    lifestyle: {
+      predimedAnswers: v.lifestyle.predimedAnswers ?? undefined,
+      weeklyActivityMinutes: v.lifestyle.weeklyActivityMinutes ?? undefined,
+      activityFrequency: v.lifestyle.activityFrequency ?? undefined,
+      activityType: v.lifestyle.activityType ?? undefined,
+      intensityLevel: v.lifestyle.intensityLevel ?? undefined,
+      sedentaryLevel: v.lifestyle.sedentaryLevel ?? undefined,
+    },
+    frailty: v.frailty ?? undefined,
+  }),
+);
 
 /**
  * camelCase alias — kept for routes that import the schema with the

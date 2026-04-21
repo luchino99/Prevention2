@@ -77,15 +77,30 @@ async function handleUpdate(req: any, res: VercelResponse, patientId: string): P
   const patient = await loadPatient(req, res, patientId);
   if (!patient) return;
 
+  // Unpack the (partial) nested shape into the flat DB column layout.
+  // `updatePatientSchema` keeps `demographics` as partial so every field
+  // is individually optional; `contact` / `notes` stay optional at the
+  // outer level.
   const update: Record<string, unknown> = {};
   const p = parse.data;
-  if (p.displayRef !== undefined) update.display_ref = p.displayRef;
-  if (p.firstName !== undefined) update.first_name = p.firstName;
-  if (p.lastName !== undefined) update.last_name = p.lastName;
-  if (p.dateOfBirth !== undefined) update.date_of_birth = p.dateOfBirth;
-  if (p.sex !== undefined) update.sex = p.sex;
-  if (p.email !== undefined) update.email = p.email;
-  if (p.phone !== undefined) update.phone = p.phone;
+  const demo = p.demographics;
+  if (demo) {
+    if (demo.externalCode !== undefined) update.display_ref = demo.externalCode;
+    if (demo.firstName !== undefined) update.first_name = demo.firstName;
+    if (demo.lastName !== undefined) update.last_name = demo.lastName;
+    if (demo.dateOfBirth !== undefined) {
+      update.date_of_birth =
+        demo.dateOfBirth instanceof Date
+          ? demo.dateOfBirth.toISOString().slice(0, 10)
+          : demo.dateOfBirth;
+    }
+    if (demo.sex !== undefined) update.sex = demo.sex;
+  }
+  const contact = p.contact;
+  if (contact) {
+    if (contact.email !== undefined) update.email = contact.email;
+    if (contact.phoneNumber !== undefined) update.phone = contact.phoneNumber;
+  }
   if (p.notes !== undefined) update.notes = p.notes;
 
   if (Object.keys(update).length === 0) {

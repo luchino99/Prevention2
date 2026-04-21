@@ -52,7 +52,11 @@ CREATE TABLE tenants (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name TEXT NOT NULL,
   slug TEXT UNIQUE NOT NULL,
-  plan tenant_plan NOT NULL DEFAULT 'trial',
+  -- Tier commerciale (starter = tier di ingresso). Separato da `status`
+  -- perché una clinica può essere in `trial` commerciale su qualunque plan.
+  plan tenant_plan NOT NULL DEFAULT 'starter',
+  -- Stato del ciclo di vita: ogni nuovo tenant nasce in `trial` finché
+  -- non viene promosso ad `active` dall'admin di piattaforma.
   status tenant_status NOT NULL DEFAULT 'trial',
   logo_url TEXT,                          -- URL da object storage, mai base64
   settings JSONB DEFAULT '{}',            -- Branding, template PDF, preferenze

@@ -90,18 +90,27 @@ async function handleCreate(req: any, res: VercelResponse): Promise<void> {
     return;
   }
 
+  // Unpack the validated nested shape (demographics / contact) into the
+  // flat DB column layout expected by `001_schema_foundation.sql`.
+  const demo = payload.demographics;
+  const contact = payload.contact;
+  const dob =
+    demo.dateOfBirth instanceof Date
+      ? demo.dateOfBirth.toISOString().slice(0, 10)
+      : demo.dateOfBirth;
+
   const { data, error } = await supabaseAdmin
     .from('patients')
     .insert({
       tenant_id: req.auth.tenantId,
       created_by_user_id: req.auth.userId,
-      display_ref: payload.displayRef ?? null,
-      first_name: payload.firstName,
-      last_name: payload.lastName,
-      date_of_birth: payload.dateOfBirth,
-      sex: payload.sex,
-      email: payload.email ?? null,
-      phone: payload.phone ?? null,
+      display_ref: demo.externalCode,
+      first_name: demo.firstName,
+      last_name: demo.lastName,
+      date_of_birth: dob,
+      sex: demo.sex,
+      email: contact?.email ?? null,
+      phone: contact?.phoneNumber ?? null,
       notes: payload.notes ?? null,
     })
     .select('id, display_ref, first_name, last_name, date_of_birth, sex, created_at')

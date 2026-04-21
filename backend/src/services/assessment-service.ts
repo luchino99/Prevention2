@@ -164,11 +164,16 @@ function findScore(
 
 function bestEffort(
   label: string,
-  fn: () => Promise<unknown>,
+  // PostgREST query builders returned by `supabase.from(...).insert(...)` are
+  // `PromiseLike`, not full `Promise` (they lack `.catch` / `.finally` /
+  // `Symbol.toStringTag`). Accepting `PromiseLike<unknown>` keeps the call
+  // sites free of `Promise.resolve(...)` wrappers while still triggering
+  // execution via the wrapper below.
+  fn: () => PromiseLike<unknown>,
 ): Promise<void> {
-  return fn().then(
+  return Promise.resolve(fn()).then(
     () => undefined,
-    (err) => {
+    (err: unknown) => {
       // Non-fatal subsystem failures are logged so the caller still gets a
       // snapshot; the assessment itself is already committed.
       // eslint-disable-next-line no-console
