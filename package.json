@@ -11,7 +11,8 @@
     "dev": "vercel dev",
     "typecheck": "tsc --noEmit --project tsconfig.json",
     "typecheck:prod": "tsc --noEmit --project tsconfig.prod.check.json",
-    "build": "tsc --noEmit --project tsconfig.json"
+    "inject:public-config": "node scripts/inject-public-config.mjs",
+    "build": "node scripts/inject-public-config.mjs && tsc --noEmit --project tsconfig.json"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
