@@ -118,14 +118,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     action: 'retention.run',
     entity_type: 'system',
     entity_id: null,
-    metadata: {
+    metadata_json: {
       run_id: runId,
       started_at: startedAt,
       finished_at: new Date().toISOString(),
       prune_result: pruneResult,
       storage_deletions: storageDeletions,
     },
-    ip_address_hash: null,
+    ip_hash: null,
   });
 
   res.status(200).json({

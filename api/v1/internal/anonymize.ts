@@ -107,14 +107,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     action: 'anonymize.run',
     entity_type: 'system',
     entity_id: null,
-    metadata: {
+    metadata_json: {
       started_at: startedAt,
       finished_at: new Date().toISOString(),
       candidates: candidates?.length ?? 0,
       processed,
       grace_days: GRACE_DAYS,
     },
-    ip_address_hash: null,
+    ip_hash: null,
   });
 
   res.status(200).json({

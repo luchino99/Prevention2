@@ -1,5 +1,5 @@
 /**
- * Audit logger — writes immutable audit trail entries to public.audit_logs.
+ * Audit logger — writes immutable audit trail entries to public.audit_events.
  *
  * GDPR alignment:
  *   - records WHO did WHAT, WHEN, on WHICH resource
@@ -105,26 +105,36 @@ export async function recordAudit(
   event: AuditEvent
 ): Promise<void> {
   try {
+    // Column names align with supabase/migrations/001_schema_foundation.sql
+    // (table `audit_events`). `outcome`, `failure_reason`, `user_agent` are
+    // added by migration 004_audit_events_extensions.sql. The internal
+    // AuditEvent TypeScript shape keeps its names (resourceType, resourceId,
+    // metadata) to avoid breaking every call-site; only the DB row mapping
+    // translates them to the canonical schema names.
     const row = {
       tenant_id: auth?.tenantId ?? event.actor?.tenantId ?? null,
       actor_user_id: auth?.userId ?? event.actor?.userId ?? null,
       actor_role: auth?.role ?? event.actor?.role ?? null,
       action: event.action,
-      resource_type: event.resourceType,
-      resource_id: event.resourceId ?? null,
+      entity_type: event.resourceType,
+      entity_id: event.resourceId ?? null,
       outcome: event.outcome ?? 'success',
       failure_reason: event.failureReason ?? null,
       ip_hash: auth?.ipHash ?? event.actor?.ipHash ?? null,
       user_agent: auth?.userAgent ?? event.actor?.userAgent ?? null,
-      metadata: sanitizeMetadata(event.metadata),
+      metadata_json: sanitizeMetadata(event.metadata),
     };
 
-    const { error } = await supabaseAdmin.from('audit_logs').insert(row);
+    const { error } = await supabaseAdmin.from('audit_events').insert(row);
     if (error) {
+      // Some PostgREST error shapes surface the text under `.details` or
+      // `.hint` rather than `.message`. Log all three so we can diagnose
+      // schema drift without ambiguity.
       console.error('[audit] insert failed', {
         action: event.action,
         resource: event.resourceType,
-        dbError: error.message,
+        dbError: error.message ?? error.details ?? error.hint ?? 'unknown',
+        dbCode: (error as { code?: string }).code ?? 'unknown',
       });
     }
   } catch (err) {

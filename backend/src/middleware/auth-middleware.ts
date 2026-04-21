@@ -102,7 +102,7 @@ export async function validateAccessToken(
 
   const { data: userRow, error: userErr } = await supabaseAdmin
     .from('users')
-    .select('id, tenant_id, role, is_suspended')
+    .select('id, tenant_id, role, status')
     .eq('id', userId)
     .single();
 
@@ -110,7 +110,7 @@ export async function validateAccessToken(
     throw new AuthError(401, 'USER_PROFILE_NOT_FOUND', 'User profile not found');
   }
 
-  if (userRow.is_suspended) {
+  if (userRow.status === 'suspended') {
     throw new AuthError(403, 'USER_SUSPENDED', 'User account is suspended');
   }
 

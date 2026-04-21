@@ -143,7 +143,7 @@ async function handleExport(req: any, res: VercelResponse, patientId: string): P
       .order('created_at', { ascending: false }),
     supabaseAdmin
       .from('audit_events')
-      .select('id, actor_user_id, action, entity_type, entity_id, metadata, created_at')
+      .select('id, actor_user_id, action, entity_type, entity_id, metadata_json, created_at')
       .eq('entity_type', 'patient')
       .eq('entity_id', patientId)
       .order('created_at', { ascending: false })

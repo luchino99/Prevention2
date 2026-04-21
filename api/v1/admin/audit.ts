@@ -47,8 +47,12 @@ export default withAuth(async (req, res: VercelResponse) => {
     const from = (q.page - 1) * q.pageSize;
     const to = from + q.pageSize - 1;
 
+    // Table name and column names aligned with
+    // supabase/migrations/001_schema_foundation.sql.
+    // The public query-param names (resourceType/resourceId) are kept stable
+    // as the API contract; only the DB column names are mapped internally.
     let query = supabaseAdmin
-      .from('audit_logs')
+      .from('audit_events')
       .select('*', { count: 'exact' })
       .order('created_at', { ascending: false })
       .range(from, to);
@@ -57,11 +61,11 @@ export default withAuth(async (req, res: VercelResponse) => {
       query = query.eq('tenant_id', r.auth.tenantId);
     }
     if (q.actorUserId) query = query.eq('actor_user_id', q.actorUserId);
-    if (q.resourceType) query = query.eq('resource_type', q.resourceType);
-    if (q.resourceId) query = query.eq('resource_id', q.resourceId);
-    if (q.action) query = query.eq('action', q.action);
-    if (q.from) query = query.gte('created_at', q.from);
-    if (q.to) query = query.lte('created_at', q.to);
+    if (q.resourceType) query = query.eq('entity_type', q.resourceType);
+    if (q.resourceId)   query = query.eq('entity_id',   q.resourceId);
+    if (q.action)       query = query.eq('action',      q.action);
+    if (q.from)         query = query.gte('created_at', q.from);
+    if (q.to)           query = query.lte('created_at', q.to);
 
     const { data, error, count } = await query;
     if (error) {
