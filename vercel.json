@@ -1,5 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
   "functions": {
     "api/v1/assessments/[id]/report.ts": { "maxDuration": 30 },
     "api/v1/patients/[id]/export.ts": { "maxDuration": 30 },

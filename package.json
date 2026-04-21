@@ -5,7 +5,7 @@
   "description": "Uelfy — B2B cardio-nephro-metabolic clinical risk assessment and longitudinal patient monitoring platform.",
   "type": "module",
   "engines": {
-    "node": ">=20.0.0"
+    "node": "20.x"
   },
   "scripts": {
     "dev": "vercel dev",
