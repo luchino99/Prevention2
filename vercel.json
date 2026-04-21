@@ -3,6 +3,7 @@
   "framework": null,
   "buildCommand": "npm run build",
   "installCommand": "npm install",
+  "outputDirectory": "frontend",
   "functions": {
     "api/v1/assessments/[id]/report.ts": { "maxDuration": 30 },
     "api/v1/patients/[id]/export.ts": { "maxDuration": 30 },
