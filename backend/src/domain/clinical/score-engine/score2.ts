@@ -15,7 +15,7 @@
  * Zero side effects - pure calculation only
  */
 
-import type { Score2Input, Score2Result } from '../../../../../shared/types/clinical';
+import type { Score2Input, Score2Result } from '../../../../../shared/types/clinical.js';
 
 // ============================================================================
 // SCORE2 Coefficients (from legacy codebase)

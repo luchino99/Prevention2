@@ -5,15 +5,15 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { withAuth } from '../../../../backend/src/middleware/auth-middleware';
-import { requireTenantMember } from '../../../../backend/src/middleware/rbac';
-import { applySecurityHeaders } from '../../../../backend/src/middleware/security-headers';
-import { checkRateLimit, RATE_LIMITS, applyRateLimitHeaders } from '../../../../backend/src/middleware/rate-limit';
+import { withAuth } from '../../../../backend/src/middleware/auth-middleware.js';
+import { requireTenantMember } from '../../../../backend/src/middleware/rbac.js';
+import { applySecurityHeaders } from '../../../../backend/src/middleware/security-headers.js';
+import { checkRateLimit, RATE_LIMITS, applyRateLimitHeaders } from '../../../../backend/src/middleware/rate-limit.js';
 import {
   loadAssessmentSnapshot,
   AssessmentServiceError,
-} from '../../../../backend/src/services/assessment-service';
-import { recordAudit } from '../../../../backend/src/audit/audit-logger';
+} from '../../../../backend/src/services/assessment-service.js';
+import { recordAudit } from '../../../../backend/src/audit/audit-logger.js';
 
 function getId(req: VercelRequest): string | null {
   const id = req.query.id;

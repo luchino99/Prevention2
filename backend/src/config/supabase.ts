@@ -4,7 +4,7 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { getEnvConfig } from './env';
+import { getEnvConfig } from './env.js';
 
 const config = getEnvConfig();
 

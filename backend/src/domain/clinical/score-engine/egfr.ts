@@ -24,7 +24,7 @@
  *   G5: eGFR <15                   (Kidney failure)
  */
 
-import { EgfrInput, EgfrResult } from '../../../../../shared/types/clinical';
+import { EgfrInput, EgfrResult } from '../../../../../shared/types/clinical.js';
 
 /**
  * Compute eGFR using CKD-EPI 2021 race-free equation

@@ -7,7 +7,7 @@
  * to understand complex domain logic.
  */
 
-import { ScoreResultEntry } from '../../../../../shared/types/clinical';
+import { ScoreResultEntry } from '../../../../../shared/types/clinical.js';
 
 /**
  * Individual score entry in the report

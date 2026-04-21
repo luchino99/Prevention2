@@ -9,13 +9,13 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { z } from 'zod';
-import { withAuth } from '../../../backend/src/middleware/auth-middleware';
-import { requireTenantMember, requireClinicalWrite } from '../../../backend/src/middleware/rbac';
-import { applySecurityHeaders } from '../../../backend/src/middleware/security-headers';
-import { checkRateLimit, RATE_LIMITS, applyRateLimitHeaders } from '../../../backend/src/middleware/rate-limit';
-import { supabaseAdmin } from '../../../backend/src/config/supabase';
-import { recordAudit } from '../../../backend/src/audit/audit-logger';
-import { createPatientSchema } from '../../../shared/schemas/patient-input';
+import { withAuth } from '../../../backend/src/middleware/auth-middleware.js';
+import { requireTenantMember, requireClinicalWrite } from '../../../backend/src/middleware/rbac.js';
+import { applySecurityHeaders } from '../../../backend/src/middleware/security-headers.js';
+import { checkRateLimit, RATE_LIMITS, applyRateLimitHeaders } from '../../../backend/src/middleware/rate-limit.js';
+import { supabaseAdmin } from '../../../backend/src/config/supabase.js';
+import { recordAudit } from '../../../backend/src/audit/audit-logger.js';
+import { createPatientSchema } from '../../../shared/schemas/patient-input.js';
 
 const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),

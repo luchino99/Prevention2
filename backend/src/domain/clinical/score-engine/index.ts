@@ -13,17 +13,17 @@
 import {
   AssessmentInput,
   ScoreResultEntry,
-} from '../../../../../shared/types/clinical';
+} from '../../../../../shared/types/clinical.js';
 
-import { computeScore2 } from './score2';
-import { computeScore2Diabetes } from './score2-diabetes';
-import { computeAda } from './ada';
-import { computeFli } from './fli';
-import { computeFrail } from './frail';
-import { computeBmi } from './bmi';
-import { computeMetabolicSyndrome } from './metabolic-syndrome';
-import { computeFib4 } from './fib4';
-import { computeEgfr } from './egfr';
+import { computeScore2 } from './score2.js';
+import { computeScore2Diabetes } from './score2-diabetes.js';
+import { computeAda } from './ada.js';
+import { computeFli } from './fli.js';
+import { computeFrail } from './frail.js';
+import { computeBmi } from './bmi.js';
+import { computeMetabolicSyndrome } from './metabolic-syndrome.js';
+import { computeFib4 } from './fib4.js';
+import { computeEgfr } from './egfr.js';
 
 /**
  * Compute all available clinical scores from a comprehensive assessment

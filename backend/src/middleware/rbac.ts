@@ -14,7 +14,7 @@
  */
 
 import type { VercelResponse } from '@vercel/node';
-import type { AuthenticatedRequest, UserRole } from './auth-middleware';
+import type { AuthenticatedRequest, UserRole } from './auth-middleware.js';
 
 export type RbacHandler = (
   req: AuthenticatedRequest,

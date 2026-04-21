@@ -7,11 +7,11 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { z } from 'zod';
-import { withAuth } from '../../../backend/src/middleware/auth-middleware';
-import { requireTenantAdmin } from '../../../backend/src/middleware/rbac';
-import { applySecurityHeaders } from '../../../backend/src/middleware/security-headers';
-import { checkRateLimit, RATE_LIMITS, applyRateLimitHeaders } from '../../../backend/src/middleware/rate-limit';
-import { supabaseAdmin } from '../../../backend/src/config/supabase';
+import { withAuth } from '../../../backend/src/middleware/auth-middleware.js';
+import { requireTenantAdmin } from '../../../backend/src/middleware/rbac.js';
+import { applySecurityHeaders } from '../../../backend/src/middleware/security-headers.js';
+import { checkRateLimit, RATE_LIMITS, applyRateLimitHeaders } from '../../../backend/src/middleware/rate-limit.js';
+import { supabaseAdmin } from '../../../backend/src/config/supabase.js';
 
 const querySchema = z.object({
   actorUserId: z.string().uuid().optional(),

@@ -20,7 +20,7 @@
  * Zero side effects - pure calculation only
  */
 
-import type { Score2DiabetesInput, Score2DiabetesResult } from '../../../../../shared/types/clinical';
+import type { Score2DiabetesInput, Score2DiabetesResult } from '../../../../../shared/types/clinical.js';
 
 // ============================================================================
 // SCORE2-Diabetes Coefficients (from legacy codebase)

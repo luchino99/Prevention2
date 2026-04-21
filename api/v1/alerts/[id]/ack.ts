@@ -6,12 +6,12 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { z } from 'zod';
-import { withAuth } from '../../../../backend/src/middleware/auth-middleware';
-import { requireClinicalWrite } from '../../../../backend/src/middleware/rbac';
-import { applySecurityHeaders } from '../../../../backend/src/middleware/security-headers';
-import { checkRateLimit, RATE_LIMITS, applyRateLimitHeaders } from '../../../../backend/src/middleware/rate-limit';
-import { supabaseAdmin } from '../../../../backend/src/config/supabase';
-import { recordAudit } from '../../../../backend/src/audit/audit-logger';
+import { withAuth } from '../../../../backend/src/middleware/auth-middleware.js';
+import { requireClinicalWrite } from '../../../../backend/src/middleware/rbac.js';
+import { applySecurityHeaders } from '../../../../backend/src/middleware/security-headers.js';
+import { checkRateLimit, RATE_LIMITS, applyRateLimitHeaders } from '../../../../backend/src/middleware/rate-limit.js';
+import { supabaseAdmin } from '../../../../backend/src/config/supabase.js';
+import { recordAudit } from '../../../../backend/src/audit/audit-logger.js';
 
 const bodySchema = z.object({
   action: z.enum(['acknowledge', 'resolve', 'dismiss']),

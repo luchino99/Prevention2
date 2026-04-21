@@ -10,14 +10,14 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { z } from 'zod';
-import { withAuth } from '../../../../../backend/src/middleware/auth-middleware';
-import { requireTenantMember, requireClinicalWrite } from '../../../../../backend/src/middleware/rbac';
-import { applySecurityHeaders } from '../../../../../backend/src/middleware/security-headers';
-import { checkRateLimit, RATE_LIMITS, applyRateLimitHeaders } from '../../../../../backend/src/middleware/rate-limit';
-import { supabaseAdmin } from '../../../../../backend/src/config/supabase';
-import { recordAudit } from '../../../../../backend/src/audit/audit-logger';
-import { createAssessment, AssessmentServiceError } from '../../../../../backend/src/services/assessment-service';
-import { assessmentInputSchema } from '../../../../../shared/schemas/assessment-input';
+import { withAuth } from '../../../../../backend/src/middleware/auth-middleware.js';
+import { requireTenantMember, requireClinicalWrite } from '../../../../../backend/src/middleware/rbac.js';
+import { applySecurityHeaders } from '../../../../../backend/src/middleware/security-headers.js';
+import { checkRateLimit, RATE_LIMITS, applyRateLimitHeaders } from '../../../../../backend/src/middleware/rate-limit.js';
+import { supabaseAdmin } from '../../../../../backend/src/config/supabase.js';
+import { recordAudit } from '../../../../../backend/src/audit/audit-logger.js';
+import { createAssessment, AssessmentServiceError } from '../../../../../backend/src/services/assessment-service.js';
+import { assessmentInputSchema } from '../../../../../shared/schemas/assessment-input.js';
 
 function getPatientId(req: VercelRequest): string | null {
   const id = req.query.id;

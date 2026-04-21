@@ -14,7 +14,7 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import crypto from 'crypto';
-import type { AuthenticatedRequest } from './auth-middleware';
+import type { AuthenticatedRequest } from './auth-middleware.js';
 
 export interface RateLimitConfig {
   /** Route identifier, e.g. 'assessments.create' */
@@ -134,7 +134,7 @@ export const RATE_LIMITS = {
 // The sync API remains for backward compat and as the fallback implementation.
 // ============================================================================
 
-import { checkRateLimitUpstash, isUpstashConfigured } from './rate-limit-upstash';
+import { checkRateLimitUpstash, isUpstashConfigured } from './rate-limit-upstash.js';
 
 function subjectFor(req: VercelRequest): string {
   const auth = (req as AuthenticatedRequest).auth;

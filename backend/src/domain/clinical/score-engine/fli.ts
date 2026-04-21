@@ -16,7 +16,7 @@
  * Zero side effects - pure calculation only
  */
 
-import type { FliInput, FliResult } from '../../../../../shared/types/clinical';
+import type { FliInput, FliResult } from '../../../../../shared/types/clinical.js';
 
 // ============================================================================
 // FLI Constants

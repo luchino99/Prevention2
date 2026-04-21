@@ -25,23 +25,23 @@
  *     computation is exactly reproducible.
  */
 
-import { supabaseAdmin } from '../config/supabase';
-import type { AuthContext } from '../middleware/auth-middleware';
-import { recordAudit } from '../audit/audit-logger';
+import { supabaseAdmin } from '../config/supabase.js';
+import type { AuthContext } from '../middleware/auth-middleware.js';
+import { recordAudit } from '../audit/audit-logger.js';
 
-import { computeAllScores } from '../domain/clinical/score-engine';
-import { aggregateCompositeRisk } from '../domain/clinical/risk-aggregation/composite-risk';
-import { buildNutritionSummary } from '../domain/clinical/nutrition-engine/predimed';
-import { assessActivity } from '../domain/clinical/activity-engine/activity-assessment';
-import { deriveAlerts } from '../domain/clinical/alert-engine/alert-deriver';
-import { determineRequiredScreenings } from '../domain/clinical/screening-engine/required-screenings';
-import { determineFollowupPlan } from '../domain/clinical/followup-engine/followup-plan';
+import { computeAllScores } from '../domain/clinical/score-engine/index.js';
+import { aggregateCompositeRisk } from '../domain/clinical/risk-aggregation/composite-risk.js';
+import { buildNutritionSummary } from '../domain/clinical/nutrition-engine/predimed.js';
+import { assessActivity } from '../domain/clinical/activity-engine/activity-assessment.js';
+import { deriveAlerts } from '../domain/clinical/alert-engine/alert-deriver.js';
+import { determineRequiredScreenings } from '../domain/clinical/screening-engine/required-screenings.js';
+import { determineFollowupPlan } from '../domain/clinical/followup-engine/followup-plan.js';
 
 import type {
   AssessmentInput,
   AssessmentSnapshot,
   ScoreResultEntry,
-} from '../../../shared/types/clinical';
+} from '../../../shared/types/clinical.js';
 
 // ============================================================================
 // Errors

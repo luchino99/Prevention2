@@ -8,13 +8,13 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { withAuth } from '../../../../backend/src/middleware/auth-middleware';
-import { requireTenantMember, requireClinicalWrite, requireTenantAdmin } from '../../../../backend/src/middleware/rbac';
-import { applySecurityHeaders } from '../../../../backend/src/middleware/security-headers';
-import { checkRateLimit, RATE_LIMITS, applyRateLimitHeaders } from '../../../../backend/src/middleware/rate-limit';
-import { supabaseAdmin } from '../../../../backend/src/config/supabase';
-import { recordAudit } from '../../../../backend/src/audit/audit-logger';
-import { updatePatientSchema } from '../../../../shared/schemas/patient-input';
+import { withAuth } from '../../../../backend/src/middleware/auth-middleware.js';
+import { requireTenantMember, requireClinicalWrite, requireTenantAdmin } from '../../../../backend/src/middleware/rbac.js';
+import { applySecurityHeaders } from '../../../../backend/src/middleware/security-headers.js';
+import { checkRateLimit, RATE_LIMITS, applyRateLimitHeaders } from '../../../../backend/src/middleware/rate-limit.js';
+import { supabaseAdmin } from '../../../../backend/src/config/supabase.js';
+import { recordAudit } from '../../../../backend/src/audit/audit-logger.js';
+import { updatePatientSchema } from '../../../../shared/schemas/patient-input.js';
 
 function getPatientId(req: VercelRequest): string | null {
   const id = req.query.id;

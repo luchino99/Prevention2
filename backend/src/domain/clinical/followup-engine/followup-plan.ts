@@ -14,7 +14,7 @@
  * Zero side effects - pure calculation only
  */
 
-import type { ScoreResultEntry } from '../../../../../shared/types/clinical';
+import type { ScoreResultEntry } from '../../../../../shared/types/clinical.js';
 
 // ============================================================================
 // Type Definitions

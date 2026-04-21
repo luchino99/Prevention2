@@ -28,12 +28,12 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { withAuth } from '../../../../backend/src/middleware/auth-middleware';
-import { requireTenantMember } from '../../../../backend/src/middleware/rbac';
-import { applySecurityHeaders } from '../../../../backend/src/middleware/security-headers';
-import { checkRateLimitAsync, applyRateLimitHeaders } from '../../../../backend/src/middleware/rate-limit';
-import { supabaseAdmin } from '../../../../backend/src/config/supabase';
-import { recordAudit } from '../../../../backend/src/audit/audit-logger';
+import { withAuth } from '../../../../backend/src/middleware/auth-middleware.js';
+import { requireTenantMember } from '../../../../backend/src/middleware/rbac.js';
+import { applySecurityHeaders } from '../../../../backend/src/middleware/security-headers.js';
+import { checkRateLimitAsync, applyRateLimitHeaders } from '../../../../backend/src/middleware/rate-limit.js';
+import { supabaseAdmin } from '../../../../backend/src/config/supabase.js';
+import { recordAudit } from '../../../../backend/src/audit/audit-logger.js';
 
 const UUID_RX = /^[0-9a-fA-F-]{36}$/;
 

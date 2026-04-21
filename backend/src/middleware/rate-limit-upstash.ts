@@ -30,7 +30,7 @@
  *   - No user PII is written to Redis; the subject is already hashed/userId
  */
 
-import type { RateLimitConfig, RateLimitResult } from './rate-limit';
+import type { RateLimitConfig, RateLimitResult } from './rate-limit.js';
 
 const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL;
 const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;

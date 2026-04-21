@@ -22,7 +22,7 @@
  * Cut-offs vary by age and comorbidities.
  */
 
-import { Fib4Input, Fib4Result } from '../../../../../shared/types/clinical';
+import { Fib4Input, Fib4Result } from '../../../../../shared/types/clinical.js';
 
 /**
  * Compute FIB-4 Index for liver fibrosis assessment

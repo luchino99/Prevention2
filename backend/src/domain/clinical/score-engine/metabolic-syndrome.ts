@@ -32,7 +32,7 @@
 import {
   MetabolicSyndromeInput,
   MetabolicSyndromeResult,
-} from '../../../../../shared/types/clinical';
+} from '../../../../../shared/types/clinical.js';
 
 /**
  * Assess Metabolic Syndrome criteria

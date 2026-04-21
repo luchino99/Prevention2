@@ -13,10 +13,10 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { validateAccessToken } from '../../../backend/src/middleware/auth-middleware';
-import { recordAudit, recordFailedLogin } from '../../../backend/src/audit/audit-logger';
-import { applySecurityHeaders } from '../../../backend/src/middleware/security-headers';
-import { checkRateLimit, RATE_LIMITS, applyRateLimitHeaders } from '../../../backend/src/middleware/rate-limit';
+import { validateAccessToken } from '../../../backend/src/middleware/auth-middleware.js';
+import { recordAudit, recordFailedLogin } from '../../../backend/src/audit/audit-logger.js';
+import { applySecurityHeaders } from '../../../backend/src/middleware/security-headers.js';
+import { checkRateLimit, RATE_LIMITS, applyRateLimitHeaders } from '../../../backend/src/middleware/rate-limit.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   applySecurityHeaders(res);

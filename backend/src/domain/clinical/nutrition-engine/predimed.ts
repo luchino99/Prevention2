@@ -8,7 +8,7 @@
  * Zero side effects - pure calculation only
  */
 
-import type { PredimedResult } from '../../../../../shared/types/clinical';
+import type { PredimedResult } from '../../../../../shared/types/clinical.js';
 
 // ============================================================================
 // Type Definitions

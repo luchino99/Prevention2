@@ -27,8 +27,8 @@
  */
 
 import { PDFDocument, StandardFonts, rgb, PDFPage, PDFFont } from 'pdf-lib';
-import type { ReportPayload } from './assessment-service';
-import type { AssessmentSnapshot } from '../../../shared/types/clinical';
+import type { ReportPayload } from './assessment-service.js';
+import type { AssessmentSnapshot } from '../../../shared/types/clinical.js';
 
 // ---------------------------------------------------------------------------
 // Page geometry

@@ -11,8 +11,8 @@
  * but surfaces the failure via console.error + a sentry-friendly log shape.
  */
 
-import { supabaseAdmin } from '../config/supabase';
-import type { AuthContext } from '../middleware/auth-middleware';
+import { supabaseAdmin } from '../config/supabase.js';
+import type { AuthContext } from '../middleware/auth-middleware.js';
 
 /** Canonical set of audit actions. Keep in sync with monitoring dashboards. */
 export type AuditAction =

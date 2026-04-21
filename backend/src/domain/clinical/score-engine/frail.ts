@@ -18,7 +18,7 @@
  * Zero side effects - pure calculation only
  */
 
-import type { FrailInput, FrailResult } from '../../../../../shared/types/clinical';
+import type { FrailInput, FrailResult } from '../../../../../shared/types/clinical.js';
 
 // ============================================================================
 // FRAIL Constants

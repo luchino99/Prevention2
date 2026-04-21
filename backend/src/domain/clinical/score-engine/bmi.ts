@@ -17,7 +17,7 @@
  *     ≥40.0      = Obese Class III (severe)
  */
 
-import { BmiInput, BmiResult } from '../../../../../shared/types/clinical';
+import { BmiInput, BmiResult } from '../../../../../shared/types/clinical.js';
 
 /**
  * Compute BMI from height and weight

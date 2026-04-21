@@ -4,9 +4,9 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { withAuth } from '../../backend/src/middleware/auth-middleware';
-import { applySecurityHeaders } from '../../backend/src/middleware/security-headers';
-import { supabaseAdmin } from '../../backend/src/config/supabase';
+import { withAuth } from '../../backend/src/middleware/auth-middleware.js';
+import { applySecurityHeaders } from '../../backend/src/middleware/security-headers.js';
+import { supabaseAdmin } from '../../backend/src/config/supabase.js';
 
 export default withAuth(async (req, res: VercelResponse) => {
   applySecurityHeaders(res);

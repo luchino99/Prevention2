@@ -23,8 +23,8 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { supabaseAdmin } from '../../../backend/src/config/supabase';
-import { applySecurityHeaders } from '../../../backend/src/middleware/security-headers';
+import { supabaseAdmin } from '../../../backend/src/config/supabase.js';
+import { applySecurityHeaders } from '../../../backend/src/middleware/security-headers.js';
 
 const CRON_SECRET = process.env.CRON_SIGNING_SECRET;
 const GRACE_DAYS = Number(process.env.ANONYMIZE_GRACE_DAYS ?? '30');

@@ -20,10 +20,10 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { supabaseAdmin } from '../../backend/src/config/supabase';
-import { applySecurityHeaders } from '../../backend/src/middleware/security-headers';
-import { checkRateLimit, applyRateLimitHeaders } from '../../backend/src/middleware/rate-limit';
-import { isUpstashConfigured } from '../../backend/src/middleware/rate-limit-upstash';
+import { supabaseAdmin } from '../../backend/src/config/supabase.js';
+import { applySecurityHeaders } from '../../backend/src/middleware/security-headers.js';
+import { checkRateLimit, applyRateLimitHeaders } from '../../backend/src/middleware/rate-limit.js';
+import { isUpstashConfigured } from '../../backend/src/middleware/rate-limit-upstash.js';
 
 const APP_VERSION = process.env.APP_VERSION ?? '0.0.0-dev';
 const APP_REGION = process.env.APP_REGION ?? 'unknown';

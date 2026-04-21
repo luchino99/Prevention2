@@ -19,7 +19,7 @@
  * Zero side effects - pure calculation only
  */
 
-import type { AdaInput, AdaResult } from '../../../../../shared/types/clinical';
+import type { AdaInput, AdaResult } from '../../../../../shared/types/clinical.js';
 
 // ============================================================================
 // Helper Functions (Pure)
