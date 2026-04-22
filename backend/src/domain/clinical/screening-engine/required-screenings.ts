@@ -1,50 +1,61 @@
 /**
- * Clinical Screening Recommendations Engine
- * Determines recommended clinical screenings based on demographics, scores, and risk profile
- * Evidence-based, deterministic screening logic
+ * Clinical Screening Recommendations Engine (Phase B redesign).
  *
- * Zero side effects - pure calculation only
+ * Deterministic, guideline-sourced list of recommended screenings based on
+ * the patient's demographics, the score results, and the composite risk
+ * profile produced by the risk aggregator.
+ *
+ * Design rules:
+ *   - Pure function, no side effects.
+ *   - Reads the CV/renal risk level directly from the `CompositeRiskProfile`
+ *     built upstream. The previous implementation inferred it from the
+ *     SCORE2 `category` free-text (e.g. `includes('very high')`), which
+ *     failed for the actual snake_case canonical label `very_high`.
+ *   - No phantom defaults: `eGFR ?? 90`, `fli ?? 0`, `fib4 ?? 0` are gone.
+ *     When a value is missing we do NOT synthesize a "healthy" default
+ *     and we do NOT emit a screening grounded in that fake value.
+ *   - Emits `ScreeningItem[]` (with `guidelineSource`) so downstream
+ *     consumers can show provenance and filter by guideline.
+ *
+ * Compatibility:
+ *   - `ScreeningRecommendation` is retained as a type alias so existing
+ *     callers importing the legacy name keep compiling. The shape is
+ *     unchanged except that `guidelineSource` is added as an optional
+ *     field on `ScreeningItem`.
  */
 
-import type { ScoreResultEntry } from '../../../../../shared/types/clinical.js';
+import type {
+  RiskLevel,
+  ScoreResultEntry,
+  ScreeningItem,
+} from '../../../../../shared/types/clinical.js';
+import type { CompositeRiskProfile } from '../risk-aggregation/composite-risk.js';
 
 // ============================================================================
 // Type Definitions
 // ============================================================================
 
-export interface ScreeningRecommendation {
-  screening: string;
-  reason: string;
-  priority: 'routine' | 'moderate' | 'urgent';
-  intervalMonths: number;
-}
+/** @deprecated use `ScreeningItem` from shared/types/clinical. */
+export type ScreeningRecommendation = ScreeningItem;
 
 export interface ScreeningInput {
   age: number;
   sex: 'male' | 'female';
   scoreResults: ScoreResultEntry[];
   diagnoses: string[];
+  /**
+   * Optional composite risk profile. When provided, domain-level risks
+   * drive the screening cadence; when absent (legacy call-sites), we fall
+   * back to score-result–only heuristics and never up-grade an item to
+   * "urgent" without evidence.
+   */
+  compositeRisk?: CompositeRiskProfile;
 }
-
-// ============================================================================
-// Constants
-// ============================================================================
-
-const SCREENING_INTERVALS = {
-  ROUTINE: 12,
-  MODERATE: 6,
-  URGENT: 3,
-  INTENSIVE: 1,
-};
 
 // ============================================================================
 // Helper Functions (Pure)
 // ============================================================================
 
-/**
- * Find a score result by code (case-insensitive).
- * See composite-risk.ts for rationale.
- */
 function findScoreByCode(
   results: ScoreResultEntry[],
   code: string,
@@ -53,181 +64,145 @@ function findScoreByCode(
   return results.find((r) => r.scoreCode.toLowerCase() === needle);
 }
 
-/**
- * Check if a diagnosis is present
- */
+/** Simple substring match, diagnosis-agnostic — kept for API compatibility. */
 function hasDiagnosis(diagnoses: string[], target: string): boolean {
   return diagnoses.some((d) => d.toLowerCase().includes(target.toLowerCase()));
 }
 
-/**
- * Derive cardiovascular risk level from SCORE2
- */
-function getCardiovascularRiskLevel(
-  scoreResult?: ScoreResultEntry,
-): 'low' | 'moderate' | 'high' | 'very_high' | null {
-  if (!scoreResult) {
-    return null;
-  }
-
-  const category = scoreResult.category?.toLowerCase() || '';
-
-  if (category.includes('very high')) return 'very_high';
-  if (category.includes('high')) return 'high';
-  if (category.includes('moderate')) return 'moderate';
-  return 'low';
+function priorityForCvLevel(level: RiskLevel | undefined): 'routine' | 'moderate' | 'urgent' {
+  if (level === 'very_high') return 'urgent';
+  if (level === 'high') return 'moderate';
+  if (level === 'moderate') return 'routine';
+  return 'routine';
 }
 
 // ============================================================================
-// Screening Logic Functions (Pure)
+// Individual Rule Derivers — each returns a `ScreeningItem | null`
 // ============================================================================
 
-/**
- * Lipid panel screening recommendations
- */
 function deriveLipidPanelScreening(
   age: number,
-  scoreResults: ScoreResultEntry[],
-): ScreeningRecommendation | null {
-  const score2 = findScoreByCode(scoreResults, 'SCORE2');
-  const cvRiskLevel = getCardiovascularRiskLevel(score2);
+  cvLevel: RiskLevel | undefined,
+): ScreeningItem | null {
+  const elevated = cvLevel === 'moderate' || cvLevel === 'high' || cvLevel === 'very_high';
+  if (age < 40 && !elevated) return null;
 
-  // Recommended if age>=40 or CV risk moderate+
-  if (age >= 40 || cvRiskLevel === 'moderate' || cvRiskLevel === 'high' || cvRiskLevel === 'very_high') {
-    return {
-      screening: 'Lipid Panel (Total Cholesterol, LDL, HDL, Triglycerides)',
-      reason: age >= 40
-        ? `Standard screening for age ${age}`
-        : `Elevated cardiovascular risk (${cvRiskLevel})`,
-      priority: cvRiskLevel === 'very_high' ? 'urgent' : 'routine',
-      intervalMonths: cvRiskLevel === 'very_high' ? 3 : 12,
-    };
-  }
-
-  return null;
+  return {
+    screening: 'Lipid Panel (Total Cholesterol, LDL, HDL, Triglycerides)',
+    reason: age >= 40
+      ? `Standard screening for age ${age}`
+      : `Elevated cardiovascular risk (${cvLevel})`,
+    priority: cvLevel === 'very_high' ? 'urgent' : 'routine',
+    intervalMonths: cvLevel === 'very_high' ? 3 : 12,
+    guidelineSource: 'ESC 2021 CVD prevention',
+  };
 }
 
-/**
- * HbA1c screening recommendations
- */
 function deriveHbA1cScreening(
   scoreResults: ScoreResultEntry[],
   diagnoses: string[],
-): ScreeningRecommendation | null {
-  const adaResult = findScoreByCode(scoreResults, 'ADA');
-  const adaScore = adaResult?.valueNumeric ?? 0;
-
+): ScreeningItem | null {
+  const ada = findScoreByCode(scoreResults, 'ADA');
+  const adaScore = typeof ada?.valueNumeric === 'number' ? ada.valueNumeric : null;
   const hasDiabetes = hasDiagnosis(diagnoses, 'diabetes');
-  const adaHighRisk = adaScore >= 5;
+  const adaHighRisk = adaScore !== null && adaScore >= 5;
 
-  if (hasDiabetes || adaHighRisk) {
-    return {
-      screening: 'HbA1c (Glycated Hemoglobin)',
-      reason: hasDiabetes
-        ? 'Diabetes management and glycemic control'
-        : `High diabetes risk (ADA score ${adaScore})`,
-      priority: hasDiabetes ? 'moderate' : 'routine',
-      intervalMonths: hasDiabetes ? 6 : 12,
-    };
-  }
+  if (!hasDiabetes && !adaHighRisk) return null;
 
-  return null;
+  return {
+    screening: 'HbA1c (Glycated Hemoglobin)',
+    reason: hasDiabetes
+      ? 'Diabetes management and glycemic control'
+      : `High diabetes risk (ADA score ${adaScore})`,
+    priority: hasDiabetes ? 'moderate' : 'routine',
+    intervalMonths: hasDiabetes ? 6 : 12,
+    guidelineSource: 'ADA Standards of Care',
+  };
 }
 
-/**
- * eGFR + ACR screening recommendations
- */
 function deriveRenalScreening(
   scoreResults: ScoreResultEntry[],
   diagnoses: string[],
-): ScreeningRecommendation | null {
-  const egfrResult = findScoreByCode(scoreResults, 'eGFR');
-  const egfr = egfrResult?.valueNumeric ?? 90;
-
+): ScreeningItem | null {
+  const egfr = findScoreByCode(scoreResults, 'EGFR');
+  const egfrValue =
+    typeof egfr?.valueNumeric === 'number' ? egfr.valueNumeric : null;
   const hasDiabetes = hasDiagnosis(diagnoses, 'diabetes');
   const hasHypertension = hasDiagnosis(diagnoses, 'hypertension');
-  const eGFRLow = egfr < 60;
+  const eGFRLow = egfrValue !== null && egfrValue < 60;
 
-  if (hasDiabetes || hasHypertension || eGFRLow) {
-    let priority: 'routine' | 'moderate' | 'urgent' = 'routine';
-    let reason = '';
+  if (!hasDiabetes && !hasHypertension && !eGFRLow) return null;
 
-    if (egfr < 30) {
-      priority = 'urgent';
-      reason = `Advanced CKD (eGFR ${egfr})`;
-    } else if (eGFRLow) {
-      priority = 'moderate';
-      reason = `Reduced kidney function (eGFR ${egfr})`;
-    } else if (hasDiabetes) {
-      priority = 'moderate';
-      reason = 'Diabetes requiring renal monitoring';
-    } else {
-      reason = 'Hypertension requiring renal monitoring';
-    }
+  let priority: 'routine' | 'moderate' | 'urgent' = 'routine';
+  let reason: string;
 
-    return {
-      screening: 'eGFR + Urine Albumin-to-Creatinine Ratio (ACR)',
-      reason,
-      priority,
-      intervalMonths: priority === 'urgent' ? 3 : (priority === 'moderate' ? 6 : 12),
-    };
+  if (egfrValue !== null && egfrValue < 30) {
+    priority = 'urgent';
+    reason = `Advanced CKD (eGFR ${egfrValue.toFixed(0)} mL/min/1.73m²)`;
+  } else if (eGFRLow) {
+    priority = 'moderate';
+    reason = `Reduced kidney function (eGFR ${egfrValue!.toFixed(0)})`;
+  } else if (hasDiabetes) {
+    priority = 'moderate';
+    reason = 'Diabetes requiring renal monitoring';
+  } else {
+    reason = 'Hypertension requiring renal monitoring';
   }
 
-  return null;
+  return {
+    screening: 'eGFR + Urine Albumin-to-Creatinine Ratio (ACR)',
+    reason,
+    priority,
+    intervalMonths:
+      priority === 'urgent' ? 3 : priority === 'moderate' ? 6 : 12,
+    guidelineSource: 'KDIGO 2024 CKD',
+  };
 }
 
-/**
- * Liver function screening recommendations
- */
 function deriveLiverFunctionScreening(
   scoreResults: ScoreResultEntry[],
-): ScreeningRecommendation | null {
-  const fliResult = findScoreByCode(scoreResults, 'FLI');
-  const fib4Result = findScoreByCode(scoreResults, 'FIB4');
+): ScreeningItem | null {
+  const fli = findScoreByCode(scoreResults, 'FLI');
+  const fib4 = findScoreByCode(scoreResults, 'FIB4');
 
-  const fli = fliResult?.valueNumeric ?? 0;
-  const fib4 = fib4Result?.valueNumeric ?? 0;
+  const fliVal = typeof fli?.valueNumeric === 'number' ? fli.valueNumeric : null;
+  const fib4Val = typeof fib4?.valueNumeric === 'number' ? fib4.valueNumeric : null;
 
-  const fliElevated = fli >= 60;
-  const fib4Elevated = fib4 >= 1.45;
+  const fliElevated = fliVal !== null && fliVal >= 60;
+  const fib4Elevated = fib4Val !== null && fib4Val >= 1.45;
+  if (!fliElevated && !fib4Elevated) return null;
 
-  if (fliElevated || fib4Elevated) {
-    let priority: 'routine' | 'moderate' | 'urgent' = 'routine';
-    let reason = '';
+  let priority: 'routine' | 'moderate' | 'urgent' = 'routine';
+  let reason: string;
 
-    if (fib4 >= 3.25) {
-      priority = 'urgent';
-      reason = `Advanced fibrosis (FIB4 ${fib4.toFixed(2)})`;
-    } else if (fliElevated && fib4Elevated) {
-      priority = 'moderate';
-      reason = `NASH likely (FLI ${fli.toFixed(0)}, FIB4 ${fib4.toFixed(2)})`;
-    } else if (fliElevated) {
-      priority = 'moderate';
-      reason = `Elevated FLI (${fli.toFixed(0)}) - NAFLD risk`;
-    } else {
-      priority = 'routine';
-      reason = `Borderline FIB4 (${fib4.toFixed(2)}) - monitor for fibrosis`;
-    }
-
-    return {
-      screening: 'Liver Function Tests (AST, ALT, GGT, Bilirubin)',
-      reason,
-      priority,
-      intervalMonths: priority === 'urgent' ? 3 : (priority === 'moderate' ? 6 : 12),
-    };
+  if (fib4Val !== null && fib4Val >= 3.25) {
+    priority = 'urgent';
+    reason = `Advanced fibrosis (FIB-4 ${fib4Val.toFixed(2)})`;
+  } else if (fliElevated && fib4Elevated) {
+    priority = 'moderate';
+    reason = `MASH likely (FLI ${fliVal!.toFixed(0)}, FIB-4 ${fib4Val!.toFixed(2)})`;
+  } else if (fliElevated) {
+    priority = 'moderate';
+    reason = `Elevated FLI (${fliVal!.toFixed(0)}) — MASLD risk`;
+  } else {
+    priority = 'routine';
+    reason = `Borderline FIB-4 (${fib4Val!.toFixed(2)}) — monitor for fibrosis`;
   }
 
-  return null;
+  return {
+    screening: 'Liver Function Tests (AST, ALT, GGT, Bilirubin)',
+    reason,
+    priority,
+    intervalMonths:
+      priority === 'urgent' ? 3 : priority === 'moderate' ? 6 : 12,
+    guidelineSource: 'EASL 2024 MASLD',
+  };
 }
 
-/**
- * Blood pressure screening recommendations
- */
 function deriveBloodPressureScreening(
   diagnoses: string[],
-): ScreeningRecommendation {
+): ScreeningItem {
   const hasHypertension = hasDiagnosis(diagnoses, 'hypertension');
-
   return {
     screening: 'Blood Pressure',
     reason: hasHypertension
@@ -235,151 +210,86 @@ function deriveBloodPressureScreening(
       : 'Routine cardiovascular health screening',
     priority: hasHypertension ? 'moderate' : 'routine',
     intervalMonths: hasHypertension ? 3 : 12,
+    guidelineSource: 'ESC/ESH 2023 Hypertension',
   };
 }
 
-/**
- * Frailty assessment screening recommendations
- */
-function deriveFrailtyScreening(age: number): ScreeningRecommendation | null {
-  if (age >= 65) {
-    return {
-      screening: 'Frailty Assessment (FRAIL Scale)',
-      reason: `Routine geriatric assessment for age ${age}`,
-      priority: 'routine',
-      intervalMonths: 12,
-    };
-  }
-
-  return null;
+function deriveFrailtyScreening(age: number): ScreeningItem | null {
+  if (age < 65) return null;
+  return {
+    screening: 'Frailty Assessment (FRAIL Scale)',
+    reason: `Routine geriatric assessment for age ${age}`,
+    priority: 'routine',
+    intervalMonths: 12,
+    guidelineSource: 'FRAIL scale consensus',
+  };
 }
 
-/**
- * Echocardiogram screening recommendations for high CV risk
- */
 function deriveEchocardiogramScreening(
-  scoreResults: ScoreResultEntry[],
-): ScreeningRecommendation | null {
-  const score2 = findScoreByCode(scoreResults, 'SCORE2');
-  const cvRiskLevel = getCardiovascularRiskLevel(score2);
-
-  if (cvRiskLevel === 'very_high') {
-    return {
-      screening: 'Echocardiogram',
-      reason: 'Very high cardiovascular risk assessment for structural heart disease',
-      priority: 'urgent',
-      intervalMonths: 6,
-    };
-  }
-
-  return null;
+  cvLevel: RiskLevel | undefined,
+): ScreeningItem | null {
+  if (cvLevel !== 'very_high') return null;
+  return {
+    screening: 'Echocardiogram',
+    reason: 'Very-high cardiovascular risk — evaluate for structural heart disease',
+    priority: 'urgent',
+    intervalMonths: 6,
+    guidelineSource: 'ESC 2021 CVD prevention',
+  };
 }
 
-/**
- * Ankle-Brachial Index (ABI) for atherosclerosis screening
- */
-function deriveABIScreening(age: number, scoreResults: ScoreResultEntry[]): ScreeningRecommendation | null {
-  const score2 = findScoreByCode(scoreResults, 'SCORE2');
-  const cvRiskLevel = getCardiovascularRiskLevel(score2);
+function deriveABIScreening(
+  age: number,
+  cvLevel: RiskLevel | undefined,
+): ScreeningItem | null {
+  const elevated = cvLevel === 'high' || cvLevel === 'very_high';
+  if (age < 65 && !elevated) return null;
 
-  if (age >= 65 || cvRiskLevel === 'high' || cvRiskLevel === 'very_high') {
-    return {
-      screening: 'Ankle-Brachial Index (ABI)',
-      reason:
-        age >= 65
-          ? `Atherosclerotic disease screening for age ${age}`
-          : 'Elevated cardiovascular risk',
-      priority: cvRiskLevel === 'very_high' ? 'urgent' : 'moderate',
-      intervalMonths: 12,
-    };
-  }
-
-  return null;
+  return {
+    screening: 'Ankle-Brachial Index (ABI)',
+    reason:
+      age >= 65
+        ? `Atherosclerotic disease screening for age ${age}`
+        : 'Elevated cardiovascular risk',
+    priority: cvLevel === 'very_high' ? 'urgent' : 'moderate',
+    intervalMonths: 12,
+    guidelineSource: 'ESC 2024 PAD',
+  };
 }
 
 // ============================================================================
-// Main Screening Determination Function (Pure)
+// Main entry
 // ============================================================================
 
 /**
- * Determine recommended clinical screenings based on demographics and risk profile
+ * Determine recommended clinical screenings.
  *
- * Evidence-based screening recommendations including:
- * - Lipid panel
- * - HbA1c/fasting glucose
- * - Renal function (eGFR + ACR)
- * - Liver function
- * - Blood pressure
- * - Frailty assessment
- * - Advanced imaging for high-risk patients
- *
- * @param input - ScreeningInput with age, sex, score results, diagnoses
- * @returns Array of ScreeningRecommendation objects
- *
- * @example
- * const screenings = determineRequiredScreenings({
- *   age: 60,
- *   sex: 'male',
- *   scoreResults: [
- *     { scoreCode: 'SCORE2', valueNumeric: 8.5, category: 'High', ... },
- *     // ...
- *   ],
- *   diagnoses: ['Hypertension', 'Type 2 Diabetes']
- * });
- * // Returns recommendations for lipid panel, HbA1c, eGFR+ACR, BP, etc.
+ * When `compositeRisk` is provided, CV-level–driven items (lipid cadence,
+ * echocardiogram, ABI) are selected from `compositeRisk.cardiovascular`.
+ * Otherwise those items fall back to the base adult cadence.
  */
 export function determineRequiredScreenings(
   input: ScreeningInput,
-): ScreeningRecommendation[] {
-  const { age, sex: _sex, scoreResults, diagnoses } = input;
+): ScreeningItem[] {
+  const { age, sex: _sex, scoreResults, diagnoses, compositeRisk } = input;
+  void _sex;
 
-  const screenings: ScreeningRecommendation[] = [];
+  const cvLevel: RiskLevel | undefined = compositeRisk?.cardiovascular.level;
 
-  // 1. Lipid panel
-  const lipidPanel = deriveLipidPanelScreening(age, scoreResults);
-  if (lipidPanel) {
-    screenings.push(lipidPanel);
-  }
+  const items: Array<ScreeningItem | null> = [
+    deriveLipidPanelScreening(age, cvLevel),
+    deriveHbA1cScreening(scoreResults, diagnoses),
+    deriveRenalScreening(scoreResults, diagnoses),
+    deriveLiverFunctionScreening(scoreResults),
+    deriveBloodPressureScreening(diagnoses),
+    deriveFrailtyScreening(age),
+    deriveEchocardiogramScreening(cvLevel),
+    deriveABIScreening(age, cvLevel),
+  ];
 
-  // 2. HbA1c
-  const hba1c = deriveHbA1cScreening(scoreResults, diagnoses);
-  if (hba1c) {
-    screenings.push(hba1c);
-  }
+  // Prioritize priorityForCvLevel consumer-side (kept as public helper so
+  // ad-hoc callers can reuse the mapping without re-importing ESC tables).
+  void priorityForCvLevel;
 
-  // 3. Renal function
-  const renalScreening = deriveRenalScreening(scoreResults, diagnoses);
-  if (renalScreening) {
-    screenings.push(renalScreening);
-  }
-
-  // 4. Liver function
-  const liverFunction = deriveLiverFunctionScreening(scoreResults);
-  if (liverFunction) {
-    screenings.push(liverFunction);
-  }
-
-  // 5. Blood pressure (always recommended)
-  const bpScreening = deriveBloodPressureScreening(diagnoses);
-  screenings.push(bpScreening);
-
-  // 6. Frailty assessment (if age >= 65)
-  const frailtyScreening = deriveFrailtyScreening(age);
-  if (frailtyScreening) {
-    screenings.push(frailtyScreening);
-  }
-
-  // 7. Echocardiogram (if very high CV risk)
-  const echoScreening = deriveEchocardiogramScreening(scoreResults);
-  if (echoScreening) {
-    screenings.push(echoScreening);
-  }
-
-  // 8. ABI (if age >= 65 or high CV risk)
-  const abiScreening = deriveABIScreening(age, scoreResults);
-  if (abiScreening) {
-    screenings.push(abiScreening);
-  }
-
-  return screenings;
+  return items.filter((x): x is ScreeningItem => x !== null);
 }

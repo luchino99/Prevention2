@@ -152,6 +152,27 @@ const LabsSchema = z.object({
     .max(CLINICAL_RANGES.albuminCreatinineRatio.max, `ACR must not exceed ${CLINICAL_RANGES.albuminCreatinineRatio.max}`)
     .optional()
     .nullable(),
+  urineAlbuminMgL: z
+    .number()
+    .nonnegative('Urine albumin must be non-negative')
+    .min(CLINICAL_RANGES.urineAlbuminMgL.min)
+    .max(CLINICAL_RANGES.urineAlbuminMgL.max, `Urine albumin must not exceed ${CLINICAL_RANGES.urineAlbuminMgL.max} mg/L`)
+    .optional()
+    .nullable(),
+  urineCreatinineMgDl: z
+    .number()
+    .positive('Urine creatinine must be positive')
+    .min(CLINICAL_RANGES.urineCreatinineMgDl.min, `Urine creatinine must be at least ${CLINICAL_RANGES.urineCreatinineMgDl.min} mg/dL`)
+    .max(CLINICAL_RANGES.urineCreatinineMgDl.max, `Urine creatinine must not exceed ${CLINICAL_RANGES.urineCreatinineMgDl.max} mg/dL`)
+    .optional()
+    .nullable(),
+}).strict();
+
+/**
+ * Assessment-level metadata. Operator intent, never a formula input.
+ */
+const MetaSchema = z.object({
+  cvAssessmentFocus: z.boolean({ coerce: true }).optional().nullable(),
 }).strict();
 
 /**
@@ -239,6 +260,7 @@ const RawAssessmentInputSchema = z.object({
   clinicalContext: ClinicalContextSchema,
   lifestyle: LifestyleSchema.optional().default({}),
   frailty: FrailtySchema,
+  meta: MetaSchema.optional().nullable(),
 }).strict();
 
 /**
@@ -272,6 +294,8 @@ export const AssessmentInputSchema = RawAssessmentInputSchema.transform(
       altUL: v.labs.altUL ?? undefined,
       plateletsGigaL: v.labs.plateletsGigaL ?? undefined,
       albuminCreatinineRatio: v.labs.albuminCreatinineRatio ?? undefined,
+      urineAlbuminMgL: v.labs.urineAlbuminMgL ?? undefined,
+      urineCreatinineMgDl: v.labs.urineCreatinineMgDl ?? undefined,
     },
     clinicalContext: {
       smoking: v.clinicalContext.smoking,
@@ -294,6 +318,9 @@ export const AssessmentInputSchema = RawAssessmentInputSchema.transform(
       sedentaryLevel: v.lifestyle.sedentaryLevel ?? undefined,
     },
     frailty: v.frailty ?? undefined,
+    meta: v.meta
+      ? { cvAssessmentFocus: v.meta.cvAssessmentFocus ?? undefined }
+      : undefined,
   }),
 );
 

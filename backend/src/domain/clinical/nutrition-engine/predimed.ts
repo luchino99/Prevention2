@@ -51,29 +51,49 @@ const DEFAULT_ACTIVITY_FACTOR = 1.2; // sedentary
 // ============================================================================
 
 /**
- * Compute PREDIMED score from 14 yes/no answers
- * PREDIMED maximum score is 14 (high adherence to Mediterranean diet)
+ * Maximum PREDIMED MEDAS score (14 yes/no items).
  *
- * @param answers - Array of 14 boolean answers
- * @returns score 0-14
+ * Exported as a named constant so the score-engine orchestrator and the
+ * UI can reference the same value without repeating the magic number.
  */
-function computePredimedScore(answers: boolean[]): number {
+export const PREDIMED_MAX_SCORE = 14;
+
+/**
+ * Compute PREDIMED MEDAS score from 14 yes/no answers.
+ *
+ * Validated instrument from Estruch et al. (PREDIMED trial). We intentionally
+ * do not alter the scoring logic — the score is simply the count of
+ * positively-answered items, capped at `PREDIMED_MAX_SCORE`.
+ *
+ * Exported so `computeAllScores` in the score-engine orchestrator can
+ * emit a canonical `ScoreResultEntry` with `scoreCode = 'PREDIMED'`
+ * without duplicating the formula.
+ *
+ * @param answers - Array of boolean answers (expected length 14). Shorter
+ *   arrays return a partial count; longer arrays are truncated to 14.
+ * @returns score 0..14
+ */
+export function computePredimedScore(answers: boolean[] | undefined | null): number {
   if (!Array.isArray(answers)) {
     return 0;
   }
   // Count "true" answers, cap at 14
-  const validAnswers = answers.slice(0, 14);
+  const validAnswers = answers.slice(0, PREDIMED_MAX_SCORE);
   return validAnswers.filter((a) => a === true).length;
 }
 
 /**
- * Categorize PREDIMED adherence
- * low: 0-4, medium: 5-9, high: 10-14
+ * Categorize PREDIMED adherence according to the canonical cut-offs
+ * from the validation literature: low (0–4), medium (5–9), high (10–14).
+ *
+ * Exported for the score-engine orchestrator; returns `null` on
+ * out-of-range input rather than throwing, which matches the permissive
+ * semantics of the rest of the clinical engine.
  */
-function categorizeAdherence(
+export function categorizePredimedAdherence(
   score: number,
 ): 'low' | 'medium' | 'high' | null {
-  if (score < 0 || score > 14) {
+  if (!Number.isFinite(score) || score < 0 || score > PREDIMED_MAX_SCORE) {
     return null;
   }
   if (score <= 4) return 'low';
@@ -203,7 +223,7 @@ export function buildNutritionSummary(input: NutritionInput): NutritionSummary {
 
   if (predimedAnswers && Array.isArray(predimedAnswers)) {
     predimedScore = computePredimedScore(predimedAnswers);
-    adherenceBand = categorizeAdherence(predimedScore);
+    adherenceBand = categorizePredimedAdherence(predimedScore);
   }
 
   // Normalize activity level and get factor.

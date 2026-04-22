@@ -1,20 +1,32 @@
 /**
  * Clinical Alert Derivation Engine
- * Derives clinical alerts from assessment results by comparing current vs previous assessments
- * and identifying critical findings
+ * Derives CLINICAL alerts from assessment results. These are time-bound,
+ * clinician-actionable signals that belong in the alerts inbox.
  *
- * Alert types:
- * 1. clinical_risk_up - composite risk increased
- * 2. followup_due - review date approaching/past
- * 3. missing_critical_data - critical labs missing
- * 4. red_flag - critical findings
- * 5. diet_adherence_drop - PREDIMED score decreased
- * 6. activity_decline - activity minutes decreased significantly
+ * Alert types emitted by deriveAlerts():
+ *   1. clinical_risk_up      - composite risk increased
+ *   2. followup_due          - review date approaching/past
+ *   3. red_flag              - critical findings
+ *   4. diet_adherence_drop   - PREDIMED score decreased
+ *   5. activity_decline      - activity minutes decreased significantly
+ *
+ * IMPORTANT — completeness vs alerts:
+ *   "missing_critical_data" used to live here. It has been moved to the
+ *   completeness-checker module because a data collection gap is not a
+ *   clinical alert: it has no due date, no severity escalation, and no
+ *   bedside action. Mixing the two concepts eroded the alerts inbox into
+ *   an unfiltered noise feed. The legacy helper `deriveCompletenessAlerts`
+ *   is preserved for back-compat tests but is NOT called from
+ *   `deriveAlerts`.
  *
  * Zero side effects - pure calculation only
  */
 
-import type { ScoreResultEntry } from '../../../../../shared/types/clinical.js';
+import type {
+  RiskLevel,
+  ScoreResultEntry,
+} from '../../../../../shared/types/clinical.js';
+import type { CompositeRiskProfile } from '../risk-aggregation/composite-risk.js';
 
 // ============================================================================
 // Type Definitions
@@ -33,9 +45,28 @@ export interface AlertEntry {
 export interface AlertDeriverInput {
   currentScoreResults: ScoreResultEntry[];
   previousScoreResults?: ScoreResultEntry[];
-  compositeRisk: any;
-  followupPlan?: any;
-  missingDataFlags: string[];
+  compositeRisk: CompositeRiskProfile;
+  /**
+   * Previous-assessment composite risk, supplied ONLY when the caller has
+   * actually loaded the previous risk profile. The alert engine will NEVER
+   * synthesize a placeholder baseline. If this is undefined/null, no
+   * `clinical_risk_up` alert is emitted — a false positive here is worse
+   * than a missed signal.
+   */
+  previousCompositeRisk?: CompositeRiskProfile | null;
+  followupPlan?: { nextReviewDate?: string } | null;
+  /**
+   * @deprecated completeness flags are emitted by the completeness-checker
+   * module; kept here only so legacy callers can pass the value without a
+   * type error. The alert engine no longer branches on them.
+   */
+  missingDataFlags?: string[];
+  /**
+   * Optional anchor for follow-up-due alerts. Defaults to `new Date()`.
+   * Passing the request timestamp keeps the alert stream deterministic
+   * relative to the assessment being evaluated.
+   */
+  now?: Date;
 }
 
 // ============================================================================
@@ -82,95 +113,133 @@ function getNumericValue(score?: ScoreResultEntry): number | null {
 }
 
 /**
- * Convert risk level string to numeric for comparison
+ * Convert a canonical `RiskLevel` to its numeric projection.
+ *
+ *   indeterminate = 0  (excluded from ordering)
+ *   low           = 1
+ *   moderate      = 2
+ *   high          = 3
+ *   very_high     = 4
+ *
+ * The previous `includes('very high')` implementation is gone: it
+ * silently mis-numbered the canonical `very_high` label because of the
+ * space vs. underscore mismatch and collapsed it down to `high`.
  */
-function riskLevelToNumeric(level: string): number {
-  const normalized = level?.toLowerCase() || '';
-  if (normalized.includes('very high')) return 4;
-  if (normalized.includes('high')) return 3;
-  if (normalized.includes('moderate')) return 2;
-  return 1; // low
+function riskLevelToNumeric(level: RiskLevel): number {
+  switch (level) {
+    case 'very_high':
+      return 4;
+    case 'high':
+      return 3;
+    case 'moderate':
+      return 2;
+    case 'low':
+      return 1;
+    case 'indeterminate':
+      return 0;
+  }
 }
 
+const LEVEL_NAMES: Record<RiskLevel, string> = {
+  indeterminate: 'Indeterminate',
+  low: 'Low',
+  moderate: 'Moderate',
+  high: 'High',
+  very_high: 'Very High',
+};
+
 /**
- * Derive risk level change alert
+ * Derive the "composite risk increased" alert.
+ *
+ * Emits nothing when:
+ *   - the previous risk is missing (no baseline → no comparison),
+ *   - either side is `indeterminate` (the transition is ambiguous and
+ *     must be interpreted by a clinician, not auto-escalated),
+ *   - the new level is <= the previous one.
  */
 function deriveRiskUpAlert(
-  currentRisk: any,
-  previousRisk: any,
+  currentRisk: CompositeRiskProfile | null | undefined,
+  previousRisk: CompositeRiskProfile | null | undefined,
+  nowISO: string,
 ): AlertEntry | null {
-  if (!currentRisk || !previousRisk) {
+  if (!currentRisk || !previousRisk) return null;
+  if (
+    currentRisk.level === 'indeterminate' ||
+    previousRisk.level === 'indeterminate'
+  ) {
     return null;
   }
 
   const currentNumeric = riskLevelToNumeric(currentRisk.level);
   const previousNumeric = riskLevelToNumeric(previousRisk.level);
+  if (currentNumeric <= previousNumeric) return null;
 
-  if (currentNumeric <= previousNumeric) {
-    return null;
-  }
-
-  const levelNames: Record<number, string> = {
-    1: 'Low',
-    2: 'Moderate',
-    3: 'High',
-    4: 'Very High',
-  };
-
-  const severity: AlertSeverity =
-    currentNumeric >= 4 ? 'critical' : 'warning';
+  const severity: AlertSeverity = currentNumeric >= 4 ? 'critical' : 'warning';
 
   return {
     type: 'clinical_risk_up',
     severity,
     title: 'Composite Risk Increased',
-    message: `Composite risk level has increased from ${levelNames[previousNumeric]} to ${levelNames[currentNumeric]}. Recommend immediate clinical review.`,
-    timestamp: new Date().toISOString(),
+    message: `Composite risk level has increased from ${LEVEL_NAMES[previousRisk.level]} to ${LEVEL_NAMES[currentRisk.level]}. Recommend immediate clinical review.`,
+    timestamp: nowISO,
   };
 }
 
 /**
- * Derive followup due alert
+ * Derive "follow-up due" alert.
+ *
+ * Fired when the follow-up plan's `nextReviewDate` is within 14 days or
+ * already past. The `now` anchor MUST be passed by the caller so that the
+ * alert is deterministic relative to the assessment; otherwise the read
+ * path would drift (a review scheduled 3 months ago would toggle between
+ * "overdue" and nothing depending on the exact minute the snapshot is
+ * rehydrated).
  */
-function deriveFollowupDueAlert(followupPlan?: any): AlertEntry | null {
-  if (!followupPlan || !followupPlan.nextReviewDate) {
-    return null;
-  }
+function deriveFollowupDueAlert(
+  followupPlan: { nextReviewDate?: string } | null | undefined,
+  now: Date,
+): AlertEntry | null {
+  if (!followupPlan?.nextReviewDate) return null;
 
   const reviewDate = new Date(followupPlan.nextReviewDate);
-  const now = new Date();
+  if (Number.isNaN(reviewDate.getTime())) return null;
+
   const daysUntilReview = Math.floor(
     (reviewDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
   );
 
-  // Alert if within 2 weeks or overdue
-  if (daysUntilReview > 14) {
-    return null;
-  }
+  if (daysUntilReview > 14) return null;
 
+  const nowISO = now.toISOString();
   if (daysUntilReview < 0) {
     return {
       type: 'followup_due',
       severity: 'critical',
-      title: 'Followup Overdue',
-      message: `Clinical review was due ${Math.abs(daysUntilReview)} days ago. Schedule appointment immediately.`,
-      timestamp: new Date().toISOString(),
+      title: 'Follow-up Overdue',
+      message: `Clinical review was due ${Math.abs(daysUntilReview)} day(s) ago (${followupPlan.nextReviewDate}). Schedule appointment immediately.`,
+      timestamp: nowISO,
     };
   }
 
   return {
     type: 'followup_due',
     severity: 'warning',
-    title: 'Followup Due Soon',
-    message: `Clinical review is due in ${daysUntilReview} days (${reviewDate.toLocaleDateString()}). Please schedule.`,
-    timestamp: new Date().toISOString(),
+    title: 'Follow-up Due Soon',
+    message: `Clinical review is due in ${daysUntilReview} day(s) (${followupPlan.nextReviewDate}). Please schedule.`,
+    timestamp: nowISO,
   };
 }
 
 /**
- * Derive missing critical data alerts
+ * Derive missing-critical-data "alerts".
+ *
+ * @deprecated This helper is retained only for backwards compatibility with
+ * legacy consumers (a handful of older tests) that expect the old mixed
+ * stream. Production code MUST use `checkAssessmentCompleteness` from
+ * `domain/clinical/completeness/completeness-checker.ts` instead and keep
+ * the two streams separate.
  */
-function deriveMissingDataAlerts(
+export function deriveCompletenessAlerts(
   missingDataFlags: string[],
   currentScores: ScoreResultEntry[],
 ): AlertEntry[] {
@@ -219,58 +288,69 @@ function deriveMissingDataAlerts(
 }
 
 /**
- * Derive red flag alerts for critical findings
+ * Derive red-flag alerts for critical findings.
+ *
+ * Each branch is gated on `typeof valueNumeric === 'number'` rather than
+ * a truthy check, because a valid `0` value would previously be silently
+ * skipped (e.g. FRAIL = 0 is a meaningful non-frail baseline).
  */
 function deriveRedFlagAlerts(
   currentScores: ScoreResultEntry[],
+  nowISO: string,
 ): AlertEntry[] {
   const alerts: AlertEntry[] = [];
 
-  // SCORE2: very high CVD risk
-  const score2 = findScoreByCode(currentScores, 'SCORE2');
-  if (score2 && score2.valueNumeric && score2.valueNumeric >= CRITICAL_THRESHOLDS.SCORE2_VERY_HIGH) {
+  // SCORE2 / SCORE2-Diabetes: very-high CVD risk
+  const score2 =
+    findScoreByCode(currentScores, 'SCORE2') ??
+    findScoreByCode(currentScores, 'SCORE2_DIABETES');
+  if (score2 && typeof score2.valueNumeric === 'number' &&
+      score2.valueNumeric >= CRITICAL_THRESHOLDS.SCORE2_VERY_HIGH) {
     alerts.push({
       type: 'red_flag',
       severity: 'critical',
       title: 'Very High Cardiovascular Risk',
-      message: `10-year SCORE2 risk is ${score2.valueNumeric}%. Urgent cardiology referral and intensive management recommended.`,
-      timestamp: new Date().toISOString(),
+      message: `10-year SCORE2 risk is ${score2.valueNumeric.toFixed(1)}%. Urgent cardiology referral and intensive management recommended.`,
+      timestamp: nowISO,
     });
   }
 
-  // eGFR: kidney failure
-  const egfr = findScoreByCode(currentScores, 'eGFR');
-  if (egfr && egfr.valueNumeric && egfr.valueNumeric < CRITICAL_THRESHOLDS.eGFR_KIDNEY_FAILURE) {
+  // eGFR: advanced CKD
+  const egfr = findScoreByCode(currentScores, 'EGFR');
+  if (egfr && typeof egfr.valueNumeric === 'number' &&
+      egfr.valueNumeric < CRITICAL_THRESHOLDS.eGFR_KIDNEY_FAILURE) {
     alerts.push({
       type: 'red_flag',
       severity: 'critical',
       title: 'Advanced Chronic Kidney Disease',
-      message: `eGFR is ${egfr.valueNumeric} (Stage G4-G5). Urgent nephrology referral recommended.`,
-      timestamp: new Date().toISOString(),
+      message: `eGFR is ${egfr.valueNumeric.toFixed(0)} mL/min/1.73m² (Stage G4–G5). Urgent nephrology referral recommended.`,
+      timestamp: nowISO,
     });
   }
 
-  // FIB4: advanced liver fibrosis
+  // FIB-4: advanced liver fibrosis
   const fib4 = findScoreByCode(currentScores, 'FIB4');
-  if (fib4 && fib4.valueNumeric && fib4.valueNumeric >= CRITICAL_THRESHOLDS.FIB4_ADVANCED) {
+  if (fib4 && typeof fib4.valueNumeric === 'number' &&
+      fib4.valueNumeric >= CRITICAL_THRESHOLDS.FIB4_ADVANCED) {
     alerts.push({
       type: 'red_flag',
       severity: 'critical',
       title: 'Advanced Liver Fibrosis',
-      message: `FIB4 index is ${fib4.valueNumeric}. High risk for cirrhosis. Urgent hepatology referral and ultrasound recommended.`,
-      timestamp: new Date().toISOString(),
+      message: `FIB-4 index is ${fib4.valueNumeric.toFixed(2)}. High risk for cirrhosis. Urgent hepatology referral and ultrasound recommended.`,
+      timestamp: nowISO,
     });
   }
 
-  // FRAIL: frail status
+  // FRAIL: frail category
   const frail = findScoreByCode(currentScores, 'FRAIL');
-  if (frail && frail.valueNumeric && frail.valueNumeric >= CRITICAL_THRESHOLDS.FRAIL_CRITICAL) {
+  if (frail && typeof frail.valueNumeric === 'number' &&
+      frail.valueNumeric >= CRITICAL_THRESHOLDS.FRAIL_CRITICAL) {
     alerts.push({
       type: 'red_flag',
       severity: 'warning',
       title: 'Frailty Identified',
-      message: `FRAIL score indicates frailty status. Geriatric assessment and multidisciplinary intervention recommended.`,
-      timestamp: new Date().toISOString(),
+      message: `FRAIL score = ${frail.valueNumeric} (frail category). Geriatric assessment and multidisciplinary intervention recommended.`,
+      timestamp: nowISO,
     });
   }
 
@@ -278,76 +358,72 @@ function deriveRedFlagAlerts(
 }
 
 /**
- * Derive diet adherence drop alert
+ * Derive diet-adherence drop alert.
+ *
+ * Both scores must be numerically available — we do NOT treat missing
+ * values as "0", otherwise a patient who simply did not complete the
+ * PREDIMED questionnaire at the later visit would be falsely flagged for
+ * a big drop.
  */
 function deriveDietAdherenceAlert(
   currentScores: ScoreResultEntry[],
-  previousScores?: ScoreResultEntry[],
+  previousScores: ScoreResultEntry[] | undefined,
+  nowISO: string,
 ): AlertEntry | null {
-  if (!previousScores) {
-    return null;
-  }
+  if (!previousScores) return null;
+  const current = findScoreByCode(currentScores, 'PREDIMED');
+  const previous = findScoreByCode(previousScores, 'PREDIMED');
+  if (!current || !previous) return null;
 
-  const currentPredimed = findScoreByCode(currentScores, 'PREDIMED');
-  const previousPredimed = findScoreByCode(previousScores, 'PREDIMED');
+  const curr = getNumericValue(current);
+  const prev = getNumericValue(previous);
+  if (curr === null || prev === null) return null;
 
-  if (!currentPredimed || !previousPredimed) {
-    return null;
-  }
-
-  const currentScore = getNumericValue(currentPredimed) ?? 0;
-  const previousScore = getNumericValue(previousPredimed) ?? 0;
-
-  const drop = previousScore - currentScore;
-
-  if (drop > 2) {
+  if (prev - curr > 2) {
     return {
       type: 'diet_adherence_drop',
       severity: 'info',
       title: 'Diet Adherence Decline',
-      message: `PREDIMED score decreased from ${previousScore} to ${currentScore}. Consider dietary counseling reinforcement.`,
-      timestamp: new Date().toISOString(),
+      message: `PREDIMED score decreased from ${prev} to ${curr}. Consider dietary counseling reinforcement.`,
+      timestamp: nowISO,
     };
   }
-
   return null;
 }
 
 /**
- * Derive activity decline alert
+ * Derive activity-decline alert.
+ *
+ * Same missing-data policy as above: if either visit is missing the
+ * activity score entirely we return null; we never substitute 0 for an
+ * absent measurement.
  */
 function deriveActivityDeclineAlert(
   currentScores: ScoreResultEntry[],
-  previousScores?: ScoreResultEntry[],
+  previousScores: ScoreResultEntry[] | undefined,
+  nowISO: string,
 ): AlertEntry | null {
-  if (!previousScores) {
-    return null;
-  }
+  if (!previousScores) return null;
+  const current = findScoreByCode(currentScores, 'ACTIVITY');
+  const previous = findScoreByCode(previousScores, 'ACTIVITY');
+  if (!current || !previous) return null;
 
-  const currentActivity = findScoreByCode(currentScores, 'ACTIVITY');
-  const previousActivity = findScoreByCode(previousScores, 'ACTIVITY');
+  const curr = getNumericValue(current);
+  const prev = getNumericValue(previous);
+  if (curr === null || prev === null) return null;
 
-  if (!currentActivity || !previousActivity) {
-    return null;
-  }
-
-  const currentMin = getNumericValue(currentActivity) ?? 0;
-  const previousMin = getNumericValue(previousActivity) ?? 0;
-
-  // Alert if activity dropped by >25% or >50 min/week
-  const absoluteDecline = previousMin - currentMin;
-  const percentDecline = previousMin > 0 ? (absoluteDecline / previousMin) * 100 : 0;
+  const absoluteDecline = prev - curr;
+  const percentDecline = prev > 0 ? (absoluteDecline / prev) * 100 : 0;
 
   if (absoluteDecline > 50 || percentDecline > 25) {
     return {
       type: 'activity_decline',
       severity: 'info',
       title: 'Significant Activity Decline',
-      message: `Weekly physical activity decreased from ${previousMin} to ${currentMin} minutes. Consider exercise program review.`,
-      timestamp: new Date().toISOString(),
+      message: `Weekly physical activity decreased from ${prev} to ${curr} minutes. Consider exercise program review.`,
+      timestamp: nowISO,
     };
   }
-
   return null;
 }
 
@@ -361,8 +437,14 @@ function deriveActivityDeclineAlert(
  * Compares current vs previous assessments and identifies critical findings,
  * missing data, and trends requiring clinical attention.
  *
- * @param input - AlertDeriverInput with scores, previous scores, risk profile, followup plan, missing flags
+ * @param input - AlertDeriverInput with current & previous score results,
+ *                composite risk (current + optional previous baseline),
+ *                follow-up plan, and optional `now` anchor.
  * @returns Array of AlertEntry objects
+ *
+ * Alerts returned here are strictly clinical / time-bound. Completeness
+ * warnings live in a separate stream produced by
+ * `checkAssessmentCompleteness` — never merge the two.
  *
  * @example
  * const alerts = deriveAlerts({
@@ -371,70 +453,60 @@ function deriveActivityDeclineAlert(
  *     // ...
  *   ],
  *   previousScoreResults: [...],
- *   compositeRisk: { level: 'high' },
- *   missingDataFlags: ['hdlMgDl']
+ *   compositeRisk,        // CompositeRiskProfile for the current assessment
+ *   previousCompositeRisk, // null when no prior assessment exists
+ *   followupPlan,
+ *   now: new Date(),
  * });
- * // Returns alerts for risk increase, missing data, red flags
  */
 export function deriveAlerts(input: AlertDeriverInput): AlertEntry[] {
   const {
     currentScoreResults,
     previousScoreResults,
     compositeRisk,
+    previousCompositeRisk,
     followupPlan,
-    missingDataFlags = [],
+    now = new Date(),
+    missingDataFlags,
   } = input;
 
+  // Legacy parameter kept for type compatibility. Intentionally unused —
+  // completeness is emitted by `checkAssessmentCompleteness`, not here.
+  void missingDataFlags;
+
+  const nowISO = now.toISOString();
   const alerts: AlertEntry[] = [];
 
-  // 1. Risk increase alert
-  if (previousScoreResults) {
-    // Note: would need previous composite risk calculation
-    // For now, checking if we can derive it from raw score changes
-    const riskUpAlert = deriveRiskUpAlert(
-      compositeRisk,
-      previousScoreResults.length > 0 ? { level: 'moderate' } : null,
-    );
-    if (riskUpAlert) {
-      alerts.push(riskUpAlert);
-    }
-  }
+  // 1. Risk-up alert (emitted only with a real previous baseline)
+  const riskUpAlert = deriveRiskUpAlert(
+    compositeRisk,
+    previousCompositeRisk ?? null,
+    nowISO,
+  );
+  if (riskUpAlert) alerts.push(riskUpAlert);
 
-  // 2. Followup due alert
-  const followupAlert = deriveFollowupDueAlert(followupPlan);
-  if (followupAlert) {
-    alerts.push(followupAlert);
-  }
+  // 2. Follow-up due
+  const followupAlert = deriveFollowupDueAlert(followupPlan ?? null, now);
+  if (followupAlert) alerts.push(followupAlert);
 
-  // 3. Missing critical data alerts
-  const missingAlerts = deriveMissingDataAlerts(missingDataFlags, currentScoreResults);
-  alerts.push(...missingAlerts);
+  // 3. Red-flag findings
+  alerts.push(...deriveRedFlagAlerts(currentScoreResults, nowISO));
 
-  // 4. Red flag alerts
-  const redFlagAlerts = deriveRedFlagAlerts(currentScoreResults);
-  alerts.push(...redFlagAlerts);
+  // 4. Diet adherence drop (only with a previous PREDIMED)
+  const dietAlert = deriveDietAdherenceAlert(
+    currentScoreResults,
+    previousScoreResults,
+    nowISO,
+  );
+  if (dietAlert) alerts.push(dietAlert);
 
-  // 5. Diet adherence drop alert
-  if (previousScoreResults) {
-    const dietAlert = deriveDietAdherenceAlert(
-      currentScoreResults,
-      previousScoreResults,
-    );
-    if (dietAlert) {
-      alerts.push(dietAlert);
-    }
-  }
-
-  // 6. Activity decline alert
-  if (previousScoreResults) {
-    const activityAlert = deriveActivityDeclineAlert(
-      currentScoreResults,
-      previousScoreResults,
-    );
-    if (activityAlert) {
-      alerts.push(activityAlert);
-    }
-  }
+  // 5. Activity decline (only with a previous activity score)
+  const activityAlert = deriveActivityDeclineAlert(
+    currentScoreResults,
+    previousScoreResults,
+    nowISO,
+  );
+  if (activityAlert) alerts.push(activityAlert);
 
   return alerts;
 }

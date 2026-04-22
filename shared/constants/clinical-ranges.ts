@@ -23,4 +23,8 @@ export const CLINICAL_RANGES = {
   altUL: { min: 1, max: 2000 },
   plateletsGigaL: { min: 10, max: 1000 },
   albuminCreatinineRatio: { min: 0, max: 10000 },
+  // Raw urinary values used to derive ACR (mg/g) at the service boundary
+  // when an explicit ACR is not provided by the clinician.
+  urineAlbuminMgL: { min: 0, max: 5000 },
+  urineCreatinineMgDl: { min: 1, max: 500 },
 } as const;

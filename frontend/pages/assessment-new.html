@@ -6,6 +6,38 @@
   <meta name="robots" content="noindex,nofollow" />
   <title>New assessment — Uelfy Clinical</title>
   <link rel="stylesheet" href="../assets/css/app.css" />
+  <style>
+    /* Readiness preview: compact panel showing which key scores the
+       current form state is ready to compute. Pure UX affordance — it
+       does not substitute backend validation. */
+    .readiness-panel {
+      padding: 10px 14px;
+      border-radius: 6px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      font-size: 13px;
+    }
+    .readiness-panel .r-item { padding: 2px 0; }
+    .readiness-panel .r-ok { color: #0f766e; }
+    .readiness-panel .r-missing { color: #b45309; }
+    .readiness-panel code { font-size: 12px; }
+    .section-note {
+      margin: 0 0 8px 0;
+      font-size: 12px;
+      color: #6b7280;
+    }
+    /* PREDIMED MEDAS items are revealed only when the clinician explicitly
+       opts in (via the `predimedEnabled` checkbox). This avoids submitting
+       a partial questionnaire that would bias the adherence band. */
+    .predimed-block {
+      margin-top: 6px;
+      padding: 10px 14px;
+      border: 1px dashed #d1d5db;
+      border-radius: 6px;
+      background: #fafafa;
+    }
+    .predimed-block .checkbox-row { margin: 4px 0; }
+  </style>
 </head>
 <body>
   <div class="app-shell">
@@ -73,6 +105,11 @@
         </div>
 
         <h3 class="mt-16">Labs (optional)</h3>
+        <p class="section-note">
+          Entries here are optional, but missing key values will be shown as
+          data-completeness warnings in the resulting assessment (e.g. no
+          lipid panel ⇒ SCORE2 cannot be computed).
+        </p>
         <div class="grid three">
           <div class="field"><label>Total cholesterol (mg/dL)</label><input name="totalCholMgDl" type="number" step="0.1" /></div>
           <div class="field"><label>HDL (mg/dL)</label><input name="hdlMgDl" type="number" step="0.1" /></div>
@@ -86,8 +123,15 @@
           <div class="field"><label>AST (U/L)</label><input name="astUL" type="number" step="0.1" /></div>
           <div class="field"><label>ALT (U/L)</label><input name="altUL" type="number" step="0.1" /></div>
           <div class="field"><label>Platelets (G/L)</label><input name="plateletsGigaL" type="number" step="0.1" /></div>
-          <div class="field"><label>ACR (albumin/creatinine)</label><input name="albuminCreatinineRatio" type="number" step="0.01" /></div>
+          <div class="field"><label>ACR (mg/g)</label><input name="albuminCreatinineRatio" type="number" step="0.01" /></div>
+          <div class="field"><label>Urine albumin (mg/L)</label><input name="urineAlbuminMgL" type="number" step="0.1" /></div>
+          <div class="field"><label>Urine creatinine (mg/dL)</label><input name="urineCreatinineMgDl" type="number" step="0.1" /></div>
         </div>
+        <p class="section-note">
+          If ACR is not provided but both urine albumin (mg/L) and urine
+          creatinine (mg/dL) are, the backend will derive ACR automatically
+          (mg/g). A directly entered ACR always takes precedence.
+        </p>
 
         <h3 class="mt-16">Clinical context</h3>
         <div class="grid two">
@@ -129,12 +173,64 @@
           </div>
         </div>
 
+        <h3 class="mt-16">PREDIMED MEDAS — Mediterranean diet adherence (optional, 14 items)</h3>
+        <p class="section-note">
+          Validated Mediterranean diet adherence questionnaire (Estruch et al.,
+          PREDIMED trial). Enable the questionnaire to record all 14 yes/no
+          items — partial responses are <em>not</em> submitted because they
+          would bias the adherence band. When disabled, the completeness
+          checker will report <code>PREDIMED_INCOMPLETE</code> as a low-priority
+          data-collection gap.
+        </p>
+        <label class="checkbox-row">
+          <input name="predimedEnabled" type="checkbox" id="predimed-enabled" />
+          Administer the 14-item PREDIMED MEDAS questionnaire for this visit
+        </label>
+        <div id="predimed-items" class="predimed-block hidden">
+          <label class="checkbox-row"><input name="predimed_1"  type="checkbox" /> 1. Olive oil is the main source of fat for cooking</label>
+          <label class="checkbox-row"><input name="predimed_2"  type="checkbox" /> 2. ≥ 4 tablespoons (≈ 60 g) of olive oil per day</label>
+          <label class="checkbox-row"><input name="predimed_3"  type="checkbox" /> 3. ≥ 2 servings of vegetables per day</label>
+          <label class="checkbox-row"><input name="predimed_4"  type="checkbox" /> 4. ≥ 3 pieces of fruit per day</label>
+          <label class="checkbox-row"><input name="predimed_5"  type="checkbox" /> 5. &lt; 1 serving/day of red or processed meat</label>
+          <label class="checkbox-row"><input name="predimed_6"  type="checkbox" /> 6. &lt; 1 serving/day of butter, margarine or cream</label>
+          <label class="checkbox-row"><input name="predimed_7"  type="checkbox" /> 7. &lt; 1 sugary/carbonated drink per day</label>
+          <label class="checkbox-row"><input name="predimed_8"  type="checkbox" /> 8. ≥ 7 glasses of wine per week (only when culturally and clinically appropriate)</label>
+          <label class="checkbox-row"><input name="predimed_9"  type="checkbox" /> 9. ≥ 3 servings of legumes per week</label>
+          <label class="checkbox-row"><input name="predimed_10" type="checkbox" /> 10. ≥ 3 servings of fish or shellfish per week</label>
+          <label class="checkbox-row"><input name="predimed_11" type="checkbox" /> 11. ≤ 2 commercial sweets/pastries per week</label>
+          <label class="checkbox-row"><input name="predimed_12" type="checkbox" /> 12. ≥ 3 servings of nuts per week</label>
+          <label class="checkbox-row"><input name="predimed_13" type="checkbox" /> 13. Prefers white meat over red meat</label>
+          <label class="checkbox-row"><input name="predimed_14" type="checkbox" /> 14. Sofrito (tomato-based sauce with olive oil) ≥ 2 times/week</label>
+        </div>
+
         <h3 class="mt-16">Frailty (FRAIL scale, optional)</h3>
         <label class="checkbox-row"><input name="fatigue"      type="checkbox" /> Fatigue</label>
         <label class="checkbox-row"><input name="resistance"   type="checkbox" /> Resistance (stairs difficulty)</label>
         <label class="checkbox-row"><input name="ambulation"   type="checkbox" /> Ambulation (cannot walk a block)</label>
         <label class="checkbox-row"><input name="illnesses"    type="checkbox" /> 5+ comorbidities</label>
         <label class="checkbox-row"><input name="weightLoss"   type="checkbox" /> Weight loss &gt;5% in last year</label>
+
+        <h3 class="mt-16">Assessment scope</h3>
+        <p class="section-note">
+          Declare the clinical intent of this visit. This flag does not
+          change score formulas — it only sharpens completeness warnings
+          (e.g. when scope is CV-focused, a missing lipid panel is raised
+          as a <em>warning</em> instead of a passive <em>info</em>).
+        </p>
+        <label class="checkbox-row">
+          <input name="cvAssessmentFocus" type="checkbox" />
+          This visit is primarily a cardiovascular risk assessment
+        </label>
+
+        <h3 class="mt-16">Readiness preview</h3>
+        <p class="section-note">
+          Live estimate of which scores the backend will be able to compute
+          with the current form state. Purely informational — server-side
+          validation is the source of truth.
+        </p>
+        <div id="readiness-wrap" class="readiness-panel">
+          <div class="muted">Fill in the form to see readiness…</div>
+        </div>
 
         <div class="flex gap-8 mt-16" style="justify-content:flex-end;">
           <a class="btn secondary" id="cancel-link" href="#">Cancel</a>
@@ -211,6 +307,29 @@
       return Number.isFinite(n) ? n : undefined;
     }
 
+    // Number of items in the validated PREDIMED MEDAS questionnaire. Kept
+    // here so the frontend stays aligned with the `PREDIMED_MAX_SCORE`
+    // constant exported from the backend nutrition engine.
+    const PREDIMED_ITEM_COUNT = 14;
+
+    /**
+     * Collect the 14 PREDIMED MEDAS answers if the clinician has opted
+     * into the questionnaire. Otherwise return `undefined` so the key
+     * is omitted from the request body — the backend then emits the
+     * canonical PREDIMED_INCOMPLETE completeness warning instead of
+     * computing a biased score from a partial response.
+     */
+    function collectPredimedAnswers(form) {
+      const enabled = form.predimedEnabled?.checked === true;
+      if (!enabled) return undefined;
+      const answers = [];
+      for (let i = 1; i <= PREDIMED_ITEM_COUNT; i += 1) {
+        const field = form[`predimed_${i}`];
+        answers.push(field?.checked === true);
+      }
+      return answers;
+    }
+
     document.getElementById('assessment-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const form = e.target;
@@ -221,7 +340,8 @@
       try {
         const labs = {};
         ['totalCholMgDl','hdlMgDl','ldlMgDl','triglyceridesMgDl','glucoseMgDl','hba1cPct',
-         'eGFR','creatinineMgDl','ggtUL','astUL','altUL','plateletsGigaL','albuminCreatinineRatio']
+         'eGFR','creatinineMgDl','ggtUL','astUL','altUL','plateletsGigaL','albuminCreatinineRatio',
+         'urineAlbuminMgL','urineCreatinineMgDl']
           .forEach((k) => { const v = num(form, k); if (v !== undefined) labs[k] = v; });
 
         const anyFrail = ['fatigue','resistance','ambulation','illnesses','weightLoss']
@@ -262,8 +382,17 @@
           lifestyle: {
             weeklyActivityMinutes: num(form, 'weeklyActivityMinutes'),
             sedentaryLevel:        form.sedentaryLevel.value || undefined,
+            // PREDIMED MEDAS: submitted only when the clinician has
+            // explicitly enabled the questionnaire. An omitted array lets
+            // the backend emit a PREDIMED_INCOMPLETE completeness warning
+            // (desired), while a partial array would be interpreted as
+            // "not adherent" and would bias the adherence band.
+            predimedAnswers: collectPredimedAnswers(form),
           },
           frailty,
+          meta: {
+            cvAssessmentFocus: form.cvAssessmentFocus?.checked === true,
+          },
         };
 
         const { snapshot } = await api.createAssessment(patientId, payload);
@@ -283,6 +412,154 @@
         btn.textContent = 'Compute assessment';
       }
     });
+
+    // -----------------------------------------------------------------
+    // Readiness preview
+    // -----------------------------------------------------------------
+    // Mirrors the backend completeness-checker heuristics, expressed as a
+    // lightweight client-side estimate. Server-side validation remains the
+    // source of truth — this panel only helps the clinician spot obvious
+    // data gaps before submitting.
+    //
+    // We check availability (not clinical correctness): e.g. SCORE2 is
+    // marked "ready" if age is in range and all required inputs are
+    // present; we do NOT run the actual ESC 2021 risk formula here.
+    // -----------------------------------------------------------------
+    function readinessSnapshot(form) {
+      const g = (k) => num(form, k);
+      const b = (k) => form[k]?.checked === true;
+      const sex = form.sex?.value || '';
+      const age = g('age');
+      const hasDiabetes = b('hasDiabetes');
+      const cvFocus = b('cvAssessmentFocus');
+
+      const bmiReady =
+        Number.isFinite(g('heightCm')) &&
+        Number.isFinite(g('weightKg')) &&
+        g('heightCm') > 0;
+
+      const score2Ready =
+        !hasDiabetes &&
+        Number.isFinite(age) && age >= 40 && age <= 69 &&
+        (sex === 'male' || sex === 'female') &&
+        Number.isFinite(g('sbpMmHg')) &&
+        Number.isFinite(g('totalCholMgDl')) &&
+        Number.isFinite(g('hdlMgDl'));
+
+      const score2DmReady =
+        hasDiabetes &&
+        Number.isFinite(age) && age >= 40 && age <= 69 &&
+        (sex === 'male' || sex === 'female') &&
+        Number.isFinite(g('sbpMmHg')) &&
+        Number.isFinite(g('totalCholMgDl')) &&
+        Number.isFinite(g('hdlMgDl'));
+
+      const egfrReady =
+        Number.isFinite(g('eGFR')) ||
+        (Number.isFinite(g('creatinineMgDl')) && Number.isFinite(age) && (sex === 'male' || sex === 'female'));
+
+      const acrDirect = Number.isFinite(g('albuminCreatinineRatio'));
+      const acrDerived =
+        Number.isFinite(g('urineAlbuminMgL')) &&
+        Number.isFinite(g('urineCreatinineMgDl')) &&
+        g('urineCreatinineMgDl') > 0;
+      const acrReady = acrDirect || acrDerived;
+
+      const fib4Ready =
+        Number.isFinite(age) &&
+        Number.isFinite(g('astUL')) &&
+        Number.isFinite(g('altUL')) &&
+        Number.isFinite(g('plateletsGigaL'));
+
+      const fliReady =
+        bmiReady &&
+        Number.isFinite(g('waistCm')) &&
+        Number.isFinite(g('ggtUL')) &&
+        Number.isFinite(g('triglyceridesMgDl'));
+
+      const metsReady =
+        Number.isFinite(g('waistCm')) &&
+        Number.isFinite(g('sbpMmHg')) &&
+        Number.isFinite(g('dbpMmHg')) &&
+        Number.isFinite(g('hdlMgDl')) &&
+        Number.isFinite(g('triglyceridesMgDl')) &&
+        Number.isFinite(g('glucoseMgDl'));
+
+      const frailtyExpected = Number.isFinite(age) && age >= 65;
+      const anyFrail = ['fatigue','resistance','ambulation','illnesses','weightLoss']
+        .some((k) => b(k));
+
+      // PREDIMED MEDAS is considered ready only when the clinician has
+      // enabled the questionnaire AND all 14 item checkboxes are present
+      // in the DOM (the answers themselves are always booleans, so a
+      // "ready" state just means: submission will produce a 14-element
+      // array, which is what `computeAllScores` requires to emit the
+      // PREDIMED ScoreResultEntry).
+      const predimedEnabled = b('predimedEnabled');
+      const predimedReady = predimedEnabled && (() => {
+        for (let i = 1; i <= PREDIMED_ITEM_COUNT; i += 1) {
+          if (!form[`predimed_${i}`]) return false;
+        }
+        return true;
+      })();
+
+      return {
+        cvFocus,
+        items: [
+          { key: 'SCORE2',          label: 'SCORE2 (non-diabetic)',            ready: score2Ready,   applicable: !hasDiabetes && Number.isFinite(age) && age >= 40 && age <= 69 },
+          { key: 'SCORE2-Diabetes', label: 'SCORE2-Diabetes',                   ready: score2DmReady, applicable: hasDiabetes && Number.isFinite(age) && age >= 40 && age <= 69 },
+          { key: 'eGFR',            label: 'eGFR (CKD-EPI 2021)',               ready: egfrReady,     applicable: true },
+          { key: 'ACR',             label: 'ACR (direct or urine-derived)',    ready: acrReady,      applicable: true },
+          { key: 'FIB-4',           label: 'FIB-4 (liver fibrosis)',            ready: fib4Ready,     applicable: true },
+          { key: 'FLI',             label: 'Fatty Liver Index',                 ready: fliReady,      applicable: true },
+          { key: 'MetS',            label: 'Metabolic syndrome (ATP III)',      ready: metsReady,     applicable: true },
+          { key: 'FRAIL',           label: 'FRAIL scale',                       ready: anyFrail,      applicable: frailtyExpected },
+          { key: 'PREDIMED',        label: 'PREDIMED MEDAS (14 items)',         ready: predimedReady, applicable: true },
+        ],
+      };
+    }
+
+    function renderReadiness() {
+      const form = document.getElementById('assessment-form');
+      const wrap = document.getElementById('readiness-wrap');
+      if (!form || !wrap) return;
+      const snap = readinessSnapshot(form);
+      const lines = snap.items
+        .filter((it) => it.applicable)
+        .map((it) => {
+          const cls = it.ready ? 'r-ok' : 'r-missing';
+          const mark = it.ready ? '✓' : '◌';
+          return `<div class="r-item ${cls}">${mark} <code>${escapeHtml(it.key)}</code> — ${escapeHtml(it.label)}${it.ready ? '' : ' <span class="muted">(inputs missing)</span>'}</div>`;
+        });
+      if (snap.cvFocus) {
+        lines.unshift('<div class="r-item muted">Scope: cardiovascular-focused visit</div>');
+      }
+      wrap.innerHTML = lines.length
+        ? lines.join('')
+        : '<div class="muted">Fill in the form to see readiness…</div>';
+    }
+
+    (() => {
+      const form = document.getElementById('assessment-form');
+      if (!form) return;
+      form.addEventListener('input',  renderReadiness);
+      form.addEventListener('change', renderReadiness);
+      renderReadiness();
+    })();
+
+    // Reveal the 14 PREDIMED MEDAS checkboxes only when the clinician
+    // enables the questionnaire. This encodes the "all-or-nothing" policy
+    // on the UI side: the answers container is not even in the DOM flow
+    // until the opt-in is made, so partial responses cannot be submitted
+    // by accident.
+    (() => {
+      const toggle = document.getElementById('predimed-enabled');
+      const block  = document.getElementById('predimed-items');
+      if (!toggle || !block) return;
+      const sync = () => block.classList.toggle('hidden', !toggle.checked);
+      toggle.addEventListener('change', sync);
+      sync();
+    })();
 
     document.getElementById('signout-link').addEventListener('click', async (e) => {
       e.preventDefault();

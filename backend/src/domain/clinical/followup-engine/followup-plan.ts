@@ -1,65 +1,116 @@
 /**
- * Followup Plan Generation Engine
- * Determines optimal follow-up schedule and monitoring actions based on composite risk
- * and individual domain results
+ * Follow-up Plan Generation Engine (Phase B redesign).
  *
- * Follow-up interval rules:
- * - Very high composite risk → 1 month
- * - High composite risk → 3 months
- * - Moderate composite risk → 6 months
- * - Low composite risk → 12 months
+ * Turns a composite risk profile + individual score results into a
+ * deterministic, guideline-sourced follow-up plan. The output has two
+ * layers:
  *
- * Actions generated based on elevated scores requiring monitoring
+ *   1. A legacy "flat" object (`intervalMonths`, `actions[]`,
+ *      `domainMonitoring[]`) kept for backwards compatibility with the
+ *      current PDF report and the existing UI card.
+ *   2. A structured `items: FollowUpItem[]` stream — each entry carries
+ *      `code`, `priority`, `dueInMonths`, `guidelineSource` — suitable for
+ *      a future rule-based follow-up inbox and for the alerts engine to
+ *      reason about due dates.
  *
- * Zero side effects - pure calculation only
+ * Design rules (blueprint §6.3 + §6.4):
+ *   - Deterministic: the function must be a pure function of its inputs.
+ *     The caller MUST supply `now` for date anchoring so that the
+ *     read-path (rehydration) produces the same `nextReviewDate` as the
+ *     original write-path. The default `now = new Date()` is a
+ *     convenience for the write-path only.
+ *   - 'indeterminate' is NOT treated as 'low'. It triggers a short-
+ *     interval reassessment (2 months) with priority 'moderate', so the
+ *     clinician is actively nudged to complete the data collection.
+ *     Silently falling back to 12 months would mask absence of data.
+ *   - Missing-data collection nudges are NOT emitted from here — that is
+ *     the completeness-checker's responsibility. This module only handles
+ *     time-bound clinical follow-up.
+ *
+ * Zero side effects — pure calculation only.
  */
 
-import type { ScoreResultEntry } from '../../../../../shared/types/clinical.js';
+import type {
+  FollowUpItem,
+  RiskLevel,
+  ScoreResultEntry,
+} from '../../../../../shared/types/clinical.js';
+import type { CompositeRiskProfile } from '../risk-aggregation/composite-risk.js';
 
 // ============================================================================
 // Type Definitions
 // ============================================================================
 
 export interface FollowupPlan {
+  /** Canonical interval for the next full clinical review. */
   intervalMonths: number;
+  /** ISO date (`YYYY-MM-DD`) of the next review anchored on `now`. */
   nextReviewDate: string;
+  /** Overall urgency of the next review. */
   priorityLevel: 'routine' | 'moderate' | 'urgent';
+  /**
+   * Flat actions array, preserved for the existing PDF/UI. Treat it as a
+   * rendered projection of `items` — the structured stream below is the
+   * source of truth for downstream engines.
+   */
   actions: string[];
+  /** Per-domain monitoring strings (narrative). */
   domainMonitoring: string[];
+  /**
+   * Structured, guideline-sourced follow-up items. Each item is stable
+   * enough to be written into a database row or cross-referenced by the
+   * alert engine.
+   */
+  items: FollowUpItem[];
 }
 
 export interface FollowupInput {
-  compositeRisk: any;
+  compositeRisk: CompositeRiskProfile;
   scoreResults: ScoreResultEntry[];
-  missingDataFlags: string[];
+  /**
+   * Optional anchor for date computations. Pass the assessment's
+   * `createdAt` when rehydrating so the plan is byte-equivalent to the
+   * one originally produced. Defaults to `new Date()` for convenience.
+   */
+  now?: Date;
 }
 
 // ============================================================================
-// Constants
+// Constants — interval table
 // ============================================================================
 
-const FOLLOWUP_INTERVALS = {
+/**
+ * Canonical follow-up intervals by composite risk level.
+ *
+ * Rationale:
+ *   very_high     → 1 month  (ESC 2021 aggressive surveillance for high-risk CVD)
+ *   high          → 3 months (ESC / KDIGO targeted follow-up)
+ *   moderate      → 6 months (routine preventive recheck)
+ *   low           → 12 months (standard primary care cadence)
+ *   indeterminate → 2 months (short-loop to complete data collection — the
+ *                             patient is NOT low risk, they are *unstratified*)
+ */
+const INTERVAL_BY_LEVEL: Record<RiskLevel, number> = {
   very_high: 1,
   high: 3,
   moderate: 6,
   low: 12,
+  indeterminate: 2,
 };
 
-const PRIORITY_MAP = {
-  very_high: 'urgent' as const,
-  high: 'urgent' as const,
-  moderate: 'moderate' as const,
-  low: 'routine' as const,
+const PRIORITY_BY_LEVEL: Record<RiskLevel, 'routine' | 'moderate' | 'urgent'> = {
+  very_high: 'urgent',
+  high: 'urgent',
+  moderate: 'moderate',
+  low: 'routine',
+  indeterminate: 'moderate',
 };
 
 // ============================================================================
 // Helper Functions (Pure)
 // ============================================================================
 
-/**
- * Find a score result by code (case-insensitive).
- * See composite-risk.ts for rationale.
- */
+/** Find a score result by code (case-insensitive). */
 function findScoreByCode(
   results: ScoreResultEntry[],
   code: string,
@@ -69,208 +120,398 @@ function findScoreByCode(
 }
 
 /**
- * Calculate next review date from interval months
+ * Compute an ISO-date (`YYYY-MM-DD`) `intervalMonths` after `now`.
+ *
+ * We use `new Date(now)` to avoid mutating the caller's Date, then apply
+ * `setUTCMonth` so the computation does not drift with the host
+ * time-zone. The snapshot slice is guaranteed to be exactly 10 characters
+ * because ISO 8601 dates start with `YYYY-MM-DD`.
  */
-function calculateNextReviewDate(intervalMonths: number): string {
-  const nextDate = new Date();
-  nextDate.setMonth(nextDate.getMonth() + intervalMonths);
-  // ISO 8601 format: `YYYY-MM-DDTHH:mm:ss.sssZ` → first 10 chars is always the date
-  return nextDate.toISOString().slice(0, 10);
+function addMonthsISO(now: Date, intervalMonths: number): string {
+  const d = new Date(now.getTime());
+  d.setUTCMonth(d.getUTCMonth() + intervalMonths);
+  return d.toISOString().slice(0, 10);
+}
+
+// ============================================================================
+// Structured FollowUpItem derivation — guideline-sourced
+// ============================================================================
+
+/**
+ * Core review item — always present. Its due date mirrors `intervalMonths`,
+ * its priority mirrors the composite risk level.
+ */
+function coreReviewItem(level: RiskLevel): FollowUpItem {
+  return {
+    code: 'core_review',
+    title: 'Scheduled clinical review',
+    rationale:
+      level === 'indeterminate'
+        ? 'Risk stratification incomplete — short-interval review to complete missing data.'
+        : `Routine cadence driven by composite risk = ${level}.`,
+    dueInMonths: INTERVAL_BY_LEVEL[level],
+    priority: PRIORITY_BY_LEVEL[level],
+    recurrenceMonths: INTERVAL_BY_LEVEL[level],
+    guidelineSource: 'Internal cadence policy',
+  };
 }
 
 /**
- * Generate actions based on composite risk level
+ * Cardiovascular follow-up items. The ESC 2021 guideline drives the
+ * cadence for patients with elevated SCORE2.
  */
-function generateActions(compositeRiskLevel: string): string[] {
-  const actions: string[] = [];
+function cardiovascularItems(
+  scoreResults: ScoreResultEntry[],
+  compositeLevel: RiskLevel,
+): FollowUpItem[] {
+  const items: FollowUpItem[] = [];
+  const score2 = findScoreByCode(scoreResults, 'SCORE2')
+    ?? findScoreByCode(scoreResults, 'SCORE2_DIABETES');
+  if (!score2 || typeof score2.valueNumeric !== 'number') return items;
 
-  const riskLevel = compositeRiskLevel?.toLowerCase() || 'low';
+  const risk = score2.valueNumeric;
 
-  if (riskLevel === 'very_high') {
-    actions.push(
-      'Schedule urgent appointment with primary care provider',
-      'Consider multidisciplinary team review (cardiology, nephrology, hepatology as needed)',
-      'Intensive lifestyle modification counseling',
-      'Medication optimization review',
-      'Baseline investigations if not recently done'
-    );
-  } else if (riskLevel === 'high') {
-    actions.push(
-      'Schedule appointment with primary care provider',
-      'Specialist consultation consideration based on domain risks',
-      'Structured lifestyle modification program',
-      'Medication compliance review',
-      'Target monitoring of key biomarkers'
-    );
-  } else if (riskLevel === 'moderate') {
-    actions.push(
-      'Routine clinical follow-up',
-      'Lifestyle modification reinforcement',
-      'Annual preventive screening',
-      'Medication review as needed'
-    );
-  } else {
-    actions.push(
-      'Routine clinical follow-up',
-      'Continue preventive health measures',
-      'Maintain current exercise and diet',
-      'Annual preventive screening'
-    );
+  // Very high SCORE2 → aggressive management
+  if (risk >= 10 || compositeLevel === 'very_high') {
+    items.push({
+      code: 'cv_lipid_intensive',
+      title: 'Intensive lipid management review',
+      rationale:
+        `10-year CVD risk ≥ 10% (SCORE2 = ${risk.toFixed(1)}%). `
+          + 'Target LDL-C per ESC 2021 very-high-risk threshold.',
+      dueInMonths: 1,
+      priority: 'urgent',
+      recurrenceMonths: 3,
+      guidelineSource: 'ESC 2021 CVD prevention',
+    });
+    items.push({
+      code: 'cv_bp_target_130',
+      title: 'Tight blood-pressure control (SBP < 130)',
+      rationale: 'Very-high CVD risk requires SBP < 130 mmHg if tolerated.',
+      dueInMonths: 1,
+      priority: 'urgent',
+      recurrenceMonths: 3,
+      guidelineSource: 'ESC 2021 CVD prevention',
+    });
+  } else if (risk >= 5) {
+    items.push({
+      code: 'cv_lipid_targeted',
+      title: 'Targeted lipid management review',
+      rationale:
+        `10-year CVD risk 5–10% (SCORE2 = ${risk.toFixed(1)}%). `
+          + 'Consider statin initiation and lifestyle intensification.',
+      dueInMonths: 3,
+      priority: 'moderate',
+      recurrenceMonths: 6,
+      guidelineSource: 'ESC 2021 CVD prevention',
+    });
   }
 
-  return actions;
+  return items;
 }
 
 /**
- * Generate domain-specific monitoring recommendations
+ * Renal follow-up items based on eGFR stage and ACR when available.
  */
-function generateDomainMonitoring(scoreResults: ScoreResultEntry[]): string[] {
-  const monitoring: string[] = [];
+function renalItems(scoreResults: ScoreResultEntry[]): FollowUpItem[] {
+  const items: FollowUpItem[] = [];
+  const egfr = findScoreByCode(scoreResults, 'EGFR');
+  if (!egfr || typeof egfr.valueNumeric !== 'number') return items;
 
-  // Cardiovascular monitoring
-  const score2 = findScoreByCode(scoreResults, 'SCORE2');
-  if (score2) {
-    const riskValue = score2.valueNumeric ?? 0;
-    if (riskValue >= 10) {
-      monitoring.push('Cardiovascular: Monthly risk assessment, lipid targets SBP <130');
-    } else if (riskValue >= 5) {
-      monitoring.push('Cardiovascular: Quarterly lipid panel, SBP <140, consider statin therapy');
+  const v = egfr.valueNumeric;
+
+  if (v < 30) {
+    items.push({
+      code: 'renal_nephrology_urgent',
+      title: 'Nephrology referral',
+      rationale: `eGFR = ${v.toFixed(0)} mL/min/1.73m² (stage G4–G5).`,
+      dueInMonths: 1,
+      priority: 'urgent',
+      recurrenceMonths: 1,
+      guidelineSource: 'KDIGO 2024 CKD',
+    });
+  } else if (v < 60) {
+    items.push({
+      code: 'renal_kidney_monitoring',
+      title: 'Quarterly kidney monitoring (eGFR + ACR)',
+      rationale: `eGFR = ${v.toFixed(0)} mL/min/1.73m² (stage G3).`,
+      dueInMonths: 3,
+      priority: 'moderate',
+      recurrenceMonths: 3,
+      guidelineSource: 'KDIGO 2024 CKD',
+    });
+  }
+
+  return items;
+}
+
+/**
+ * Hepatic follow-up items based on FIB-4 and FLI.
+ */
+function hepaticItems(scoreResults: ScoreResultEntry[]): FollowUpItem[] {
+  const items: FollowUpItem[] = [];
+  const fib4 = findScoreByCode(scoreResults, 'FIB4');
+  const fli = findScoreByCode(scoreResults, 'FLI');
+
+  const fib4Val = typeof fib4?.valueNumeric === 'number' ? fib4.valueNumeric : null;
+  const fliVal = typeof fli?.valueNumeric === 'number' ? fli.valueNumeric : null;
+
+  if (fib4Val !== null && fib4Val >= 3.25) {
+    items.push({
+      code: 'hepatic_hepatology_urgent',
+      title: 'Hepatology referral',
+      rationale: `FIB-4 = ${fib4Val.toFixed(2)} — advanced fibrosis likely.`,
+      dueInMonths: 1,
+      priority: 'urgent',
+      recurrenceMonths: 6,
+      guidelineSource: 'EASL 2024 MASLD',
+    });
+  } else if (
+    (fib4Val !== null && fib4Val >= 1.45) ||
+    (fliVal !== null && fliVal >= 60)
+  ) {
+    items.push({
+      code: 'hepatic_monitor',
+      title: 'Liver monitoring (repeat FIB-4 + ultrasound)',
+      rationale:
+        fib4Val !== null && fib4Val >= 1.45
+          ? `FIB-4 = ${fib4Val.toFixed(2)} (indeterminate/intermediate).`
+          : `FLI = ${fliVal!.toFixed(0)} — NAFLD likely.`,
+      dueInMonths: 6,
+      priority: 'moderate',
+      recurrenceMonths: 6,
+      guidelineSource: 'EASL 2024 MASLD',
+    });
+  }
+
+  return items;
+}
+
+/**
+ * Metabolic follow-up items (MetS / ADA / diabetes control).
+ */
+function metabolicItems(scoreResults: ScoreResultEntry[]): FollowUpItem[] {
+  const items: FollowUpItem[] = [];
+  const ada = findScoreByCode(scoreResults, 'ADA');
+  const mets = findScoreByCode(scoreResults, 'METABOLIC_SYNDROME');
+
+  const adaVal = typeof ada?.valueNumeric === 'number' ? ada.valueNumeric : null;
+  const metsPositive = (mets?.valueNumeric ?? 0) >= 3 ||
+    (mets?.category ?? '').toLowerCase() === 'metabolic syndrome';
+
+  if (adaVal !== null && adaVal >= 5) {
+    items.push({
+      code: 'metabolic_dm_screening',
+      title: 'Diabetes screening (HbA1c ± OGTT)',
+      rationale: `ADA diabetes-risk score = ${adaVal} (high risk).`,
+      dueInMonths: 3,
+      priority: 'moderate',
+      recurrenceMonths: 12,
+      guidelineSource: 'ADA Standards of Care',
+    });
+  }
+
+  if (metsPositive) {
+    items.push({
+      code: 'metabolic_mets_management',
+      title: 'Metabolic-syndrome lifestyle management review',
+      rationale: 'ATP III criteria met — structured lifestyle reinforcement.',
+      dueInMonths: 6,
+      priority: 'moderate',
+      recurrenceMonths: 6,
+      guidelineSource: 'NCEP ATP III',
+    });
+  }
+
+  return items;
+}
+
+/**
+ * Frailty follow-up items.
+ */
+function frailtyItems(scoreResults: ScoreResultEntry[]): FollowUpItem[] {
+  const items: FollowUpItem[] = [];
+  const frail = findScoreByCode(scoreResults, 'FRAIL');
+  if (!frail || typeof frail.valueNumeric !== 'number') return items;
+
+  const v = frail.valueNumeric;
+  if (v >= 3) {
+    items.push({
+      code: 'frailty_comprehensive_geriatric',
+      title: 'Comprehensive geriatric assessment',
+      rationale: `FRAIL score = ${v} — frail category.`,
+      dueInMonths: 3,
+      priority: 'urgent',
+      recurrenceMonths: 6,
+      guidelineSource: 'FRAIL scale consensus',
+    });
+  } else if (v === 2) {
+    items.push({
+      code: 'frailty_prehabilitation',
+      title: 'Prehabilitation program (strength, nutrition)',
+      rationale: 'Pre-frail — intervene early.',
+      dueInMonths: 6,
+      priority: 'moderate',
+      recurrenceMonths: 6,
+      guidelineSource: 'FRAIL scale consensus',
+    });
+  }
+
+  return items;
+}
+
+// ============================================================================
+// Narrative projections for legacy `actions` and `domainMonitoring`
+// ============================================================================
+
+function narrativeActions(level: RiskLevel): string[] {
+  switch (level) {
+    case 'very_high':
+      return [
+        'Schedule urgent appointment with primary care provider',
+        'Consider multidisciplinary team review (cardiology, nephrology, hepatology as needed)',
+        'Intensive lifestyle modification counseling',
+        'Medication optimization review',
+        'Baseline investigations if not recently done',
+      ];
+    case 'high':
+      return [
+        'Schedule appointment with primary care provider',
+        'Specialist consultation consideration based on domain risks',
+        'Structured lifestyle modification program',
+        'Medication compliance review',
+        'Target monitoring of key biomarkers',
+      ];
+    case 'moderate':
+      return [
+        'Routine clinical follow-up',
+        'Lifestyle modification reinforcement',
+        'Annual preventive screening',
+        'Medication review as needed',
+      ];
+    case 'indeterminate':
+      return [
+        'Short-interval reassessment to complete risk stratification',
+        'Prioritize collection of missing labs and history',
+        'Do not assume low risk until stratification is possible',
+      ];
+    case 'low':
+      return [
+        'Routine clinical follow-up',
+        'Continue preventive health measures',
+        'Maintain current exercise and diet',
+        'Annual preventive screening',
+      ];
+  }
+}
+
+function narrativeDomainMonitoring(scoreResults: ScoreResultEntry[]): string[] {
+  const lines: string[] = [];
+
+  const score2 = findScoreByCode(scoreResults, 'SCORE2')
+    ?? findScoreByCode(scoreResults, 'SCORE2_DIABETES');
+  if (score2 && typeof score2.valueNumeric === 'number') {
+    const v = score2.valueNumeric;
+    if (v >= 10) {
+      lines.push('Cardiovascular: monthly risk assessment, strict lipid and SBP<130 targets');
+    } else if (v >= 5) {
+      lines.push('Cardiovascular: quarterly lipid panel, SBP<140, consider statin therapy');
     } else {
-      monitoring.push('Cardiovascular: Annual lipid panel, SBP monitoring');
+      lines.push('Cardiovascular: annual lipid panel, SBP monitoring');
     }
   }
 
-  // Metabolic monitoring
   const mets = findScoreByCode(scoreResults, 'METABOLIC_SYNDROME');
   const ada = findScoreByCode(scoreResults, 'ADA');
   if (mets || ada) {
     const adaScore = ada?.valueNumeric ?? 0;
-    if (adaScore >= 5) {
-      monitoring.push('Metabolic: HbA1c every 3-6 months, glucose monitoring, intensive weight loss');
-    } else {
-      monitoring.push('Metabolic: HbA1c annually, fasting glucose, BMI monitoring');
-    }
+    lines.push(
+      adaScore >= 5
+        ? 'Metabolic: HbA1c every 3–6 months, glucose monitoring, weight loss'
+        : 'Metabolic: HbA1c annually, fasting glucose, BMI monitoring',
+    );
   }
 
-  // Hepatic monitoring
-  const flib = findScoreByCode(scoreResults, 'FLI');
+  const fli = findScoreByCode(scoreResults, 'FLI');
   const fib4 = findScoreByCode(scoreResults, 'FIB4');
-  if (flib || fib4) {
+  if (fli || fib4) {
     const fib4Value = fib4?.valueNumeric ?? 0;
-    const fliValue = flib?.valueNumeric ?? 0;
+    const fliValue = fli?.valueNumeric ?? 0;
     if (fib4Value >= 3.25) {
-      monitoring.push('Hepatic: Urgent hepatology referral, liver ultrasound/elastography, portal HTN screening');
+      lines.push('Hepatic: urgent hepatology referral, ultrasound/elastography');
     } else if (fliValue >= 60 || fib4Value >= 1.45) {
-      monitoring.push('Hepatic: Repeat FIB4 every 6 months, ultrasound annually, liver enzyme panel');
+      lines.push('Hepatic: repeat FIB-4 every 6 months, annual ultrasound, LFT');
     } else {
-      monitoring.push('Hepatic: Annual liver function tests and ultrasound if FLI remains elevated');
+      lines.push('Hepatic: annual LFT and ultrasound if FLI persistently elevated');
     }
   }
 
-  // Renal monitoring
-  const egfr = findScoreByCode(scoreResults, 'eGFR');
-  if (egfr) {
-    const egfrValue = egfr.valueNumeric ?? 90;
-    if (egfrValue < 30) {
-      monitoring.push('Renal: Urgent nephrology referral, monthly eGFR+ACR, prepare for renal replacement therapy');
-    } else if (egfrValue < 60) {
-      monitoring.push('Renal: Quarterly eGFR+ACR, target BP <130/80, ACEi/ARB optimization');
+  const egfr = findScoreByCode(scoreResults, 'EGFR');
+  if (egfr && typeof egfr.valueNumeric === 'number') {
+    const v = egfr.valueNumeric;
+    if (v < 30) {
+      lines.push('Renal: urgent nephrology referral, monthly eGFR+ACR');
+    } else if (v < 60) {
+      lines.push('Renal: quarterly eGFR+ACR, SBP<130/80, ACEi/ARB optimization');
     } else {
-      monitoring.push('Renal: Annual eGFR+ACR, monitor proteinuria, BP control');
+      lines.push('Renal: annual eGFR+ACR, proteinuria and BP control');
     }
   }
 
-  // Frailty monitoring
   const frail = findScoreByCode(scoreResults, 'FRAIL');
-  if (frail) {
-    const frailValue = frail.valueNumeric ?? 0;
-    if (frailValue >= 3) {
-      monitoring.push('Frailty: Geriatric assessment, physical therapy, nutritional support, regular monitoring');
-    } else if (frailValue === 2) {
-      monitoring.push('Frailty: Prehabilitation program, strength training, routine assessment');
+  if (frail && typeof frail.valueNumeric === 'number') {
+    const v = frail.valueNumeric;
+    if (v >= 3) {
+      lines.push('Frailty: geriatric assessment, physical therapy, nutritional support');
+    } else if (v === 2) {
+      lines.push('Frailty: prehabilitation program, strength training');
     }
   }
 
-  return monitoring.length > 0 ? monitoring : ['Standard preventive care monitoring'];
-}
-
-/**
- * Generate data collection actions based on missing flags
- */
-function generateMissingDataActions(missingFlags: string[]): string[] {
-  const actions: string[] = [];
-
-  if (missingFlags.length > 0) {
-    actions.push(`Obtain missing data: ${missingFlags.join(', ')}`);
-  }
-
-  return actions;
+  return lines.length > 0 ? lines : ['Standard preventive care monitoring'];
 }
 
 // ============================================================================
-// Main Followup Plan Function (Pure)
+// Main entry
 // ============================================================================
 
 /**
- * Determine follow-up plan based on composite risk and individual scores
+ * Determine the follow-up plan for an assessment.
  *
- * Generates:
- * - Follow-up interval (1, 3, 6, or 12 months)
- * - Next review date
- * - Priority level
- * - Clinical actions
- * - Domain-specific monitoring recommendations
- *
- * @param input - FollowupInput with composite risk, scores, missing data flags
- * @returns FollowupPlan with interval, actions, and monitoring details
- *
- * @example
- * const plan = determineFollowupPlan({
- *   compositeRisk: { level: 'high' },
- *   scoreResults: [
- *     { scoreCode: 'SCORE2', valueNumeric: 8.5, ... },
- *     { scoreCode: 'eGFR', valueNumeric: 45, ... },
- *   ],
- *   missingDataFlags: []
- * });
- * // plan.intervalMonths = 3, plan.nextReviewDate = "2026-07-19"
- * // plan.priorityLevel = "urgent"
- * // plan.actions contains medication optimization, specialist consideration, etc.
+ * Determinism: the function is pure. The optional `now` parameter MUST be
+ * passed by consumers that expect idempotent rehydration (i.e. the
+ * read-path of `loadAssessmentSnapshot`).
  */
 export function determineFollowupPlan(input: FollowupInput): FollowupPlan {
-  const {
-    compositeRisk,
-    scoreResults,
-    missingDataFlags = [],
-  } = input;
+  const { compositeRisk, scoreResults, now = new Date() } = input;
 
-  // Get risk level (default to low if not specified)
-  const riskLevel = (compositeRisk?.level || 'low').toLowerCase();
+  const level: RiskLevel = compositeRisk.level;
+  const intervalMonths = INTERVAL_BY_LEVEL[level];
+  const priorityLevel = PRIORITY_BY_LEVEL[level];
+  const nextReviewDate = addMonthsISO(now, intervalMonths);
 
-  // Determine interval months based on risk
-  const intervalMonths =
-    FOLLOWUP_INTERVALS[riskLevel as keyof typeof FOLLOWUP_INTERVALS] || 12;
+  // Structured items — the new source of truth.
+  const items: FollowUpItem[] = [
+    coreReviewItem(level),
+    ...cardiovascularItems(scoreResults, level),
+    ...renalItems(scoreResults),
+    ...hepaticItems(scoreResults),
+    ...metabolicItems(scoreResults),
+    ...frailtyItems(scoreResults),
+  ];
 
-  // Calculate next review date
-  const nextReviewDate = calculateNextReviewDate(intervalMonths);
-
-  // Get priority level
-  const priorityLevel =
-    PRIORITY_MAP[riskLevel as keyof typeof PRIORITY_MAP] || 'routine';
-
-  // Generate actions
-  const baseActions = generateActions(riskLevel);
-  const missingDataActions = generateMissingDataActions(missingDataFlags);
-  const allActions = [...baseActions, ...missingDataActions];
-
-  // Generate domain monitoring recommendations
-  const domainMonitoring = generateDomainMonitoring(scoreResults);
+  // Legacy narrative projection for the PDF/UI until they migrate to
+  // `items`. Building it from the level (not from `items`) preserves the
+  // existing clinician-facing phrasing verbatim.
+  const actions = narrativeActions(level);
+  const domainMonitoring = narrativeDomainMonitoring(scoreResults);
 
   return {
     intervalMonths,
     nextReviewDate,
     priorityLevel,
-    actions: allActions,
+    actions,
     domainMonitoring,
+    items,
   };
 }

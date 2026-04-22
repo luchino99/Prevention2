@@ -1,34 +1,53 @@
 /**
  * Composite Risk Aggregation Engine
- * Aggregates individual clinical score results into a unified cardio-nephro-metabolic risk profile
+ * Aggregates individual clinical score results into a unified
+ * cardio-nephro-metabolic risk profile.
  *
  * Domains:
  * - Cardiovascular: derived from SCORE2 or SCORE2-Diabetes category
  * - Metabolic: derived from metabolic syndrome, ADA score, and BMI
  * - Hepatic: derived from FLI and FIB4 indices
- * - Renal: derived from eGFR stage and albuminuria
+ * - Renal: derived from eGFR stage and KDIGO albuminuria (ACR)
  * - Frailty: derived from FRAIL score
  *
- * Composite risk = highest domain risk (converted to numeric scale)
+ * Composite risk = highest *stratified* domain risk. Domains marked
+ * `indeterminate` are EXCLUDED from the aggregation on purpose: absence of
+ * data is not evidence of safety. If every domain is indeterminate, the
+ * composite itself is `indeterminate`.
  *
- * Zero side effects - pure calculation only
+ * Zero side effects - pure calculation only.
  */
 
-import type { ScoreResultEntry } from '../../../../../shared/types/clinical.js';
+import type {
+  AssessmentInput,
+  DomainRiskEntry,
+  RiskLevel,
+  ScoreResultEntry,
+} from '../../../../../shared/types/clinical.js';
 
 // ============================================================================
-// Type Definitions
+// Type Definitions (kept here for backwards-compat with existing imports)
 // ============================================================================
 
-export type RiskLevel = 'low' | 'moderate' | 'high' | 'very_high';
+/**
+ * @deprecated use `RiskLevel` from `shared/types/clinical`.
+ * Re-exported here to avoid breaking older imports in engine adjacent code.
+ */
+export type { RiskLevel } from '../../../../../shared/types/clinical.js';
 
-export interface DomainRisk {
-  level: RiskLevel;
-  reasoning: string;
-}
+export type DomainRisk = DomainRiskEntry;
 
 export interface CompositeRiskProfile {
   level: RiskLevel;
+  /**
+   * Numeric projection of the composite risk level.
+   *   low=1, moderate=2, high=3, very_high=4, indeterminate=0
+   *
+   * The `0` encoding for indeterminate is intentional — sorting by numeric
+   * value surfaces stratified domains above unstratified ones, while a
+   * downstream layer that naively uses `numeric >= 3` will not
+   * mistakenly classify indeterminate as high.
+   */
   numeric: number;
   cardiovascular: DomainRisk;
   metabolic: DomainRisk;
@@ -41,37 +60,34 @@ export interface CompositeRiskProfile {
 // Helper Functions (Pure)
 // ============================================================================
 
-/**
- * Convert risk level to numeric value
- * low=1, moderate=2, high=3, very_high=4
- */
+/** low=1 moderate=2 high=3 very_high=4 indeterminate=0 */
 function riskLevelToNumeric(level: RiskLevel): number {
-  const map: Record<RiskLevel, number> = {
-    low: 1,
-    moderate: 2,
-    high: 3,
-    very_high: 4,
-  };
-  return map[level];
+  switch (level) {
+    case 'very_high':
+      return 4;
+    case 'high':
+      return 3;
+    case 'moderate':
+      return 2;
+    case 'low':
+      return 1;
+    case 'indeterminate':
+      return 0;
+  }
 }
 
-/**
- * Convert numeric value back to risk level
- * 1=low, 2=moderate, 3=high, 4=very_high
- */
 function numericToRiskLevel(numeric: number): RiskLevel {
   if (numeric >= 4) return 'very_high';
-  if (numeric >= 3) return 'high';
-  if (numeric >= 2) return 'moderate';
-  return 'low';
+  if (numeric === 3) return 'high';
+  if (numeric === 2) return 'moderate';
+  if (numeric === 1) return 'low';
+  return 'indeterminate';
 }
 
 /**
- * Find a score result by code (case-insensitive).
- * Needed because downstream engines were written with mixed-case codes
- * ("eGFR") while the score-engine emits canonical upper-case codes ("EGFR").
- * Changing the score-engine output would violate the "protect validated score
- * logic" rule, so consumers do case-insensitive lookups instead.
+ * Case-insensitive lookup. The underlying score engine emits canonical
+ * upper-case codes (`EGFR`) while tests and some consumers still use mixed
+ * case (`eGFR`). We do the normalisation here so callers stay agnostic.
  */
 function findScoreByCode(
   results: ScoreResultEntry[],
@@ -81,20 +97,28 @@ function findScoreByCode(
   return results.find((r) => r.scoreCode.toLowerCase() === needle);
 }
 
+// ============================================================================
+// Domain derivations
+// ============================================================================
+
 /**
- * Derive cardiovascular risk from SCORE2 or SCORE2-Diabetes category
- * Categories: "Low" (0-2%), "Moderate" (2-5%), "High" (5-10%), "Very High" (10%+)
+ * Cardiovascular risk from SCORE2 / SCORE2-Diabetes category.
+ * Returns 'indeterminate' when neither score is available — never 'low',
+ * because absence of lipid/BP data cannot be interpreted as safety.
  */
-function deriveCardiovascularRisk(results: ScoreResultEntry[]): DomainRisk {
+function deriveCardiovascularRisk(
+  results: ScoreResultEntry[],
+): DomainRiskEntry {
   const score2 = findScoreByCode(results, 'SCORE2');
   const score2Diabetes = findScoreByCode(results, 'SCORE2_DIABETES');
-
-  const scoreResult = score2 || score2Diabetes;
+  const scoreResult = score2Diabetes ?? score2;
 
   if (!scoreResult) {
     return {
-      level: 'low',
-      reasoning: 'No SCORE2 or SCORE2-Diabetes data available',
+      level: 'indeterminate',
+      reasoning:
+        'SCORE2 / SCORE2-Diabetes not computable (missing lipid panel and/or blood pressure).',
+      evidence: [],
     };
   }
 
@@ -108,26 +132,39 @@ function deriveCardiovascularRisk(results: ScoreResultEntry[]): DomainRisk {
 
   return {
     level,
-    reasoning: `SCORE2 category: ${scoreResult.category} (${scoreResult.valueNumeric}%)`,
+    reasoning: `${scoreResult.scoreCode} category: ${scoreResult.category} (${scoreResult.valueNumeric}%)`,
+    evidence: [scoreResult.scoreCode],
   };
 }
 
 /**
- * Derive metabolic risk from metabolic syndrome, ADA score, and BMI
- * Logic:
- * - If MetS present AND (ADA>=5 OR BMI>=30) → high
- * - If MetS present OR ADA>=3 → moderate
- * - Else → low
+ * Metabolic risk from metabolic syndrome, ADA score, and BMI.
+ * Returns 'indeterminate' when we have no signal at all (no MetS result,
+ * no ADA, no BMI).
  */
-function deriveMetabolicRisk(results: ScoreResultEntry[]): DomainRisk {
+function deriveMetabolicRisk(results: ScoreResultEntry[]): DomainRiskEntry {
   const metsResult = findScoreByCode(results, 'METABOLIC_SYNDROME');
   const adaResult = findScoreByCode(results, 'ADA');
   const bmiResult = findScoreByCode(results, 'BMI');
+
+  if (!metsResult && !adaResult && !bmiResult) {
+    return {
+      level: 'indeterminate',
+      reasoning:
+        'Metabolic syndrome, ADA score and BMI are all unavailable.',
+      evidence: [],
+    };
+  }
 
   const metsPresent =
     metsResult?.category?.toLowerCase().includes('present') || false;
   const adaScore = adaResult?.valueNumeric ?? 0;
   const bmi = bmiResult?.valueNumeric ?? 0;
+  const evidence: string[] = [
+    ...(metsResult ? ['METABOLIC_SYNDROME'] : []),
+    ...(adaResult ? ['ADA'] : []),
+    ...(bmiResult ? ['BMI'] : []),
+  ];
 
   let level: RiskLevel = 'low';
   let reasoning = '';
@@ -143,120 +180,153 @@ function deriveMetabolicRisk(results: ScoreResultEntry[]): DomainRisk {
     reasoning = `No metabolic syndrome, ADA score ${adaScore}, BMI ${bmi.toFixed(1)}`;
   }
 
-  return { level, reasoning };
+  return { level, reasoning, evidence };
 }
 
 /**
- * Derive hepatic risk from FLI and FIB4
- * Logic:
- * - If FIB4>=3.25 → very_high
- * - If FLI>=60 AND FIB4>=1.45 → high
- * - If FLI>=60 OR FIB4>=1.45 → moderate
- * - Else → low
+ * Hepatic risk from FLI and FIB4.
+ * Returns 'indeterminate' when neither FLI nor FIB4 is available.
  */
-function deriveHepaticRisk(results: ScoreResultEntry[]): DomainRisk {
+function deriveHepaticRisk(results: ScoreResultEntry[]): DomainRiskEntry {
   const fliResult = findScoreByCode(results, 'FLI');
   const fib4Result = findScoreByCode(results, 'FIB4');
 
+  if (!fliResult && !fib4Result) {
+    return {
+      level: 'indeterminate',
+      reasoning: 'FLI and FIB-4 are both unavailable.',
+      evidence: [],
+    };
+  }
+
   const fli = fliResult?.valueNumeric ?? 0;
   const fib4 = fib4Result?.valueNumeric ?? 0;
+  const evidence: string[] = [
+    ...(fliResult ? ['FLI'] : []),
+    ...(fib4Result ? ['FIB4'] : []),
+  ];
 
   let level: RiskLevel = 'low';
   let reasoning = '';
 
-  if (fib4 >= 3.25) {
+  if (fib4Result && fib4 >= 3.25) {
     level = 'very_high';
-    reasoning = `Advanced liver fibrosis (FIB4 ${fib4.toFixed(2)})`;
-  } else if (fli >= 60 && fib4 >= 1.45) {
+    reasoning = `Advanced liver fibrosis (FIB-4 ${fib4.toFixed(2)})`;
+  } else if (fliResult && fib4Result && fli >= 60 && fib4 >= 1.45) {
     level = 'high';
-    reasoning = `Likely NASH with FLI ${fli.toFixed(1)} and moderate fibrosis (FIB4 ${fib4.toFixed(2)})`;
-  } else if (fli >= 60 || fib4 >= 1.45) {
+    reasoning = `Likely NASH with FLI ${fli.toFixed(1)} and moderate fibrosis (FIB-4 ${fib4.toFixed(2)})`;
+  } else if ((fliResult && fli >= 60) || (fib4Result && fib4 >= 1.45)) {
     level = 'moderate';
-    reasoning = `Elevated FLI (${fli.toFixed(1)}) or borderline FIB4 (${fib4.toFixed(2)})`;
+    reasoning = `Elevated FLI (${fli.toFixed(1)}) or borderline FIB-4 (${fib4.toFixed(2)})`;
   } else {
     level = 'low';
-    reasoning = `FLI ${fli.toFixed(1)}, FIB4 ${fib4.toFixed(2)}`;
+    reasoning = `FLI ${fli.toFixed(1)}, FIB-4 ${fib4.toFixed(2)}`;
   }
 
-  return { level, reasoning };
+  return { level, reasoning, evidence };
 }
 
 /**
- * Derive renal risk from eGFR stage and albuminuria
- * eGFR stages: G1-G2=low, G3a=moderate, G3b=high, G4-G5=very_high
- * Albuminuria bumps up: A2→+1 level, A3→+2 levels
+ * Renal risk from eGFR stage + KDIGO albuminuria (ACR).
+ *
+ * eGFR stages are read from `rawPayload.stage` (e.g. "G3a") produced by the
+ * eGFR engine. `category` carries the human-readable label
+ * ("mildly_decreased") and is NOT a reliable stage detector — relying on
+ * it was the root cause of a previous silent downgrade where the renal
+ * domain defaulted to 'low' even for G3b/G4 patients.
+ *
+ * Albuminuria is read from `input.labs.albuminCreatinineRatio` when the
+ * aggregator is called with an `AssessmentInput` context (the new default).
+ * Legacy callers that still invoke the aggregator with only `scoreResults`
+ * will get the eGFR-only stratification, which is safe but less sensitive.
  */
-function deriveRenalRisk(results: ScoreResultEntry[]): DomainRisk {
-  const egfrResult = findScoreByCode(results, 'eGFR');
+function deriveRenalRisk(
+  results: ScoreResultEntry[],
+  input?: AssessmentInput,
+): DomainRiskEntry {
+  const egfrResult = findScoreByCode(results, 'EGFR');
 
-  if (!egfrResult) {
+  const acrValue =
+    input?.labs.albuminCreatinineRatio !== undefined
+      ? Number(input.labs.albuminCreatinineRatio)
+      : undefined;
+
+  if (!egfrResult && acrValue === undefined) {
     return {
-      level: 'low',
-      reasoning: 'No eGFR data available',
+      level: 'indeterminate',
+      reasoning:
+        'Renal function not stratified (no eGFR, no ACR). Request serum creatinine and spot urine ACR.',
+      evidence: [],
     };
   }
 
-  // Parse stage from category (e.g., "G1", "G3a", "G4")
-  const stage = egfrResult.category?.toUpperCase() || '';
+  // Parse stage from the raw engine output, not from the localisable
+  // category label.
+  const stage =
+    (egfrResult?.rawPayload?.stage as string | undefined)?.toUpperCase() ??
+    '';
 
-  let baseLevelNumeric: number = 1; // default low
-  let baseReasoning = `eGFR ${egfrResult.valueNumeric} mL/min/1.73m²`;
+  let baseLevelNumeric = 1; // default low
+  let baseReasoning = egfrResult
+    ? `eGFR ${egfrResult.valueNumeric} mL/min/1.73m²`
+    : 'eGFR not available';
 
-  if (stage.includes('G1') || stage.includes('G2')) {
+  if (stage === 'G1' || stage === 'G2') {
     baseLevelNumeric = 1;
-  } else if (stage.includes('G3A')) {
+    baseReasoning += ` (${stage})`;
+  } else if (stage === 'G3A') {
     baseLevelNumeric = 2;
-    baseReasoning += ' (Stage G3a)';
-  } else if (stage.includes('G3B')) {
+    baseReasoning += ' (G3a)';
+  } else if (stage === 'G3B') {
     baseLevelNumeric = 3;
-    baseReasoning += ' (Stage G3b)';
-  } else if (stage.includes('G4') || stage.includes('G5')) {
+    baseReasoning += ' (G3b)';
+  } else if (stage === 'G4' || stage === 'G5') {
     baseLevelNumeric = 4;
-    baseReasoning += ` (Stage ${stage})`;
+    baseReasoning += ` (${stage})`;
   }
 
-  // Check for albuminuria adjustment
-  const acrRawPayload = egfrResult.inputPayload?.albuminCreatinineRatio;
-  let albuminuriaAdjustment = 0;
-  let albuminuriaNote = '';
-
-  if (acrRawPayload !== undefined) {
-    const acr = typeof acrRawPayload === 'number' ? acrRawPayload : 0;
-    // A1: <30 mg/g, A2: 30-299 mg/g, A3: >=300 mg/g
-    if (acr >= 300) {
-      albuminuriaAdjustment = 2;
-      albuminuriaNote = ' + albuminuria (A3)';
-    } else if (acr >= 30) {
-      albuminuriaAdjustment = 1;
-      albuminuriaNote = ' + microalbuminuria (A2)';
+  // KDIGO albuminuria adjustment. A2 (30-299) bumps +1 level; A3 (≥300)
+  // bumps +2 levels. ACR < 30 is A1 (normal to mildly increased).
+  let albAdjust = 0;
+  let albNote = '';
+  if (acrValue !== undefined) {
+    if (acrValue >= 300) {
+      albAdjust = 2;
+      albNote = ' + severe albuminuria (A3)';
+    } else if (acrValue >= 30) {
+      albAdjust = 1;
+      albNote = ' + moderate albuminuria (A2)';
+    } else {
+      albNote = ' + ACR A1 (normal)';
     }
   }
 
-  const finalLevelNumeric = Math.min(
-    4,
-    baseLevelNumeric + albuminuriaAdjustment,
-  );
-  const finalLevel = numericToRiskLevel(finalLevelNumeric);
+  const finalNumeric = Math.min(4, baseLevelNumeric + albAdjust);
+  const finalLevel = numericToRiskLevel(finalNumeric);
+
+  const evidence: string[] = [
+    ...(egfrResult ? ['EGFR'] : []),
+    ...(acrValue !== undefined ? ['ACR'] : []),
+  ];
 
   return {
     level: finalLevel,
-    reasoning: baseReasoning + albuminuriaNote,
+    reasoning: baseReasoning + albNote,
+    evidence,
   };
 }
 
 /**
- * Derive frailty risk from FRAIL score category
- * robust/not_frail=low, pre_frail/intermediate=moderate, frail=high
+ * Frailty risk from FRAIL scale.
+ * Returns null when the patient was not assessed (not the same as low risk).
  */
-function deriveFrailtyRisk(results: ScoreResultEntry[]): DomainRisk | null {
+function deriveFrailtyRisk(
+  results: ScoreResultEntry[],
+): DomainRiskEntry | null {
   const frailResult = findScoreByCode(results, 'FRAIL');
-
-  if (!frailResult) {
-    return null;
-  }
+  if (!frailResult) return null;
 
   const category = frailResult.category?.toLowerCase() || '';
-
   let level: RiskLevel = 'low';
   if (category.includes('frail') && !category.includes('intermediate')) {
     level = 'high';
@@ -273,6 +343,7 @@ function deriveFrailtyRisk(results: ScoreResultEntry[]): DomainRisk | null {
   return {
     level,
     reasoning: `FRAIL category: ${frailResult.category} (score: ${frailResult.valueNumeric})`,
+    evidence: ['FRAIL'],
   };
 }
 
@@ -281,45 +352,52 @@ function deriveFrailtyRisk(results: ScoreResultEntry[]): DomainRisk | null {
 // ============================================================================
 
 /**
- * Aggregate individual score results into a composite cardio-nephro-metabolic risk profile
+ * Aggregate individual score results into a composite cardio-nephro-metabolic
+ * risk profile.
  *
  * @param scoreResults - Array of ScoreResultEntry from all clinical scores
- * @returns CompositeRiskProfile with domain-specific and composite risks
- *
- * @example
- * const profile = aggregateCompositeRisk([
- *   { scoreCode: 'SCORE2', valueNumeric: 5.2, category: 'Moderate', ... },
- *   { scoreCode: 'METABOLIC_SYNDROME', valueNumeric: null, category: 'Present', ... },
- *   { scoreCode: 'eGFR', valueNumeric: 45, category: 'G3b', ... },
- *   // ... more scores
- * ]);
- * // profile.level = 'moderate', numeric = 2
+ * @param input - OPTIONAL canonical assessment input. Enables ACR-aware
+ *                renal staging. Omit only in legacy test paths that do not
+ *                care about albuminuria.
  */
 export function aggregateCompositeRisk(
   scoreResults: ScoreResultEntry[],
+  input?: AssessmentInput,
 ): CompositeRiskProfile {
-  // Derive domain-specific risks
   const cardiovascular = deriveCardiovascularRisk(scoreResults);
   const metabolic = deriveMetabolicRisk(scoreResults);
   const hepatic = deriveHepaticRisk(scoreResults);
-  const renal = deriveRenalRisk(scoreResults);
+  const renal = deriveRenalRisk(scoreResults, input);
   const frailty = deriveFrailtyRisk(scoreResults);
 
-  // Collect all numeric levels
-  const levels: number[] = [
-    riskLevelToNumeric(cardiovascular.level),
-    riskLevelToNumeric(metabolic.level),
-    riskLevelToNumeric(hepatic.level),
-    riskLevelToNumeric(renal.level),
-  ];
-
-  if (frailty) {
-    levels.push(riskLevelToNumeric(frailty.level));
+  // Collect only *stratified* domains for the composite. Indeterminate
+  // domains must not be folded into the max — silence is not safety.
+  const stratifiedLevels: number[] = [];
+  if (cardiovascular.level !== 'indeterminate') {
+    stratifiedLevels.push(riskLevelToNumeric(cardiovascular.level));
+  }
+  if (metabolic.level !== 'indeterminate') {
+    stratifiedLevels.push(riskLevelToNumeric(metabolic.level));
+  }
+  if (hepatic.level !== 'indeterminate') {
+    stratifiedLevels.push(riskLevelToNumeric(hepatic.level));
+  }
+  if (renal.level !== 'indeterminate') {
+    stratifiedLevels.push(riskLevelToNumeric(renal.level));
+  }
+  if (frailty && frailty.level !== 'indeterminate') {
+    stratifiedLevels.push(riskLevelToNumeric(frailty.level));
   }
 
-  // Composite = max of all domains
-  const compositeNumeric = Math.max(...levels);
-  const compositeLevel = numericToRiskLevel(compositeNumeric);
+  let compositeLevel: RiskLevel;
+  let compositeNumeric: number;
+  if (stratifiedLevels.length === 0) {
+    compositeLevel = 'indeterminate';
+    compositeNumeric = 0;
+  } else {
+    compositeNumeric = Math.max(...stratifiedLevels);
+    compositeLevel = numericToRiskLevel(compositeNumeric);
+  }
 
   return {
     level: compositeLevel,

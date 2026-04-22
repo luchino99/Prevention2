@@ -36,12 +36,18 @@ import { assessActivity } from '../domain/clinical/activity-engine/activity-asse
 import { deriveAlerts } from '../domain/clinical/alert-engine/alert-deriver.js';
 import { determineRequiredScreenings } from '../domain/clinical/screening-engine/required-screenings.js';
 import { determineFollowupPlan } from '../domain/clinical/followup-engine/followup-plan.js';
+import { applyLabDerivations } from '../domain/clinical/derivations/index.js';
+import { checkAssessmentCompleteness } from '../domain/clinical/completeness/completeness-checker.js';
 
 import type {
   AssessmentInput,
   AssessmentSnapshot,
+  CompletenessWarning,
+  DomainRiskEntry,
+  RiskLevel,
   ScoreResultEntry,
 } from '../../../shared/types/clinical.js';
+import type { CompositeRiskProfile } from '../domain/clinical/risk-aggregation/composite-risk.js';
 
 // ============================================================================
 // Errors
@@ -202,30 +208,92 @@ async function assertCanWritePatient(
 // Helpers
 // ============================================================================
 
-/**
- * Identify which clinically important inputs are missing from the assessment.
- * Feeds the alert-deriver so the clinician is nudged to collect them.
- */
-function computeMissingDataFlags(input: AssessmentInput): string[] {
-  const flags: string[] = [];
-  if (input.labs.totalCholMgDl == null) flags.push('totalCholMgDl');
-  if (input.labs.hdlMgDl == null) flags.push('hdlMgDl');
-  if (input.vitals.sbpMmHg == null) flags.push('sbpMmHg');
-  if (input.labs.creatinineMgDl == null && input.labs.eGFR == null) {
-    flags.push('creatinineMgDl');
-  }
-  if (input.labs.glucoseMgDl == null && input.labs.hba1cPct == null) {
-    flags.push('glucoseMgDl');
-  }
-  return flags;
-}
-
 function findScore(
   results: ScoreResultEntry[],
   code: string,
 ): ScoreResultEntry | undefined {
   const needle = code.toLowerCase();
   return results.find((r) => r.scoreCode.toLowerCase() === needle);
+}
+
+/**
+ * Load the composite risk profile of the most recent assessment for this
+ * patient that is NOT the one being created/rehydrated right now.
+ *
+ * The returned shape mirrors the `CompositeRiskProfile` produced by the
+ * aggregator so it can be fed back into the alert engine for risk-trend
+ * comparison. When no previous assessment exists, when the previous
+ * `risk_profiles` row is missing (best-effort persistence may have
+ * failed), or when the query errors out, we return `null` — a missing
+ * baseline is preferable to a synthetic one (the alert engine explicitly
+ * refuses to emit a risk-up alert without a real baseline).
+ *
+ * The DB read is shielded by RLS and additionally filtered by tenant_id
+ * (defence-in-depth). We also pin the query to assessments older than
+ * the row being processed so we never compare the row with itself.
+ */
+async function loadPreviousCompositeRisk(
+  tenantId: string,
+  patientId: string,
+  excludeAssessmentId: string | null,
+  createdAt: string,
+): Promise<CompositeRiskProfile | null> {
+  try {
+    let query = supabaseAdmin
+      .from('assessments')
+      .select('id, created_at, risk_profiles ( composite_risk_level, composite_score, cardiovascular_risk, metabolic_risk, hepatic_risk, renal_risk, frailty_risk, summary_json )')
+      .eq('tenant_id', tenantId)
+      .eq('patient_id', patientId)
+      .lt('created_at', createdAt)
+      .order('created_at', { ascending: false })
+      .limit(1);
+    if (excludeAssessmentId) {
+      query = query.neq('id', excludeAssessmentId);
+    }
+    const { data, error } = await query.maybeSingle();
+    if (error || !data) return null;
+
+    // PostgREST returns the joined `risk_profiles` as an array (because
+    // the FK is one-to-many on the schema even though our code keeps it
+    // 1:1 via the UNIQUE constraint). Normalize to a single row.
+    const rp: any = Array.isArray(data.risk_profiles)
+      ? data.risk_profiles[0]
+      : data.risk_profiles;
+    if (!rp) return null;
+
+    const level = rp.composite_risk_level as RiskLevel;
+    const summary = (rp.summary_json ?? {}) as Record<string, unknown>;
+
+    const toDomain = (
+      col: string | null | undefined,
+      key: string,
+    ): DomainRiskEntry => {
+      const fromSummary = summary[key] as DomainRiskEntry | undefined;
+      if (fromSummary && typeof fromSummary === 'object' && 'level' in fromSummary) {
+        return fromSummary;
+      }
+      const lvl = (col as RiskLevel | null | undefined) ?? 'indeterminate';
+      return { level: lvl, reasoning: 'reconstructed from persisted column' };
+    };
+
+    const frailtyRaw = toDomain(rp.frailty_risk, 'frailty');
+    const frailty: DomainRiskEntry | null =
+      rp.frailty_risk == null && !summary.frailty ? null : frailtyRaw;
+
+    return {
+      level,
+      numeric: Number(rp.composite_score ?? 0),
+      cardiovascular: toDomain(rp.cardiovascular_risk, 'cardiovascular'),
+      metabolic: toDomain(rp.metabolic_risk, 'metabolic'),
+      hepatic: toDomain(rp.hepatic_risk, 'hepatic'),
+      renal: toDomain(rp.renal_risk, 'renal'),
+      frailty,
+    };
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error('[assessment-service] loadPreviousCompositeRisk failed', e);
+    return null;
+  }
 }
 
 function bestEffort(
@@ -259,46 +327,74 @@ export async function createAssessment(
 ): Promise<AssessmentSnapshot> {
   const { tenant_id } = await assertCanWritePatient(auth, patientId);
 
-  // ─── 1. Run the deterministic engine BEFORE any DB write ───
-  const scoreResults = computeAllScores(input);
-  const compositeRisk = aggregateCompositeRisk(scoreResults);
+  // ─── 1. Boundary derivations ───
+  // Enrich the canonical input with values that can be deterministically
+  // derived (today: ACR from urine albumin + urine creatinine). The
+  // original `input` is kept untouched so the persisted snapshot matches
+  // exactly what the clinician submitted; `enrichedInput` drives
+  // computation only.
+  const { input: enrichedInput } = applyLabDerivations(input);
+
+  // ─── 2. Run the deterministic engine BEFORE any DB write ───
+  const scoreResults = computeAllScores(enrichedInput);
+  const compositeRisk = aggregateCompositeRisk(scoreResults, enrichedInput);
+
+  // Completeness is a separate signal from clinical alerts. See the
+  // CompletenessWarning type documentation in shared/types/clinical.ts.
+  const completenessWarnings: CompletenessWarning[] =
+    checkAssessmentCompleteness(enrichedInput);
 
   const nutrition = buildNutritionSummary({
-    predimedAnswers: input.lifestyle.predimedAnswers,
-    weightKg: input.vitals.weightKg,
-    heightCm: input.vitals.heightCm,
-    age: input.demographics.age,
-    sex: input.demographics.sex,
-    activityLevel: input.lifestyle.intensityLevel ?? undefined,
+    predimedAnswers: enrichedInput.lifestyle.predimedAnswers,
+    weightKg: enrichedInput.vitals.weightKg,
+    heightCm: enrichedInput.vitals.heightCm,
+    age: enrichedInput.demographics.age,
+    sex: enrichedInput.demographics.sex,
+    activityLevel: enrichedInput.lifestyle.intensityLevel ?? undefined,
   });
 
   const activity = assessActivity({
-    minutesPerWeek: input.lifestyle.weeklyActivityMinutes ?? undefined,
-    frequency: input.lifestyle.activityFrequency ?? undefined,
-    activityType: input.lifestyle.activityType ?? undefined,
-    intensityLevel: input.lifestyle.intensityLevel ?? undefined,
+    minutesPerWeek: enrichedInput.lifestyle.weeklyActivityMinutes ?? undefined,
+    frequency: enrichedInput.lifestyle.activityFrequency ?? undefined,
+    activityType: enrichedInput.lifestyle.activityType ?? undefined,
+    intensityLevel: enrichedInput.lifestyle.intensityLevel ?? undefined,
   });
 
   const screenings = determineRequiredScreenings({
-    age: input.demographics.age,
-    sex: input.demographics.sex,
+    age: enrichedInput.demographics.age,
+    sex: enrichedInput.demographics.sex,
     scoreResults,
-    diagnoses: input.clinicalContext.diagnoses ?? [],
+    diagnoses: enrichedInput.clinicalContext.diagnoses ?? [],
+    compositeRisk,
   });
 
-  const missingDataFlags = computeMissingDataFlags(input);
+  // Anchor all date-sensitive engines to a single `now`. This is what
+  // makes the pipeline deterministic across create and rehydrate paths.
+  const now = new Date();
 
   const followupPlan = determineFollowupPlan({
     compositeRisk,
     scoreResults,
-    missingDataFlags,
+    now,
   });
+
+  // Best-effort load of the previous composite risk for risk-trend alerts.
+  // The alert engine refuses to emit a risk-up alert without a real
+  // baseline, so a null here simply suppresses that single alert type —
+  // every other alert category is independent.
+  const previousCompositeRisk = await loadPreviousCompositeRisk(
+    tenant_id,
+    patientId,
+    null, // no current id yet — assessment row not inserted
+    now.toISOString(),
+  );
 
   const alerts = deriveAlerts({
     currentScoreResults: scoreResults,
     compositeRisk,
+    previousCompositeRisk,
     followupPlan,
-    missingDataFlags,
+    now,
   });
 
   // ─── 2. Persist assessment header ───
@@ -326,29 +422,35 @@ export async function createAssessment(
   const assessmentId: string = assessmentRow.id as string;
 
   // ─── 3. Persist normalized assessment_measurements ───
+  // Uses `enrichedInput` so any boundary-derived value (e.g. ACR derived
+  // from urine albumin + urine creatinine) is persisted into the
+  // measurement projection. The canonical `clinical_input_snapshot`
+  // column below keeps the clinician's original payload intact.
   const bmiScore = findScore(scoreResults, 'BMI');
+  const egfrScore = findScore(scoreResults, 'EGFR');
   await bestEffort('assessment_measurements', () =>
     supabaseAdmin.from('assessment_measurements').insert({
       assessment_id: assessmentId,
-      height_cm: input.vitals.heightCm,
-      weight_kg: input.vitals.weightKg,
+      height_cm: enrichedInput.vitals.heightCm,
+      weight_kg: enrichedInput.vitals.weightKg,
       bmi: bmiScore?.valueNumeric ?? null,
-      waist_cm: input.vitals.waistCm,
-      sbp: input.vitals.sbpMmHg,
-      dbp: input.vitals.dbpMmHg,
-      total_chol_mgdl: input.labs.totalCholMgDl ?? null,
-      hdl_mgdl: input.labs.hdlMgDl ?? null,
-      ldl_mgdl: input.labs.ldlMgDl ?? null,
-      triglycerides_mgdl: input.labs.triglyceridesMgDl ?? null,
-      glucose_mgdl: input.labs.glucoseMgDl ?? null,
-      hba1c_pct: input.labs.hba1cPct ?? null,
-      egfr: input.labs.eGFR ?? null,
-      creatinine_mgdl: input.labs.creatinineMgDl ?? null,
-      albumin_creatinine_ratio: input.labs.albuminCreatinineRatio ?? null,
-      ggt: input.labs.ggtUL ?? null,
-      ast: input.labs.astUL ?? null,
-      alt: input.labs.altUL ?? null,
-      platelets: input.labs.plateletsGigaL ?? null,
+      waist_cm: enrichedInput.vitals.waistCm,
+      sbp: enrichedInput.vitals.sbpMmHg,
+      dbp: enrichedInput.vitals.dbpMmHg,
+      total_chol_mgdl: enrichedInput.labs.totalCholMgDl ?? null,
+      hdl_mgdl: enrichedInput.labs.hdlMgDl ?? null,
+      ldl_mgdl: enrichedInput.labs.ldlMgDl ?? null,
+      triglycerides_mgdl: enrichedInput.labs.triglyceridesMgDl ?? null,
+      glucose_mgdl: enrichedInput.labs.glucoseMgDl ?? null,
+      hba1c_pct: enrichedInput.labs.hba1cPct ?? null,
+      egfr: egfrScore?.valueNumeric ?? enrichedInput.labs.eGFR ?? null,
+      creatinine_mgdl: enrichedInput.labs.creatinineMgDl ?? null,
+      albumin_creatinine_ratio:
+        enrichedInput.labs.albuminCreatinineRatio ?? null,
+      ggt: enrichedInput.labs.ggtUL ?? null,
+      ast: enrichedInput.labs.astUL ?? null,
+      alt: enrichedInput.labs.altUL ?? null,
+      platelets: enrichedInput.labs.plateletsGigaL ?? null,
     }),
   );
 
@@ -467,6 +569,11 @@ export async function createAssessment(
       composite_risk_level: compositeRisk.level,
       alert_count: alerts.length,
       score_count: scoreResults.length,
+      // Stable, machine-readable completeness signal. Sourced from the
+      // canonical `checkAssessmentCompleteness` projection so the audit
+      // trail and the UI share a single source of truth. Codes only —
+      // no free-text, no PHI.
+      completeness_warning_codes: completenessWarnings.map((w) => w.code),
     },
   });
 
@@ -486,6 +593,7 @@ export async function createAssessment(
     nutrition,
     activity,
     alerts,
+    completenessWarnings,
   });
 }
 
@@ -539,37 +647,50 @@ export async function loadAssessmentSnapshot(
     );
   }
 
-  const scoreResults = computeAllScores(input);
-  const compositeRisk = aggregateCompositeRisk(scoreResults);
+  // Boundary derivations — keep read-path in lockstep with write-path so
+  // the rehydrated snapshot is byte-equivalent to the one originally
+  // returned by createAssessment().
+  const { input: enrichedInput } = applyLabDerivations(input);
+  const scoreResults = computeAllScores(enrichedInput);
+  const compositeRisk = aggregateCompositeRisk(scoreResults, enrichedInput);
+  const completenessWarnings: CompletenessWarning[] =
+    checkAssessmentCompleteness(enrichedInput);
 
   const nutrition = buildNutritionSummary({
-    predimedAnswers: input.lifestyle.predimedAnswers,
-    weightKg: input.vitals.weightKg,
-    heightCm: input.vitals.heightCm,
-    age: input.demographics.age,
-    sex: input.demographics.sex,
-    activityLevel: input.lifestyle.intensityLevel ?? undefined,
+    predimedAnswers: enrichedInput.lifestyle.predimedAnswers,
+    weightKg: enrichedInput.vitals.weightKg,
+    heightCm: enrichedInput.vitals.heightCm,
+    age: enrichedInput.demographics.age,
+    sex: enrichedInput.demographics.sex,
+    activityLevel: enrichedInput.lifestyle.intensityLevel ?? undefined,
   });
 
   const activity = assessActivity({
-    minutesPerWeek: input.lifestyle.weeklyActivityMinutes ?? undefined,
-    frequency: input.lifestyle.activityFrequency ?? undefined,
-    activityType: input.lifestyle.activityType ?? undefined,
-    intensityLevel: input.lifestyle.intensityLevel ?? undefined,
+    minutesPerWeek: enrichedInput.lifestyle.weeklyActivityMinutes ?? undefined,
+    frequency: enrichedInput.lifestyle.activityFrequency ?? undefined,
+    activityType: enrichedInput.lifestyle.activityType ?? undefined,
+    intensityLevel: enrichedInput.lifestyle.intensityLevel ?? undefined,
   });
 
   const screenings = determineRequiredScreenings({
-    age: input.demographics.age,
-    sex: input.demographics.sex,
+    age: enrichedInput.demographics.age,
+    sex: enrichedInput.demographics.sex,
     scoreResults,
-    diagnoses: input.clinicalContext.diagnoses ?? [],
+    diagnoses: enrichedInput.clinicalContext.diagnoses ?? [],
+    compositeRisk,
   });
 
-  const missingDataFlags = computeMissingDataFlags(input);
+  // Rehydration uses the assessment's original `created_at` as the `now`
+  // anchor so the follow-up plan is byte-equivalent to the one emitted at
+  // creation time. Without this the `nextReviewDate` would silently drift
+  // every time the snapshot is reloaded.
+  const createdAtIso = (row.created_at as string) ?? new Date().toISOString();
+  const now = new Date(createdAtIso);
+
   const followupPlan = determineFollowupPlan({
     compositeRisk,
     scoreResults,
-    missingDataFlags,
+    now,
   });
 
   // Prefer persisted alerts — they carry acknowledgements and timestamps.
@@ -578,21 +699,30 @@ export async function loadAssessmentSnapshot(
     .select('type, severity, title, message, created_at')
     .eq('assessment_id', assessmentId);
 
-  const alerts =
-    persistedAlerts && persistedAlerts.length > 0
-      ? persistedAlerts.map((a: any) => ({
-          type: String(a.type),
-          severity: (a.severity as 'info' | 'warning' | 'critical') ?? 'info',
-          title: String(a.title ?? ''),
-          message: String(a.message ?? ''),
-          timestamp: String(a.created_at ?? new Date().toISOString()),
-        }))
-      : deriveAlerts({
-          currentScoreResults: scoreResults,
-          compositeRisk,
-          followupPlan,
-          missingDataFlags,
-        });
+  let alerts: ReturnType<typeof deriveAlerts>;
+  if (persistedAlerts && persistedAlerts.length > 0) {
+    alerts = persistedAlerts.map((a: any) => ({
+      type: String(a.type),
+      severity: (a.severity as 'info' | 'warning' | 'critical') ?? 'info',
+      title: String(a.title ?? ''),
+      message: String(a.message ?? ''),
+      timestamp: String(a.created_at ?? new Date().toISOString()),
+    }));
+  } else {
+    const previousCompositeRisk = await loadPreviousCompositeRisk(
+      row.tenant_id as string,
+      row.patient_id as string,
+      assessmentId,
+      createdAtIso,
+    );
+    alerts = deriveAlerts({
+      currentScoreResults: scoreResults,
+      compositeRisk,
+      previousCompositeRisk,
+      followupPlan,
+      now,
+    });
+  }
 
   return buildSnapshot({
     assessmentId,
@@ -610,6 +740,7 @@ export async function loadAssessmentSnapshot(
     nutrition,
     activity,
     alerts,
+    completenessWarnings,
   });
 }
 
@@ -633,6 +764,7 @@ type SnapshotAssembly = {
   nutrition: ReturnType<typeof buildNutritionSummary>;
   activity: ReturnType<typeof assessActivity>;
   alerts: ReturnType<typeof deriveAlerts>;
+  completenessWarnings: CompletenessWarning[];
 };
 
 function buildSnapshot(a: SnapshotAssembly): AssessmentSnapshot {
@@ -657,6 +789,7 @@ function buildSnapshot(a: SnapshotAssembly): AssessmentSnapshot {
       renal: a.compositeRisk.renal,
       frailty: a.compositeRisk.frailty,
     },
+    completenessWarnings: a.completenessWarnings,
     screenings: a.screenings,
     followupPlan: a.followupPlan,
     nutritionSummary: a.nutrition,

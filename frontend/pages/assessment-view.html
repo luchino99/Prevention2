@@ -6,6 +6,40 @@
   <meta name="robots" content="noindex,nofollow" />
   <title>Assessment — Uelfy Clinical</title>
   <link rel="stylesheet" href="../assets/css/app.css" />
+  <style>
+    /* Risk-level visual system — keep aligned with CompositeRisk semantics.
+       `indeterminate` is NOT a synonym for low; render it distinctly. */
+    .badge.indeterminate {
+      background: repeating-linear-gradient(45deg, #f2f3f5, #f2f3f5 4px, #e5e7eb 4px, #e5e7eb 8px);
+      color: #374151;
+      border: 1px dashed #9ca3af;
+    }
+    .completeness-list { list-style: none; padding: 0; margin: 0; }
+    .completeness-list li {
+      padding: 10px 12px;
+      border-left: 3px solid #f59e0b;
+      background: #fffbeb;
+      margin-bottom: 8px;
+      border-radius: 4px;
+    }
+    .completeness-list li.info {
+      border-left-color: #6b7280;
+      background: #f9fafb;
+    }
+    .completeness-list .cw-title { font-weight: 600; }
+    .completeness-list .cw-action {
+      display: block;
+      margin-top: 6px;
+      font-size: 13px;
+      color: #374151;
+    }
+    .completeness-list .cw-fields {
+      display: block;
+      margin-top: 4px;
+      font-size: 12px;
+      color: #6b7280;
+    }
+  </style>
 </head>
 <body>
   <div class="app-shell">
@@ -38,6 +72,16 @@
       <section class="card">
         <h3>Composite risk</h3>
         <div class="grid three" id="composite-grid"></div>
+      </section>
+
+      <section class="card" id="completeness-card" style="display:none;">
+        <h3>Data completeness</h3>
+        <p class="muted" style="margin-top:-4px;font-size:13px;">
+          Scores that could not be computed because of missing inputs.
+          These are <strong>not</strong> clinical alerts — they describe data
+          collection gaps, not acute findings.
+        </p>
+        <ul class="completeness-list" id="completeness-wrap"></ul>
       </section>
 
       <section class="card">
@@ -153,6 +197,24 @@
 
     function renderFollowup(p) {
       if (!p) { document.getElementById('followup-wrap').innerHTML = `<p class="muted">No follow-up plan.</p>`; return; }
+      const items = Array.isArray(p.items) ? p.items : [];
+      const itemsHtml = items.length ? `
+        <div class="mt-16">
+          <div class="kpi-label">Structured follow-up items</div>
+          <table class="table">
+            <thead><tr><th>Item</th><th>Priority</th><th>Due (months)</th><th>Rationale</th><th>Guideline</th></tr></thead>
+            <tbody>
+              ${items.map((it) => `
+                <tr>
+                  <td>${escapeHtml(it.title ?? it.code ?? '—')}</td>
+                  <td>${riskBadge(it.priority)}</td>
+                  <td>${escapeHtml(String(it.dueInMonths))}</td>
+                  <td class="muted">${escapeHtml(it.rationale ?? '')}</td>
+                  <td class="muted">${escapeHtml(it.guidelineSource ?? '')}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>` : '';
       document.getElementById('followup-wrap').innerHTML = `
         <div class="grid three">
           <div><div class="kpi-label">Priority</div>${riskBadge(p.priorityLevel)}</div>
@@ -166,7 +228,8 @@
         <div class="mt-16">
           <div class="kpi-label">Domain monitoring</div>
           <div>${(p.domainMonitoring ?? []).map((d) => `<span class="badge muted" style="margin-right:6px;">${escapeHtml(d)}</span>`).join('') || '<span class="muted">—</span>'}</div>
-        </div>`;
+        </div>
+        ${itemsHtml}`;
     }
 
     function renderScreenings(items) {
@@ -174,7 +237,7 @@
       if (!items?.length) { wrap.innerHTML = `<p class="muted">No specific screenings recommended.</p>`; return; }
       wrap.innerHTML = `
         <table class="table">
-          <thead><tr><th>Screening</th><th>Priority</th><th>Interval</th><th>Reason</th></tr></thead>
+          <thead><tr><th>Screening</th><th>Priority</th><th>Interval</th><th>Reason</th><th>Guideline</th></tr></thead>
           <tbody>
             ${items.map((s) => `
               <tr>
@@ -182,6 +245,7 @@
                 <td>${riskBadge(s.priority)}</td>
                 <td>${escapeHtml(String(s.intervalMonths))} months</td>
                 <td class="muted">${escapeHtml(s.reason ?? '—')}</td>
+                <td class="muted">${escapeHtml(s.guidelineSource ?? '')}</td>
               </tr>`).join('')}
           </tbody>
         </table>`;
@@ -203,6 +267,28 @@
           <div><span class="kpi-label">Meets WHO:</span> ${act?.meetsWhoGuidelines ? '<span class="badge ok">yes</span>' : '<span class="badge muted">no</span>'}</div>
           <div><span class="kpi-label">Sedentary risk:</span> ${riskBadge(act?.sedentaryRiskLevel)}</div>
         </div>`;
+    }
+
+    function renderCompleteness(warnings) {
+      const card = document.getElementById('completeness-card');
+      const wrap = document.getElementById('completeness-wrap');
+      if (!warnings?.length) {
+        card.style.display = 'none';
+        wrap.innerHTML = '';
+        return;
+      }
+      card.style.display = '';
+      wrap.innerHTML = warnings.map((w) => `
+        <li class="${escapeHtml(w.severity ?? 'info')}">
+          <span class="cw-title">${escapeHtml(w.title)}</span>
+          <span class="muted" style="font-size:12px;"> · ${escapeHtml(w.code)}</span>
+          <div class="muted" style="font-size:13px; margin-top:2px;">${escapeHtml(w.detail ?? '')}</div>
+          <span class="cw-action"><strong>Suggested action:</strong> ${escapeHtml(w.suggestedAction ?? '—')}</span>
+          ${Array.isArray(w.missingFields) && w.missingFields.length
+            ? `<span class="cw-fields">Missing: ${w.missingFields.map((f) => `<code>${escapeHtml(f)}</code>`).join(', ')}</span>`
+            : ''}
+        </li>
+      `).join('');
     }
 
     function renderAlerts(alerts) {
@@ -238,6 +324,7 @@
           `${snapshot.assessment.status ?? '—'} · id ${snapshot.assessment.id.substring(0, 8)}…`;
 
         renderComposite(snapshot.compositeRisk);
+        renderCompleteness(snapshot.completenessWarnings || []);
         renderScores(snapshot.scoreResults);
         renderFollowup(snapshot.followupPlan);
         renderScreenings(snapshot.screenings);
