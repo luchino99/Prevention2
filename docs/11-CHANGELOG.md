@@ -7,6 +7,73 @@ executed per the project blueprint.
 
 ---
 
+## [0.2.1-deploy] — 2026-04-22 — **Deploy-pipeline hardening (Vercel + CI split)**
+
+Strictly non-functional; no runtime behavior, API contract, score formula,
+DB schema, or RLS policy changed. This entry documents the build/CI
+separation that unblocked the first production deploy on Vercel.
+
+### Fixed
+
+- **Vercel build crash `sh: line 1: tsc: command not found`.** Root
+  cause: `package.json#scripts.build` invoked `tsc --noEmit` but
+  TypeScript is a `devDependency`, and Vercel does not install
+  devDependencies in production mode. Fix: `build` now runs only
+  `node scripts/inject-public-config.mjs` (the inject step is the sole
+  operation that must succeed to produce the deploy artifact); typecheck
+  is promoted to a CI-only quality gate.
+- **Login redirect 404 (`/frontend/pages/login.html`).** Root cause:
+  `frontend/assets/js/api-client.js` redirected to the legacy path, but
+  the Vercel output directory is `frontend-dist/` (the inject script
+  copies `frontend/` → `frontend-dist/`), so the live path is
+  `/pages/login.html`. Fix applied in both `forceReauth()` and
+  `requireAuth()`; a belt-and-braces `redirects` block in `vercel.json`
+  308-redirects `/frontend/:path*` → `/:path*` for any stragglers.
+
+### Added
+
+- `.github/workflows/ci.yml` — three-job quality gate (`typecheck`,
+  `test`, `build-dryrun`) that installs full devDependencies via
+  `npm ci`, runs both `typecheck` and `typecheck:prod`, runs `vitest`,
+  executes the inject script in lenient mode (no Supabase env vars),
+  and asserts the 8 expected pages exist under `frontend-dist/pages/`
+  (`dashboard`, `login`, `patients`, `patient-detail`, `alerts`,
+  `audit`, `assessment-new`, `assessment-view`). Runs on every push
+  and pull_request against `main`.
+- `package.json#scripts.build:check` — convenience script for local/CI
+  parity: `inject` + full typecheck in one command.
+- `package.json#scripts.test` — `vitest run` is now wired up at the
+  root so CI can invoke it without a config path flag.
+
+### Changed
+
+- `package.json`:
+  - `scripts.build`: `tsc --noEmit` → `node scripts/inject-public-config.mjs`.
+  - `scripts.typecheck`: now explicitly pins `--project tsconfig.json`.
+  - `scripts.typecheck:prod` added — strict production-only typecheck
+    against `tsconfig.prod.check.json`.
+  - `scripts.inject:public-config` added as a named entrypoint (parity
+    with the deploy `build`).
+  - `engines.node` normalized to `"20.x"` (was `>=20.0.0`), matching
+    `actions/setup-node@v4` in CI.
+- `vercel.json` — added `redirects` block (`/` → `/pages/login.html`,
+  `/frontend/:path*` → `/:path*` permanent) and removed the obsolete
+  `api/openai.js` entry from `functions`.
+- `docs/12-PACKAGE-UPGRADE.md` — canonical script table, rationale for
+  "build is inject-only," and the updated `vercel.json` reference.
+
+### Rationale
+
+Keeping type checking inside the deploy `build` command couples
+**artifact production** to **regression prevention**. Those have
+different environments (prod install vs. full install), different
+failure modes (missing `frontend-dist/` vs. type drift), and different
+recovery paths (roll back deploy vs. reject PR). They are cleanly
+separated now: Vercel deploys if and only if the artifact can be
+produced; CI blocks merges if types or tests regress.
+
+---
+
 ## [0.2.1-refactor] — 2026-04-20 — **Security/GDPR follow-ups + service-layer realignment**
 
 ### Added

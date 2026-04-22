@@ -12,7 +12,9 @@
     "typecheck": "tsc --noEmit --project tsconfig.json",
     "typecheck:prod": "tsc --noEmit --project tsconfig.prod.check.json",
     "inject:public-config": "node scripts/inject-public-config.mjs",
-    "build": "node scripts/inject-public-config.mjs && tsc --noEmit --project tsconfig.json"
+    "build": "node scripts/inject-public-config.mjs",
+    "build:check": "node scripts/inject-public-config.mjs && tsc --noEmit --project tsconfig.json",
+    "test": "vitest run"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
