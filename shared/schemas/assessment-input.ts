@@ -4,8 +4,12 @@
  */
 
 import { z } from 'zod';
-import { CLINICAL_RANGES } from '../constants/clinical-ranges';
-import type { AssessmentInput } from '../types/clinical';
+// NB: Node 20 ESM does NOT perform extension resolution on relative
+// specifiers. The `.js` suffix on TypeScript source imports is required
+// so the compiled output (and Vercel's /var/task/... runtime) can
+// resolve the module. Without it we get ERR_MODULE_NOT_FOUND on import.
+import { CLINICAL_RANGES } from '../constants/clinical-ranges.js';
+import type { AssessmentInput } from '../types/clinical.js';
 
 /**
  * Demographics section - required information about the patient

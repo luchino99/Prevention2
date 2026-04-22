@@ -149,11 +149,25 @@ async function handleCreate(req: any, res: VercelResponse, patientId: string): P
     res.status(201).json({ snapshot });
   } catch (err: any) {
     if (err instanceof AssessmentServiceError) {
-      res.status(err.status).json({ error: { code: err.code, message: err.message } });
+      const body: { error: { code: string; message: string; details?: unknown } } = {
+        error: { code: err.code, message: err.message },
+      };
+      if (err.details !== undefined) body.error.details = err.details;
+      res.status(err.status).json(body);
       return;
     }
+    // Unexpected error path. We log the full stack to Vercel logs and
+    // return a sanitised message to the client. The server-side console
+    // line is the only place the stack is retained.
+    // eslint-disable-next-line no-console
     console.error('[assessments.create] unexpected', err);
-    res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Assessment creation failed' } });
+    res.status(500).json({
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Assessment creation failed',
+        details: { cause: String(err?.message ?? err ?? 'unknown') },
+      },
+    });
   }
 }
 

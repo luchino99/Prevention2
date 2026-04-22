@@ -52,10 +52,53 @@ export class AssessmentServiceError extends Error {
     public readonly status: number,
     public readonly code: string,
     message: string,
+    public readonly details?: unknown,
   ) {
     super(message);
     this.name = 'AssessmentServiceError';
   }
+}
+
+/**
+ * Map a Supabase/PostgREST insert error into a crisp `AssessmentServiceError`.
+ *
+ * The generic "DB_ERROR" bucket hides the two most common operational
+ * failures (missing migration, RLS misconfiguration). Detecting them
+ * explicitly gives the clinician an actionable message instead of a blank
+ * 500, and lets Vercel logs retain the full PostgREST payload for
+ * post-mortem.
+ */
+function classifyAssessmentInsertError(
+  assessErr: { message?: string; code?: string; details?: string; hint?: string } | null,
+): AssessmentServiceError {
+  const msg = assessErr?.message ?? '';
+  const pgCode = assessErr?.code ?? '';
+
+  // PostgREST schema-cache / missing column signals. When migration 003
+  // was not applied to the target database, the `clinical_input_snapshot`
+  // column does not exist and we surface a targeted message so ops can
+  // fix it in one step.
+  const isSchemaCacheMiss =
+    pgCode === 'PGRST204' ||
+    /Could not find the '?clinical_input_snapshot'? column/i.test(msg) ||
+    /column .*clinical_input_snapshot.* does not exist/i.test(msg);
+
+  if (isSchemaCacheMiss) {
+    return new AssessmentServiceError(
+      500,
+      'MIGRATION_REQUIRED',
+      'Database migration 003 (clinical_input_snapshot) is not applied to this project. '
+        + 'Run supabase/migrations/003_retention_anonymization_snapshot.sql on the target database.',
+      { pgCode, pgMessage: msg, hint: assessErr?.hint, details: assessErr?.details },
+    );
+  }
+
+  return new AssessmentServiceError(
+    500,
+    'ASSESSMENT_INSERT_FAILED',
+    `Failed to create assessment: ${msg || 'unknown'}`,
+    { pgCode, pgMessage: msg, hint: assessErr?.hint, details: assessErr?.details },
+  );
 }
 
 // ============================================================================
@@ -112,7 +155,7 @@ async function assertCanWritePatient(
   }
 
   if (auth.role === 'clinician') {
-    const { data: link } = await supabaseAdmin
+    const { data: link, error: linkErr } = await supabaseAdmin
       .from('professional_patient_links')
       .select('id')
       .eq('professional_user_id', auth.userId)
@@ -120,11 +163,34 @@ async function assertCanWritePatient(
       .eq('is_active', true)
       .maybeSingle();
 
+    // Distinguish "table/migration missing" from "no link row". Without
+    // this, a missing migration 005 would masquerade as NO_PATIENT_LINK
+    // and send ops on a wild goose chase. PostgREST returns PGRST205 /
+    // "could not find the table" in that case.
+    if (linkErr) {
+      const code = (linkErr as any).code as string | undefined;
+      const msg = linkErr.message ?? '';
+      const isMissingTable =
+        code === 'PGRST205' ||
+        /relation .*professional_patient_links.* does not exist/i.test(msg) ||
+        /Could not find the table '?public\.professional_patient_links'?/i.test(msg);
+      if (isMissingTable) {
+        throw new AssessmentServiceError(
+          500,
+          'MIGRATION_REQUIRED',
+          'Database migration 005 (professional_patient_links) is not applied. '
+            + 'Run supabase/migrations/005_professional_patient_links.sql on the target database.',
+          { pgCode: code, pgMessage: msg },
+        );
+      }
+      throw new AssessmentServiceError(500, 'DB_ERROR', msg, { pgCode: code });
+    }
+
     if (!link) {
       throw new AssessmentServiceError(
         403,
         'NO_PATIENT_LINK',
-        'You are not linked to this patient',
+        'You are not linked to this patient. Ask a tenant admin to assign the patient to you.',
       );
     }
   }
@@ -251,11 +317,11 @@ export async function createAssessment(
     .single();
 
   if (assessErr || !assessmentRow) {
-    throw new AssessmentServiceError(
-      500,
-      'ASSESSMENT_INSERT_FAILED',
-      `Failed to create assessment: ${assessErr?.message ?? 'unknown'}`,
-    );
+    // Log the full PostgREST error server-side so ops can see pgCode + hint
+    // without leaking them to unauthenticated callers.
+    // eslint-disable-next-line no-console
+    console.error('[assessment-service] assessments.insert failed', assessErr);
+    throw classifyAssessmentInsertError(assessErr as any);
   }
   const assessmentId: string = assessmentRow.id as string;
 

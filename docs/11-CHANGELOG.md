@@ -7,6 +7,106 @@ executed per the project blueprint.
 
 ---
 
+## [0.2.1-hotfix-assessment500] — 2026-04-22 — **Assessment 500 — diagnosis & prevention**
+
+Live-production hotfix for `POST /api/v1/patients/{id}/assessments`
+returning HTTP 500 with an opaque body. No clinical score formula, no
+DB schema change. All changes are safe/idempotent.
+
+### Root cause (confirmed from Vercel function logs)
+
+```
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module
+  '/var/task/shared/constants/clinical-ranges' imported from
+  /var/task/shared/schemas/assessment-input.js
+```
+
+`shared/schemas/assessment-input.ts` imported
+`../constants/clinical-ranges` and `../types/clinical` **without the
+`.js` suffix**. Node 20 ESM (the Vercel serverless runtime) does NOT
+perform extension resolution on relative specifiers, so the function
+crashed at import time before any handler code executed — producing a
+generic HTTP 500 with no body. The TypeScript compiler did not flag
+the drift because `tsconfig` uses `"moduleResolution": "bundler"`
+(permissive at compile time, strict at runtime).
+
+### Fixed
+
+- **Missing `.js` extension on relative imports.** Fixed in
+  `shared/schemas/assessment-input.ts`:
+  - `import { CLINICAL_RANGES } from '../constants/clinical-ranges'` →
+    `'../constants/clinical-ranges.js'`
+  - `import type { AssessmentInput } from '../types/clinical'` →
+    `'../types/clinical.js'`
+  Full grep across `api/`, `backend/`, `shared/` confirmed no other
+  drift existed.
+
+- **Silent `NO_PATIENT_LINK` after patient creation.** `POST /api/v1/patients`
+  did not create a `professional_patient_links` row for the creating
+  clinician, so the very next `POST /api/v1/patients/{id}/assessments`
+  from the same clinician failed authorization. Fixed:
+  `api/v1/patients/index.ts` now best-effort inserts a PPL row
+  (`relationship_type='primary'`, `is_active=true`, `assigned_by=self`)
+  when `auth.role === 'clinician'`. Idempotent via the existing
+  `ppl_unique_active(professional_user_id, patient_id, is_active)`
+  UNIQUE constraint. No behavior change for `tenant_admin` /
+  `platform_admin` (they bypass the link check entirely).
+
+- **Opaque 500 on missing migration 003.** If the target Supabase
+  project was missing `assessments.clinical_input_snapshot`
+  (PostgREST `PGRST204`), the insert failed with a generic
+  `ASSESSMENT_INSERT_FAILED` and no actionable hint.
+  `assessment-service.ts#classifyAssessmentInsertError` now detects
+  the schema-cache / missing-column signature and returns a targeted
+  `MIGRATION_REQUIRED` error pointing at
+  `003_retention_anonymization_snapshot.sql`.
+
+- **Opaque 500 on missing migration 005.** Same pattern for the PPL
+  table: the check in `assertCanWritePatient` now distinguishes
+  "table missing" (→ `MIGRATION_REQUIRED` pointing at
+  `005_professional_patient_links.sql`) from "no link row" (→
+  unchanged `NO_PATIENT_LINK`, with a clearer message).
+
+### Added
+
+- **CI guard — "Lint ESM relative import extensions".** New step in
+  `.github/workflows/ci.yml` (job `typecheck`) greps `api/`,
+  `backend/`, `shared/` for relative TS imports whose specifier does
+  **not** end in `.js`, `.mjs`, `.cjs`, or `.json`, and fails the
+  build with an actionable error message. This is the only line of
+  defense against this class of drift because `tsc` will not catch
+  it under `"moduleResolution": "bundler"`. Scoped to runtime code
+  only; tests are excluded because vitest resolves TS source
+  directly.
+- `AssessmentServiceError.details` — optional structured payload
+  (pgCode, pgMessage, hint). The route handler passes it through to
+  the client under `error.details` so the network tab and the
+  `assessment-new.html` error banner surface the root cause directly
+  instead of "Assessment creation failed".
+- Route handler also returns `error.details.cause` for the
+  unexpected-error path so production incidents no longer require a
+  Vercel log dive for first triage.
+- `supabase/bootstrap/002_diagnose_assessment_500.sql` — 11-check
+  diagnostic script (assessments table, `clinical_input_snapshot`
+  column, snapshot-immutable trigger, PPL table + RLS, storage
+  bucket, patients schema drift, enum labels, per-user link check,
+  RLS enabled on `assessments`). Rewritten as a single
+  `UNION ALL`-over-CTE query so the Supabase SQL editor (which only
+  renders the last statement's result set) returns all 11 rows at
+  once. `CHECK 6` (storage bucket) carries a three-layer guard
+  (`to_regclass` + `has_table_privilege` + existence) so the script
+  no longer raises `42501: must be owner of table buckets` on
+  Supabase projects where the SQL role lacks `SELECT` on
+  `storage.buckets`. Read-only; safe to run on production.
+
+### Server-side logging
+
+- `assessments.insert` failures now log `console.error` with the full
+  PostgREST error object (code/hint/details) before throwing. Vercel
+  function logs retain everything; the response body stays sanitised.
+
+---
+
 ## [0.2.1-deploy] — 2026-04-22 — **Deploy-pipeline hardening (Vercel + CI split)**
 
 Strictly non-functional; no runtime behavior, API contract, score formula,

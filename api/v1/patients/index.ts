@@ -141,6 +141,40 @@ async function handleCreate(req: any, res: VercelResponse): Promise<void> {
     return;
   }
 
+  // Auto-create a `professional_patient_links` row when a clinician
+  // creates a patient. Without this, the clinician can create a patient
+  // but immediately fails `assertCanWritePatient` on the next assessment
+  // with NO_PATIENT_LINK (see assessment-service.ts). Best-effort: we
+  // never fail the patient-create response on a link insertion error
+  // because:
+  //   - the patient row is already committed;
+  //   - `ppl_unique_active (professional_user_id, patient_id, is_active)`
+  //     guarantees idempotency, so a retry won't duplicate rows;
+  //   - tenant_admin / platform_admin do not need a link (they bypass
+  //     the check in assertCanWritePatient);
+  //   - the cross-tenant trigger guarantees this insert can never cross
+  //     tenant boundaries even if the handler were ever misconfigured.
+  if (req.auth.role === 'clinician') {
+    const { error: linkErr } = await supabaseAdmin
+      .from('professional_patient_links')
+      .insert({
+        tenant_id: req.auth.tenantId,
+        professional_user_id: req.auth.userId,
+        patient_id: data.id,
+        relationship_type: 'primary',
+        is_active: true,
+        assigned_by: req.auth.userId,
+      });
+    if (linkErr) {
+      // eslint-disable-next-line no-console
+      console.error('[patients.create] auto-link PPL failed', {
+        patientId: data.id,
+        userId: req.auth.userId,
+        pg: { code: (linkErr as any).code, message: linkErr.message },
+      });
+    }
+  }
+
   await recordAudit(req.auth, {
     action: 'patient.create',
     resourceType: 'patient',
