@@ -138,7 +138,9 @@ async function handleExport(req: any, res: VercelResponse, patientId: string): P
       .order('created_at', { ascending: false }),
     supabaseAdmin
       .from('report_exports')
-      .select('id, assessment_id, storage_bucket, storage_path, file_size_bytes, content_type, created_at, generated_by_user_id')
+      .select(
+        'id, assessment_id, export_type, storage_path, file_size_bytes, engine_version, report_version, created_at, exported_by',
+      )
       .eq('patient_id', patientId)
       .order('created_at', { ascending: false }),
     supabaseAdmin

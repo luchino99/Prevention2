@@ -39,9 +39,14 @@ async function handleGet(req: any, res: VercelResponse, patientId: string): Prom
   const patient = await loadPatient(req, res, patientId);
   if (!patient) return;
 
+  // `composite_risk_*` fields live in the separate `risk_profiles` table
+  // (see 001_schema_foundation.sql §9), not on `assessments`. We join via
+  // the 1:1 relation so the dashboard can still render a summary.
   const { data: lastAssessment } = await supabaseAdmin
     .from('assessments')
-    .select('id, created_at, composite_risk_score, composite_risk_band, status')
+    .select(
+      'id, created_at, assessment_date, status, engine_version, risk_profile:risk_profiles(composite_risk_level, composite_score)',
+    )
     .eq('patient_id', patientId)
     .order('created_at', { ascending: false })
     .limit(1)
@@ -80,28 +85,47 @@ async function handleUpdate(req: any, res: VercelResponse, patientId: string): P
   // Unpack the (partial) nested shape into the flat DB column layout.
   // `updatePatientSchema` keeps `demographics` as partial so every field
   // is individually optional; `contact` / `notes` stay optional at the
-  // outer level.
+  // outer level. All keys must match canonical schema names (see
+  // 001_schema_foundation.sql §4 patients).
   const update: Record<string, unknown> = {};
   const p = parse.data;
   const demo = p.demographics;
   if (demo) {
-    if (demo.externalCode !== undefined) update.display_ref = demo.externalCode;
+    if (demo.externalCode !== undefined) update.external_code = demo.externalCode;
     if (demo.firstName !== undefined) update.first_name = demo.firstName;
     if (demo.lastName !== undefined) update.last_name = demo.lastName;
+    // If first/last name changed, refresh the canonical display_name
+    if (demo.firstName !== undefined || demo.lastName !== undefined) {
+      const first = demo.firstName ?? patient.first_name ?? '';
+      const last = demo.lastName ?? patient.last_name ?? '';
+      const combined = `${first} ${last}`.trim();
+      if (combined.length > 0) update.display_name = combined;
+    }
     if (demo.dateOfBirth !== undefined) {
-      update.date_of_birth =
+      const birthDateStr =
         demo.dateOfBirth instanceof Date
           ? demo.dateOfBirth.toISOString().slice(0, 10)
           : demo.dateOfBirth;
+      update.birth_date = birthDateStr;
+      const y =
+        demo.dateOfBirth instanceof Date
+          ? demo.dateOfBirth.getUTCFullYear()
+          : typeof demo.dateOfBirth === 'string'
+            ? new Date(demo.dateOfBirth).getUTCFullYear()
+            : null;
+      if (Number.isFinite(y)) update.birth_year = y;
     }
     if (demo.sex !== undefined) update.sex = demo.sex;
   }
   const contact = p.contact;
   if (contact) {
-    if (contact.email !== undefined) update.email = contact.email;
-    if (contact.phoneNumber !== undefined) update.phone = contact.phoneNumber;
+    if (contact.email !== undefined) update.contact_email = contact.email;
+    if (contact.phoneNumber !== undefined) update.contact_phone = contact.phoneNumber;
   }
   if (p.notes !== undefined) update.notes = p.notes;
+  if (p.consentGiven !== undefined) {
+    update.consent_status = p.consentGiven ? 'active' : 'pending';
+  }
 
   if (Object.keys(update).length === 0) {
     res.status(400).json({ error: { code: 'NO_FIELDS', message: 'No fields to update' } });

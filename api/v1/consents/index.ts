@@ -1,12 +1,28 @@
 /**
  * /api/v1/consents
  *   GET  — list consents for a patient (query: ?patientId=<uuid>)
- *   POST — grant/record a consent
- *         body: { patientId, consentType, purpose, textVersion, legalBasis }
+ *   POST — grant / revoke a consent
+ *         body: { patientId, consentType, purpose, policyVersion, legalBasis,
+ *                 action: 'grant' | 'revoke' }
  *
  * Consents are versioned and immutable: revoking creates a new row with
- * status='revoked' rather than mutating the granted row. This preserves the
- * audit trail required for GDPR accountability.
+ * `granted = false` rather than mutating the granted row. This preserves the
+ * audit trail required for GDPR accountability (Art.7 §1 + Art.30).
+ *
+ * Canonical schema is `consent_records` (001_schema_foundation.sql §14):
+ *
+ *   subject_type        'patient' | 'user'
+ *   subject_id          patient_id or user_id
+ *   consent_type        health_data_processing | ai_processing
+ *                       | notifications | data_sharing_clinician | marketing
+ *   granted             boolean
+ *   legal_basis         text
+ *   policy_version      text           -- versioning handle
+ *   policy_url          text
+ *   granted_at / revoked_at
+ *   ip_hash / user_agent_hash
+ *   jurisdiction        default 'EU'
+ *   purpose             text
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
@@ -22,20 +38,34 @@ const listQuery = z.object({
   patientId: z.string().uuid(),
 });
 
+/**
+ * Consent type enum — MUST match the `consent_type` Postgres enum declared in
+ * 001_schema_foundation.sql. Do NOT add aliases at this boundary; frontends
+ * must map their UI labels to these canonical tokens.
+ */
+const CONSENT_TYPE_VALUES = [
+  'health_data_processing',
+  'ai_processing',
+  'notifications',
+  'data_sharing_clinician',
+  'marketing',
+] as const;
+
 const grantBody = z.object({
   patientId: z.string().uuid(),
-  consentType: z.enum([
-    'data_processing',
-    'clinical_communication',
-    'report_sharing',
-    'research_anonymized',
-    'marketing',
-  ]),
+  consentType: z.enum(CONSENT_TYPE_VALUES),
   purpose: z.string().min(1).max(500),
-  textVersion: z.string().min(1).max(50),
-  legalBasis: z.enum(['consent', 'contract', 'legal_obligation', 'vital_interests', 'legitimate_interests']),
+  policyVersion: z.string().min(1).max(50),
+  policyUrl: z.string().url().max(500).optional().nullable(),
+  legalBasis: z.enum([
+    'consent',
+    'contract',
+    'legal_obligation',
+    'vital_interests',
+    'legitimate_interests',
+  ]),
   action: z.enum(['grant', 'revoke']).default('grant'),
-  evidence: z.record(z.unknown()).optional(),
+  jurisdiction: z.string().min(2).max(10).optional(),
 });
 
 async function handleList(req: any, res: VercelResponse): Promise<void> {
@@ -46,15 +76,34 @@ async function handleList(req: any, res: VercelResponse): Promise<void> {
   }
   const { patientId } = parse.data;
 
-  let q = supabaseAdmin
-    .from('patient_consents')
+  // Tenant isolation: verify the patient belongs to the caller's tenant
+  // BEFORE exposing any consent row. RLS also enforces this but defence-
+  // in-depth keeps the code explicit.
+  const { data: patient, error: patientErr } = await supabaseAdmin
+    .from('patients')
+    .select('id, tenant_id')
+    .eq('id', patientId)
+    .maybeSingle();
+  if (patientErr) {
+    res.status(500).json({ error: { code: 'DB_ERROR', message: patientErr.message } });
+    return;
+  }
+  if (!patient) {
+    res.status(404).json({ error: { code: 'PATIENT_NOT_FOUND', message: '' } });
+    return;
+  }
+  if (req.auth.role !== 'platform_admin' && patient.tenant_id !== req.auth.tenantId) {
+    res.status(403).json({ error: { code: 'CROSS_TENANT_FORBIDDEN', message: '' } });
+    return;
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from('consent_records')
     .select('*')
-    .eq('patient_id', patientId)
+    .eq('subject_type', 'patient')
+    .eq('subject_id', patientId)
     .order('created_at', { ascending: false });
 
-  if (req.auth.role !== 'platform_admin') q = q.eq('tenant_id', req.auth.tenantId);
-
-  const { data, error } = await q;
   if (error) {
     res.status(500).json({ error: { code: 'DB_ERROR', message: error.message } });
     return;
@@ -74,11 +123,15 @@ async function handleGrant(req: any, res: VercelResponse): Promise<void> {
   const p = parse.data;
 
   // Verify patient tenant
-  const { data: patient } = await supabaseAdmin
+  const { data: patient, error: patientErr } = await supabaseAdmin
     .from('patients')
     .select('id, tenant_id')
     .eq('id', p.patientId)
-    .single();
+    .maybeSingle();
+  if (patientErr) {
+    res.status(500).json({ error: { code: 'DB_ERROR', message: patientErr.message } });
+    return;
+  }
   if (!patient) {
     res.status(404).json({ error: { code: 'PATIENT_NOT_FOUND', message: '' } });
     return;
@@ -89,20 +142,24 @@ async function handleGrant(req: any, res: VercelResponse): Promise<void> {
   }
 
   const now = new Date().toISOString();
+  const granted = p.action === 'grant';
+
   const { data, error } = await supabaseAdmin
-    .from('patient_consents')
+    .from('consent_records')
     .insert({
-      tenant_id: patient.tenant_id,
-      patient_id: p.patientId,
-      recorded_by_user_id: req.auth.userId,
+      subject_type: 'patient',
+      subject_id: p.patientId,
       consent_type: p.consentType,
-      purpose: p.purpose,
-      text_version: p.textVersion,
+      granted,
       legal_basis: p.legalBasis,
-      status: p.action === 'grant' ? 'granted' : 'revoked',
-      granted_at: p.action === 'grant' ? now : null,
-      revoked_at: p.action === 'revoke' ? now : null,
-      evidence: p.evidence ?? null,
+      policy_version: p.policyVersion,
+      policy_url: p.policyUrl ?? null,
+      granted_at: granted ? now : now, // row timestamp either way
+      revoked_at: granted ? null : now,
+      ip_hash: req.auth.ipHash ?? null,
+      user_agent_hash: null, // hashed upstream if UA capture is enabled
+      jurisdiction: p.jurisdiction ?? 'EU',
+      purpose: p.purpose,
     })
     .select('*')
     .single();
@@ -112,13 +169,24 @@ async function handleGrant(req: any, res: VercelResponse): Promise<void> {
     return;
   }
 
+  // Patient-level consent_status is a denormalized convenience flag on
+  // patients.* — keep it roughly in sync with the latest `health_data_processing`
+  // grant/revoke so the rest of the app can short-circuit.
+  if (p.consentType === 'health_data_processing') {
+    await supabaseAdmin
+      .from('patients')
+      .update({ consent_status: granted ? 'active' : 'revoked' })
+      .eq('id', p.patientId);
+  }
+
   await recordAudit(req.auth, {
-    action: p.action === 'grant' ? 'consent.grant' : 'consent.revoke',
+    action: granted ? 'consent.grant' : 'consent.revoke',
     resourceType: 'consent',
     resourceId: data.id,
     metadata: {
       consent_type: p.consentType,
-      text_version: p.textVersion,
+      policy_version: p.policyVersion,
+      legal_basis: p.legalBasis,
       patient_id: p.patientId,
     },
   });

@@ -210,9 +210,67 @@ h3 { font-size: var(--fs-lg); }
 .mt-8  { margin-top: 8px; }
 .mt-16 { margin-top: 16px; }
 .mt-24 { margin-top: 24px; }
+.ml-8  { margin-left: 8px; }
 .muted { color: var(--c-text-muted); }
 .mono  { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
 .hidden { display: none !important; }
+
+.grid.two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 18px; }
+.grid.three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 18px; }
+
+.list-plain {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.list-plain > li {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--c-border);
+  font-size: var(--fs-sm);
+}
+.list-plain > li:last-child { border-bottom: 0; }
+
+.badge.muted, .badge.neutral { background: #eef1f5; color: var(--c-text-muted); }
+.badge.danger { background: #ffe3e3; color: var(--c-danger); }
+.badge.warning { background: #fff4e0; color: var(--c-warning); }
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-sm);
+  margin: 8px 0;
+}
+.checkbox-row input[type="checkbox"] { width: 16px; height: 16px; }
+
+/* Dialog ------------------------------------------------------------------ */
+.dialog {
+  border: 0;
+  border-radius: var(--radius-md);
+  padding: 0;
+  box-shadow: var(--shadow-md);
+  max-width: 560px;
+  width: 90%;
+}
+.dialog::backdrop {
+  background: rgba(22, 31, 55, .35);
+}
+.dialog-body {
+  padding: 20px 24px;
+}
+.dialog-body h3 { margin-bottom: 12px; }
+
+/* KPI ----------------------------------------------------------------- */
+.kpi-label {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: .3px;
+  color: var(--c-text-muted);
+}
+.kpi-value {
+  font-size: var(--fs-2xl);
+  font-weight: 600;
+}
 
 /* Alerts (inline) --------------------------------------------------------- */
 .inline-alert {

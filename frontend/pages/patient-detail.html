@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Patient — Uelfy Clinical</title>
+  <link rel="stylesheet" href="../assets/css/app.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="app-sidebar">
+      <div class="brand">Uelfy Clinical</div>
+      <nav>
+        <a href="./dashboard.html">Dashboard</a>
+        <a href="./patients.html" class="active">Patients</a>
+        <a href="./alerts.html">Alerts</a>
+        <a href="./audit.html" id="nav-audit" class="hidden">Audit log</a>
+        <a href="#" id="signout-link">Sign out</a>
+      </nav>
+    </aside>
+
+    <main class="app-main">
+      <div class="topbar">
+        <div>
+          <h1 id="patient-name" style="margin-bottom:2px;">Loading…</h1>
+          <div class="muted" id="patient-subline">—</div>
+        </div>
+        <div class="flex gap-8">
+          <a class="btn secondary" id="export-btn" href="#">Export (GDPR Art.15)</a>
+          <a class="btn" id="new-assessment-btn" href="#">+ New assessment</a>
+        </div>
+      </div>
+
+      <div id="error-banner" class="inline-alert danger hidden"></div>
+
+      <section class="card">
+        <h3>Demographics</h3>
+        <div class="grid three" id="demographics-grid">
+          <div><div class="kpi-label">External code</div><div id="d-code" class="mono">—</div></div>
+          <div><div class="kpi-label">Sex</div><div id="d-sex">—</div></div>
+          <div><div class="kpi-label">Date of birth</div><div id="d-dob">—</div></div>
+          <div><div class="kpi-label">Status</div><div id="d-status">—</div></div>
+          <div><div class="kpi-label">Consent</div><div id="d-consent">—</div></div>
+          <div><div class="kpi-label">Created</div><div id="d-created">—</div></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="flex between">
+          <h3 style="margin:0;">Assessment history</h3>
+          <a class="btn secondary" id="new-assessment-btn-2" href="#">+ New assessment</a>
+        </div>
+        <div id="assessments-wrap" class="mt-16"><p class="muted">Loading…</p></div>
+      </section>
+
+      <section class="card">
+        <h3>Open alerts</h3>
+        <div id="alerts-wrap"><p class="muted">Loading…</p></div>
+      </section>
+
+      <section class="card">
+        <h3>Consents</h3>
+        <div id="consents-wrap"><p class="muted">Loading…</p></div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    window.__UELFY_CONFIG__ = {
+      supabaseUrl: window.location.origin.includes('localhost')
+        ? 'http://localhost:54321'
+        : '__PUBLIC_SUPABASE_URL__',
+      supabaseAnonKey: '__PUBLIC_SUPABASE_ANON_KEY__'
+    };
+  </script>
+  <script type="module">
+    import { api, requireAuth, supabase } from '../assets/js/api-client.js';
+
+    await requireAuth();
+
+    const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[c]);
+
+    const params = new URLSearchParams(window.location.search);
+    const patientId = params.get('id');
+    if (!patientId || !/^[0-9a-fA-F-]{36}$/.test(patientId)) {
+      document.body.innerHTML = '<main class="app-main"><div class="inline-alert danger">Invalid patient id.</div></main>';
+      throw new Error('invalid id');
+    }
+
+    const errorBanner = document.getElementById('error-banner');
+    function showError(msg) {
+      errorBanner.textContent = msg;
+      errorBanner.classList.remove('hidden');
+    }
+
+    // Role gating
+    try {
+      const { user } = await api.me();
+      if (user.role === 'tenant_admin' || user.role === 'platform_admin') {
+        document.getElementById('nav-audit').classList.remove('hidden');
+      }
+      if (!['clinician', 'tenant_admin', 'platform_admin'].includes(user.role)) {
+        document.getElementById('new-assessment-btn').style.display = 'none';
+        document.getElementById('new-assessment-btn-2').style.display = 'none';
+      }
+    } catch (e) { console.error(e); }
+
+    // Wire new-assessment buttons
+    const newUrl = `./assessment-new.html?patientId=${encodeURIComponent(patientId)}`;
+    document.getElementById('new-assessment-btn').href = newUrl;
+    document.getElementById('new-assessment-btn-2').href = newUrl;
+
+    // Export (GDPR Art.15 portability) — uses signed URL via fetch helper
+    document.getElementById('export-btn').addEventListener('click', async (e) => {
+      e.preventDefault();
+      try {
+        const { data: sess } = await supabase.auth.getSession();
+        const token = sess?.session?.access_token;
+        if (!token) return;
+        const res = await fetch(`/api/v1/patients/${encodeURIComponent(patientId)}/export`, {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          showError(`Export failed: ${err?.error?.message || res.statusText}`);
+          return;
+        }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `patient-${patientId}-export.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        showError(err.message || 'Export failed');
+      }
+    });
+
+    async function renderPatient() {
+      try {
+        const { patient } = await api.getPatient(patientId);
+        document.getElementById('patient-name').textContent =
+          patient.display_name || [patient.first_name, patient.last_name].filter(Boolean).join(' ') || '—';
+        document.getElementById('patient-subline').textContent =
+          `Ref: ${patient.external_code ?? '—'}`;
+
+        document.getElementById('d-code').textContent = patient.external_code ?? '—';
+        document.getElementById('d-sex').textContent = patient.sex ?? '—';
+        document.getElementById('d-dob').textContent = patient.birth_date ?? (patient.birth_year ? String(patient.birth_year) : '—');
+        document.getElementById('d-status').innerHTML = patient.is_active === false
+          ? '<span class="badge muted">inactive</span>'
+          : '<span class="badge ok">active</span>';
+        document.getElementById('d-consent').textContent = patient.consent_status ?? '—';
+        document.getElementById('d-created').textContent = patient.created_at
+          ? new Date(patient.created_at).toLocaleString()
+          : '—';
+      } catch (e) {
+        showError(`Patient load failed: ${e.message}`);
+      }
+    }
+
+    async function renderAssessments() {
+      const wrap = document.getElementById('assessments-wrap');
+      try {
+        const { assessments } = await api.listAssessments(patientId, { page: 1, pageSize: 20 });
+        if (!assessments?.length) {
+          wrap.innerHTML = `<p class="muted">No assessments recorded yet.</p>`;
+          return;
+        }
+        const rows = assessments.map((a) => {
+          const rp = a.riskProfile || {};
+          const riskBadge = rp.compositeRiskLevel
+            ? `<span class="badge ${escapeHtml(rp.compositeRiskLevel)}">${escapeHtml(rp.compositeRiskLevel)}</span>`
+            : '<span class="muted">—</span>';
+          return `
+            <tr>
+              <td>${escapeHtml(a.assessmentDate ?? a.createdAt ?? '—')}</td>
+              <td>${escapeHtml(a.status ?? '—')}</td>
+              <td>${riskBadge}</td>
+              <td class="mono">${escapeHtml(a.engineVersion ?? '—')}</td>
+              <td><a href="./assessment-view.html?id=${encodeURIComponent(a.id)}">Open</a></td>
+            </tr>`;
+        }).join('');
+        wrap.innerHTML = `
+          <table class="table">
+            <thead>
+              <tr><th>Date</th><th>Status</th><th>Composite risk</th><th>Engine</th><th></th></tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>`;
+      } catch (e) {
+        wrap.innerHTML = `<div class="inline-alert danger">Failed to load assessments: ${escapeHtml(e.message)}</div>`;
+      }
+    }
+
+    async function renderAlerts() {
+      const wrap = document.getElementById('alerts-wrap');
+      try {
+        const { alerts } = await api.listPatientAlerts(patientId, { status: 'open', pageSize: 20 });
+        if (!alerts?.length) {
+          wrap.innerHTML = `<p class="muted">No open alerts.</p>`;
+          return;
+        }
+        wrap.innerHTML = `
+          <ul class="list-plain">
+            ${alerts.map((a) => `
+              <li>
+                <span class="badge ${escapeHtml(a.severity)}">${escapeHtml(a.severity)}</span>
+                <strong>${escapeHtml(a.title ?? a.type ?? 'Alert')}</strong>
+                <span class="muted"> · ${escapeHtml(a.message ?? '')}</span>
+                <div class="muted mt-8">Opened: ${escapeHtml(new Date(a.created_at).toLocaleString())}</div>
+              </li>
+            `).join('')}
+          </ul>`;
+      } catch (e) {
+        wrap.innerHTML = `<div class="inline-alert danger">Failed to load alerts: ${escapeHtml(e.message)}</div>`;
+      }
+    }
+
+    async function renderConsents() {
+      const wrap = document.getElementById('consents-wrap');
+      try {
+        const { consents } = await api.listConsents(patientId);
+        if (!consents?.length) {
+          wrap.innerHTML = `<p class="muted">No consent records.</p>`;
+          return;
+        }
+        wrap.innerHTML = `
+          <table class="table">
+            <thead>
+              <tr><th>Type</th><th>Status</th><th>Policy version</th><th>Recorded</th></tr>
+            </thead>
+            <tbody>
+              ${consents.map((c) => `
+                <tr>
+                  <td>${escapeHtml(c.consent_type)}</td>
+                  <td>${c.granted
+                    ? '<span class="badge ok">granted</span>'
+                    : '<span class="badge muted">revoked</span>'}</td>
+                  <td class="mono">${escapeHtml(c.policy_version ?? '—')}</td>
+                  <td>${escapeHtml(new Date(c.recorded_at ?? c.created_at).toLocaleString())}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>`;
+      } catch (e) {
+        wrap.innerHTML = `<div class="inline-alert danger">Failed to load consents: ${escapeHtml(e.message)}</div>`;
+      }
+    }
+
+    await Promise.all([renderPatient(), renderAssessments(), renderAlerts(), renderConsents()]);
+
+    document.getElementById('signout-link').addEventListener('click', async (e) => {
+      e.preventDefault();
+      await api.signOut();
+      window.location.href = './login.html';
+    });
+  </script>
+</body>
+</html>

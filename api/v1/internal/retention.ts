@@ -26,9 +26,16 @@ import { applySecurityHeaders } from '../../../backend/src/middleware/security-h
 const CRON_SECRET = process.env.CRON_SIGNING_SECRET;
 const MAX_STORAGE_DELETIONS = 500; // per run — keep latency bounded
 
+/**
+ * Clinical-reports bucket — must match the constant in
+ * `api/v1/assessments/[id]/report.ts`. Canonical `report_exports` schema
+ * (001_schema_foundation.sql §16) deliberately does NOT carry a
+ * `storage_bucket` column: bucket is a server-side constant.
+ */
+const REPORT_BUCKET = 'clinical-reports';
+
 interface OrphanRow {
   id: string;
-  storage_bucket: string;
   storage_path: string;
 }
 
@@ -73,41 +80,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
   // 2) Storage cleanup — iterate over orphaned report rows and delete objects.
   //    fn_retention_prune already NULLed their storage_path. We read them by
-  //    joining a recently-expired window.
+  //    joining a recently-expired window. Bucket is a server-side constant
+  //    (REPORT_BUCKET) — the schema does not carry a per-row bucket column.
   const { data: orphans } = await supabaseAdmin
     .from('report_exports')
-    .select('id, storage_bucket, storage_path')
+    .select('id, storage_path')
     .lt('created_at', new Date(Date.now() - 2 * 365 * 24 * 3600 * 1000).toISOString())
     .not('storage_path', 'is', null)
     .limit(MAX_STORAGE_DELETIONS);
 
   let storageDeletions = 0;
   if (orphans && orphans.length > 0) {
-    // Group by bucket then batch remove
-    const perBucket = new Map<string, string[]>();
-    for (const row of orphans) {
-      const bucket = String(row.storage_bucket);
-      const path = String(row.storage_path);
-      const acc = perBucket.get(bucket) ?? [];
-      acc.push(path);
-      perBucket.set(bucket, acc);
-    }
-    for (const [bucket, paths] of perBucket.entries()) {
-      const { error: delErr } = await supabaseAdmin.storage.from(bucket).remove(paths);
+    const paths: string[] = orphans
+      .map((o: OrphanRow) => o.storage_path)
+      .filter((p): p is string => typeof p === 'string' && p.length > 0);
+
+    if (paths.length > 0) {
+      const { error: delErr } = await supabaseAdmin.storage
+        .from(REPORT_BUCKET)
+        .remove(paths);
       if (delErr) {
         // eslint-disable-next-line no-console
-        console.warn('[retention] storage.remove failed', bucket, delErr.message);
-        continue;
+        console.warn('[retention] storage.remove failed', REPORT_BUCKET, delErr.message);
+      } else {
+        storageDeletions = paths.length;
+        // Blank the storage_path on the DB rows so we don't re-delete
+        await supabaseAdmin
+          .from('report_exports')
+          .update({ storage_path: null })
+          .in('id', orphans.map((o: OrphanRow) => o.id as string));
       }
-      storageDeletions += paths.length;
-      // Blank the storage_path on the DB rows so we don't re-delete
-      await supabaseAdmin
-        .from('report_exports')
-        .update({ storage_path: null })
-        .in(
-          'id',
-          orphans.filter((o: OrphanRow) => o.storage_bucket === bucket).map((o: OrphanRow) => o.id as string),
-        );
     }
   }
 

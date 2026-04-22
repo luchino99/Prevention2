@@ -100,18 +100,42 @@ export async function validateAccessToken(
   const userId = data.user.id;
   const email = data.user.email ?? '';
 
+  // IMPORTANT: Use `.maybeSingle()` so a missing public.users row is a
+  // *not-found* condition rather than a PostgREST `.single()` error. Then
+  // split real DB errors (HTTP 500, DB_ERROR) from missing-profile (401,
+  // USER_PROFILE_NOT_FOUND). Conflating the two masks schema drift as
+  // auth failures — which is exactly the bug that blocked the dashboard
+  // after the Strategy A reconciliation.
   const { data: userRow, error: userErr } = await supabaseAdmin
     .from('users')
     .select('id, tenant_id, role, status')
     .eq('id', userId)
-    .single();
+    .maybeSingle();
 
-  if (userErr || !userRow) {
-    throw new AuthError(401, 'USER_PROFILE_NOT_FOUND', 'User profile not found');
+  if (userErr) {
+    // PostgREST 42703 etc. — propagate the underlying code for diagnostics.
+    // eslint-disable-next-line no-console
+    console.error('[auth] users lookup failed', {
+      code: (userErr as any)?.code,
+      message: userErr.message,
+      userId,
+    });
+    throw new AuthError(500, 'DB_ERROR', 'Could not load user profile');
+  }
+
+  if (!userRow) {
+    throw new AuthError(
+      401,
+      'USER_PROFILE_NOT_FOUND',
+      'Authenticated user has no public.users row — tenant onboarding incomplete',
+    );
   }
 
   if (userRow.status === 'suspended') {
     throw new AuthError(403, 'USER_SUSPENDED', 'User account is suspended');
+  }
+  if (userRow.status === 'inactive') {
+    throw new AuthError(403, 'USER_INACTIVE', 'User account is inactive');
   }
 
   const role = userRow.role as UserRole;

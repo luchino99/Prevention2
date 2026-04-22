@@ -72,7 +72,7 @@ export default withAuth(async (req, res: VercelResponse) => {
     // Load alert and verify tenant
     const { data: alert, error: loadErr } = await supabaseAdmin
       .from('alerts')
-      .select('id, tenant_id, status')
+      .select('id, tenant_id, status, acknowledged_at, metadata')
       .eq('id', id)
       .single();
     if (loadErr || !alert) {
@@ -85,14 +85,42 @@ export default withAuth(async (req, res: VercelResponse) => {
     }
 
     const newStatus = ACTION_TO_STATUS[action];
+    const nowIso = new Date().toISOString();
+
+    // Canonical schema (001_schema_foundation.sql §13 alerts) has:
+    //   acknowledged_at TIMESTAMPTZ
+    //   acknowledged_by UUID REFERENCES users(id)
+    //   resolved_at     TIMESTAMPTZ
+    // There is NO resolved_by and NO `note` column. Operator notes and
+    // state-transition metadata are stored in `alerts.metadata` (JSONB).
     const update: Record<string, unknown> = {
       status: newStatus,
-      acknowledged_at: action === 'acknowledge' ? new Date().toISOString() : null,
-      acknowledged_by_user_id: action === 'acknowledge' ? r.auth.userId : null,
-      resolved_at: action === 'resolve' ? new Date().toISOString() : null,
-      resolved_by_user_id: action === 'resolve' ? r.auth.userId : null,
-      note: note ?? null,
     };
+    if (action === 'acknowledge') {
+      update.acknowledged_at = nowIso;
+      update.acknowledged_by = r.auth.userId;
+    }
+    if (action === 'resolve') {
+      update.resolved_at = nowIso;
+      // If never acknowledged, treat resolution as implicit ack-by-this-user
+      // so `acknowledged_by` has correct provenance for auditability.
+      if (!alert.acknowledged_at) {
+        update.acknowledged_at = nowIso;
+        update.acknowledged_by = r.auth.userId;
+      }
+    }
+    // Preserve operator note inside the canonical metadata JSON column.
+    if (note && note.length > 0) {
+      update.metadata = {
+        ...(alert.metadata ?? {}),
+        last_action_note: {
+          action,
+          by_user_id: r.auth.userId,
+          at: nowIso,
+          text: note,
+        },
+      };
+    }
 
     const { data, error } = await supabaseAdmin
       .from('alerts')

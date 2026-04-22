@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Assessment — Uelfy Clinical</title>
+  <link rel="stylesheet" href="../assets/css/app.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="app-sidebar">
+      <div class="brand">Uelfy Clinical</div>
+      <nav>
+        <a href="./dashboard.html">Dashboard</a>
+        <a href="./patients.html" class="active">Patients</a>
+        <a href="./alerts.html">Alerts</a>
+        <a href="./audit.html" id="nav-audit" class="hidden">Audit log</a>
+        <a href="#" id="signout-link">Sign out</a>
+      </nav>
+    </aside>
+
+    <main class="app-main">
+      <div class="topbar">
+        <div>
+          <h1 id="page-title" style="margin-bottom:2px;">Assessment</h1>
+          <div class="muted" id="page-subline">Loading…</div>
+        </div>
+        <div class="flex gap-8">
+          <a class="btn secondary" id="back-link" href="#">← Patient</a>
+          <button class="btn" id="report-btn">Generate PDF report</button>
+        </div>
+      </div>
+
+      <div id="error-banner" class="inline-alert danger hidden"></div>
+      <div id="report-banner" class="inline-alert hidden"></div>
+
+      <section class="card">
+        <h3>Composite risk</h3>
+        <div class="grid three" id="composite-grid"></div>
+      </section>
+
+      <section class="card">
+        <h3>Score results</h3>
+        <div id="scores-wrap"><p class="muted">Loading…</p></div>
+      </section>
+
+      <section class="card">
+        <h3>Follow-up plan</h3>
+        <div id="followup-wrap"><p class="muted">Loading…</p></div>
+      </section>
+
+      <section class="card">
+        <h3>Recommended screenings</h3>
+        <div id="screenings-wrap"><p class="muted">Loading…</p></div>
+      </section>
+
+      <section class="card">
+        <h3>Lifestyle (nutrition &amp; activity)</h3>
+        <div class="grid two" id="lifestyle-wrap"></div>
+      </section>
+
+      <section class="card">
+        <h3>Alerts triggered by this assessment</h3>
+        <div id="alerts-wrap"><p class="muted">Loading…</p></div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    window.__UELFY_CONFIG__ = {
+      supabaseUrl: window.location.origin.includes('localhost')
+        ? 'http://localhost:54321'
+        : '__PUBLIC_SUPABASE_URL__',
+      supabaseAnonKey: '__PUBLIC_SUPABASE_ANON_KEY__'
+    };
+  </script>
+  <script type="module">
+    import { api, requireAuth } from '../assets/js/api-client.js';
+
+    await requireAuth();
+
+    const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[c]);
+
+    const params = new URLSearchParams(window.location.search);
+    const assessmentId = params.get('id');
+    if (!assessmentId || !/^[0-9a-fA-F-]{36}$/.test(assessmentId)) {
+      document.body.innerHTML = '<main class="app-main"><div class="inline-alert danger">Invalid assessment id.</div></main>';
+      throw new Error('invalid id');
+    }
+
+    const errorBanner = document.getElementById('error-banner');
+    const reportBanner = document.getElementById('report-banner');
+
+    function showError(msg) {
+      errorBanner.textContent = msg;
+      errorBanner.classList.remove('hidden');
+    }
+    function showReportInfo(msg, kind = 'success') {
+      reportBanner.className = `inline-alert ${kind}`;
+      reportBanner.innerHTML = msg;
+    }
+
+    try {
+      const { user } = await api.me();
+      if (user.role === 'tenant_admin' || user.role === 'platform_admin') {
+        document.getElementById('nav-audit').classList.remove('hidden');
+      }
+    } catch (e) { console.error(e); }
+
+    function riskBadge(level) {
+      if (!level) return '<span class="muted">—</span>';
+      return `<span class="badge ${escapeHtml(level)}">${escapeHtml(level)}</span>`;
+    }
+
+    function renderComposite(c) {
+      const cells = [
+        ['Overall',         c.level,                  c.numeric != null ? `score ${c.numeric.toFixed(2)}` : ''],
+        ['Cardiovascular',  c.cardiovascular?.level,  c.cardiovascular?.reasoning],
+        ['Metabolic',       c.metabolic?.level,       c.metabolic?.reasoning],
+        ['Hepatic',         c.hepatic?.level,         c.hepatic?.reasoning],
+        ['Renal',           c.renal?.level,           c.renal?.reasoning],
+        ['Frailty',         c.frailty?.level ?? null, c.frailty?.reasoning ?? '—'],
+      ];
+      document.getElementById('composite-grid').innerHTML = cells.map(([label, level, reason]) => `
+        <div>
+          <div class="kpi-label">${escapeHtml(label)}</div>
+          <div style="margin:4px 0;">${riskBadge(level)}</div>
+          <div class="muted" style="font-size:12px;">${escapeHtml(reason ?? '')}</div>
+        </div>
+      `).join('');
+    }
+
+    function renderScores(scores) {
+      const wrap = document.getElementById('scores-wrap');
+      if (!scores?.length) { wrap.innerHTML = `<p class="muted">No score results.</p>`; return; }
+      wrap.innerHTML = `
+        <table class="table">
+          <thead><tr><th>Score</th><th>Value</th><th>Category</th><th>Label</th></tr></thead>
+          <tbody>
+            ${scores.map((s) => `
+              <tr>
+                <td class="mono">${escapeHtml(s.scoreCode)}</td>
+                <td>${s.valueNumeric != null ? escapeHtml(String(s.valueNumeric)) : '<span class="muted">—</span>'}</td>
+                <td>${escapeHtml(s.category ?? '—')}</td>
+                <td>${escapeHtml(s.label ?? '—')}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>`;
+    }
+
+    function renderFollowup(p) {
+      if (!p) { document.getElementById('followup-wrap').innerHTML = `<p class="muted">No follow-up plan.</p>`; return; }
+      document.getElementById('followup-wrap').innerHTML = `
+        <div class="grid three">
+          <div><div class="kpi-label">Priority</div>${riskBadge(p.priorityLevel)}</div>
+          <div><div class="kpi-label">Interval</div><div>${escapeHtml(String(p.intervalMonths))} months</div></div>
+          <div><div class="kpi-label">Next review</div><div>${escapeHtml(p.nextReviewDate ?? '—')}</div></div>
+        </div>
+        <div class="mt-16">
+          <div class="kpi-label">Actions</div>
+          <ul class="list-plain">${(p.actions ?? []).map((a) => `<li>${escapeHtml(a)}</li>`).join('') || '<li class="muted">—</li>'}</ul>
+        </div>
+        <div class="mt-16">
+          <div class="kpi-label">Domain monitoring</div>
+          <div>${(p.domainMonitoring ?? []).map((d) => `<span class="badge muted" style="margin-right:6px;">${escapeHtml(d)}</span>`).join('') || '<span class="muted">—</span>'}</div>
+        </div>`;
+    }
+
+    function renderScreenings(items) {
+      const wrap = document.getElementById('screenings-wrap');
+      if (!items?.length) { wrap.innerHTML = `<p class="muted">No specific screenings recommended.</p>`; return; }
+      wrap.innerHTML = `
+        <table class="table">
+          <thead><tr><th>Screening</th><th>Priority</th><th>Interval</th><th>Reason</th></tr></thead>
+          <tbody>
+            ${items.map((s) => `
+              <tr>
+                <td>${escapeHtml(s.screening)}</td>
+                <td>${riskBadge(s.priority)}</td>
+                <td>${escapeHtml(String(s.intervalMonths))} months</td>
+                <td class="muted">${escapeHtml(s.reason ?? '—')}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>`;
+    }
+
+    function renderLifestyle(nutri, act) {
+      document.getElementById('lifestyle-wrap').innerHTML = `
+        <div>
+          <h4 style="margin:0 0 8px;">Nutrition</h4>
+          <div><span class="kpi-label">PREDIMED:</span> ${nutri?.predimedScore != null ? escapeHtml(String(nutri.predimedScore)) : '<span class="muted">—</span>'}</div>
+          <div><span class="kpi-label">Adherence:</span> ${escapeHtml(nutri?.adherenceBand ?? '—')}</div>
+          <div><span class="kpi-label">BMR:</span> ${escapeHtml(String(Math.round(nutri?.bmrKcal ?? 0)))} kcal</div>
+          <div><span class="kpi-label">TDEE:</span> ${escapeHtml(String(Math.round(nutri?.tdeeKcal ?? 0)))} kcal</div>
+        </div>
+        <div>
+          <h4 style="margin:0 0 8px;">Activity</h4>
+          <div><span class="kpi-label">Minutes/week:</span> ${act?.minutesPerWeek != null ? escapeHtml(String(act.minutesPerWeek)) : '<span class="muted">—</span>'}</div>
+          <div><span class="kpi-label">Qualitative:</span> ${escapeHtml(act?.qualitativeBand ?? '—')}</div>
+          <div><span class="kpi-label">Meets WHO:</span> ${act?.meetsWhoGuidelines ? '<span class="badge ok">yes</span>' : '<span class="badge muted">no</span>'}</div>
+          <div><span class="kpi-label">Sedentary risk:</span> ${riskBadge(act?.sedentaryRiskLevel)}</div>
+        </div>`;
+    }
+
+    function renderAlerts(alerts) {
+      const wrap = document.getElementById('alerts-wrap');
+      if (!alerts?.length) { wrap.innerHTML = `<p class="muted">No alerts triggered by this assessment.</p>`; return; }
+      wrap.innerHTML = `
+        <ul class="list-plain">
+          ${alerts.map((a) => `
+            <li>
+              <span class="badge ${escapeHtml(a.severity)}">${escapeHtml(a.severity)}</span>
+              <strong>${escapeHtml(a.title)}</strong>
+              <span class="muted"> · ${escapeHtml(a.message)}</span>
+              <div class="muted mt-8">${escapeHtml(new Date(a.timestamp).toLocaleString())}</div>
+            </li>
+          `).join('')}
+        </ul>`;
+    }
+
+    let cachedPatientId = null;
+
+    async function load() {
+      try {
+        const { snapshot } = await api.getAssessment(assessmentId);
+        cachedPatientId = snapshot?.assessment?.patientId ?? null;
+        const back = cachedPatientId
+          ? `./patient-detail.html?id=${encodeURIComponent(cachedPatientId)}`
+          : './patients.html';
+        document.getElementById('back-link').href = back;
+
+        document.getElementById('page-title').textContent =
+          `Assessment · ${new Date(snapshot.assessment.createdAt).toLocaleDateString()}`;
+        document.getElementById('page-subline').textContent =
+          `${snapshot.assessment.status ?? '—'} · id ${snapshot.assessment.id.substring(0, 8)}…`;
+
+        renderComposite(snapshot.compositeRisk);
+        renderScores(snapshot.scoreResults);
+        renderFollowup(snapshot.followupPlan);
+        renderScreenings(snapshot.screenings);
+        renderLifestyle(snapshot.nutritionSummary, snapshot.activitySummary);
+        renderAlerts(snapshot.alerts);
+
+        // If a report already exists, fetch its signed URL non-fatally.
+        try {
+          const existing = await api.getReportUrl(assessmentId);
+          if (existing?.signedUrl) {
+            showReportInfo(
+              `A report has already been generated. <a href="${existing.signedUrl}" target="_blank" rel="noopener">Open PDF</a>.`,
+              'success',
+            );
+          }
+        } catch (_) { /* no existing report yet */ }
+      } catch (e) {
+        showError(`Assessment load failed: ${e.message}`);
+      }
+    }
+
+    document.getElementById('report-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('report-btn');
+      btn.disabled = true;
+      btn.textContent = 'Generating…';
+      try {
+        const resp = await api.generateReport(assessmentId);
+        const url = resp?.signedUrl || resp?.url;
+        if (url) {
+          showReportInfo(
+            `Report generated. <a href="${url}" target="_blank" rel="noopener">Open PDF</a>.`,
+            'success',
+          );
+        } else {
+          showReportInfo('Report generated. Refresh to retrieve the signed URL.', 'success');
+        }
+      } catch (e) {
+        showError(`Report generation failed: ${e.message}`);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Generate PDF report';
+      }
+    });
+
+    document.getElementById('signout-link').addEventListener('click', async (e) => {
+      e.preventDefault();
+      await api.signOut();
+      window.location.href = './login.html';
+    });
+
+    load();
+  </script>
+</body>
+</html>

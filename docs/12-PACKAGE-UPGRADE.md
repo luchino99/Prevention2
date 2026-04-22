@@ -53,9 +53,11 @@ code-reviewed line-by-line.
 }
 ```
 
-The legacy `openai: ^4.0.0` entry can remain installed if needed by the
-archived `api/openai.js` during the transition window; remove it once the
-legacy route is deleted.
+The legacy `openai: ^4.0.0` dependency has been removed in Wave 4 along
+with the archived `api/openai.js` route. The OPENAI_* env vars in
+`.env.example` are kept as future scaffolding for bounded, supportive AI
+commentary (see blueprint §"Bounded AI"). Re-add the SDK only when a new,
+PHI-aware route is implemented under `api/v1/`.
 
 ## 5. DevDependencies
 

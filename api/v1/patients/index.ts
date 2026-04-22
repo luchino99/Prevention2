@@ -15,7 +15,7 @@ import { applySecurityHeaders } from '../../../backend/src/middleware/security-h
 import { checkRateLimit, RATE_LIMITS, applyRateLimitHeaders } from '../../../backend/src/middleware/rate-limit.js';
 import { supabaseAdmin } from '../../../backend/src/config/supabase.js';
 import { recordAudit } from '../../../backend/src/audit/audit-logger.js';
-import { createPatientSchema } from '../../../shared/schemas/patient-input.js';
+import { createPatientSchema, getPatientDisplayName } from '../../../shared/schemas/patient-input.js';
 
 const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -41,9 +41,13 @@ async function handleList(req: any, res: VercelResponse): Promise<void> {
 
   let query = supabaseAdmin
     .from('patients')
-    .select('id, display_ref, first_name, last_name, date_of_birth, sex, created_at, tenant_id', {
-      count: 'exact',
-    })
+    .select(
+      'id, external_code, display_name, first_name, last_name, birth_date, birth_year, sex, contact_email, contact_phone, is_active, created_at, tenant_id',
+      {
+        count: 'exact',
+      },
+    )
+    .is('deleted_at', null)
     .range(from, to)
     .order('created_at', { ascending: false });
 
@@ -53,7 +57,7 @@ async function handleList(req: any, res: VercelResponse): Promise<void> {
 
   if (search) {
     query = query.or(
-      `first_name.ilike.%${search}%,last_name.ilike.%${search}%,display_ref.ilike.%${search}%`
+      `first_name.ilike.%${search}%,last_name.ilike.%${search}%,display_name.ilike.%${search}%,external_code.ilike.%${search}%`
     );
   }
 
@@ -99,21 +103,37 @@ async function handleCreate(req: any, res: VercelResponse): Promise<void> {
       ? demo.dateOfBirth.toISOString().slice(0, 10)
       : demo.dateOfBirth;
 
+  // Schema requires `display_name NOT NULL`. Derive it from demographics
+  // (identical to the helper `getPatientDisplayName`), and compute
+  // birth_year from the parsed DOB for data minimization alignment.
+  const displayName = getPatientDisplayName(demo);
+  const birthYear =
+    demo.dateOfBirth instanceof Date
+      ? demo.dateOfBirth.getUTCFullYear()
+      : typeof demo.dateOfBirth === 'string'
+        ? new Date(demo.dateOfBirth).getUTCFullYear()
+        : null;
+
   const { data, error } = await supabaseAdmin
     .from('patients')
     .insert({
       tenant_id: req.auth.tenantId,
-      created_by_user_id: req.auth.userId,
-      display_ref: demo.externalCode,
+      created_by: req.auth.userId,
+      external_code: demo.externalCode,
+      display_name: displayName,
       first_name: demo.firstName,
       last_name: demo.lastName,
-      date_of_birth: dob,
+      birth_date: dob,
+      birth_year: birthYear,
       sex: demo.sex,
-      email: contact?.email ?? null,
-      phone: contact?.phoneNumber ?? null,
+      contact_email: contact?.email ?? null,
+      contact_phone: contact?.phoneNumber ?? null,
       notes: payload.notes ?? null,
+      consent_status: payload.consentGiven ? 'active' : 'pending',
     })
-    .select('id, display_ref, first_name, last_name, date_of_birth, sex, created_at')
+    .select(
+      'id, external_code, display_name, first_name, last_name, birth_date, birth_year, sex, contact_email, contact_phone, consent_status, is_active, created_at',
+    )
     .single();
 
   if (error) {

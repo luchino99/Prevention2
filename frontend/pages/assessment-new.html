@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>New assessment — Uelfy Clinical</title>
+  <link rel="stylesheet" href="../assets/css/app.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="app-sidebar">
+      <div class="brand">Uelfy Clinical</div>
+      <nav>
+        <a href="./dashboard.html">Dashboard</a>
+        <a href="./patients.html" class="active">Patients</a>
+        <a href="./alerts.html">Alerts</a>
+        <a href="./audit.html" id="nav-audit" class="hidden">Audit log</a>
+        <a href="#" id="signout-link">Sign out</a>
+      </nav>
+    </aside>
+
+    <main class="app-main">
+      <div class="topbar">
+        <div>
+          <h1 style="margin-bottom:2px;">New assessment</h1>
+          <div class="muted" id="patient-subline">Loading…</div>
+        </div>
+        <a class="btn secondary" id="back-link" href="#">← Back to patient</a>
+      </div>
+
+      <div id="error-banner" class="inline-alert danger hidden"></div>
+
+      <form id="assessment-form" class="card" autocomplete="off">
+        <h3>Demographics (snapshot)</h3>
+        <div class="grid two">
+          <div class="field">
+            <label>Age (years) *</label>
+            <input name="age" type="number" min="18" max="120" required />
+          </div>
+          <div class="field">
+            <label>Sex *</label>
+            <select name="sex" required>
+              <option value="">—</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+          </div>
+        </div>
+
+        <h3 class="mt-16">Vitals</h3>
+        <div class="grid three">
+          <div class="field">
+            <label>Height (cm) *</label>
+            <input name="heightCm" type="number" step="0.1" min="100" max="230" required />
+          </div>
+          <div class="field">
+            <label>Weight (kg) *</label>
+            <input name="weightKg" type="number" step="0.1" min="30" max="300" required />
+          </div>
+          <div class="field">
+            <label>Waist (cm) *</label>
+            <input name="waistCm" type="number" step="0.1" min="40" max="200" required />
+          </div>
+          <div class="field">
+            <label>SBP (mmHg) *</label>
+            <input name="sbpMmHg" type="number" min="70" max="260" required />
+          </div>
+          <div class="field">
+            <label>DBP (mmHg) *</label>
+            <input name="dbpMmHg" type="number" min="40" max="160" required />
+          </div>
+        </div>
+
+        <h3 class="mt-16">Labs (optional)</h3>
+        <div class="grid three">
+          <div class="field"><label>Total cholesterol (mg/dL)</label><input name="totalCholMgDl" type="number" step="0.1" /></div>
+          <div class="field"><label>HDL (mg/dL)</label><input name="hdlMgDl" type="number" step="0.1" /></div>
+          <div class="field"><label>LDL (mg/dL)</label><input name="ldlMgDl" type="number" step="0.1" /></div>
+          <div class="field"><label>Triglycerides (mg/dL)</label><input name="triglyceridesMgDl" type="number" step="0.1" /></div>
+          <div class="field"><label>Glucose (mg/dL)</label><input name="glucoseMgDl" type="number" step="0.1" /></div>
+          <div class="field"><label>HbA1c (%)</label><input name="hba1cPct" type="number" step="0.01" /></div>
+          <div class="field"><label>eGFR</label><input name="eGFR" type="number" step="0.1" /></div>
+          <div class="field"><label>Creatinine (mg/dL)</label><input name="creatinineMgDl" type="number" step="0.01" /></div>
+          <div class="field"><label>GGT (U/L)</label><input name="ggtUL" type="number" step="0.1" /></div>
+          <div class="field"><label>AST (U/L)</label><input name="astUL" type="number" step="0.1" /></div>
+          <div class="field"><label>ALT (U/L)</label><input name="altUL" type="number" step="0.1" /></div>
+          <div class="field"><label>Platelets (G/L)</label><input name="plateletsGigaL" type="number" step="0.1" /></div>
+          <div class="field"><label>ACR (albumin/creatinine)</label><input name="albuminCreatinineRatio" type="number" step="0.01" /></div>
+        </div>
+
+        <h3 class="mt-16">Clinical context</h3>
+        <div class="grid two">
+          <div class="field">
+            <label>CV risk region *</label>
+            <select name="cvRiskRegion" required>
+              <option value="low">Low</option>
+              <option value="moderate" selected>Moderate</option>
+              <option value="high">High</option>
+              <option value="very_high">Very high</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Age at diabetes diagnosis (if known)</label>
+            <input name="ageAtDiabetesDiagnosis" type="number" min="1" max="120" />
+          </div>
+        </div>
+        <label class="checkbox-row"><input name="smoking" type="checkbox" /> Current smoker</label>
+        <label class="checkbox-row"><input name="hasDiabetes" type="checkbox" /> Diabetes diagnosis</label>
+        <label class="checkbox-row"><input name="hypertension" type="checkbox" /> Hypertension</label>
+        <label class="checkbox-row"><input name="familyHistoryDiabetes" type="checkbox" /> Family history of diabetes</label>
+        <label class="checkbox-row"><input name="familyHistoryCvd" type="checkbox" /> Family history of CVD</label>
+        <label class="checkbox-row"><input name="gestationalDiabetes" type="checkbox" /> Gestational diabetes history</label>
+
+        <h3 class="mt-16">Lifestyle</h3>
+        <div class="grid two">
+          <div class="field">
+            <label>Weekly activity (minutes)</label>
+            <input name="weeklyActivityMinutes" type="number" min="0" max="3000" />
+          </div>
+          <div class="field">
+            <label>Sedentary level</label>
+            <select name="sedentaryLevel">
+              <option value="">—</option>
+              <option value="low">Low</option>
+              <option value="moderate">Moderate</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+        </div>
+
+        <h3 class="mt-16">Frailty (FRAIL scale, optional)</h3>
+        <label class="checkbox-row"><input name="fatigue"      type="checkbox" /> Fatigue</label>
+        <label class="checkbox-row"><input name="resistance"   type="checkbox" /> Resistance (stairs difficulty)</label>
+        <label class="checkbox-row"><input name="ambulation"   type="checkbox" /> Ambulation (cannot walk a block)</label>
+        <label class="checkbox-row"><input name="illnesses"    type="checkbox" /> 5+ comorbidities</label>
+        <label class="checkbox-row"><input name="weightLoss"   type="checkbox" /> Weight loss &gt;5% in last year</label>
+
+        <div class="flex gap-8 mt-16" style="justify-content:flex-end;">
+          <a class="btn secondary" id="cancel-link" href="#">Cancel</a>
+          <button type="submit" class="btn" id="submit-btn">Compute assessment</button>
+        </div>
+      </form>
+    </main>
+  </div>
+
+  <script>
+    window.__UELFY_CONFIG__ = {
+      supabaseUrl: window.location.origin.includes('localhost')
+        ? 'http://localhost:54321'
+        : '__PUBLIC_SUPABASE_URL__',
+      supabaseAnonKey: '__PUBLIC_SUPABASE_ANON_KEY__'
+    };
+  </script>
+  <script type="module">
+    import { api, requireAuth } from '../assets/js/api-client.js';
+
+    await requireAuth();
+
+    const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[c]);
+
+    const params = new URLSearchParams(window.location.search);
+    const patientId = params.get('patientId');
+    if (!patientId || !/^[0-9a-fA-F-]{36}$/.test(patientId)) {
+      document.body.innerHTML = '<main class="app-main"><div class="inline-alert danger">Invalid patient id.</div></main>';
+      throw new Error('invalid id');
+    }
+
+    const backUrl = `./patient-detail.html?id=${encodeURIComponent(patientId)}`;
+    document.getElementById('back-link').href = backUrl;
+    document.getElementById('cancel-link').href = backUrl;
+
+    const errorBanner = document.getElementById('error-banner');
+    function showError(msg) {
+      errorBanner.textContent = msg;
+      errorBanner.classList.remove('hidden');
+    }
+
+    try {
+      const { user } = await api.me();
+      if (!['clinician', 'tenant_admin', 'platform_admin'].includes(user.role)) {
+        document.body.innerHTML = '<main class="app-main"><div class="inline-alert danger">Your role cannot create clinical assessments.</div></main>';
+        throw new Error('forbidden');
+      }
+    } catch (e) { if (e.message === 'forbidden') throw e; }
+
+    try {
+      const { patient } = await api.getPatient(patientId);
+      const label = patient.display_name || [patient.first_name, patient.last_name].filter(Boolean).join(' ') || '—';
+      document.getElementById('patient-subline').textContent = `${label} · ${patient.external_code ?? '—'}`;
+      // Prefill age & sex from patient profile when available.
+      if (patient.sex) {
+        const sexSel = document.querySelector('select[name="sex"]');
+        sexSel.value = patient.sex;
+      }
+      const birthYear = patient.birth_year ?? (patient.birth_date ? new Date(patient.birth_date).getUTCFullYear() : null);
+      if (birthYear) {
+        document.querySelector('input[name="age"]').value =
+          String(new Date().getUTCFullYear() - birthYear);
+      }
+    } catch (e) {
+      showError(`Patient load failed: ${e.message}`);
+    }
+
+    function num(form, name) {
+      const v = form[name]?.value;
+      if (v === undefined || v === null || v === '') return undefined;
+      const n = Number(v);
+      return Number.isFinite(n) ? n : undefined;
+    }
+
+    document.getElementById('assessment-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      errorBanner.classList.add('hidden');
+      const btn = document.getElementById('submit-btn');
+      btn.disabled = true;
+      btn.textContent = 'Computing…';
+      try {
+        const labs = {};
+        ['totalCholMgDl','hdlMgDl','ldlMgDl','triglyceridesMgDl','glucoseMgDl','hba1cPct',
+         'eGFR','creatinineMgDl','ggtUL','astUL','altUL','plateletsGigaL','albuminCreatinineRatio']
+          .forEach((k) => { const v = num(form, k); if (v !== undefined) labs[k] = v; });
+
+        const anyFrail = ['fatigue','resistance','ambulation','illnesses','weightLoss']
+          .some((k) => form[k].checked);
+        const frailty = anyFrail ? {
+          fatigue:      form.fatigue.checked,
+          resistance:   form.resistance.checked,
+          ambulation:   form.ambulation.checked,
+          illnesses:    form.illnesses.checked,
+          weightLoss:   form.weightLoss.checked,
+        } : null;
+
+        const payload = {
+          demographics: {
+            age: num(form, 'age'),
+            sex: form.sex.value,
+          },
+          vitals: {
+            heightCm: num(form, 'heightCm'),
+            weightKg: num(form, 'weightKg'),
+            waistCm:  num(form, 'waistCm'),
+            sbpMmHg:  num(form, 'sbpMmHg'),
+            dbpMmHg:  num(form, 'dbpMmHg'),
+          },
+          labs,
+          clinicalContext: {
+            smoking:                form.smoking.checked,
+            hasDiabetes:            form.hasDiabetes.checked,
+            ageAtDiabetesDiagnosis: num(form, 'ageAtDiabetesDiagnosis'),
+            hypertension:           form.hypertension.checked,
+            familyHistoryDiabetes:  form.familyHistoryDiabetes.checked,
+            familyHistoryCvd:       form.familyHistoryCvd.checked,
+            gestationalDiabetes:    form.gestationalDiabetes.checked,
+            cvRiskRegion:           form.cvRiskRegion.value,
+            medications:            [],
+            diagnoses:              [],
+          },
+          lifestyle: {
+            weeklyActivityMinutes: num(form, 'weeklyActivityMinutes'),
+            sedentaryLevel:        form.sedentaryLevel.value || undefined,
+          },
+          frailty,
+        };
+
+        const { snapshot } = await api.createAssessment(patientId, payload);
+        const assessmentId = snapshot?.assessment?.id || snapshot?.id;
+        if (!assessmentId) {
+          showError('Assessment created, but response missing id.');
+          return;
+        }
+        window.location.href = `./assessment-view.html?id=${encodeURIComponent(assessmentId)}`;
+      } catch (err) {
+        const msg = err?.details
+          ? `${err.message} — ${JSON.stringify(err.details).substring(0, 400)}`
+          : (err.message || 'Assessment creation failed');
+        showError(msg);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Compute assessment';
+      }
+    });
+
+    document.getElementById('signout-link').addEventListener('click', async (e) => {
+      e.preventDefault();
+      await api.signOut();
+      window.location.href = './login.html';
+    });
+  </script>
+</body>
+</html>

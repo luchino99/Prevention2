@@ -57,17 +57,22 @@ async function handleGenerate(req: any, res: VercelResponse, assessmentId: strin
       return;
     }
 
+    // Canonical schema (001_schema_foundation.sql §16): exported_by FK to
+    // users(id), storage_path TEXT, file_size_bytes, engine_version,
+    // report_version, export_type. There is no storage_bucket / content_type
+    // column — the bucket name is a server-side constant (REPORT_BUCKET).
     const { data: exportRow, error: exportErr } = await supabaseAdmin
       .from('report_exports')
       .insert({
         tenant_id: snapshot.assessment.tenantId,
         patient_id: snapshot.assessment.patientId,
         assessment_id: assessmentId,
-        generated_by_user_id: req.auth.userId,
-        storage_bucket: REPORT_BUCKET,
+        exported_by: req.auth.userId,
+        export_type: 'pdf_clinical',
         storage_path: fileName,
         file_size_bytes: pdfBuffer.byteLength,
-        content_type: 'application/pdf',
+        engine_version: '1.0.0',
+        report_version: '1.0.0',
       })
       .select('id')
       .single();
@@ -114,8 +119,9 @@ async function handleGetSignedUrl(req: any, res: VercelResponse, assessmentId: s
   // Find the most recent export for this assessment within the caller's tenant
   let query = supabaseAdmin
     .from('report_exports')
-    .select('id, storage_bucket, storage_path, tenant_id, patient_id')
+    .select('id, storage_path, tenant_id, patient_id')
     .eq('assessment_id', assessmentId)
+    .not('storage_path', 'is', null)
     .order('created_at', { ascending: false })
     .limit(1);
 
@@ -133,9 +139,10 @@ async function handleGetSignedUrl(req: any, res: VercelResponse, assessmentId: s
     return;
   }
 
+  // Bucket is a server-side constant, not a per-row column.
   const { data: signed, error: signErr } = await supabaseAdmin.storage
-    .from(data.storage_bucket)
-    .createSignedUrl(data.storage_path, SIGNED_URL_EXPIRY_SECONDS);
+    .from(REPORT_BUCKET)
+    .createSignedUrl(String(data.storage_path), SIGNED_URL_EXPIRY_SECONDS);
 
   if (signErr || !signed) {
     res.status(500).json({ error: { code: 'SIGN_FAILED', message: 'Signed URL failed' } });

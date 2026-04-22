@@ -33,10 +33,25 @@ async function currentAccessToken() {
   return data?.session?.access_token ?? null;
 }
 
+/**
+ * On any 401 we defensively sign the user out and redirect to login so that
+ * a stale/invalid Supabase session does not keep pages in a half-broken
+ * state. This also catches cases where the public.users profile is missing
+ * (USER_PROFILE_NOT_FOUND) — see backend/src/middleware/auth-middleware.ts.
+ */
+async function forceReauth(reason) {
+  try { await supabase.auth.signOut(); } catch { /* ignore */ }
+  // Avoid redirect loops if we are already on the login page.
+  if (!window.location.pathname.endsWith('/login.html')) {
+    const next = encodeURIComponent(window.location.pathname + window.location.search);
+    window.location.href = `/pages/login.html?reason=${encodeURIComponent(reason || 'session_expired')}&next=${next}`;
+  }
+}
+
 async function apiFetch(path, { method = 'GET', body, query } = {}) {
   const token = await currentAccessToken();
   if (!token) {
-    window.location.href = '/frontend/pages/login.html';
+    await forceReauth('no_token');
     throw new Error('Not authenticated');
   }
   let url = path;
@@ -59,6 +74,15 @@ async function apiFetch(path, { method = 'GET', body, query } = {}) {
   if (!res.ok) {
     let err;
     try { err = await res.json(); } catch { err = { error: { code: 'HTTP_' + res.status, message: res.statusText } }; }
+
+    // 401 always means: the token is gone, expired, or the server-side
+    // profile row is missing. Either way the only safe recovery is to
+    // re-authenticate; otherwise the UI displays "User profile not found"
+    // forever without actionable recovery.
+    if (res.status === 401) {
+      await forceReauth(err?.error?.code || 'unauthorized');
+    }
+
     const e = new Error(err?.error?.message || 'API error');
     e.status = res.status;
     e.code = err?.error?.code;
@@ -104,6 +128,7 @@ export const api = {
     apiFetch(`/api/v1/assessments/${encodeURIComponent(assessmentId)}/report`),
 
   // Alerts
+  listAlerts:        (query) => apiFetch('/api/v1/alerts', { query }),
   listPatientAlerts: (patientId, query) =>
     apiFetch(`/api/v1/patients/${encodeURIComponent(patientId)}/alerts`, { query }),
   ackAlert:          (alertId, action, note) =>
@@ -124,7 +149,7 @@ export const api = {
 export async function requireAuth() {
   const { data } = await supabase.auth.getSession();
   if (!data?.session) {
-    window.location.href = '/frontend/pages/login.html';
+    window.location.href = '/pages/login.html';
     throw new Error('Redirecting to login');
   }
   return data.session;

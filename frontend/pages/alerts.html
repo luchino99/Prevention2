@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Alerts — Uelfy Clinical</title>
+  <link rel="stylesheet" href="../assets/css/app.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="app-sidebar">
+      <div class="brand">Uelfy Clinical</div>
+      <nav>
+        <a href="./dashboard.html">Dashboard</a>
+        <a href="./patients.html">Patients</a>
+        <a href="./alerts.html" class="active">Alerts</a>
+        <a href="./audit.html" id="nav-audit" class="hidden">Audit log</a>
+        <a href="#" id="signout-link">Sign out</a>
+      </nav>
+    </aside>
+
+    <main class="app-main">
+      <div class="topbar">
+        <div>
+          <h1 style="margin-bottom:2px;">Clinical alerts</h1>
+          <div class="muted" id="tenant-label">Loading…</div>
+        </div>
+        <div class="flex gap-8">
+          <select id="filter-status">
+            <option value="open" selected>Open</option>
+            <option value="acknowledged">Acknowledged</option>
+            <option value="resolved">Resolved</option>
+            <option value="dismissed">Dismissed</option>
+          </select>
+          <select id="filter-severity">
+            <option value="">All severities</option>
+            <option value="critical">Critical</option>
+            <option value="warning">Warning</option>
+            <option value="info">Info</option>
+          </select>
+        </div>
+      </div>
+
+      <section class="card">
+        <div id="alerts-table-wrap"><p class="muted">Loading…</p></div>
+        <div class="flex between mt-16" id="pagination-wrap"></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Action dialog -->
+  <dialog id="action-dialog" class="dialog">
+    <form id="action-form" method="dialog" class="dialog-body">
+      <h3 id="action-title">Acknowledge alert</h3>
+      <div id="action-error" class="inline-alert danger hidden"></div>
+      <div class="field">
+        <label>Optional note (logged in metadata)</label>
+        <textarea name="note" rows="3" maxlength="1000" placeholder="Rationale, actions taken, follow-up…"></textarea>
+      </div>
+      <div class="flex gap-8" style="justify-content:flex-end;">
+        <button type="button" class="btn secondary" id="action-cancel">Cancel</button>
+        <button type="submit" class="btn" id="action-submit">Confirm</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+    window.__UELFY_CONFIG__ = {
+      supabaseUrl: window.location.origin.includes('localhost')
+        ? 'http://localhost:54321'
+        : '__PUBLIC_SUPABASE_URL__',
+      supabaseAnonKey: '__PUBLIC_SUPABASE_ANON_KEY__'
+    };
+  </script>
+  <script type="module">
+    import { api, requireAuth } from '../assets/js/api-client.js';
+
+    await requireAuth();
+
+    const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[c]);
+
+    const PAGE_SIZE = 30;
+    const state = { page: 1, status: 'open', severity: '' };
+
+    try {
+      const { user, tenant } = await api.me();
+      document.getElementById('tenant-label').textContent = tenant?.name || '—';
+      if (user.role === 'tenant_admin' || user.role === 'platform_admin') {
+        document.getElementById('nav-audit').classList.remove('hidden');
+      }
+    } catch (e) { console.error(e); }
+
+    const dialog = document.getElementById('action-dialog');
+    let currentAction = { alertId: null, action: null };
+
+    function openAction(alertId, action) {
+      currentAction = { alertId, action };
+      document.getElementById('action-title').textContent =
+        action === 'acknowledge' ? 'Acknowledge alert'
+        : action === 'resolve' ? 'Resolve alert'
+        : 'Dismiss alert';
+      document.getElementById('action-error').classList.add('hidden');
+      document.getElementById('action-form').reset();
+      dialog.showModal();
+    }
+    document.getElementById('action-cancel').onclick = () => dialog.close();
+
+    document.getElementById('action-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const note = e.target.note.value.trim() || undefined;
+      const err = document.getElementById('action-error');
+      const btn = document.getElementById('action-submit');
+      btn.disabled = true;
+      try {
+        await api.ackAlert(currentAction.alertId, currentAction.action, note);
+        dialog.close();
+        render();
+      } catch (ex) {
+        err.textContent = ex.message || 'Action failed';
+        err.classList.remove('hidden');
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    async function render() {
+      const wrap = document.getElementById('alerts-table-wrap');
+      wrap.innerHTML = `<p class="muted">Loading…</p>`;
+      try {
+        const { alerts, pagination } = await api.listAlerts({
+          status: state.status,
+          severity: state.severity || undefined,
+          page: state.page,
+          pageSize: PAGE_SIZE,
+        });
+        if (!alerts?.length) {
+          wrap.innerHTML = `<p class="muted">No alerts match the current filter.</p>`;
+          document.getElementById('pagination-wrap').innerHTML = '';
+          return;
+        }
+        const rows = alerts.map((a) => {
+          const patientName =
+            a.patient?.display_name || a.patient?.external_code || '—';
+          const pid = a.patient_id;
+          const actions = state.status === 'open' ? `
+            <button class="btn secondary" data-id="${a.id}" data-action="acknowledge">Ack</button>
+            <button class="btn secondary" data-id="${a.id}" data-action="resolve">Resolve</button>
+            <button class="btn secondary" data-id="${a.id}" data-action="dismiss">Dismiss</button>
+          ` : state.status === 'acknowledged' ? `
+            <button class="btn secondary" data-id="${a.id}" data-action="resolve">Resolve</button>
+          ` : '';
+          return `
+            <tr>
+              <td><span class="badge ${escapeHtml(a.severity)}">${escapeHtml(a.severity)}</span></td>
+              <td>${escapeHtml(a.title ?? a.type ?? 'Alert')}</td>
+              <td>
+                ${pid
+                  ? `<a href="./patient-detail.html?id=${encodeURIComponent(pid)}">${escapeHtml(patientName)}</a>`
+                  : escapeHtml(patientName)}
+              </td>
+              <td class="mono">${escapeHtml(a.type ?? '—')}</td>
+              <td>${escapeHtml(new Date(a.created_at).toLocaleString())}</td>
+              <td class="flex gap-8">${actions}</td>
+            </tr>`;
+        }).join('');
+
+        wrap.innerHTML = `
+          <table class="table">
+            <thead>
+              <tr><th>Severity</th><th>Title</th><th>Patient</th><th>Type</th><th>Opened</th><th>Actions</th></tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>`;
+
+        wrap.querySelectorAll('button[data-action]').forEach((btn) => {
+          btn.addEventListener('click', () => openAction(btn.dataset.id, btn.dataset.action));
+        });
+
+        const totalPages = Math.max(1, Math.ceil((pagination?.total || 0) / PAGE_SIZE));
+        document.getElementById('pagination-wrap').innerHTML = `
+          <div class="muted">Page ${state.page} / ${totalPages} · ${pagination?.total ?? '—'} alerts</div>
+          <div class="flex gap-8">
+            <button class="btn secondary" id="prev-page" ${state.page <= 1 ? 'disabled' : ''}>Prev</button>
+            <button class="btn secondary" id="next-page" ${state.page >= totalPages ? 'disabled' : ''}>Next</button>
+          </div>`;
+        document.getElementById('prev-page').onclick = () => { state.page--; render(); };
+        document.getElementById('next-page').onclick = () => { state.page++; render(); };
+      } catch (e) {
+        wrap.innerHTML = `<div class="inline-alert danger">Failed to load alerts: ${escapeHtml(e.message)}</div>`;
+      }
+    }
+
+    document.getElementById('filter-status').addEventListener('change', (e) => {
+      state.status = e.target.value;
+      state.page = 1;
+      render();
+    });
+    document.getElementById('filter-severity').addEventListener('change', (e) => {
+      state.severity = e.target.value;
+      state.page = 1;
+      render();
+    });
+
+    document.getElementById('signout-link').addEventListener('click', async (e) => {
+      e.preventDefault();
+      await api.signOut();
+      window.location.href = './login.html';
+    });
+
+    render();
+  </script>
+</body>
+</html>

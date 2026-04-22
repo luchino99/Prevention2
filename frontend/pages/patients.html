@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Patients — Uelfy Clinical</title>
+  <link rel="stylesheet" href="../assets/css/app.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="app-sidebar">
+      <div class="brand">Uelfy Clinical</div>
+      <nav>
+        <a href="./dashboard.html">Dashboard</a>
+        <a href="./patients.html" class="active">Patients</a>
+        <a href="./alerts.html">Alerts</a>
+        <a href="./audit.html" id="nav-audit" class="hidden">Audit log</a>
+        <a href="#" id="signout-link">Sign out</a>
+      </nav>
+    </aside>
+
+    <main class="app-main">
+      <div class="topbar">
+        <div>
+          <h1 style="margin-bottom:2px;">Patients</h1>
+          <div class="muted" id="tenant-label">Loading…</div>
+        </div>
+        <div class="flex gap-8">
+          <input
+            id="search-input"
+            type="search"
+            placeholder="Search by name or code…"
+            autocomplete="off"
+          />
+          <button class="btn" id="new-patient-btn">+ New patient</button>
+        </div>
+      </div>
+
+      <section class="card">
+        <div id="patients-table-wrap">
+          <p class="muted">Loading…</p>
+        </div>
+        <div class="flex between mt-16" id="pagination-wrap"></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- New patient dialog -->
+  <dialog id="new-patient-dialog" class="dialog">
+    <form id="new-patient-form" method="dialog" class="dialog-body">
+      <h3 style="margin-top:0;">New patient</h3>
+      <div id="np-error" class="inline-alert danger hidden"></div>
+
+      <div class="grid two">
+        <div class="field">
+          <label>First name *</label>
+          <input name="firstName" required maxlength="100" />
+        </div>
+        <div class="field">
+          <label>Last name *</label>
+          <input name="lastName" required maxlength="100" />
+        </div>
+      </div>
+
+      <div class="grid two">
+        <div class="field">
+          <label>External code *</label>
+          <input name="externalCode" required maxlength="50" placeholder="MRN, internal id…" />
+        </div>
+        <div class="field">
+          <label>Sex *</label>
+          <select name="sex" required>
+            <option value="">—</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid two">
+        <div class="field">
+          <label>Date of birth *</label>
+          <input name="dateOfBirth" type="date" required />
+        </div>
+        <div class="field">
+          <label>Contact email</label>
+          <input name="email" type="email" maxlength="200" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Contact phone</label>
+        <input name="phoneNumber" maxlength="20" placeholder="+39 …" />
+      </div>
+
+      <div class="field">
+        <label>Notes</label>
+        <textarea name="notes" rows="2" maxlength="2000"></textarea>
+      </div>
+
+      <label class="checkbox-row">
+        <input name="consentGiven" type="checkbox" />
+        Patient has granted health data processing consent
+      </label>
+
+      <div class="flex gap-8 mt-16" style="justify-content:flex-end;">
+        <button type="button" class="btn secondary" id="np-cancel">Cancel</button>
+        <button type="submit" class="btn" id="np-submit">Create patient</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+    window.__UELFY_CONFIG__ = {
+      supabaseUrl: window.location.origin.includes('localhost')
+        ? 'http://localhost:54321'
+        : '__PUBLIC_SUPABASE_URL__',
+      supabaseAnonKey: '__PUBLIC_SUPABASE_ANON_KEY__'
+    };
+  </script>
+  <script type="module">
+    import { api, requireAuth } from '../assets/js/api-client.js';
+
+    await requireAuth();
+
+    const PAGE_SIZE = 20;
+    const state = { page: 1, search: '', role: null };
+
+    const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[c]);
+
+    try {
+      const { user, tenant } = await api.me();
+      state.role = user.role;
+      document.getElementById('tenant-label').textContent = tenant?.name || '—';
+      if (user.role === 'tenant_admin' || user.role === 'platform_admin') {
+        document.getElementById('nav-audit').classList.remove('hidden');
+      }
+      // Only clinicians, tenant_admin, platform_admin can create patients.
+      if (!['clinician', 'tenant_admin', 'platform_admin'].includes(user.role)) {
+        document.getElementById('new-patient-btn').style.display = 'none';
+      }
+    } catch (e) { console.error(e); }
+
+    async function render() {
+      const wrap = document.getElementById('patients-table-wrap');
+      wrap.innerHTML = `<p class="muted">Loading…</p>`;
+      try {
+        const { patients, pagination } = await api.listPatients({
+          page: state.page,
+          pageSize: PAGE_SIZE,
+          search: state.search || undefined,
+        });
+
+        if (!patients?.length) {
+          wrap.innerHTML = `<p class="muted">No patients match your filter.</p>`;
+          document.getElementById('pagination-wrap').innerHTML = '';
+          return;
+        }
+
+        const rows = patients.map(p => `
+          <tr>
+            <td class="mono">${escapeHtml(p.external_code ?? (p.id || '').substring(0, 8))}</td>
+            <td>${escapeHtml(p.display_name || [p.first_name, p.last_name].filter(Boolean).join(' ') || '—')}</td>
+            <td>${escapeHtml(p.sex ?? '—')}</td>
+            <td>${escapeHtml(p.birth_date ?? (p.birth_year ? String(p.birth_year) : '—'))}</td>
+            <td>${p.is_active === false
+              ? '<span class="badge muted">inactive</span>'
+              : '<span class="badge ok">active</span>'}</td>
+            <td><a href="./patient-detail.html?id=${encodeURIComponent(p.id)}">Open</a></td>
+          </tr>
+        `).join('');
+
+        wrap.innerHTML = `
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Ref</th><th>Name</th><th>Sex</th><th>DOB</th><th>Status</th><th></th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>`;
+
+        const totalPages = Math.max(1, Math.ceil((pagination?.total || 0) / PAGE_SIZE));
+        document.getElementById('pagination-wrap').innerHTML = `
+          <div class="muted">Page ${state.page} / ${totalPages} · ${pagination?.total ?? '—'} patients</div>
+          <div class="flex gap-8">
+            <button class="btn secondary" id="prev-page" ${state.page <= 1 ? 'disabled' : ''}>Prev</button>
+            <button class="btn secondary" id="next-page" ${state.page >= totalPages ? 'disabled' : ''}>Next</button>
+          </div>`;
+        document.getElementById('prev-page').onclick = () => { state.page--; render(); };
+        document.getElementById('next-page').onclick = () => { state.page++; render(); };
+      } catch (e) {
+        console.error(e);
+        wrap.innerHTML = `<div class="inline-alert danger">Failed to load patients: ${escapeHtml(e.message)}</div>`;
+      }
+    }
+
+    let searchTimer = null;
+    document.getElementById('search-input').addEventListener('input', (e) => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        state.page = 1;
+        state.search = e.target.value.trim();
+        render();
+      }, 250);
+    });
+
+    // ── New patient dialog ─────────────────────────────────────────────
+    const dialog = document.getElementById('new-patient-dialog');
+    document.getElementById('new-patient-btn').onclick = () => dialog.showModal();
+    document.getElementById('np-cancel').onclick = () => dialog.close();
+
+    document.getElementById('new-patient-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const errorEl = document.getElementById('np-error');
+      errorEl.classList.add('hidden');
+      const submitBtn = document.getElementById('np-submit');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Creating…';
+      try {
+        const dobIso = form.dateOfBirth.value
+          ? new Date(form.dateOfBirth.value + 'T00:00:00Z').toISOString()
+          : null;
+        if (!dobIso) throw new Error('Date of birth is required');
+        const body = {
+          demographics: {
+            firstName:    form.firstName.value.trim(),
+            lastName:     form.lastName.value.trim(),
+            dateOfBirth:  dobIso,
+            sex:          form.sex.value,
+            externalCode: form.externalCode.value.trim(),
+          },
+          contact: (form.email.value.trim() || form.phoneNumber.value.trim()) ? {
+            email:       form.email.value.trim() || null,
+            phoneNumber: form.phoneNumber.value.trim() || null,
+          } : undefined,
+          notes: form.notes.value.trim() || undefined,
+          consentGiven: !!form.consentGiven.checked,
+        };
+        const { patient } = await api.createPatient(body);
+        dialog.close();
+        window.location.href = `./patient-detail.html?id=${encodeURIComponent(patient.id)}`;
+      } catch (err) {
+        errorEl.textContent = err?.details
+          ? `${err.message} — ${JSON.stringify(err.details)}`
+          : (err.message || 'Failed to create patient');
+        errorEl.classList.remove('hidden');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create patient';
+      }
+    });
+
+    document.getElementById('signout-link').addEventListener('click', async (e) => {
+      e.preventDefault();
+      await api.signOut();
+      window.location.href = './login.html';
+    });
+
+    render();
+  </script>
+</body>
+</html>

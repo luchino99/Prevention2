@@ -119,12 +119,14 @@ clinical math or changing runtime semantics:
   Zod schema that nests those fields under `demographics` and `contact`.
   Now correctly unpacks `payload.demographics.{firstName,lastName,dateOfBirth,sex,externalCode}`
   and `payload.contact?.{email,phoneNumber}` into the flat DB column
-  layout. `display_ref` is now sourced from `demographics.externalCode`
-  (a single source of truth for the patient's external MRN/ID).
+  layout. The canonical column for the patient's external MRN/ID is
+  `external_code` (Wave 1.1 alignment); `demographics.externalCode` →
+  `external_code`. `display_name` is computed by `getPatientDisplayName()`.
 - `api/v1/patients/[id]/index.ts` (PATCH) — identical fix for the
   partial-update path. Handles `p.demographics` being optional (since
   `PatientUpdateSchema.demographics = PatientDemographicsSchema.partial().optional()`)
-  and maps `externalCode → display_ref`, `phoneNumber → phone`.
+  and maps `externalCode → external_code`, `phoneNumber → contact_phone`,
+  `email → contact_email`.
   `dateOfBirth` is converted from `Date` to `YYYY-MM-DD` string at the
   DB boundary on both routes.
 - `backend/src/config/supabase.ts` — `setSession()` call simplified to
@@ -170,7 +172,7 @@ semantics, no security posture was modified by this pass.
 
 #### Database (Supabase / PostgreSQL)
 - `supabase/migrations/001_schema_foundation.sql` — 17-table B2B multi-tenant schema.
-  - Tables: `tenants`, `users`, `patients`, `professional_patient_links`, `patient_consents`, `assessments`, `score_results`, `lifestyle_snapshots`, `followup_plans`, `alerts`, `report_exports`, `audit_logs`, plus supporting lookup tables.
+  - Tables: `tenants`, `users`, `patients`, `professional_patient_links` (added in `005_professional_patient_links.sql`), `consent_records`, `assessments`, `score_results`, `lifestyle_snapshots`, `followup_plans`, `alerts`, `report_exports`, `audit_events`, plus supporting lookup tables.
   - Enums: `user_role` (`platform_admin|tenant_admin|clinician|assistant_staff|patient`), `tenant_status`, `assessment_status`, `alert_severity`, `consent_type`, etc.
   - Helpers: `get_current_tenant_id()`, `get_current_user_role()`, `update_updated_at()`.
 - `supabase/migrations/002_rls_policies.sql` — Row-Level Security policies on every sensitive table. Tenant isolation via `tenant_id = get_current_tenant_id()`; role-aware SELECT / INSERT / UPDATE / DELETE policies.

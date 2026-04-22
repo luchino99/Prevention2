@@ -95,10 +95,10 @@ Status legend:  `✅ done` · `🟡 partial / follow-up` · `⬜ open`
 
 | # | Control | Status | Evidence |
 |---|---|---|---|
-| 8.1 | Consent is versioned (immutable row per version) | ✅ | `patient_consents` schema + insert-on-change pattern in `api/v1/consents` |
-| 8.2 | Revoking creates a new row with `status='revoked'` | ✅ | Same |
+| 8.1 | Consent is versioned (immutable row per version) | ✅ | `consent_records` schema + insert-on-change pattern in `api/v1/consents` |
+| 8.2 | Revoking creates a new row with `granted=false` | ✅ | Same (boolean `granted` flag, append-only) |
 | 8.3 | Lawful basis explicitly stored per consent | ✅ | `legal_basis` enum |
-| 8.4 | Consent text version stored alongside consent | ✅ | `text_version` column |
+| 8.4 | Consent policy version stored alongside consent | ✅ | `policy_version` column (and optional `policy_url`, `jurisdiction`) |
 | 8.5 | Purpose limitation recorded | ✅ | `purpose` column |
 | 8.6 | Data minimization — storage only of fields required for scoring | ✅ | Shared types + Zod schemas; no unused payload fields persisted |
 | 8.7 | Data retention policy documented per entity | ✅ | `fn_retention_prune()` SQL function + daily `/api/v1/internal/retention` cron (Vercel cron schedule `0 3 * * *`) |
