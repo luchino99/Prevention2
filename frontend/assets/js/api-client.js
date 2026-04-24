@@ -151,6 +151,10 @@ export const api = {
   listPatientDueItems: (patientId, query) =>
     apiFetch(`/api/v1/patients/${encodeURIComponent(patientId)}/due-items`, { query }),
 
+  // Longitudinal trends (ISSUE 4 — per-domain time series for Progress card)
+  getPatientTrends: (patientId) =>
+    apiFetch(`/api/v1/patients/${encodeURIComponent(patientId)}/trends`),
+
   // Consents
   listConsents:      (patientId) => apiFetch('/api/v1/consents', { query: { patientId } }),
   recordConsent:     (body) => apiFetch('/api/v1/consents', { method: 'POST', body }),

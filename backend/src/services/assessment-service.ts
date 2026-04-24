@@ -660,6 +660,10 @@ export async function createAssessment(
   );
 
   // ─── 7. Activity snapshot ───
+  // Migration 008 extends this table with the MET projection so the
+  // trend charts on the patient page can plot MVPA (MET-min/week) and
+  // sedentary hours/day. The legacy aggregate columns stay populated
+  // for backward compatibility.
   await bestEffort('activity_snapshots', () =>
     supabaseAdmin.from('activity_snapshots').insert({
       assessment_id: assessmentId,
@@ -670,6 +674,12 @@ export async function createAssessment(
       sedentary_level: input.lifestyle.sedentaryLevel ?? null,
       qualitative_band: activity.qualitativeBand,
       meets_who_guidelines: activity.meetsWhoGuidelines,
+      // WS5 MET projection (migration 008)
+      moderate_minutes_per_week: activity.moderateMinutesPerWeek,
+      vigorous_minutes_per_week: activity.vigorousMinutesPerWeek,
+      met_minutes_per_week: activity.metMinutesPerWeek,
+      sedentary_hours_per_day: activity.sedentaryHoursPerDay,
+      sedentary_risk_level: activity.sedentaryRiskLevel,
     }),
   );
 
@@ -693,13 +703,34 @@ export async function createAssessment(
   );
 
   // ─── 8b. Due items (WS7) ───
-  // Materialise the structured follow-up items and screening items as
+  // Materialise the structured follow-up and screening items as
   // `due_items` rows so the patient-detail countdown UI can render them
-  // without recomputing the engines on the read path. Upsert keyed on
-  // (patient_id, source_engine, item_code) so re-running an assessment
-  // updates the due_at / priority / rationale in place (partial unique
-  // index in migration 007 restricts the constraint to non-terminal
-  // rows).
+  // without re-running the engines on the read path.
+  //
+  // Why not upsert:
+  //   Migration 007 enforces uniqueness with a PARTIAL unique index
+  //   (`idx_due_items_open_unique ... WHERE status IN ('open',
+  //   'acknowledged')`). PostgREST's `.upsert(..., { onConflict })`
+  //   compiles to `INSERT ... ON CONFLICT (cols) DO UPDATE` which
+  //   requires either a full unique constraint OR a simple unique
+  //   index — partial indexes are NOT accepted as conflict targets.
+  //   The call therefore raised PostgREST error 42P10 ("no unique or
+  //   exclusion constraint matching the ON CONFLICT specification")
+  //   every time an assessment was re-created, which `bestEffort`
+  //   silently swallowed. Net effect: no due items ever reached the
+  //   UI. See ISSUE 1 in the WS9 remediation plan.
+  //
+  // Strategy:
+  //   DELETE open/acknowledged rows for the engine-owned codes being
+  //   regenerated, then INSERT the fresh batch. This:
+  //     - preserves the completed/dismissed audit trail,
+  //     - leaves `manual` rows untouched (only 'followup' and
+  //       'screening' codes are replaced),
+  //     - restores a clean "last assessment wins" semantic.
+  //
+  // Best-effort wrapping is retained so a due_items write failure
+  // never rolls back the already-committed assessment, but each stage
+  // logs its own error for ops visibility.
   const dueItemRows = buildDueItemRows({
     tenantId: tenant_id,
     patientId,
@@ -710,13 +741,26 @@ export async function createAssessment(
     now,
   });
   if (dueItemRows.length > 0) {
-    await bestEffort('due_items', () =>
-      supabaseAdmin
-        .from('due_items')
-        .upsert(dueItemRows, {
-          onConflict: 'patient_id,source_engine,item_code',
-          ignoreDuplicates: false,
-        }),
+    const engineCodes = Array.from(
+      new Set(
+        dueItemRows
+          .filter((r) => r.source_engine === 'followup' || r.source_engine === 'screening')
+          .map((r) => String(r.item_code)),
+      ),
+    );
+    if (engineCodes.length > 0) {
+      await bestEffort('due_items.delete_open', () =>
+        supabaseAdmin
+          .from('due_items')
+          .delete()
+          .eq('patient_id', patientId)
+          .in('source_engine', ['followup', 'screening'])
+          .in('status', ['open', 'acknowledged'])
+          .in('item_code', engineCodes),
+      );
+    }
+    await bestEffort('due_items.insert', () =>
+      supabaseAdmin.from('due_items').insert(dueItemRows),
     );
   }
 

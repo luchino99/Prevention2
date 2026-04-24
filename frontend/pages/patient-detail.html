@@ -56,6 +56,18 @@
 
       <section class="card">
         <div class="flex between">
+          <h3 style="margin:0;">Progress</h3>
+          <span class="muted" id="progress-subline">—</span>
+        </div>
+        <div class="muted mt-4" style="font-size:0.85em;">
+          Longitudinal trends across clinical domains. Each sparkline is
+          anchored on the assessment dates; latest value on the right.
+        </div>
+        <div id="progress-wrap" class="mt-16"><p class="muted">Loading…</p></div>
+      </section>
+
+      <section class="card">
+        <div class="flex between">
           <h3 style="margin:0;">Due items</h3>
           <span class="muted" id="due-items-subline">—</span>
         </div>
@@ -249,6 +261,166 @@
     }
 
     /**
+     * Longitudinal progress — per-domain sparklines (ISSUE 4).
+     *
+     * Consumes GET /api/v1/patients/[id]/trends and renders a small
+     * inline SVG sparkline for each clinical series. The SVG is
+     * intentionally dependency-free (no chart library) so this renders
+     * on every browser the clinician might have inside a hospital
+     * network. Each card shows: latest value + unit, delta versus the
+     * previous assessment, and the sparkline baseline.
+     *
+     * No data is fabricated client-side — points come straight from
+     * the persisted score_results / measurement / activity /
+     * nutrition / risk rows. An empty series is rendered as a neutral
+     * placeholder so a clinician can tell "no data yet" from "data
+     * stopped flowing".
+     */
+    function fmtNumber(v, digits = 1) {
+      if (typeof v !== 'number' || !Number.isFinite(v)) return '—';
+      return v.toFixed(digits);
+    }
+
+    function sparklineSvg(points, opts = {}) {
+      const width = opts.width ?? 160;
+      const height = opts.height ?? 40;
+      const pad = 4;
+      if (!Array.isArray(points) || points.length === 0) {
+        return `
+          <svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img" aria-label="no data">
+            <text x="${width / 2}" y="${height / 2 + 4}" text-anchor="middle"
+              font-size="11" fill="#9ca3af">no data</text>
+          </svg>`;
+      }
+      const values = points.map((p) => p.value);
+      const min = Math.min(...values);
+      const max = Math.max(...values);
+      const span = max - min || 1;
+      const stepX = points.length === 1
+        ? 0
+        : (width - pad * 2) / (points.length - 1);
+      const scaleY = (v) =>
+        height - pad - ((v - min) / span) * (height - pad * 2);
+      const toCoord = (p, i) => ({
+        x: pad + i * stepX,
+        y: scaleY(p.value),
+      });
+      const path = points
+        .map((p, i) => {
+          const c = toCoord(p, i);
+          return `${i === 0 ? 'M' : 'L'}${c.x.toFixed(2)},${c.y.toFixed(2)}`;
+        })
+        .join(' ');
+      const last = toCoord(points[points.length - 1], points.length - 1);
+      const stroke = opts.stroke ?? '#2563eb';
+      return `
+        <svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img"
+             aria-label="trend sparkline">
+          <path d="${path}" fill="none" stroke="${stroke}"
+                stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" />
+          <circle cx="${last.x.toFixed(2)}" cy="${last.y.toFixed(2)}" r="2.4"
+                  fill="${stroke}" />
+        </svg>`;
+    }
+
+    function renderSparklineCard(title, unit, points, fmtDigits = 1) {
+      const n = Array.isArray(points) ? points.length : 0;
+      const latest = n > 0 ? points[n - 1].value : null;
+      const prev = n > 1 ? points[n - 2].value : null;
+      const delta = (latest !== null && prev !== null) ? latest - prev : null;
+      const deltaLabel = delta === null
+        ? ''
+        : delta === 0
+          ? '·'
+          : (delta > 0 ? `+${fmtNumber(delta, fmtDigits)}` : fmtNumber(delta, fmtDigits));
+      const deltaClass = delta === null || delta === 0
+        ? 'muted'
+        : (delta > 0 ? 'badge warning' : 'badge ok');
+      const dateRange = n > 0
+        ? `${escapeHtml(points[0].date ?? '')}${n > 1 ? ' → ' + escapeHtml(points[n - 1].date ?? '') : ''}`
+        : '';
+      return `
+        <div style="padding:10px 12px;border:1px solid var(--border,#e5e7eb);border-radius:6px;background:#fff;">
+          <div class="flex between" style="align-items:flex-start;gap:8px;">
+            <div>
+              <div class="kpi-label">${escapeHtml(title)}</div>
+              <div style="font-weight:600;font-size:1.05em;">
+                ${latest === null ? '<span class="muted">—</span>' : escapeHtml(fmtNumber(latest, fmtDigits))}
+                <span class="muted" style="font-size:0.85em;">${escapeHtml(unit ?? '')}</span>
+              </div>
+              ${n > 0 ? `<div class="muted" style="font-size:0.75em;margin-top:2px;">${n} point${n === 1 ? '' : 's'} · ${dateRange}</div>` : ''}
+            </div>
+            <div style="text-align:right;">
+              ${sparklineSvg(points)}
+              ${delta !== null && delta !== 0
+                ? `<div style="margin-top:2px;"><span class="${deltaClass}">${escapeHtml(deltaLabel)}</span></div>`
+                : ''}
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function renderProgressGroup(heading, entries) {
+      const visible = entries.filter((e) => Array.isArray(e.points));
+      if (visible.length === 0) return '';
+      return `
+        <div class="mt-16">
+          <div class="kpi-label" style="margin-bottom:6px;">${escapeHtml(heading)}</div>
+          <div class="grid three" style="gap:10px;">
+            ${visible.map((e) => renderSparklineCard(
+              e.title, e.unit ?? '', e.points, e.digits ?? 1,
+            )).join('')}
+          </div>
+        </div>`;
+    }
+
+    async function renderProgress() {
+      const wrap = document.getElementById('progress-wrap');
+      const subline = document.getElementById('progress-subline');
+      try {
+        const trends = await api.getPatientTrends(patientId);
+        const tlLen = Array.isArray(trends?.timeline) ? trends.timeline.length : 0;
+        if (tlLen === 0) {
+          wrap.innerHTML = `<p class="muted">No completed assessments yet — progress charts will populate after the first assessment is recorded.</p>`;
+          subline.textContent = '—';
+          return;
+        }
+        subline.textContent = `${tlLen} assessment${tlLen === 1 ? '' : 's'} plotted`;
+        const s = trends.series ?? {};
+        const html = [
+          renderProgressGroup('Cardiovascular', [
+            { title: 'SCORE2',          unit: '% 10-yr', points: s.cardiovascular?.score2,          digits: 1 },
+            { title: 'SCORE2-Diabetes', unit: '% 10-yr', points: s.cardiovascular?.score2Diabetes, digits: 1 },
+          ]),
+          renderProgressGroup('Metabolic', [
+            { title: 'HbA1c',              unit: '%',        points: s.metabolic?.hba1c,             digits: 1 },
+            { title: 'Fasting glucose',    unit: 'mg/dL',    points: s.metabolic?.glucose,           digits: 0 },
+            { title: 'Metabolic syndrome', unit: 'criteria', points: s.metabolic?.metabolicSyndrome, digits: 0 },
+          ]),
+          renderProgressGroup('Renal', [
+            { title: 'eGFR', unit: 'mL/min/1.73m²', points: s.renal?.egfr, digits: 1 },
+            { title: 'ACR',  unit: 'mg/g',          points: s.renal?.acr,  digits: 1 },
+          ]),
+          renderProgressGroup('Hepatic', [
+            { title: 'FIB-4', unit: '', points: s.hepatic?.fib4, digits: 2 },
+            { title: 'FLI',   unit: '', points: s.hepatic?.fli,  digits: 0 },
+          ]),
+          renderProgressGroup('Lifestyle', [
+            { title: 'PREDIMED',  unit: '/14',         points: s.lifestyle?.predimed,          digits: 0 },
+            { title: 'MET-min/week', unit: 'MET-min/wk', points: s.lifestyle?.metMinutesPerWeek, digits: 0 },
+          ]),
+          renderProgressGroup('Composite', [
+            { title: 'Composite score', unit: '', points: s.composite?.composite, digits: 2 },
+          ]),
+        ].filter(Boolean).join('');
+        wrap.innerHTML = html || `<p class="muted">No numeric series available for the current assessments.</p>`;
+      } catch (e) {
+        wrap.innerHTML = `<div class="inline-alert danger">Failed to load progress charts: ${escapeHtml(e.message)}</div>`;
+        subline.textContent = '—';
+      }
+    }
+
+    /**
      * Due items — materialised follow-up / screening countdown (WS7).
      *
      * - Server returns `nowIso` for monotonic countdown across clock drift.
@@ -267,18 +439,36 @@
       return months === 1 ? 'Due in ~1 month' : `Due in ~${months} months`;
     }
 
-    function dueBadgeClass(days, priority) {
-      if (typeof days === 'number' && days < 0) return 'danger';
+    /**
+     * Map the canonical `countdownStatus` (computed server-side) to the UI
+     * badge class. Keeping this pure of `dueInDays` guarantees the UI and
+     * the server agree on the bucketing even if client clocks drift.
+     */
+    function countdownBadgeClass(countdownStatus, priority) {
+      if (countdownStatus === 'overdue') return 'danger';
+      if (countdownStatus === 'due_now') return 'danger';
+      if (countdownStatus === 'due_soon') return 'warning';
       if (priority === 'urgent') return 'danger';
       if (priority === 'moderate') return 'warning';
       return 'ok';
+    }
+
+    /** Human label for the canonical status — shown as a small secondary pill. */
+    function countdownStatusLabel(countdownStatus) {
+      switch (countdownStatus) {
+        case 'overdue':  return 'overdue';
+        case 'due_now':  return 'due now';
+        case 'due_soon': return 'due soon';
+        case 'upcoming': return 'upcoming';
+        default:         return '';
+      }
     }
 
     async function renderDueItems() {
       const wrap = document.getElementById('due-items-wrap');
       const subline = document.getElementById('due-items-subline');
       try {
-        const { items, pagination } = await api.listPatientDueItems(patientId, {
+        const { items, summary, pagination } = await api.listPatientDueItems(patientId, {
           // Repeated keys so server-side union (enum | array) matches.
           status: ['open', 'acknowledged'],
           pageSize: 100,
@@ -288,11 +478,21 @@
           subline.textContent = '0 pending';
           return;
         }
-        const total = pagination?.total ?? items.length;
-        const overdue = items.filter((it) => typeof it.dueInDays === 'number' && it.dueInDays < 0).length;
-        subline.textContent = overdue > 0
-          ? `${total} pending · ${overdue} overdue`
-          : `${total} pending`;
+        // Trust the server `summary` (canonical bucketing from the
+        // countdown-status model). Fallback to a client-side recount
+        // only if the field is missing (e.g. older backend).
+        const total = summary?.total ?? pagination?.total ?? items.length;
+        const overdue = summary?.overdue ?? items.filter(
+          (it) => it.countdownStatus === 'overdue'
+            || (typeof it.dueInDays === 'number' && it.dueInDays < 0),
+        ).length;
+        const dueNow = summary?.dueNow ?? items.filter(
+          (it) => it.countdownStatus === 'due_now',
+        ).length;
+        const parts = [`${total} pending`];
+        if (overdue > 0) parts.push(`${overdue} overdue`);
+        if (dueNow > 0) parts.push(`${dueNow} due now`);
+        subline.textContent = parts.join(' · ');
 
         const priorityOrder = { urgent: 0, moderate: 1, routine: 2 };
         const groups = { urgent: [], moderate: [], routine: [] };
@@ -313,7 +513,12 @@
           const rows = list.map((it) => {
             const days = it.dueInDays;
             const label2 = dueInLabel(days);
-            const badgeCls = dueBadgeClass(days, it.priority);
+            const status = it.countdownStatus
+              || (typeof days === 'number' && days < 0 ? 'overdue' : 'upcoming');
+            const badgeCls = countdownBadgeClass(status, it.priority);
+            const statusPill = status
+              ? `<span class="badge muted" style="margin-left:6px;">${escapeHtml(countdownStatusLabel(status))}</span>`
+              : '';
             const sourceBadge = it.sourceEngine
               ? `<span class="badge muted" style="margin-left:6px;">${escapeHtml(it.sourceEngine)}</span>`
               : '';
@@ -331,7 +536,7 @@
                 <div class="flex between" style="align-items:flex-start;">
                   <div>
                     <strong>${escapeHtml(it.title)}</strong>
-                    ${sourceBadge}${domainBadge}
+                    ${statusPill}${sourceBadge}${domainBadge}
                     ${rationale}
                     ${guideline}
                   </div>
@@ -522,6 +727,7 @@
     await Promise.all([
       renderPatient(),
       renderAssessments(),
+      renderProgress(),
       renderDueItems(),
       renderAlerts(),
       renderCompletenessNotices(),

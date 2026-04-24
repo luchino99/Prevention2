@@ -104,6 +104,18 @@
         <div class="grid two" id="lifestyle-wrap"></div>
       </section>
 
+      <section class="card" id="lifestyle-recs-card" style="display:none;">
+        <h3>Lifestyle recommendations</h3>
+        <p class="muted" style="margin-top:-4px;font-size:13px;">
+          Bounded, guideline-sourced counselling nudges derived from the
+          patient's own data. All entries carry an explicit
+          <strong>supportive</strong> authority flag — they are
+          <em>not</em> prescriptions and do not replace clinician
+          judgement. No meal plans, no training plans.
+        </p>
+        <div id="lifestyle-recs-wrap"></div>
+      </section>
+
       <section class="card">
         <h3>Alerts triggered by this assessment</h3>
         <div id="alerts-wrap"><p class="muted">Loading…</p></div>
@@ -252,21 +264,96 @@
     }
 
     function renderLifestyle(nutri, act) {
+      // Activity block surfaces the full WS5 MET projection (moderate +
+      // vigorous split, MET-min/week against the WHO ≥600 target, and
+      // sedentary hours/day with the ESC 2021 ≥8 h/day cutoff). The
+      // legacy aggregate `minutesPerWeek` is still rendered so clinicians
+      // used to the previous UI have a continuous reference point.
+      const fmt = (v) => (typeof v === 'number' && Number.isFinite(v) ? String(Math.round(v)) : null);
+      const fmtOne = (v) => (typeof v === 'number' && Number.isFinite(v) ? v.toFixed(1) : null);
+      const WHO_MET_TARGET = 600;
+
+      const mod = fmt(act?.moderateMinutesPerWeek);
+      const vig = fmt(act?.vigorousMinutesPerWeek);
+      const totalMin = fmt(act?.minutesPerWeek);
+      const metMin = fmt(act?.metMinutesPerWeek);
+      const sedHours = fmtOne(act?.sedentaryHoursPerDay);
+
+      const metPctOfTarget =
+        typeof act?.metMinutesPerWeek === 'number' && Number.isFinite(act.metMinutesPerWeek)
+          ? Math.round((act.metMinutesPerWeek / WHO_MET_TARGET) * 100)
+          : null;
+      const metBadge = metPctOfTarget === null
+        ? '<span class="muted">—</span>'
+        : `<span class="badge ${metPctOfTarget >= 100 ? 'ok' : metPctOfTarget >= 50 ? 'warning' : 'danger'}">${metPctOfTarget}% of WHO target</span>`;
+
       document.getElementById('lifestyle-wrap').innerHTML = `
         <div>
           <h4 style="margin:0 0 8px;">Nutrition</h4>
-          <div><span class="kpi-label">PREDIMED:</span> ${nutri?.predimedScore != null ? escapeHtml(String(nutri.predimedScore)) : '<span class="muted">—</span>'}</div>
+          <div><span class="kpi-label">PREDIMED:</span> ${nutri?.predimedScore != null ? escapeHtml(String(nutri.predimedScore)) + ' / 14' : '<span class="muted">—</span>'}</div>
           <div><span class="kpi-label">Adherence:</span> ${escapeHtml(nutri?.adherenceBand ?? '—')}</div>
           <div><span class="kpi-label">BMR:</span> ${escapeHtml(String(Math.round(nutri?.bmrKcal ?? 0)))} kcal</div>
           <div><span class="kpi-label">TDEE:</span> ${escapeHtml(String(Math.round(nutri?.tdeeKcal ?? 0)))} kcal</div>
         </div>
         <div>
-          <h4 style="margin:0 0 8px;">Activity</h4>
-          <div><span class="kpi-label">Minutes/week:</span> ${act?.minutesPerWeek != null ? escapeHtml(String(act.minutesPerWeek)) : '<span class="muted">—</span>'}</div>
-          <div><span class="kpi-label">Qualitative:</span> ${escapeHtml(act?.qualitativeBand ?? '—')}</div>
-          <div><span class="kpi-label">Meets WHO:</span> ${act?.meetsWhoGuidelines ? '<span class="badge ok">yes</span>' : '<span class="badge muted">no</span>'}</div>
-          <div><span class="kpi-label">Sedentary risk:</span> ${riskBadge(act?.sedentaryRiskLevel)}</div>
+          <h4 style="margin:0 0 8px;">Activity (WHO / GPAQ)</h4>
+          <div><span class="kpi-label">Moderate:</span> ${mod !== null ? escapeHtml(mod) + ' min/week' : '<span class="muted">—</span>'}</div>
+          <div><span class="kpi-label">Vigorous:</span> ${vig !== null ? escapeHtml(vig) + ' min/week' : '<span class="muted">—</span>'}</div>
+          <div><span class="kpi-label">Total:</span> ${totalMin !== null ? escapeHtml(totalMin) + ' min/week' : '<span class="muted">—</span>'}</div>
+          <div><span class="kpi-label">MET-min/week:</span> ${metMin !== null ? escapeHtml(metMin) : '<span class="muted">—</span>'} ${metBadge}</div>
+          <div><span class="kpi-label">Qualitative band:</span> ${escapeHtml(act?.qualitativeBand ?? '—')}</div>
+          <div><span class="kpi-label">Meets WHO (≥600 MET-min):</span> ${act?.meetsWhoGuidelines ? '<span class="badge ok">yes</span>' : '<span class="badge muted">no</span>'}</div>
+          <div><span class="kpi-label">Sedentary:</span> ${sedHours !== null ? escapeHtml(sedHours) + ' h/day' : '<span class="muted">—</span>'} ${riskBadge(act?.sedentaryRiskLevel)}</div>
         </div>`;
+    }
+
+    /**
+     * Lifestyle recommendations (WS6). Supportive-only — rendered as a
+     * dedicated section so clinicians can triage them independently of
+     * the deterministic follow-up/screening items. Every entry carries
+     * `authority: 'supportive'`; the UI labels this explicitly so the
+     * reader never confuses these with prescriptions.
+     */
+    function recPriorityBadge(priority) {
+      const label = priority ?? 'routine';
+      const cls = label === 'urgent' ? 'danger'
+        : label === 'moderate' ? 'warning'
+        : 'ok';
+      return `<span class="badge ${cls}">${escapeHtml(label)}</span>`;
+    }
+
+    function renderLifestyleRecommendations(recs) {
+      const card = document.getElementById('lifestyle-recs-card');
+      const wrap = document.getElementById('lifestyle-recs-wrap');
+      if (!Array.isArray(recs) || recs.length === 0) {
+        card.style.display = 'none';
+        wrap.innerHTML = '';
+        return;
+      }
+      card.style.display = '';
+      // Order: urgent → moderate → routine. Stable within the same
+      // priority so the persisted, deterministic emission order is
+      // preserved.
+      const rank = (p) => (p === 'urgent' ? 0 : p === 'moderate' ? 1 : 2);
+      const ordered = [...recs].sort((a, b) => rank(a.priority) - rank(b.priority));
+      wrap.innerHTML = `
+        <ul class="list-plain">
+          ${ordered.map((r) => `
+            <li class="mt-8" style="padding:10px 12px;border:1px solid #e5e7eb;border-radius:6px;background:#fff;">
+              <div class="flex between" style="align-items:flex-start;gap:8px;">
+                <div>
+                  <strong>${escapeHtml(r.title ?? r.code ?? 'Recommendation')}</strong>
+                  <span class="badge muted" style="margin-left:6px;">${escapeHtml(r.domain ?? '—')}</span>
+                  <span class="badge muted" style="margin-left:6px;" title="Non-prescriptive counselling nudge">supportive</span>
+                  <div class="muted mt-4" style="font-size:0.92em;">${escapeHtml(r.rationale ?? '')}</div>
+                  ${r.guidelineSource
+                    ? `<div class="muted mt-4" style="font-size:0.8em;">Source: ${escapeHtml(r.guidelineSource)}</div>`
+                    : ''}
+                </div>
+                <div style="white-space:nowrap;">${recPriorityBadge(r.priority)}</div>
+              </div>
+            </li>`).join('')}
+        </ul>`;
     }
 
     function renderCompleteness(warnings) {
@@ -329,6 +416,7 @@
         renderFollowup(snapshot.followupPlan);
         renderScreenings(snapshot.screenings);
         renderLifestyle(snapshot.nutritionSummary, snapshot.activitySummary);
+        renderLifestyleRecommendations(snapshot.lifestyleRecommendations || []);
         renderAlerts(snapshot.alerts);
 
         // If a report already exists, fetch its signed URL non-fatally.

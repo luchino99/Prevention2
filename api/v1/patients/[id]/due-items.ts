@@ -102,6 +102,30 @@ function daysBetween(nowIso: string, dueIso: string): number {
   return Math.round((b - a) / MS_PER_DAY);
 }
 
+/**
+ * Canonical countdown status model (ISSUE 5). Computed server-side from
+ * the signed `dueInDays` so every client renders the same buckets and
+ * timezone ambiguity is resolved against the server anchor `nowIso`.
+ *
+ * Thresholds (document-once so the UI cannot drift):
+ *   overdue    : dueInDays  <  0
+ *   due_now    : 0 ≤ dueInDays ≤ 1     (today or tomorrow)
+ *   due_soon   : 2 ≤ dueInDays ≤ 14    (within two weeks)
+ *   upcoming   : dueInDays > 14
+ */
+export type CountdownStatus =
+  | 'overdue'
+  | 'due_now'
+  | 'due_soon'
+  | 'upcoming';
+
+function computeCountdownStatus(dueInDays: number): CountdownStatus {
+  if (dueInDays < 0) return 'overdue';
+  if (dueInDays <= 1) return 'due_now';
+  if (dueInDays <= 14) return 'due_soon';
+  return 'upcoming';
+}
+
 // ============================================================================
 // Handler
 // ============================================================================
@@ -206,6 +230,8 @@ export default withAuth(async (req, res: VercelResponse) => {
 
     const items = (data ?? []).map((row: any) => {
       const dueIso: string = String(row.due_at);
+      const dueInDays = daysBetween(nowDateIso, dueIso);
+      const countdownStatus = computeCountdownStatus(dueInDays);
       return {
         id: row.id,
         tenantId: row.tenant_id,
@@ -219,7 +245,8 @@ export default withAuth(async (req, res: VercelResponse) => {
         priority: row.priority,
         domain: row.domain,
         dueAt: dueIso,
-        dueInDays: daysBetween(nowDateIso, dueIso),
+        dueInDays,
+        countdownStatus,
         recurrenceMonths: row.recurrence_months,
         status: row.status,
         acknowledgedAt: row.acknowledged_at,
@@ -234,10 +261,28 @@ export default withAuth(async (req, res: VercelResponse) => {
       };
     });
 
+    // Aggregate counts so the UI subline can be rendered without a
+    // second pass over `items` and so a future "inbox" view can use the
+    // buckets directly.
+    const summary = {
+      total: count ?? items.length,
+      overdue: items.filter((i) => i.countdownStatus === 'overdue').length,
+      dueNow: items.filter((i) => i.countdownStatus === 'due_now').length,
+      dueSoon: items.filter((i) => i.countdownStatus === 'due_soon').length,
+      upcoming: items.filter((i) => i.countdownStatus === 'upcoming').length,
+    };
+
     s.status(200).json({
       items,
+      summary,
       pagination: { page, pageSize, total: count ?? 0 },
       nowIso,
+      thresholds: {
+        overdue: 'dueInDays < 0',
+        due_now: '0..1 days',
+        due_soon: '2..14 days',
+        upcoming: '> 14 days',
+      },
     });
   })(req as any, res);
 });
