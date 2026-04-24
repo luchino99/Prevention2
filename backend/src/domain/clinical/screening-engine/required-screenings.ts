@@ -29,6 +29,7 @@ import type {
   ScoreResultEntry,
   ScreeningItem,
 } from '../../../../../shared/types/clinical.js';
+import { GUIDELINES } from '../guideline-catalog/index.js';
 import type { CompositeRiskProfile } from '../risk-aggregation/composite-risk.js';
 
 // ============================================================================
@@ -94,7 +95,7 @@ function deriveLipidPanelScreening(
       : `Elevated cardiovascular risk (${cvLevel})`,
     priority: cvLevel === 'very_high' ? 'urgent' : 'routine',
     intervalMonths: cvLevel === 'very_high' ? 3 : 12,
-    guidelineSource: 'ESC 2021 CVD prevention',
+    guidelineSource: GUIDELINES.ESC_2021_PREVENTION.displayString,
   };
 }
 
@@ -116,7 +117,7 @@ function deriveHbA1cScreening(
       : `High diabetes risk (ADA score ${adaScore})`,
     priority: hasDiabetes ? 'moderate' : 'routine',
     intervalMonths: hasDiabetes ? 6 : 12,
-    guidelineSource: 'ADA Standards of Care',
+    guidelineSource: GUIDELINES.ADA_SOC.displayString,
   };
 }
 
@@ -155,7 +156,7 @@ function deriveRenalScreening(
     priority,
     intervalMonths:
       priority === 'urgent' ? 3 : priority === 'moderate' ? 6 : 12,
-    guidelineSource: 'KDIGO 2024 CKD',
+    guidelineSource: GUIDELINES.KDIGO_2024_CKD.displayString,
   };
 }
 
@@ -195,7 +196,7 @@ function deriveLiverFunctionScreening(
     priority,
     intervalMonths:
       priority === 'urgent' ? 3 : priority === 'moderate' ? 6 : 12,
-    guidelineSource: 'EASL 2024 MASLD',
+    guidelineSource: GUIDELINES.EASL_2024_MASLD.displayString,
   };
 }
 
@@ -210,7 +211,7 @@ function deriveBloodPressureScreening(
       : 'Routine cardiovascular health screening',
     priority: hasHypertension ? 'moderate' : 'routine',
     intervalMonths: hasHypertension ? 3 : 12,
-    guidelineSource: 'ESC/ESH 2023 Hypertension',
+    guidelineSource: GUIDELINES.ESC_ESH_2023_HTN.displayString,
   };
 }
 
@@ -221,7 +222,7 @@ function deriveFrailtyScreening(age: number): ScreeningItem | null {
     reason: `Routine geriatric assessment for age ${age}`,
     priority: 'routine',
     intervalMonths: 12,
-    guidelineSource: 'FRAIL scale consensus',
+    guidelineSource: GUIDELINES.FRAIL_SCALE_CONSENSUS.displayString,
   };
 }
 
@@ -234,7 +235,7 @@ function deriveEchocardiogramScreening(
     reason: 'Very-high cardiovascular risk — evaluate for structural heart disease',
     priority: 'urgent',
     intervalMonths: 6,
-    guidelineSource: 'ESC 2021 CVD prevention',
+    guidelineSource: GUIDELINES.ESC_2021_PREVENTION.displayString,
   };
 }
 
@@ -254,7 +255,7 @@ function deriveDiabeticRetinopathyScreening(
     reason: 'Annual ophthalmologic exam recommended for all diabetic patients',
     priority: 'routine',
     intervalMonths: 12,
-    guidelineSource: 'ADA Standards of Care 2024 §12',
+    guidelineSource: GUIDELINES.ADA_SOC_2024_S12.displayString,
   };
 }
 
@@ -273,7 +274,7 @@ function deriveDiabeticFootScreening(
       'Annual inspection + monofilament / vibration / pedal-pulse testing',
     priority: 'routine',
     intervalMonths: 12,
-    guidelineSource: 'ADA Standards of Care 2024 §12',
+    guidelineSource: GUIDELINES.ADA_SOC_2024_S12.displayString,
   };
 }
 
@@ -292,7 +293,7 @@ function deriveDiabeticUrineACRScreening(
     reason: 'Annual ACR to detect incipient diabetic nephropathy',
     priority: 'routine',
     intervalMonths: 12,
-    guidelineSource: 'ADA Standards of Care 2024 §11 + KDIGO 2024',
+    guidelineSource: GUIDELINES.ADA_SOC_2024_S11_KDIGO.displayString,
   };
 }
 
@@ -311,7 +312,7 @@ function deriveABIScreening(
         : 'Elevated cardiovascular risk',
     priority: cvLevel === 'very_high' ? 'urgent' : 'moderate',
     intervalMonths: 12,
-    guidelineSource: 'ESC 2024 PAD',
+    guidelineSource: GUIDELINES.ESC_2024_PAD.displayString,
   };
 }
 

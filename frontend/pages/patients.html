@@ -21,6 +21,8 @@
     </aside>
 
     <main class="app-main">
+      <div id="nav-header-mount"></div>
+
       <div class="topbar">
         <div>
           <h1 style="margin-bottom:2px;">Patients</h1>
@@ -121,8 +123,20 @@
   </script>
   <script type="module">
     import { api, requireAuth } from '../assets/js/api-client.js';
+    import { mountNavHeader } from '../components/nav-header.js';
 
     await requireAuth();
+
+    // Root-level list page — single breadcrumb, no patient chip.
+    mountNavHeader({
+      container: document.getElementById('nav-header-mount'),
+      crumbs: [
+        { label: 'Dashboard', href: './dashboard.html' },
+        { label: 'Patients' },
+      ],
+      backHref: './dashboard.html',
+      backLabel: 'Back to dashboard',
+    });
 
     const PAGE_SIZE = 20;
     const state = { page: 1, search: '', role: null };

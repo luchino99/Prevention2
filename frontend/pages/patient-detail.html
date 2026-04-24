@@ -21,6 +21,8 @@
     </aside>
 
     <main class="app-main">
+      <div id="nav-header-mount"></div>
+
       <div class="topbar">
         <div>
           <h1 id="patient-name" style="margin-bottom:2px;">Loading…</h1>
@@ -119,6 +121,8 @@
   </script>
   <script type="module">
     import { api, requireAuth, supabase } from '../assets/js/api-client.js';
+    import { mountNavHeader, computeAgeFromBirthDate } from '../components/nav-header.js';
+    import { mountProgressCharts } from '../components/progress-charts.js';
 
     await requireAuth();
 
@@ -126,12 +130,92 @@
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
     })[c]);
 
+    // ────────────────────────────────────────────────────────────────────
+    // Guideline rendering (WS6)
+    //
+    // Mirrors the helper in `assessment-view.html`. The server attaches a
+    // structured `guideline: PublicGuidelineRef` alongside the legacy
+    // `guidelineSource` displayString when the item maps to a row in the
+    // shared catalog (see `backend/src/domain/clinical/guideline-catalog/`).
+    // Off-catalog rows keep the raw string unchanged — nothing regresses.
+    // ────────────────────────────────────────────────────────────────────
+    function formatEvidenceLabel(level) {
+      if (!level) return '';
+      if (level === 'A' || level === 'B' || level === 'C') return `Evidence ${level}`;
+      if (level === 'consensus') return 'Consensus';
+      if (level === 'policy') return 'Internal policy';
+      return String(level);
+    }
+    function guidelineCellHtml(item) {
+      const g = item?.guideline;
+      const raw = item?.guidelineSource ?? '';
+      const baseLabel = raw ? escapeHtml(String(raw)) : '';
+      if (g && typeof g === 'object') {
+        const ev = formatEvidenceLabel(g.evidenceLevel);
+        const titleAttr = g.title ? ` title="${escapeHtml(g.title)}"` : '';
+        const evChip = ev
+          ? `<span class="badge muted" style="margin-left:6px;"${titleAttr}>${escapeHtml(ev)}</span>`
+          : '';
+        const link = g.url
+          ? ` <a href="${escapeHtml(g.url)}" target="_blank" rel="noopener" style="font-size:0.85em;">link ↗</a>`
+          : '';
+        return `${baseLabel}${evChip}${link}`;
+      }
+      return baseLabel;
+    }
+    function guidelineSourceLineHtml(item) {
+      const inner = guidelineCellHtml(item);
+      if (!inner) return '';
+      return `<div class="muted mt-4" style="font-size:0.8em;">Source: ${inner}</div>`;
+    }
+
     const params = new URLSearchParams(window.location.search);
     const patientId = params.get('id');
     if (!patientId || !/^[0-9a-fA-F-]{36}$/.test(patientId)) {
       document.body.innerHTML = '<main class="app-main"><div class="inline-alert danger">Invalid patient id.</div></main>';
       throw new Error('invalid id');
     }
+
+    /**
+     * Shared state consumed by the nav-header renderer. Both
+     * `renderPatient` and `renderAssessments` refresh this object and
+     * call `renderNavHeader()` so that the breadcrumb appears as soon
+     * as possible, and the patient chip + risk dot fill in once the
+     * corresponding data lands.
+     */
+    const navState = {
+      patient: null,
+      latestRiskLevel: null,
+    };
+    function renderNavHeader() {
+      const mount = document.getElementById('nav-header-mount');
+      if (!mount) return;
+      const p = navState.patient;
+      const chipRef = p?.external_code || (patientId ? patientId.slice(0, 8) : '—');
+      mountNavHeader({
+        container: mount,
+        crumbs: [
+          { label: 'Dashboard', href: './dashboard.html' },
+          { label: 'Patients',  href: './patients.html' },
+          { label: chipRef },
+        ],
+        backHref: './patients.html',
+        backLabel: 'Back to patients',
+        patient: {
+          id: patientId,
+          displayName:
+            p?.display_name ||
+            [p?.first_name, p?.last_name].filter(Boolean).join(' ') ||
+            '—',
+          externalCode: p?.external_code || null,
+          riskLevel: navState.latestRiskLevel,
+          sex: p?.sex || null,
+          age: computeAgeFromBirthDate(p?.birth_date ?? p?.birth_year),
+        },
+      });
+    }
+    // Render a skeleton breadcrumb immediately so the header doesn't pop in.
+    renderNavHeader();
 
     const errorBanner = document.getElementById('error-banner');
     function showError(msg) {
@@ -187,6 +271,8 @@
     async function renderPatient() {
       try {
         const { patient } = await api.getPatient(patientId);
+        navState.patient = patient;
+        renderNavHeader();
         document.getElementById('patient-name').textContent =
           patient.display_name || [patient.first_name, patient.last_name].filter(Boolean).join(' ') || '—';
         document.getElementById('patient-subline').textContent =
@@ -230,6 +316,12 @@
       const wrap = document.getElementById('assessments-wrap');
       try {
         const { assessments } = await getAssessmentsList();
+        // Surface the latest composite risk level on the nav chip. The
+        // assessment endpoint returns rows sorted newest-first, so [0] is
+        // authoritative for "current" risk stratification.
+        navState.latestRiskLevel =
+          assessments?.[0]?.riskProfile?.compositeRiskLevel ?? null;
+        renderNavHeader();
         if (!assessments?.length) {
           wrap.innerHTML = `<p class="muted">No assessments recorded yet.</p>`;
           return;
@@ -261,159 +353,29 @@
     }
 
     /**
-     * Longitudinal progress — per-domain sparklines (ISSUE 4).
+     * Longitudinal progress — per-domain enhanced sparklines (WS2).
      *
-     * Consumes GET /api/v1/patients/[id]/trends and renders a small
-     * inline SVG sparkline for each clinical series. The SVG is
-     * intentionally dependency-free (no chart library) so this renders
-     * on every browser the clinician might have inside a hospital
-     * network. Each card shows: latest value + unit, delta versus the
-     * previous assessment, and the sparkline baseline.
-     *
-     * No data is fabricated client-side — points come straight from
-     * the persisted score_results / measurement / activity /
-     * nutrition / risk rows. An empty series is rendered as a neutral
-     * placeholder so a clinician can tell "no data yet" from "data
-     * stopped flowing".
+     * Rendering is delegated to `progress-charts.js`, which owns the
+     * SVG layout, threshold-band shading, axis labels, domain colour,
+     * and reference legend. This wrapper is kept thin because:
+     *   - The chart component has no I/O — it is unit-testable offline.
+     *   - Any future swap (e.g. Canvas renderer for very long series)
+     *     is a one-import change here.
+     *   - The page remains responsible only for fetching + error UX +
+     *     subline bookkeeping.
      */
-    function fmtNumber(v, digits = 1) {
-      if (typeof v !== 'number' || !Number.isFinite(v)) return '—';
-      return v.toFixed(digits);
-    }
-
-    function sparklineSvg(points, opts = {}) {
-      const width = opts.width ?? 160;
-      const height = opts.height ?? 40;
-      const pad = 4;
-      if (!Array.isArray(points) || points.length === 0) {
-        return `
-          <svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img" aria-label="no data">
-            <text x="${width / 2}" y="${height / 2 + 4}" text-anchor="middle"
-              font-size="11" fill="#9ca3af">no data</text>
-          </svg>`;
-      }
-      const values = points.map((p) => p.value);
-      const min = Math.min(...values);
-      const max = Math.max(...values);
-      const span = max - min || 1;
-      const stepX = points.length === 1
-        ? 0
-        : (width - pad * 2) / (points.length - 1);
-      const scaleY = (v) =>
-        height - pad - ((v - min) / span) * (height - pad * 2);
-      const toCoord = (p, i) => ({
-        x: pad + i * stepX,
-        y: scaleY(p.value),
-      });
-      const path = points
-        .map((p, i) => {
-          const c = toCoord(p, i);
-          return `${i === 0 ? 'M' : 'L'}${c.x.toFixed(2)},${c.y.toFixed(2)}`;
-        })
-        .join(' ');
-      const last = toCoord(points[points.length - 1], points.length - 1);
-      const stroke = opts.stroke ?? '#2563eb';
-      return `
-        <svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img"
-             aria-label="trend sparkline">
-          <path d="${path}" fill="none" stroke="${stroke}"
-                stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" />
-          <circle cx="${last.x.toFixed(2)}" cy="${last.y.toFixed(2)}" r="2.4"
-                  fill="${stroke}" />
-        </svg>`;
-    }
-
-    function renderSparklineCard(title, unit, points, fmtDigits = 1) {
-      const n = Array.isArray(points) ? points.length : 0;
-      const latest = n > 0 ? points[n - 1].value : null;
-      const prev = n > 1 ? points[n - 2].value : null;
-      const delta = (latest !== null && prev !== null) ? latest - prev : null;
-      const deltaLabel = delta === null
-        ? ''
-        : delta === 0
-          ? '·'
-          : (delta > 0 ? `+${fmtNumber(delta, fmtDigits)}` : fmtNumber(delta, fmtDigits));
-      const deltaClass = delta === null || delta === 0
-        ? 'muted'
-        : (delta > 0 ? 'badge warning' : 'badge ok');
-      const dateRange = n > 0
-        ? `${escapeHtml(points[0].date ?? '')}${n > 1 ? ' → ' + escapeHtml(points[n - 1].date ?? '') : ''}`
-        : '';
-      return `
-        <div style="padding:10px 12px;border:1px solid var(--border,#e5e7eb);border-radius:6px;background:#fff;">
-          <div class="flex between" style="align-items:flex-start;gap:8px;">
-            <div>
-              <div class="kpi-label">${escapeHtml(title)}</div>
-              <div style="font-weight:600;font-size:1.05em;">
-                ${latest === null ? '<span class="muted">—</span>' : escapeHtml(fmtNumber(latest, fmtDigits))}
-                <span class="muted" style="font-size:0.85em;">${escapeHtml(unit ?? '')}</span>
-              </div>
-              ${n > 0 ? `<div class="muted" style="font-size:0.75em;margin-top:2px;">${n} point${n === 1 ? '' : 's'} · ${dateRange}</div>` : ''}
-            </div>
-            <div style="text-align:right;">
-              ${sparklineSvg(points)}
-              ${delta !== null && delta !== 0
-                ? `<div style="margin-top:2px;"><span class="${deltaClass}">${escapeHtml(deltaLabel)}</span></div>`
-                : ''}
-            </div>
-          </div>
-        </div>`;
-    }
-
-    function renderProgressGroup(heading, entries) {
-      const visible = entries.filter((e) => Array.isArray(e.points));
-      if (visible.length === 0) return '';
-      return `
-        <div class="mt-16">
-          <div class="kpi-label" style="margin-bottom:6px;">${escapeHtml(heading)}</div>
-          <div class="grid three" style="gap:10px;">
-            ${visible.map((e) => renderSparklineCard(
-              e.title, e.unit ?? '', e.points, e.digits ?? 1,
-            )).join('')}
-          </div>
-        </div>`;
-    }
-
     async function renderProgress() {
       const wrap = document.getElementById('progress-wrap');
       const subline = document.getElementById('progress-subline');
       try {
         const trends = await api.getPatientTrends(patientId);
-        const tlLen = Array.isArray(trends?.timeline) ? trends.timeline.length : 0;
-        if (tlLen === 0) {
-          wrap.innerHTML = `<p class="muted">No completed assessments yet — progress charts will populate after the first assessment is recorded.</p>`;
-          subline.textContent = '—';
-          return;
-        }
-        subline.textContent = `${tlLen} assessment${tlLen === 1 ? '' : 's'} plotted`;
-        const s = trends.series ?? {};
-        const html = [
-          renderProgressGroup('Cardiovascular', [
-            { title: 'SCORE2',          unit: '% 10-yr', points: s.cardiovascular?.score2,          digits: 1 },
-            { title: 'SCORE2-Diabetes', unit: '% 10-yr', points: s.cardiovascular?.score2Diabetes, digits: 1 },
-          ]),
-          renderProgressGroup('Metabolic', [
-            { title: 'HbA1c',              unit: '%',        points: s.metabolic?.hba1c,             digits: 1 },
-            { title: 'Fasting glucose',    unit: 'mg/dL',    points: s.metabolic?.glucose,           digits: 0 },
-            { title: 'Metabolic syndrome', unit: 'criteria', points: s.metabolic?.metabolicSyndrome, digits: 0 },
-          ]),
-          renderProgressGroup('Renal', [
-            { title: 'eGFR', unit: 'mL/min/1.73m²', points: s.renal?.egfr, digits: 1 },
-            { title: 'ACR',  unit: 'mg/g',          points: s.renal?.acr,  digits: 1 },
-          ]),
-          renderProgressGroup('Hepatic', [
-            { title: 'FIB-4', unit: '', points: s.hepatic?.fib4, digits: 2 },
-            { title: 'FLI',   unit: '', points: s.hepatic?.fli,  digits: 0 },
-          ]),
-          renderProgressGroup('Lifestyle', [
-            { title: 'PREDIMED',  unit: '/14',         points: s.lifestyle?.predimed,          digits: 0 },
-            { title: 'MET-min/week', unit: 'MET-min/wk', points: s.lifestyle?.metMinutesPerWeek, digits: 0 },
-          ]),
-          renderProgressGroup('Composite', [
-            { title: 'Composite score', unit: '', points: s.composite?.composite, digits: 2 },
-          ]),
-        ].filter(Boolean).join('');
-        wrap.innerHTML = html || `<p class="muted">No numeric series available for the current assessments.</p>`;
+        const { assessmentCount } = mountProgressCharts({
+          container: wrap,
+          trends,
+        });
+        subline.textContent = assessmentCount > 0
+          ? `${assessmentCount} assessment${assessmentCount === 1 ? '' : 's'} plotted`
+          : '—';
       } catch (e) {
         wrap.innerHTML = `<div class="inline-alert danger">Failed to load progress charts: ${escapeHtml(e.message)}</div>`;
         subline.textContent = '—';
@@ -528,9 +490,7 @@
             const rationale = it.rationale
               ? `<div class="muted mt-4" style="font-size:0.9em;">${escapeHtml(it.rationale)}</div>`
               : '';
-            const guideline = it.guidelineSource
-              ? `<div class="muted mt-4" style="font-size:0.8em;">Source: ${escapeHtml(it.guidelineSource)}</div>`
-              : '';
+            const guideline = guidelineSourceLineHtml(it);
             return `
               <li class="mt-8" style="padding:10px 12px;border:1px solid var(--border,#e5e7eb);border-radius:6px;">
                 <div class="flex between" style="align-items:flex-start;">

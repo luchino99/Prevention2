@@ -21,6 +21,8 @@
     </aside>
 
     <main class="app-main">
+      <div id="nav-header-mount"></div>
+
       <div class="topbar">
         <div>
           <h1 style="margin-bottom:2px;">Clinical alerts</h1>
@@ -75,12 +77,25 @@
   </script>
   <script type="module">
     import { api, requireAuth } from '../assets/js/api-client.js';
+    import { mountNavHeader } from '../components/nav-header.js';
 
     await requireAuth();
 
     const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
     })[c]);
+
+    // Render the breadcrumb immediately — this page is a global inbox,
+    // so no patient chip is attached. Back goes to the dashboard.
+    mountNavHeader({
+      container: document.getElementById('nav-header-mount'),
+      crumbs: [
+        { label: 'Dashboard', href: './dashboard.html' },
+        { label: 'Alerts' },
+      ],
+      backHref: './dashboard.html',
+      backLabel: 'Back to dashboard',
+    });
 
     const PAGE_SIZE = 30;
     const state = { page: 1, status: 'open', severity: '' };

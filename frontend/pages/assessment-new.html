@@ -6,38 +6,11 @@
   <meta name="robots" content="noindex,nofollow" />
   <title>New assessment — Uelfy Clinical</title>
   <link rel="stylesheet" href="../assets/css/app.css" />
-  <style>
-    /* Readiness preview: compact panel showing which key scores the
-       current form state is ready to compute. Pure UX affordance — it
-       does not substitute backend validation. */
-    .readiness-panel {
-      padding: 10px 14px;
-      border-radius: 6px;
-      background: #f9fafb;
-      border: 1px solid #e5e7eb;
-      font-size: 13px;
-    }
-    .readiness-panel .r-item { padding: 2px 0; }
-    .readiness-panel .r-ok { color: #0f766e; }
-    .readiness-panel .r-missing { color: #b45309; }
-    .readiness-panel code { font-size: 12px; }
-    .section-note {
-      margin: 0 0 8px 0;
-      font-size: 12px;
-      color: #6b7280;
-    }
-    /* PREDIMED MEDAS items are revealed only when the clinician explicitly
-       opts in (via the `predimedEnabled` checkbox). This avoids submitting
-       a partial questionnaire that would bias the adherence band. */
-    .predimed-block {
-      margin-top: 6px;
-      padding: 10px 14px;
-      border: 1px dashed #d1d5db;
-      border-radius: 6px;
-      background: #fafafa;
-    }
-    .predimed-block .checkbox-row { margin: 4px 0; }
-  </style>
+  <!--
+    `.readiness-panel`, `.predimed-block`, `.section-note` are defined in
+    the shared stylesheet — see `frontend/assets/css/app.css` §15. They
+    stay aligned with the rest of the B2B design token palette.
+  -->
 </head>
 <body>
   <div class="app-shell">
@@ -53,12 +26,13 @@
     </aside>
 
     <main class="app-main">
+      <div id="nav-header-mount"></div>
+
       <div class="topbar">
         <div>
           <h1 style="margin-bottom:2px;">New assessment</h1>
           <div class="muted" id="patient-subline">Loading…</div>
         </div>
-        <a class="btn secondary" id="back-link" href="#">← Back to patient</a>
       </div>
 
       <div id="error-banner" class="inline-alert danger hidden"></div>
@@ -273,6 +247,10 @@
   </script>
   <script type="module">
     import { api, requireAuth } from '../assets/js/api-client.js';
+    import {
+      mountNavHeader,
+      computeAgeFromBirthDate,
+    } from '../components/nav-header.js';
 
     await requireAuth();
 
@@ -288,8 +266,44 @@
     }
 
     const backUrl = `./patient-detail.html?id=${encodeURIComponent(patientId)}`;
-    document.getElementById('back-link').href = backUrl;
     document.getElementById('cancel-link').href = backUrl;
+
+    /**
+     * Nav-header state. Breadcrumb is rendered immediately with what we
+     * already know (Dashboard › Patients › … › New assessment); the patient
+     * chip fills in once `api.getPatient` lands. No risk level is shown on
+     * this page because the chip here represents context, not a new result.
+     */
+    const navState = { patient: null };
+    function renderNavHeader() {
+      const mount = document.getElementById('nav-header-mount');
+      if (!mount) return;
+      const p = navState.patient;
+      const chipRef = p?.external_code || patientId.slice(0, 8);
+      mountNavHeader({
+        container: mount,
+        crumbs: [
+          { label: 'Dashboard', href: './dashboard.html' },
+          { label: 'Patients',  href: './patients.html' },
+          { label: chipRef,     href: backUrl },
+          { label: 'New assessment' },
+        ],
+        backHref: backUrl,
+        backLabel: 'Back to patient',
+        patient: {
+          id: patientId,
+          displayName:
+            p?.display_name ||
+            [p?.first_name, p?.last_name].filter(Boolean).join(' ') ||
+            '—',
+          externalCode: p?.external_code || null,
+          riskLevel: null,
+          sex: p?.sex || null,
+          age: computeAgeFromBirthDate(p?.birth_date ?? p?.birth_year),
+        },
+      });
+    }
+    renderNavHeader();
 
     const errorBanner = document.getElementById('error-banner');
     function showError(msg) {
@@ -307,6 +321,8 @@
 
     try {
       const { patient } = await api.getPatient(patientId);
+      navState.patient = patient;
+      renderNavHeader();
       const label = patient.display_name || [patient.first_name, patient.last_name].filter(Boolean).join(' ') || '—';
       document.getElementById('patient-subline').textContent = `${label} · ${patient.external_code ?? '—'}`;
       // Prefill age & sex from patient profile when available.

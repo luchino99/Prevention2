@@ -78,18 +78,29 @@ declare module 'pdf-lib' {
     addPage(...args: any[]): any;
     embedFont(...args: any[]): any;
     save(...args: any[]): any;
+    getPage(index: number): any;
+    getPageCount(): number;
+    registerFontkit(fontkit: any): void;
     setTitle(v: string): void;
     setCreator(v: string): void;
     setProducer(v: string): void;
     setAuthor(v: string): void;
     setSubject(v: string): void;
     setKeywords(v: string[]): void;
+    setCreationDate(d: Date): void;
+    setModificationDate(d: Date): void;
   }
   export const StandardFonts: any;
   export function rgb(r: number, g: number, b: number): any;
   export type PDFFont = any;
   export type PDFPage = any;
   export type PDFImage = any;
+  export type RGB = any;
+}
+
+declare module '@pdf-lib/fontkit' {
+  const fontkit: any;
+  export default fontkit;
 }
 
 // Node built-in modules used by the backend (shimmed; real types come from @types/node)

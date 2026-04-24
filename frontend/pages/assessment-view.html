@@ -6,40 +6,11 @@
   <meta name="robots" content="noindex,nofollow" />
   <title>Assessment — Uelfy Clinical</title>
   <link rel="stylesheet" href="../assets/css/app.css" />
-  <style>
-    /* Risk-level visual system — keep aligned with CompositeRisk semantics.
-       `indeterminate` is NOT a synonym for low; render it distinctly. */
-    .badge.indeterminate {
-      background: repeating-linear-gradient(45deg, #f2f3f5, #f2f3f5 4px, #e5e7eb 4px, #e5e7eb 8px);
-      color: #374151;
-      border: 1px dashed #9ca3af;
-    }
-    .completeness-list { list-style: none; padding: 0; margin: 0; }
-    .completeness-list li {
-      padding: 10px 12px;
-      border-left: 3px solid #f59e0b;
-      background: #fffbeb;
-      margin-bottom: 8px;
-      border-radius: 4px;
-    }
-    .completeness-list li.info {
-      border-left-color: #6b7280;
-      background: #f9fafb;
-    }
-    .completeness-list .cw-title { font-weight: 600; }
-    .completeness-list .cw-action {
-      display: block;
-      margin-top: 6px;
-      font-size: 13px;
-      color: #374151;
-    }
-    .completeness-list .cw-fields {
-      display: block;
-      margin-top: 4px;
-      font-size: 12px;
-      color: #6b7280;
-    }
-  </style>
+  <!--
+    Risk-level visual system (`.badge.indeterminate`, `.completeness-list`)
+    is defined in the shared stylesheet so it stays aligned with the PDF
+    token registry. See `frontend/assets/css/app.css` §8 + §15.
+  -->
 </head>
 <body>
   <div class="app-shell">
@@ -55,13 +26,14 @@
     </aside>
 
     <main class="app-main">
+      <div id="nav-header-mount"></div>
+
       <div class="topbar">
         <div>
           <h1 id="page-title" style="margin-bottom:2px;">Assessment</h1>
           <div class="muted" id="page-subline">Loading…</div>
         </div>
         <div class="flex gap-8">
-          <a class="btn secondary" id="back-link" href="#">← Patient</a>
           <button class="btn" id="report-btn">Generate PDF report</button>
         </div>
       </div>
@@ -133,6 +105,11 @@
   </script>
   <script type="module">
     import { api, requireAuth } from '../assets/js/api-client.js';
+    import {
+      mountNavHeader,
+      resolveAssessmentNeighbours,
+      computeAgeFromBirthDate,
+    } from '../components/nav-header.js';
 
     await requireAuth();
 
@@ -146,6 +123,70 @@
       document.body.innerHTML = '<main class="app-main"><div class="inline-alert danger">Invalid assessment id.</div></main>';
       throw new Error('invalid id');
     }
+
+    /**
+     * Shared state for the nav-header renderer. Populated progressively
+     * as `load()` completes (assessment snapshot first, patient + sibling
+     * list second) so the breadcrumb appears immediately and the patient
+     * chip + prev/next chips fill in without a flash.
+     */
+    const navState = {
+      patient: null,              // resolved patient row
+      assessment: null,           // { id, createdAt }
+      prevAssessmentId: null,
+      nextAssessmentId: null,
+      compositeRiskLevel: null,   // this assessment's composite risk
+    };
+    function renderNavHeader() {
+      const mount = document.getElementById('nav-header-mount');
+      if (!mount) return;
+      const p = navState.patient;
+      const pid = p?.id || null;
+      const chipRef = p?.external_code || (pid ? pid.slice(0, 8) : '—');
+      const crumbs = [
+        { label: 'Dashboard', href: './dashboard.html' },
+        { label: 'Patients',  href: './patients.html' },
+      ];
+      if (pid) {
+        crumbs.push({
+          label: chipRef,
+          href: `./patient-detail.html?id=${encodeURIComponent(pid)}`,
+        });
+      }
+      const dateLabel = navState.assessment?.createdAt
+        ? new Date(navState.assessment.createdAt).toLocaleDateString(undefined, {
+            year: 'numeric', month: 'short', day: '2-digit',
+          })
+        : 'Assessment';
+      crumbs.push({ label: dateLabel });
+
+      const backHref = pid
+        ? `./patient-detail.html?id=${encodeURIComponent(pid)}`
+        : './patients.html';
+
+      mountNavHeader({
+        container: mount,
+        crumbs,
+        backHref,
+        backLabel: 'Back to patient',
+        assessment: navState.assessment,
+        prevAssessmentId: navState.prevAssessmentId,
+        nextAssessmentId: navState.nextAssessmentId,
+        patient: pid ? {
+          id: pid,
+          displayName:
+            p?.display_name ||
+            [p?.first_name, p?.last_name].filter(Boolean).join(' ') ||
+            '—',
+          externalCode: p?.external_code || null,
+          riskLevel: navState.compositeRiskLevel,
+          sex: p?.sex || null,
+          age: computeAgeFromBirthDate(p?.birth_date ?? p?.birth_year),
+        } : null,
+      });
+    }
+    // Paint an empty skeleton nav immediately so layout doesn't shift.
+    renderNavHeader();
 
     const errorBanner = document.getElementById('error-banner');
     const reportBanner = document.getElementById('report-banner');
@@ -169,6 +210,52 @@
     function riskBadge(level) {
       if (!level) return '<span class="muted">—</span>';
       return `<span class="badge ${escapeHtml(level)}">${escapeHtml(level)}</span>`;
+    }
+
+    // ────────────────────────────────────────────────────────────────────
+    // Guideline rendering (WS6)
+    //
+    // The server now projects each followup item / screening / lifestyle
+    // recommendation through the shared catalog (see
+    // `backend/src/domain/clinical/guideline-catalog/`) and attaches an
+    // optional structured `guideline: PublicGuidelineRef` next to the
+    // legacy `guidelineSource` string. The UI shows the raw string
+    // verbatim (so nothing regresses for off-catalog legacy rows) and —
+    // when the structured payload is present — augments it with an
+    // evidence-level chip and an external link.
+    //
+    // This helper never throws and never produces an unescaped URL.
+    // ────────────────────────────────────────────────────────────────────
+    function formatEvidenceLabel(level) {
+      if (!level) return '';
+      if (level === 'A' || level === 'B' || level === 'C') return `Evidence ${level}`;
+      if (level === 'consensus') return 'Consensus';
+      if (level === 'policy') return 'Internal policy';
+      return String(level);
+    }
+
+    function guidelineCellHtml(item) {
+      const g = item?.guideline;
+      const raw = item?.guidelineSource ?? '';
+      const baseLabel = raw ? escapeHtml(String(raw)) : '';
+      if (g && typeof g === 'object') {
+        const ev = formatEvidenceLabel(g.evidenceLevel);
+        const titleAttr = g.title ? ` title="${escapeHtml(g.title)}"` : '';
+        const evChip = ev
+          ? `<span class="badge muted" style="margin-left:6px;"${titleAttr}>${escapeHtml(ev)}</span>`
+          : '';
+        const link = g.url
+          ? ` <a href="${escapeHtml(g.url)}" target="_blank" rel="noopener" style="font-size:0.85em;">link ↗</a>`
+          : '';
+        return `${baseLabel}${evChip}${link}`;
+      }
+      return baseLabel;
+    }
+
+    function guidelineSourceLineHtml(item) {
+      const inner = guidelineCellHtml(item);
+      if (!inner) return '';
+      return `<div class="muted mt-4" style="font-size:0.8em;">Source: ${inner}</div>`;
     }
 
     function renderComposite(c) {
@@ -222,7 +309,7 @@
                   <td>${riskBadge(it.priority)}</td>
                   <td>${escapeHtml(String(it.dueInMonths))}</td>
                   <td class="muted">${escapeHtml(it.rationale ?? '')}</td>
-                  <td class="muted">${escapeHtml(it.guidelineSource ?? '')}</td>
+                  <td class="muted">${guidelineCellHtml(it)}</td>
                 </tr>`).join('')}
             </tbody>
           </table>
@@ -257,7 +344,7 @@
                 <td>${riskBadge(s.priority)}</td>
                 <td>${escapeHtml(String(s.intervalMonths))} months</td>
                 <td class="muted">${escapeHtml(s.reason ?? '—')}</td>
-                <td class="muted">${escapeHtml(s.guidelineSource ?? '')}</td>
+                <td class="muted">${guidelineCellHtml(s)}</td>
               </tr>`).join('')}
           </tbody>
         </table>`;
@@ -346,9 +433,7 @@
                   <span class="badge muted" style="margin-left:6px;">${escapeHtml(r.domain ?? '—')}</span>
                   <span class="badge muted" style="margin-left:6px;" title="Non-prescriptive counselling nudge">supportive</span>
                   <div class="muted mt-4" style="font-size:0.92em;">${escapeHtml(r.rationale ?? '')}</div>
-                  ${r.guidelineSource
-                    ? `<div class="muted mt-4" style="font-size:0.8em;">Source: ${escapeHtml(r.guidelineSource)}</div>`
-                    : ''}
+                  ${guidelineSourceLineHtml(r)}
                 </div>
                 <div style="white-space:nowrap;">${recPriorityBadge(r.priority)}</div>
               </div>
@@ -400,10 +485,16 @@
       try {
         const { snapshot } = await api.getAssessment(assessmentId);
         cachedPatientId = snapshot?.assessment?.patientId ?? null;
-        const back = cachedPatientId
-          ? `./patient-detail.html?id=${encodeURIComponent(cachedPatientId)}`
-          : './patients.html';
-        document.getElementById('back-link').href = back;
+
+        // Feed the nav-header with everything we can derive from the
+        // snapshot synchronously — createdAt for the breadcrumb date and
+        // the composite risk level for the chip's dot.
+        navState.assessment = {
+          id: snapshot.assessment.id,
+          createdAt: snapshot.assessment.createdAt,
+        };
+        navState.compositeRiskLevel = snapshot?.compositeRisk?.level ?? null;
+        renderNavHeader();
 
         document.getElementById('page-title').textContent =
           `Assessment · ${new Date(snapshot.assessment.createdAt).toLocaleDateString()}`;
@@ -418,6 +509,31 @@
         renderLifestyle(snapshot.nutritionSummary, snapshot.activitySummary);
         renderLifestyleRecommendations(snapshot.lifestyleRecommendations || []);
         renderAlerts(snapshot.alerts);
+
+        // Non-fatal enrichment: fetch patient + sibling assessments in
+        // parallel so the chip and the prev/next chips appear as soon
+        // as available. Any failure here must not break the snapshot
+        // render above.
+        if (cachedPatientId) {
+          Promise.allSettled([
+            api.getPatient(cachedPatientId),
+            api.listAssessments(cachedPatientId, { page: 1, pageSize: 100 }),
+          ]).then(([patientResult, listResult]) => {
+            if (patientResult.status === 'fulfilled') {
+              navState.patient = patientResult.value?.patient ?? null;
+            }
+            if (listResult.status === 'fulfilled') {
+              const list = listResult.value?.assessments ?? [];
+              const neighbours = resolveAssessmentNeighbours(
+                list.map((a) => ({ id: a.id, createdAt: a.assessmentDate ?? a.createdAt })),
+                assessmentId,
+              );
+              navState.prevAssessmentId = neighbours.prev;
+              navState.nextAssessmentId = neighbours.next;
+            }
+            renderNavHeader();
+          }).catch(() => { /* nav-header enrichment is best-effort */ });
+        }
 
         // If a report already exists, fetch its signed URL non-fatally.
         try {

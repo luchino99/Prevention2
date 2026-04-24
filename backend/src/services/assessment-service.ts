@@ -39,6 +39,7 @@ import { determineFollowupPlan } from '../domain/clinical/followup-engine/follow
 import { applyLabDerivations } from '../domain/clinical/derivations/index.js';
 import { checkAssessmentCompleteness } from '../domain/clinical/completeness/completeness-checker.js';
 import { deriveLifestyleRecommendations } from '../domain/clinical/lifestyle-recommendation-engine/lifestyle-recommendations.js';
+import { resolvePublicGuidelineRef } from '../domain/clinical/guideline-catalog/index.js';
 
 import type {
   AssessmentInput,
@@ -1009,6 +1010,26 @@ type SnapshotAssembly = {
 };
 
 function buildSnapshot(a: SnapshotAssembly): AssessmentSnapshot {
+  // WS6 — enrich every guideline-bearing item with its structured
+  // `PublicGuidelineRef` projection. This is a pure read-side
+  // transformation: the legacy `guidelineSource` string stays untouched
+  // (so existing consumers and persisted rows keep their exact wording)
+  // and `guideline` is added as optional structured metadata. Off-catalog
+  // strings resolve to `null`, which the UI/PDF interpret as "fall back
+  // to the raw text". No persistence side-effects here.
+  const enrichedScreenings = a.screenings.map((s) => ({
+    ...s,
+    guideline: resolvePublicGuidelineRef(s.guidelineSource),
+  }));
+  const enrichedFollowupItems = a.followupPlan.items.map((it) => ({
+    ...it,
+    guideline: resolvePublicGuidelineRef(it.guidelineSource),
+  }));
+  const enrichedLifestyleRecs = a.lifestyleRecommendations.map((r) => ({
+    ...r,
+    guideline: resolvePublicGuidelineRef(r.guidelineSource),
+  }));
+
   return {
     assessment: {
       id: a.assessmentId,
@@ -1031,11 +1052,14 @@ function buildSnapshot(a: SnapshotAssembly): AssessmentSnapshot {
       frailty: a.compositeRisk.frailty,
     },
     completenessWarnings: a.completenessWarnings,
-    screenings: a.screenings,
-    followupPlan: a.followupPlan,
+    screenings: enrichedScreenings,
+    followupPlan: {
+      ...a.followupPlan,
+      items: enrichedFollowupItems,
+    },
     nutritionSummary: a.nutrition,
     activitySummary: a.activity,
-    lifestyleRecommendations: a.lifestyleRecommendations,
+    lifestyleRecommendations: enrichedLifestyleRecs,
     alerts: a.alerts,
   };
 }

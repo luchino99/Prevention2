@@ -42,6 +42,7 @@ import {
   applyRateLimitHeaders,
 } from '../../../../backend/src/middleware/rate-limit.js';
 import { supabaseAdmin } from '../../../../backend/src/config/supabase.js';
+import { resolvePublicGuidelineRef } from '../../../../backend/src/domain/clinical/guideline-catalog/index.js';
 
 // ============================================================================
 // Schema
@@ -242,6 +243,10 @@ export default withAuth(async (req, res: VercelResponse) => {
         title: row.title,
         rationale: row.rationale,
         guidelineSource: row.guideline_source,
+        // WS6 — structured projection of `guideline_source` through the
+        // server catalog. Null for off-catalog legacy rows; the UI falls
+        // back to the raw string in that case.
+        guideline: resolvePublicGuidelineRef(row.guideline_source),
         priority: row.priority,
         domain: row.domain,
         dueAt: dueIso,

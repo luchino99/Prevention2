@@ -14,6 +14,7 @@ import {
   AssessmentInput,
   ScoreResultEntry,
 } from '../../../../../shared/types/clinical.js';
+import { GUIDELINES } from '../guideline-catalog/index.js';
 
 import { computeScore2 } from './score2.js';
 import { computeScore2Diabetes } from './score2-diabetes.js';
@@ -291,7 +292,7 @@ export function computeAllScores(input: AssessmentInput): ScoreResultEntry[] {
             glucoseMgDl: glucose ?? null,
             hba1cPct: hba1c ?? null,
           },
-          guidelineSource: 'ADA Standards of Care 2024 §2 (Classification & Diagnosis)',
+          guidelineSource: GUIDELINES.ADA_SOC_2024_S2_CLASSIFICATION.displayString,
           suggestedAction:
             'Confirm diagnosis with repeat testing (fasting glucose, HbA1c or OGTT) '
             + 'per ADA SOC §2. Initiate diabetology pathway.',
@@ -373,7 +374,7 @@ export function computeAllScores(input: AssessmentInput): ScoreResultEntry[] {
             severity,
             hba1cPct: hba1c ?? null,
             glucoseMgDl: glucose ?? null,
-            guidelineSource: 'ADA Standards of Care 2024 §6 (Glycemic Targets)',
+            guidelineSource: GUIDELINES.ADA_SOC_2024_S6_GLYCEMIC.displayString,
           },
         });
       }

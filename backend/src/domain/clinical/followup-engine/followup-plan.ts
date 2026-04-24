@@ -35,6 +35,7 @@ import type {
   RiskLevel,
   ScoreResultEntry,
 } from '../../../../../shared/types/clinical.js';
+import { GUIDELINES } from '../guideline-catalog/index.js';
 import type { CompositeRiskProfile } from '../risk-aggregation/composite-risk.js';
 
 // ============================================================================
@@ -164,7 +165,7 @@ function coreReviewItem(level: RiskLevel): FollowUpItem {
     dueInMonths: INTERVAL_BY_LEVEL[level],
     priority: PRIORITY_BY_LEVEL[level],
     recurrenceMonths: INTERVAL_BY_LEVEL[level],
-    guidelineSource: 'Internal cadence policy',
+    guidelineSource: GUIDELINES.INTERNAL_CADENCE.displayString,
   };
 }
 
@@ -194,7 +195,7 @@ function cardiovascularItems(
       dueInMonths: 1,
       priority: 'urgent',
       recurrenceMonths: 3,
-      guidelineSource: 'ESC 2021 CVD prevention',
+      guidelineSource: GUIDELINES.ESC_2021_PREVENTION.displayString,
     });
     items.push({
       code: 'cv_bp_target_130',
@@ -203,7 +204,7 @@ function cardiovascularItems(
       dueInMonths: 1,
       priority: 'urgent',
       recurrenceMonths: 3,
-      guidelineSource: 'ESC 2021 CVD prevention',
+      guidelineSource: GUIDELINES.ESC_2021_PREVENTION.displayString,
     });
   } else if (risk >= 5) {
     items.push({
@@ -215,7 +216,7 @@ function cardiovascularItems(
       dueInMonths: 3,
       priority: 'moderate',
       recurrenceMonths: 6,
-      guidelineSource: 'ESC 2021 CVD prevention',
+      guidelineSource: GUIDELINES.ESC_2021_PREVENTION.displayString,
     });
   }
 
@@ -240,7 +241,7 @@ function renalItems(scoreResults: ScoreResultEntry[]): FollowUpItem[] {
       dueInMonths: 1,
       priority: 'urgent',
       recurrenceMonths: 1,
-      guidelineSource: 'KDIGO 2024 CKD',
+      guidelineSource: GUIDELINES.KDIGO_2024_CKD.displayString,
     });
   } else if (v < 60) {
     items.push({
@@ -250,7 +251,7 @@ function renalItems(scoreResults: ScoreResultEntry[]): FollowUpItem[] {
       dueInMonths: 3,
       priority: 'moderate',
       recurrenceMonths: 3,
-      guidelineSource: 'KDIGO 2024 CKD',
+      guidelineSource: GUIDELINES.KDIGO_2024_CKD.displayString,
     });
   }
 
@@ -276,7 +277,7 @@ function hepaticItems(scoreResults: ScoreResultEntry[]): FollowUpItem[] {
       dueInMonths: 1,
       priority: 'urgent',
       recurrenceMonths: 6,
-      guidelineSource: 'EASL 2024 MASLD',
+      guidelineSource: GUIDELINES.EASL_2024_MASLD.displayString,
     });
   } else if (
     (fib4Val !== null && fib4Val >= 1.45) ||
@@ -292,7 +293,7 @@ function hepaticItems(scoreResults: ScoreResultEntry[]): FollowUpItem[] {
       dueInMonths: 6,
       priority: 'moderate',
       recurrenceMonths: 6,
-      guidelineSource: 'EASL 2024 MASLD',
+      guidelineSource: GUIDELINES.EASL_2024_MASLD.displayString,
     });
   }
 
@@ -332,7 +333,7 @@ function metabolicItems(
           + 'Confirm with repeat testing before initiating care pathway.',
       dueInMonths: 0, // ~7 days — expressed as 0.25 is not supported; UI layer renders "within 1 week"
       priority: 'urgent',
-      guidelineSource: 'ADA Standards of Care 2024 §2',
+      guidelineSource: GUIDELINES.ADA_SOC_2024_S2.displayString,
     });
   }
 
@@ -351,7 +352,7 @@ function metabolicItems(
         dueInMonths: 1,
         priority: 'urgent',
         recurrenceMonths: 3,
-        guidelineSource: 'ADA Standards of Care 2024 §6',
+        guidelineSource: GUIDELINES.ADA_SOC_2024_S6.displayString,
       });
     } else if (severity === 'suboptimal') {
       items.push({
@@ -361,7 +362,7 @@ function metabolicItems(
         dueInMonths: 3,
         priority: 'moderate',
         recurrenceMonths: 3,
-        guidelineSource: 'ADA Standards of Care 2024 §6',
+        guidelineSource: GUIDELINES.ADA_SOC_2024_S6.displayString,
       });
     }
   }
@@ -375,7 +376,7 @@ function metabolicItems(
       dueInMonths: 12,
       priority: 'routine',
       recurrenceMonths: 12,
-      guidelineSource: 'ADA Standards of Care 2024 §12',
+      guidelineSource: GUIDELINES.ADA_SOC_2024_S12.displayString,
     });
     items.push({
       code: 'dm_foot_screening',
@@ -384,7 +385,7 @@ function metabolicItems(
       dueInMonths: 12,
       priority: 'routine',
       recurrenceMonths: 12,
-      guidelineSource: 'ADA Standards of Care 2024 §12',
+      guidelineSource: GUIDELINES.ADA_SOC_2024_S12.displayString,
     });
     items.push({
       code: 'dm_annual_urine_acr',
@@ -393,7 +394,7 @@ function metabolicItems(
       dueInMonths: 12,
       priority: 'routine',
       recurrenceMonths: 12,
-      guidelineSource: 'ADA Standards of Care 2024 §11 + KDIGO 2024',
+      guidelineSource: GUIDELINES.ADA_SOC_2024_S11_KDIGO.displayString,
     });
   }
 
@@ -409,7 +410,7 @@ function metabolicItems(
       dueInMonths: 3,
       priority: 'moderate',
       recurrenceMonths: 12,
-      guidelineSource: 'ADA Standards of Care',
+      guidelineSource: GUIDELINES.ADA_SOC.displayString,
     });
   }
 
@@ -421,7 +422,7 @@ function metabolicItems(
       dueInMonths: 6,
       priority: 'moderate',
       recurrenceMonths: 6,
-      guidelineSource: 'NCEP ATP III',
+      guidelineSource: GUIDELINES.NCEP_ATP_III.displayString,
     });
   }
 
@@ -445,7 +446,7 @@ function frailtyItems(scoreResults: ScoreResultEntry[]): FollowUpItem[] {
       dueInMonths: 3,
       priority: 'urgent',
       recurrenceMonths: 6,
-      guidelineSource: 'FRAIL scale consensus',
+      guidelineSource: GUIDELINES.FRAIL_SCALE_CONSENSUS.displayString,
     });
   } else if (v === 2) {
     items.push({
@@ -455,7 +456,7 @@ function frailtyItems(scoreResults: ScoreResultEntry[]): FollowUpItem[] {
       dueInMonths: 6,
       priority: 'moderate',
       recurrenceMonths: 6,
-      guidelineSource: 'FRAIL scale consensus',
+      guidelineSource: GUIDELINES.FRAIL_SCALE_CONSENSUS.displayString,
     });
   }
 

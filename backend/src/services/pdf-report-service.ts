@@ -1,194 +1,907 @@
 /**
- * PDF Report Service.
+ * Clinical PDF Report Service — orchestrator.
  *
  * Renders a `ReportPayload` (AssessmentSnapshot + tenant/patient/clinician
  * display metadata produced by `assessment-service.ts::buildReportPayload`)
  * into a professional A4 PDF suitable for clinician archival and patient
  * handover.
  *
- * Runtime: pure TypeScript (pdf-lib, no native deps), Vercel-serverless-ready.
+ * Runtime: pure TypeScript (pdf-lib + @pdf-lib/fontkit, no native deps),
+ * Vercel-serverless-ready.
  *
  * Layout (blueprint §8.4):
- *   1. Header            — tenant name, report type
- *   2. Patient block     — pseudonymous reference, demographics, external code
- *   3. Assessment meta   — assessment id, created at, clinician, composite risk
- *   4. Composite risk    — per-domain breakdown with reasoning
- *   5. Validated scores  — every computed score with category + value
- *   6. Lifestyle         — PREDIMED, activity, smoking
- *   7. Alerts (if any)   — severity-coloured
- *   8. Follow-up plan    — next review, actions, domain monitoring
- *   9. Required screenings
- *  10. Footer            — generation timestamp, pagination, disclaimer
+ *   1. Brand header band (every page) — tenant name, document type
+ *   2. Patient identification block — pseudonymous reference, demographics
+ *   3. Assessment metadata block — id, timestamp, clinician, composite risk
+ *   4. Composite risk breakdown — per-domain banded cards with reasoning
+ *   5. Validated clinical scores — structured rows with category pill
+ *   6. Lifestyle summary — PREDIMED, activity, sedentary, smoking
+ *   7. Lifestyle recommendations — bounded, source-cited, priority-coloured
+ *   8. Completeness warnings — missing-data caveats separated from alerts
+ *   9. Active alerts — severity-coloured banded cards
+ *  10. Follow-up plan — priority, next review, actions, domain monitoring
+ *  11. Required screenings — priority-coloured, interval, source
+ *  12. Footer (every page) — tenant, audit id, generation timestamp,
+ *      pagination, non-authoritative-AI disclaimer
  *
- * The PDF is byte-stable for a given canonical input (modulo the footer
- * timestamp) because all substance comes from the deterministic engine.
+ * Encoding
+ *   The renderer embeds NotoSans via @pdf-lib/fontkit so text containing
+ *   Unicode punctuation, accented names and clinical symbols (—, •, ≥, µ,
+ *   °, ±, →) is preserved. If the TTF assets are missing at runtime we
+ *   gracefully fall back to StandardFonts.Helvetica and run the sanitiser.
  *
- * Dependency: `pdf-lib` (package.json: "pdf-lib": "^1.17.1")
+ * Protected clinical logic
+ *   The renderer performs zero numeric computation. Every value comes from
+ *   the deterministic engine via the AssessmentSnapshot. No threshold
+ *   re-interpretation, no AI enrichment, no rounding beyond display
+ *   formatting.
+ *
+ * Dependencies (package.json):
+ *   - "pdf-lib"            "^1.17.1"
+ *   - "@pdf-lib/fontkit"   "^1.1.1"
  */
 
-import { PDFDocument, StandardFonts, rgb, PDFPage, PDFFont } from 'pdf-lib';
+import { PDFDocument } from 'pdf-lib';
 import type { ReportPayload } from './assessment-service.js';
-import type { AssessmentSnapshot } from '../../../shared/types/clinical.js';
+import type {
+  AssessmentSnapshot,
+  PublicGuidelineRef,
+} from '../../../shared/types/clinical.js';
+import { collectReferenceFramework } from '../domain/clinical/guideline-catalog/index.js';
 
-// ---------------------------------------------------------------------------
-// Page geometry
-// ---------------------------------------------------------------------------
+import { loadReportFonts } from './pdf/font-loader.js';
+import {
+  BOX,
+  COLOR,
+  CONTENT_WIDTH,
+  PAGE,
+  SPACING,
+  TYPE,
+  domainAccent,
+  severityPalette,
+} from './pdf/pdf-tokens.js';
+import {
+  RenderCtx,
+  createCtx,
+  drawAllFooters,
+  drawBandedCard,
+  drawKeyValue,
+  drawLine,
+  drawPageHeader,
+  drawPill,
+  drawWrapped,
+  ensureSpace,
+  hrule,
+  measureWrapped,
+  pillWidth,
+  sectionTitle,
+  textWidth,
+  verticalGap,
+} from './pdf/pdf-primitives.js';
 
-const PAGE_WIDTH = 595.28; // A4 width in points
-const PAGE_HEIGHT = 841.89; // A4 height in points
-const MARGIN_X = 50;
-const MARGIN_TOP = 60;
-const MARGIN_BOTTOM = 60;
-const LINE_HEIGHT = 14;
-const SECTION_GAP = 18;
+// ───────────────────────────────────────────────────────────────────────────
+// Public API
+// ───────────────────────────────────────────────────────────────────────────
 
-// ---------------------------------------------------------------------------
-// Palette (WCAG-AA contrast against white)
-// ---------------------------------------------------------------------------
+export async function renderAssessmentReportPdf(
+  payload: ReportPayload,
+): Promise<Uint8Array> {
+  const { snapshot, patient, tenant, clinician } = payload;
 
-const COLOR_PRIMARY = rgb(0.13, 0.31, 0.55); // deep blue
-const COLOR_TEXT = rgb(0.13, 0.13, 0.13);
-const COLOR_MUTED = rgb(0.45, 0.45, 0.45);
-const COLOR_DANGER = rgb(0.78, 0.16, 0.16);
-const COLOR_WARNING = rgb(0.83, 0.55, 0.10);
-const COLOR_OK = rgb(0.16, 0.55, 0.30);
+  const pdf = await PDFDocument.create();
+  pdf.setTitle(`Clinical Assessment Report — ${snapshot.assessment.id}`);
+  pdf.setCreator('Uelfy Clinical Platform');
+  pdf.setProducer('Uelfy / pdf-lib');
+  pdf.setCreationDate(new Date());
+  pdf.setModificationDate(new Date());
 
-// ---------------------------------------------------------------------------
-// Rendering context
-// ---------------------------------------------------------------------------
+  const fonts = await loadReportFonts(pdf);
 
-interface RenderCtx {
-  pdf: PDFDocument;
-  page: PDFPage;
-  font: PDFFont;
-  fontBold: PDFFont;
-  cursorY: number;
+  const headerOpts = {
+    tenantName: tenant.name || 'Clinical Assessment',
+    title: 'Cardio-Nephro-Metabolic Risk Assessment',
+    subtitle: `Report · ${formatIsoDate(snapshot.assessment.createdAt)}`,
+  };
+
+  const ctx = createCtx(pdf, fonts, (c) => drawPageHeader(c, headerOpts));
+
+  // ─── 1. Patient identification ───
+  sectionTitle(ctx, 'Patient identification');
+  drawKeyValue(ctx, 'Reference', resolvePatientReference(patient));
+  const hasName = Boolean(patient.firstName || patient.lastName);
+  if (hasName) {
+    drawKeyValue(
+      ctx,
+      'Name',
+      `${patient.firstName ?? ''} ${patient.lastName ?? ''}`.trim() || '—',
+    );
+  }
+  drawKeyValue(ctx, 'Date of birth', formatIsoDate(patient.birthDate));
+  drawKeyValue(
+    ctx,
+    'Sex',
+    patient.sex ?? snapshot.input.demographics.sex ?? '—',
+  );
+  drawKeyValue(ctx, 'Age', resolvePatientAge(snapshot, patient));
+
+  // ─── 2. Assessment metadata ───
+  sectionTitle(ctx, 'Assessment');
+  drawKeyValue(ctx, 'Assessment ID', snapshot.assessment.id);
+  drawKeyValue(ctx, 'Performed at', formatIsoDateTime(snapshot.assessment.createdAt));
+  drawKeyValue(ctx, 'Status', snapshot.assessment.status ?? 'completed');
+  drawKeyValue(
+    ctx,
+    'Clinician',
+    clinician?.fullName?.trim() || clinician?.email || '—',
+  );
+
+  // Composite risk — headline + pill
+  renderCompositeHeadline(ctx, snapshot);
+
+  // ─── 3. Composite risk breakdown ───
+  renderDomainBreakdown(ctx, snapshot);
+
+  // ─── 4. Validated scores ───
+  renderValidatedScores(ctx, snapshot);
+
+  // ─── 5. Lifestyle summary ───
+  renderLifestyleSummary(ctx, snapshot);
+
+  // ─── 6. Lifestyle recommendations (bounded, supportive) ───
+  if (snapshot.lifestyleRecommendations?.length > 0) {
+    renderLifestyleRecommendations(ctx, snapshot);
+  }
+
+  // ─── 7. Completeness warnings ───
+  if (snapshot.completenessWarnings?.length > 0) {
+    renderCompletenessWarnings(ctx, snapshot);
+  }
+
+  // ─── 8. Active alerts ───
+  if (snapshot.alerts?.length > 0) {
+    renderAlerts(ctx, snapshot);
+  }
+
+  // ─── 9. Follow-up plan ───
+  renderFollowupPlan(ctx, snapshot);
+
+  // ─── 10. Required screenings ───
+  if (snapshot.screenings?.length > 0) {
+    renderScreenings(ctx, snapshot);
+  }
+
+  // ─── 11. Reference framework (WS6 — source transparency) ───
+  // Consolidated list of the guideline citations surfaced across the
+  // three rule-engine outputs above. Silent no-op when no catalog-
+  // resolved citations are present, so legacy assessments render
+  // byte-identically.
+  renderReferenceFramework(ctx, snapshot);
+
+  // ─── Footer on every page ───
+  drawAllFooters(pdf, fonts, {
+    tenantName: tenant.name || 'Uelfy Clinical',
+    reportId: snapshot.assessment.id,
+    generatedAt: new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC',
+  });
+
+  return await pdf.save();
 }
 
-function ensureSpace(ctx: RenderCtx, needed: number): void {
-  if (ctx.cursorY - needed < MARGIN_BOTTOM) {
-    ctx.page = ctx.pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
-    ctx.cursorY = PAGE_HEIGHT - MARGIN_TOP;
+// ───────────────────────────────────────────────────────────────────────────
+// Section renderers — each is pure-view over the snapshot
+// ───────────────────────────────────────────────────────────────────────────
+
+function renderCompositeHeadline(ctx: RenderCtx, snapshot: AssessmentSnapshot): void {
+  verticalGap(ctx, SPACING.xs);
+  ensureSpace(ctx, 40);
+  const labelY = ctx.cursorY - TYPE.cardTitle;
+  ctx.page.drawText('Composite risk', {
+    x: PAGE.marginX,
+    y: labelY,
+    size: TYPE.label,
+    font: ctx.fonts.bold,
+    color: COLOR.muted,
+  });
+
+  const numericText = formatValue(snapshot.compositeRisk.numeric);
+  const level = snapshot.compositeRisk.level;
+  const { ink, band } = severityPalette(level);
+
+  const valueX = PAGE.marginX + 135;
+  const valueSize = TYPE.sectionTitle;
+  ctx.page.drawText(numericText, {
+    x: valueX,
+    y: ctx.cursorY - valueSize,
+    size: valueSize,
+    font: ctx.fonts.bold,
+    color: COLOR.text,
+  });
+  const valueW = ctx.fonts.bold.widthOfTextAtSize(numericText, valueSize);
+
+  drawPill(ctx, level.replace('_', ' ').toUpperCase(), {
+    x: valueX + valueW + SPACING.sm,
+    baselineY: ctx.cursorY - valueSize + 2,
+    fill: band,
+    ink,
+    size: TYPE.label,
+  });
+
+  ctx.cursorY -= valueSize * 1.5;
+}
+
+function renderDomainBreakdown(ctx: RenderCtx, snapshot: AssessmentSnapshot): void {
+  sectionTitle(ctx, 'Composite risk breakdown');
+  const DOMAINS: Array<{ key: 'cardiovascular' | 'metabolic' | 'hepatic' | 'renal' | 'frailty'; label: string }> = [
+    { key: 'cardiovascular', label: 'Cardiovascular' },
+    { key: 'metabolic',      label: 'Metabolic' },
+    { key: 'hepatic',        label: 'Hepatic' },
+    { key: 'renal',          label: 'Renal' },
+    { key: 'frailty',        label: 'Frailty' },
+  ];
+
+  for (const { key, label } of DOMAINS) {
+    const entry = snapshot.compositeRisk[key];
+    if (!entry) continue;
+    const { ink, band } = severityPalette(entry.level);
+    const accent = domainAccent(key);
+
+    const innerWidth = CONTENT_WIDTH - BOX.paddingX * 2;
+    const reasoningH = entry.reasoning
+      ? measureWrapped(ctx.fonts, entry.reasoning, innerWidth, { size: TYPE.body })
+      : 0;
+    const evidenceLine = entry.evidence?.length
+      ? `Evidence: ${entry.evidence.join(', ')}`
+      : null;
+    const evidenceH = evidenceLine
+      ? measureWrapped(ctx.fonts, evidenceLine, innerWidth, { size: TYPE.label })
+      : 0;
+    const estH = TYPE.cardTitle * 2 + SPACING.sm + reasoningH + evidenceH + SPACING.sm;
+
+    drawBandedCard(
+      ctx,
+      { bandColor: accent, estimatedHeight: estH },
+      (iw) => {
+        // Title row
+        const titleY = ctx.cursorY - TYPE.cardTitle;
+        ctx.page.drawText(label, {
+          x: PAGE.marginX + BOX.paddingX,
+          y: titleY,
+          size: TYPE.cardTitle,
+          font: ctx.fonts.bold,
+          color: COLOR.text,
+        });
+        // Level pill on the right
+        const pillText = entry.level.replace('_', ' ').toUpperCase();
+        const pw = pillWidth(ctx.fonts, pillText);
+        drawPill(ctx, pillText, {
+          x: PAGE.marginX + BOX.paddingX + iw - pw,
+          baselineY: titleY,
+          fill: band,
+          ink,
+        });
+        ctx.cursorY -= TYPE.cardTitle * 1.2;
+
+        if (entry.reasoning) {
+          drawWrapped(ctx, entry.reasoning, iw, {
+            size: TYPE.body,
+            color: COLOR.textSoft,
+            x: PAGE.marginX + BOX.paddingX,
+          });
+        }
+        if (evidenceLine) {
+          drawWrapped(ctx, evidenceLine, iw, {
+            size: TYPE.label,
+            color: COLOR.muted,
+            x: PAGE.marginX + BOX.paddingX,
+          });
+        }
+      },
+    );
   }
 }
 
-function drawText(
-  ctx: RenderCtx,
-  text: string,
-  opts: { bold?: boolean; size?: number; color?: ReturnType<typeof rgb>; x?: number } = {},
-): void {
-  const size = opts.size ?? 10;
-  const font = opts.bold ? ctx.fontBold : ctx.font;
-  const color = opts.color ?? COLOR_TEXT;
-  const x = opts.x ?? MARGIN_X;
-  ensureSpace(ctx, size + 2);
-  ctx.page.drawText(sanitize(text), {
-    x,
-    y: ctx.cursorY,
-    size,
-    font,
-    color,
-  });
-  ctx.cursorY -= size + 4;
+function renderValidatedScores(ctx: RenderCtx, snapshot: AssessmentSnapshot): void {
+  sectionTitle(ctx, 'Validated clinical scores');
+  if (!snapshot.scoreResults?.length) {
+    drawLine(ctx, 'No scores computed.', { size: TYPE.body, color: COLOR.muted, font: 'italic' });
+    return;
+  }
+
+  // Two-column table: [ Score label + code ][ Value ][ Category pill ]
+  const xLabel = PAGE.marginX;
+  const xValue = PAGE.marginX + 260;
+  const xCategory = PAGE.marginX + 330;
+  const rowGap = SPACING.xs;
+
+  for (const s of snapshot.scoreResults) {
+    ensureSpace(ctx, TYPE.body * 2 + rowGap);
+    const labelY = ctx.cursorY - TYPE.body;
+
+    // Label
+    ctx.page.drawText(prepare(ctx, s.label), {
+      x: xLabel,
+      y: labelY,
+      size: TYPE.body,
+      font: ctx.fonts.bold,
+      color: COLOR.text,
+    });
+    // Score code in muted font on the same line
+    const labelWidth = textWidth(ctx.fonts, s.label, { size: TYPE.body, font: 'bold' });
+    ctx.page.drawText(`[${s.scoreCode}]`, {
+      x: xLabel + labelWidth + 6,
+      y: labelY,
+      size: TYPE.label,
+      font: ctx.fonts.regular,
+      color: COLOR.muted,
+    });
+
+    // Numeric value
+    ctx.page.drawText(formatValue(s.valueNumeric), {
+      x: xValue,
+      y: labelY,
+      size: TYPE.body,
+      font: ctx.fonts.regular,
+      color: COLOR.text,
+    });
+
+    // Category pill
+    if (s.category) {
+      const { ink, band } = severityPalette(s.category);
+      drawPill(ctx, s.category.toUpperCase(), {
+        x: xCategory,
+        baselineY: labelY,
+        fill: band,
+        ink,
+      });
+    }
+
+    ctx.cursorY -= TYPE.body * 1.25 + rowGap;
+    hrule(ctx, { color: COLOR.lineFaint, marginTop: 0, marginBottom: SPACING.xs });
+  }
 }
 
-function drawHeading(ctx: RenderCtx, text: string): void {
-  ctx.cursorY -= SECTION_GAP / 2;
-  drawText(ctx, text, { bold: true, size: 13, color: COLOR_PRIMARY });
-  drawHr(ctx);
-  ctx.cursorY -= 4;
+function renderLifestyleSummary(ctx: RenderCtx, snapshot: AssessmentSnapshot): void {
+  sectionTitle(ctx, 'Lifestyle');
+
+  const predimed = snapshot.nutritionSummary.predimedScore;
+  drawKeyValue(
+    ctx,
+    'PREDIMED (MEDAS)',
+    predimed != null
+      ? `${predimed} (${snapshot.nutritionSummary.adherenceBand ?? '—'} adherence)`
+      : '—',
+  );
+  drawKeyValue(
+    ctx,
+    'BMR',
+    `${Math.round(snapshot.nutritionSummary.bmrKcal)} kcal/day`,
+  );
+  drawKeyValue(
+    ctx,
+    'TDEE',
+    `${Math.round(snapshot.nutritionSummary.tdeeKcal)} kcal/day (activity factor ${snapshot.nutritionSummary.activityFactor.toFixed(2)})`,
+  );
+  drawKeyValue(ctx, 'Activity level', snapshot.nutritionSummary.activityLevel);
+
+  const minsPerWeek = snapshot.activitySummary.minutesPerWeek;
+  drawKeyValue(
+    ctx,
+    'Physical activity',
+    minsPerWeek != null
+      ? `${minsPerWeek} min/week — ${snapshot.activitySummary.qualitativeBand}`
+      : '—',
+  );
+  const metMins = snapshot.activitySummary.metMinutesPerWeek;
+  drawKeyValue(
+    ctx,
+    'MET-min/week',
+    metMins != null ? String(Math.round(metMins)) : '—',
+  );
+  drawKeyValue(
+    ctx,
+    'WHO 2020 guidelines',
+    snapshot.activitySummary.meetsWhoGuidelines ? 'Met (≥150 min/wk moderate)' : 'Not met',
+  );
+  drawKeyValue(
+    ctx,
+    'Sedentary risk',
+    snapshot.activitySummary.sedentaryRiskLevel.replace('_', ' ').toUpperCase(),
+  );
+  drawKeyValue(ctx, 'Smoking', snapshot.input.clinicalContext.smoking ? 'Yes' : 'No');
 }
 
-function drawHr(ctx: RenderCtx): void {
-  ctx.page.drawLine({
-    start: { x: MARGIN_X, y: ctx.cursorY + 2 },
-    end: { x: PAGE_WIDTH - MARGIN_X, y: ctx.cursorY + 2 },
-    thickness: 0.6,
-    color: COLOR_PRIMARY,
-  });
-  ctx.cursorY -= 6;
+function renderLifestyleRecommendations(ctx: RenderCtx, snapshot: AssessmentSnapshot): void {
+  sectionTitle(ctx, 'Lifestyle recommendations');
+  drawLine(
+    ctx,
+    'Supportive counselling nudges, not clinical prescriptions.',
+    { size: TYPE.label, color: COLOR.muted, font: 'italic' },
+  );
+
+  for (const r of snapshot.lifestyleRecommendations) {
+    const { ink, band } = severityPalette(r.priority);
+    const innerWidth = CONTENT_WIDTH - BOX.paddingX * 2;
+    const rationaleH = measureWrapped(ctx.fonts, r.rationale, innerWidth, { size: TYPE.body });
+    const estH = TYPE.cardTitle + SPACING.xs + rationaleH + TYPE.label + SPACING.sm;
+    drawBandedCard(
+      ctx,
+      { bandColor: domainAccent(mapRecommendationDomain(r.domain)), estimatedHeight: estH },
+      (iw) => {
+        const titleY = ctx.cursorY - TYPE.cardTitle;
+        ctx.page.drawText(prepare(ctx, r.title), {
+          x: PAGE.marginX + BOX.paddingX,
+          y: titleY,
+          size: TYPE.cardTitle,
+          font: ctx.fonts.bold,
+          color: COLOR.text,
+        });
+        // Priority pill on the right
+        const pillText = r.priority.toUpperCase();
+        const pw = pillWidth(ctx.fonts, pillText);
+        drawPill(ctx, pillText, {
+          x: PAGE.marginX + BOX.paddingX + iw - pw,
+          baselineY: titleY,
+          fill: band,
+          ink,
+        });
+        ctx.cursorY -= TYPE.cardTitle * 1.25;
+
+        drawWrapped(ctx, r.rationale, iw, {
+          size: TYPE.body,
+          color: COLOR.textSoft,
+          x: PAGE.marginX + BOX.paddingX,
+        });
+
+        drawLine(ctx, `Source: ${r.guidelineSource}`, {
+          size: TYPE.label,
+          color: COLOR.muted,
+          font: 'italic',
+          x: PAGE.marginX + BOX.paddingX,
+        });
+        drawGuidelineTag(ctx, r.guideline, PAGE.marginX + BOX.paddingX);
+      },
+    );
+  }
 }
 
-function drawKv(ctx: RenderCtx, label: string, value: string): void {
-  ensureSpace(ctx, LINE_HEIGHT);
-  ctx.page.drawText(sanitize(label) + ':', {
-    x: MARGIN_X,
-    y: ctx.cursorY,
-    size: 9,
-    font: ctx.fontBold,
-    color: COLOR_MUTED,
-  });
-  ctx.page.drawText(sanitize(value), {
-    x: MARGIN_X + 140,
-    y: ctx.cursorY,
-    size: 10,
-    font: ctx.font,
-    color: COLOR_TEXT,
-  });
-  ctx.cursorY -= LINE_HEIGHT;
-}
-
-/**
- * Colour mapping that is tolerant of any legacy level string. The engine
- * currently emits 'low' | 'moderate' | 'high' | 'very_high' for risk levels
- * and 'info' | 'warning' | 'critical' for alert severities.
- */
-function severityColor(level: string): ReturnType<typeof rgb> {
-  switch (level.toLowerCase()) {
-    case 'critical':
-    case 'very_high':
-    case 'high':
-      return COLOR_DANGER;
-    case 'warning':
-    case 'moderate':
-      return COLOR_WARNING;
-    case 'info':
-    case 'low':
+/** Map the finer-grained recommendation domain to the 5 chart domains. */
+function mapRecommendationDomain(domain: string): string {
+  switch (domain) {
+    case 'activity':
+    case 'sedentary':
+    case 'sleep':
+    case 'hydration':
+    case 'weight':
+    case 'alcohol':
+    case 'smoking':
+      return 'lifestyle';
+    case 'diet':
+      return 'lifestyle';
     default:
-      return COLOR_OK;
+      return 'lifestyle';
   }
 }
 
-/**
- * Strip characters that the StandardFonts (WinAnsi) cannot encode. pdf-lib
- * throws on unsupported glyphs (some Unicode). Clinical notes may contain
- * smart-quotes, em-dashes, etc.
- */
-function sanitize(text: string): string {
-  if (!text) return '';
-  return text
-    .replace(/[\u2018\u2019]/g, "'")
-    .replace(/[\u201C\u201D]/g, '"')
-    .replace(/\u2013|\u2014/g, '-')
-    .replace(/\u2026/g, '...')
-    .replace(/[^\x00-\x7F\u00A0-\u00FF]/g, '?');
+function renderCompletenessWarnings(ctx: RenderCtx, snapshot: AssessmentSnapshot): void {
+  sectionTitle(ctx, 'Data completeness warnings');
+  drawLine(
+    ctx,
+    'The following scores could not be computed because of missing inputs.',
+    { size: TYPE.label, color: COLOR.muted, font: 'italic' },
+  );
+  for (const w of snapshot.completenessWarnings) {
+    const { ink, band } = severityPalette(w.severity);
+    const innerWidth = CONTENT_WIDTH - BOX.paddingX * 2;
+    const detailH = measureWrapped(ctx.fonts, w.detail, innerWidth, { size: TYPE.body });
+    const actionH = measureWrapped(ctx.fonts, w.suggestedAction, innerWidth, { size: TYPE.body });
+    const missingH = w.missingFields?.length
+      ? measureWrapped(ctx.fonts, `Missing: ${w.missingFields.join(', ')}`, innerWidth, { size: TYPE.label })
+      : 0;
+    const estH = TYPE.cardTitle * 1.3 + detailH + actionH + missingH + SPACING.sm * 2;
+
+    drawBandedCard(
+      ctx,
+      { bandColor: band, estimatedHeight: estH },
+      (iw) => {
+        const titleY = ctx.cursorY - TYPE.cardTitle;
+        ctx.page.drawText(prepare(ctx, w.title), {
+          x: PAGE.marginX + BOX.paddingX,
+          y: titleY,
+          size: TYPE.cardTitle,
+          font: ctx.fonts.bold,
+          color: COLOR.text,
+        });
+        const pillText = w.severity.toUpperCase();
+        const pw = pillWidth(ctx.fonts, pillText);
+        drawPill(ctx, pillText, {
+          x: PAGE.marginX + BOX.paddingX + iw - pw,
+          baselineY: titleY,
+          fill: band,
+          ink,
+        });
+        ctx.cursorY -= TYPE.cardTitle * 1.35;
+
+        drawWrapped(ctx, w.detail, iw, {
+          size: TYPE.body,
+          color: COLOR.textSoft,
+          x: PAGE.marginX + BOX.paddingX,
+        });
+        drawWrapped(ctx, `Action: ${w.suggestedAction}`, iw, {
+          size: TYPE.body,
+          font: 'italic',
+          color: COLOR.text,
+          x: PAGE.marginX + BOX.paddingX,
+        });
+        if (w.missingFields?.length) {
+          drawWrapped(ctx, `Missing: ${w.missingFields.join(', ')}`, iw, {
+            size: TYPE.label,
+            color: COLOR.muted,
+            x: PAGE.marginX + BOX.paddingX,
+          });
+        }
+      },
+    );
+  }
 }
 
-function drawWrapped(
-  ctx: RenderCtx,
-  text: string,
-  maxWidth: number,
-  size = 10,
-  color: ReturnType<typeof rgb> = COLOR_TEXT,
-): void {
-  const words = sanitize(text).split(/\s+/);
-  let line = '';
-  for (const word of words) {
-    const candidate = line ? `${line} ${word}` : word;
-    const w = ctx.font.widthOfTextAtSize(candidate, size);
-    if (w > maxWidth && line) {
-      drawText(ctx, line, { size, color });
-      line = word;
-    } else {
-      line = candidate;
+function renderAlerts(ctx: RenderCtx, snapshot: AssessmentSnapshot): void {
+  sectionTitle(ctx, `Active clinical alerts (${snapshot.alerts.length})`);
+  for (const a of snapshot.alerts) {
+    const { ink, band } = severityPalette(a.severity);
+    const innerWidth = CONTENT_WIDTH - BOX.paddingX * 2;
+    const msgH = measureWrapped(ctx.fonts, a.message, innerWidth, { size: TYPE.body });
+    const estH = TYPE.cardTitle * 1.3 + msgH + TYPE.label * 1.5 + SPACING.sm;
+    drawBandedCard(
+      ctx,
+      { bandColor: band, estimatedHeight: estH },
+      (iw) => {
+        const titleY = ctx.cursorY - TYPE.cardTitle;
+        ctx.page.drawText(prepare(ctx, a.title), {
+          x: PAGE.marginX + BOX.paddingX,
+          y: titleY,
+          size: TYPE.cardTitle,
+          font: ctx.fonts.bold,
+          color: COLOR.text,
+        });
+        const pillText = a.severity.toUpperCase();
+        const pw = pillWidth(ctx.fonts, pillText);
+        drawPill(ctx, pillText, {
+          x: PAGE.marginX + BOX.paddingX + iw - pw,
+          baselineY: titleY,
+          fill: band,
+          ink,
+        });
+        ctx.cursorY -= TYPE.cardTitle * 1.35;
+
+        drawWrapped(ctx, a.message, iw, {
+          size: TYPE.body,
+          color: COLOR.textSoft,
+          x: PAGE.marginX + BOX.paddingX,
+        });
+        drawLine(ctx, `Raised: ${formatIsoDateTime(a.timestamp)} · ${a.type}`, {
+          size: TYPE.label,
+          color: COLOR.muted,
+          font: 'italic',
+          x: PAGE.marginX + BOX.paddingX,
+        });
+      },
+    );
+  }
+}
+
+function renderFollowupPlan(ctx: RenderCtx, snapshot: AssessmentSnapshot): void {
+  sectionTitle(ctx, 'Follow-up plan');
+  drawKeyValue(ctx, 'Priority', snapshot.followupPlan.priorityLevel.toUpperCase());
+  drawKeyValue(
+    ctx,
+    'Next review',
+    `${formatIsoDate(snapshot.followupPlan.nextReviewDate)}  ·  every ${snapshot.followupPlan.intervalMonths} month(s)`,
+  );
+
+  if (snapshot.followupPlan.items?.length > 0) {
+    verticalGap(ctx, SPACING.xs);
+    drawLine(ctx, 'Structured follow-up items', { size: TYPE.cardTitle, font: 'bold' });
+    for (const it of snapshot.followupPlan.items) {
+      const { ink, band } = severityPalette(it.priority);
+      ensureSpace(ctx, TYPE.body * 3);
+      const baselineY = ctx.cursorY - TYPE.body;
+      // Bullet title + priority pill
+      ctx.page.drawText(`• ${prepare(ctx, it.title)}`, {
+        x: PAGE.marginX + SPACING.xs,
+        y: baselineY,
+        size: TYPE.body,
+        font: ctx.fonts.bold,
+        color: COLOR.text,
+      });
+      const pillText = it.priority.toUpperCase();
+      const pw = pillWidth(ctx.fonts, pillText);
+      drawPill(ctx, pillText, {
+        x: PAGE.width - PAGE.marginX - pw,
+        baselineY,
+        fill: band,
+        ink,
+      });
+      ctx.cursorY -= TYPE.body * 1.25;
+      drawWrapped(
+        ctx,
+        it.rationale,
+        CONTENT_WIDTH - SPACING.md,
+        { size: TYPE.label, color: COLOR.textSoft, x: PAGE.marginX + SPACING.md },
+      );
+      const srcLine = [
+        `Due in ${it.dueInMonths} month(s)`,
+        it.recurrenceMonths ? `recurs every ${it.recurrenceMonths} month(s)` : null,
+        it.guidelineSource ? `source: ${it.guidelineSource}` : null,
+      ].filter(Boolean).join(' · ');
+      if (srcLine) {
+        drawLine(ctx, srcLine, {
+          size: TYPE.label,
+          font: 'italic',
+          color: COLOR.muted,
+          x: PAGE.marginX + SPACING.md,
+        });
+      }
+      drawGuidelineTag(ctx, it.guideline, PAGE.marginX + SPACING.md);
+      verticalGap(ctx, SPACING.xs);
+    }
+  } else if (snapshot.followupPlan.actions?.length > 0) {
+    // Legacy projection — render as plain bullets.
+    verticalGap(ctx, SPACING.xs);
+    drawLine(ctx, 'Actions', { size: TYPE.cardTitle, font: 'bold' });
+    for (const action of snapshot.followupPlan.actions) {
+      drawWrapped(ctx, `• ${action}`, CONTENT_WIDTH - SPACING.sm, {
+        size: TYPE.body,
+        x: PAGE.marginX + SPACING.xs,
+      });
     }
   }
-  if (line) drawText(ctx, line, { size, color });
+
+  if (snapshot.followupPlan.domainMonitoring?.length > 0) {
+    verticalGap(ctx, SPACING.xs);
+    drawLine(ctx, 'Domain monitoring', { size: TYPE.cardTitle, font: 'bold' });
+    for (const d of snapshot.followupPlan.domainMonitoring) {
+      drawLine(ctx, `• ${d}`, { size: TYPE.body, x: PAGE.marginX + SPACING.xs });
+    }
+  }
+}
+
+function renderScreenings(ctx: RenderCtx, snapshot: AssessmentSnapshot): void {
+  sectionTitle(ctx, 'Required screenings');
+  for (const s of snapshot.screenings) {
+    const { ink, band } = severityPalette(s.priority);
+    ensureSpace(ctx, TYPE.body * 3);
+    const baselineY = ctx.cursorY - TYPE.body;
+    ctx.page.drawText(`• ${prepare(ctx, s.screening)}`, {
+      x: PAGE.marginX + SPACING.xs,
+      y: baselineY,
+      size: TYPE.body,
+      font: ctx.fonts.bold,
+      color: COLOR.text,
+    });
+    const pillText = `${s.priority.toUpperCase()} · ${s.intervalMonths}mo`;
+    const pw = pillWidth(ctx.fonts, pillText);
+    drawPill(ctx, pillText, {
+      x: PAGE.width - PAGE.marginX - pw,
+      baselineY,
+      fill: band,
+      ink,
+    });
+    ctx.cursorY -= TYPE.body * 1.25;
+
+    if (s.reason) {
+      drawWrapped(ctx, s.reason, CONTENT_WIDTH - SPACING.md, {
+        size: TYPE.label,
+        color: COLOR.textSoft,
+        x: PAGE.marginX + SPACING.md,
+      });
+    }
+    if (s.guidelineSource) {
+      drawLine(ctx, `Source: ${s.guidelineSource}`, {
+        size: TYPE.label,
+        font: 'italic',
+        color: COLOR.muted,
+        x: PAGE.marginX + SPACING.md,
+      });
+    }
+    drawGuidelineTag(ctx, s.guideline, PAGE.marginX + SPACING.md);
+    verticalGap(ctx, SPACING.xs);
+  }
+}
+
+/**
+ * Render the optional per-item structured guideline chip (WS6). When
+ * `guideline` is populated by `assessment-service.buildSnapshot`, we
+ * surface the family/evidence tag on a second, slightly indented line
+ * directly below the legacy `Source: …` text. When `guideline` is null
+ * (off-catalog citation or pre-WS6 legacy row), this is a no-op, so the
+ * PDF output is byte-identical to the pre-WS6 render for those items.
+ *
+ * Why a separate helper:
+ *   - Keeps the three call-sites (lifestyle recs, follow-up items,
+ *     screenings) structurally symmetric.
+ *   - Centralises the formatting contract — if the chip gains another
+ *     field (translation, supersedence), every call-site picks it up.
+ */
+function drawGuidelineTag(
+  ctx: RenderCtx,
+  g: PublicGuidelineRef | null | undefined,
+  x: number,
+): void {
+  if (!g) return;
+  const tag = formatGuidelineTag(g);
+  if (!tag) return;
+  drawLine(ctx, tag, {
+    size: TYPE.label,
+    color: COLOR.muted,
+    font: 'italic',
+    x,
+  });
+}
+
+/**
+ * Build the one-line guideline tag shown directly below the legacy
+ * `Source: …` string.
+ *
+ * Shape: `<families> · <evidence-label>` — the URL is intentionally
+ * omitted here because it is enumerated in the "Reference framework"
+ * section at the end of the document. Duplicating it would crowd each
+ * item line and cost vertical space without new information.
+ */
+function formatGuidelineTag(g: PublicGuidelineRef): string {
+  const fams = (g.families ?? []).join(' + ');
+  const tokens: string[] = [];
+  if (fams) tokens.push(fams);
+  const ev = formatEvidenceLabel(g.evidenceLevel);
+  if (ev) tokens.push(ev);
+  return tokens.join(' · ');
+}
+
+/**
+ * Map the evidence-level bucket emitted by the catalog to a
+ * clinician-readable label.
+ */
+function formatEvidenceLabel(level: string): string {
+  switch (level) {
+    case 'A':
+    case 'B':
+    case 'C':
+      return `Evidence ${level}`;
+    case 'consensus':
+      return 'Consensus';
+    case 'policy':
+      return 'Internal policy';
+    default:
+      // Unknown future values: surface them verbatim rather than swallow.
+      return level ?? '';
+  }
+}
+
+/**
+ * Render the consolidated "Reference framework" section (WS6).
+ *
+ * Responsibilities
+ *   - Dedupe the guideline citations surfaced across follow-up items,
+ *     screenings and lifestyle recommendations.
+ *   - Show each reference exactly once with its families, full document
+ *     title, evidence level and authoritative URL.
+ *   - Silent no-op when the rendered snapshot has no catalog-resolved
+ *     citations (legacy assessments with off-catalog `guidelineSource`
+ *     strings) — avoids emitting an empty, confusing section.
+ *
+ * What this section is NOT
+ *   - Not a bibliography: it only lists references the clinician saw
+ *     above in this very document.
+ *   - Not clinical guidance in itself. The PDF's non-authoritative-AI
+ *     disclaimer in the footer still applies.
+ */
+function renderReferenceFramework(
+  ctx: RenderCtx,
+  snapshot: AssessmentSnapshot,
+): void {
+  const items: Array<{
+    guideline?: PublicGuidelineRef | null;
+    guidelineSource?: string | null;
+  }> = [
+    ...(snapshot.followupPlan?.items ?? []),
+    ...(snapshot.screenings ?? []),
+    ...(snapshot.lifestyleRecommendations ?? []),
+  ];
+  const refs = collectReferenceFramework(items);
+  if (refs.length === 0) return;
+
+  sectionTitle(ctx, 'Reference framework');
+  drawLine(
+    ctx,
+    'Guidelines cited above, listed in order of first appearance.',
+    { size: TYPE.label, color: COLOR.muted, font: 'italic' },
+  );
+
+  const innerWidth = CONTENT_WIDTH - SPACING.md;
+  for (const g of refs) {
+    ensureSpace(ctx, TYPE.cardTitle * 3 + SPACING.sm);
+
+    // 1. Header line — short label (bold) + family(ies) on the right.
+    const fams = (g.families ?? []).join(' + ');
+    const labelText = g.shortLabel || g.id;
+    const baselineY = ctx.cursorY - TYPE.cardTitle;
+    ctx.page.drawText(prepare(ctx, `• ${labelText}`), {
+      x: PAGE.marginX + SPACING.xs,
+      y: baselineY,
+      size: TYPE.cardTitle,
+      font: ctx.fonts.bold,
+      color: COLOR.text,
+    });
+    if (fams) {
+      const famWidth = textWidth(ctx.fonts, fams, {
+        size: TYPE.label,
+        font: 'italic',
+      });
+      ctx.page.drawText(prepare(ctx, fams), {
+        x: PAGE.width - PAGE.marginX - famWidth,
+        y: baselineY,
+        size: TYPE.label,
+        font: ctx.fonts.italic,
+        color: COLOR.muted,
+      });
+    }
+    ctx.cursorY -= TYPE.cardTitle * 1.3;
+
+    // 2. Full title (wrapped).
+    if (g.title) {
+      drawWrapped(ctx, g.title, innerWidth, {
+        size: TYPE.body,
+        color: COLOR.textSoft,
+        x: PAGE.marginX + SPACING.md,
+      });
+    }
+
+    // 3. Meta line — evidence level · URL (if any).
+    const metaTokens: string[] = [];
+    const ev = formatEvidenceLabel(g.evidenceLevel);
+    if (ev) metaTokens.push(ev);
+    if (g.url) metaTokens.push(g.url);
+    if (metaTokens.length > 0) {
+      drawWrapped(ctx, metaTokens.join(' · '), innerWidth, {
+        size: TYPE.label,
+        color: COLOR.muted,
+        font: 'italic',
+        x: PAGE.marginX + SPACING.md,
+      });
+    }
+    verticalGap(ctx, SPACING.xs);
+  }
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// Pure helpers
+// ───────────────────────────────────────────────────────────────────────────
+
+function prepare(ctx: RenderCtx, s: string): string {
+  // The primitives already prepare their arguments via prepareText; this
+  // helper exists so that callers writing inline via page.drawText get the
+  // same guarantee.
+  return ctx.fonts.unicodeCapable ? String(s ?? '') : (s == null ? '' : sanitiseFallback(String(s)));
+}
+
+function sanitiseFallback(s: string): string {
+  // Mirrors font-loader.sanitiseForWinAnsi — kept here inlined for hot path.
+  return s
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/[\u2013\u2014]/g, '-')
+    .replace(/\u2026/g, '...')
+    .replace(/\u2022/g, '*')
+    .replace(/[\u2190-\u21FF]/g, '->')
+    .replace(/\u2265/g, '>=')
+    .replace(/\u2264/g, '<=')
+    .replace(/\u00B1/g, '+/-')
+    .replace(/[^\x00-\x7F\u00A0-\u00FF]/g, '?');
 }
 
 function formatValue(v: unknown): string {
   if (v === null || v === undefined) return '—';
   if (typeof v === 'number') {
+    if (!Number.isFinite(v)) return '—';
     return Number.isInteger(v) ? String(v) : v.toFixed(2);
   }
   return String(v);
@@ -217,19 +930,21 @@ function formatIsoDateTime(iso: string | null | undefined): string {
 }
 
 /**
- * Resolve a patient display string that NEVER leaks personal data beyond what
- * the caller already stored. We prefer the pseudonymous `externalCode`, then
- * the tenant-provided `displayName`, then a composed name only if the schema
- * explicitly captured first+last (blueprint §3.2: data minimization).
+ * Pseudonymous patient reference — data-minimisation (blueprint §3.2).
+ * We prefer the stable external code, then the tenant display name, then
+ * fall back to a composed name ONLY if the schema captured first+last.
  */
 function resolvePatientReference(patient: ReportPayload['patient']): string {
   if (patient.externalCode) return patient.externalCode;
-  if (patient.displayName) return patient.displayName;
+  if (patient.displayName)  return patient.displayName;
   const composed = `${patient.firstName ?? ''} ${patient.lastName ?? ''}`.trim();
   return composed || '—';
 }
 
-function resolvePatientAge(snapshot: AssessmentSnapshot, patient: ReportPayload['patient']): string {
+function resolvePatientAge(
+  snapshot: AssessmentSnapshot,
+  patient: ReportPayload['patient'],
+): string {
   if (typeof snapshot.input.demographics.age === 'number') {
     return `${snapshot.input.demographics.age} years`;
   }
@@ -238,250 +953,4 @@ function resolvePatientAge(snapshot: AssessmentSnapshot, patient: ReportPayload[
     return `${now - patient.birthYear} years (derived)`;
   }
   return '—';
-}
-
-// ---------------------------------------------------------------------------
-// Public renderer
-// ---------------------------------------------------------------------------
-
-export async function renderAssessmentReportPdf(
-  payload: ReportPayload,
-): Promise<Uint8Array> {
-  const { snapshot, patient, tenant, clinician } = payload;
-
-  const pdf = await PDFDocument.create();
-  pdf.setTitle(`Clinical Assessment Report — ${snapshot.assessment.id}`);
-  pdf.setCreator('Uelfy Clinical Platform');
-  pdf.setProducer('Uelfy / pdf-lib');
-  pdf.setCreationDate(new Date());
-  pdf.setModificationDate(new Date());
-
-  const font = await pdf.embedFont(StandardFonts.Helvetica);
-  const fontBold = await pdf.embedFont(StandardFonts.HelveticaBold);
-  const page = pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
-  const ctx: RenderCtx = {
-    pdf,
-    page,
-    font,
-    fontBold,
-    cursorY: PAGE_HEIGHT - MARGIN_TOP,
-  };
-
-  // ─── 1. Header ───
-  drawText(ctx, tenant.name ?? 'Clinical Assessment Report', {
-    bold: true,
-    size: 16,
-    color: COLOR_PRIMARY,
-  });
-  drawText(ctx, 'Cardio-Nephro-Metabolic Risk Assessment', {
-    size: 11,
-    color: COLOR_MUTED,
-  });
-  drawHr(ctx);
-
-  // ─── 2. Patient block ───
-  drawHeading(ctx, 'Patient');
-  drawKv(ctx, 'Reference', resolvePatientReference(patient));
-  if (patient.firstName || patient.lastName) {
-    drawKv(
-      ctx,
-      'Name',
-      `${patient.firstName ?? ''} ${patient.lastName ?? ''}`.trim() || '—',
-    );
-  }
-  drawKv(ctx, 'Date of birth', formatIsoDate(patient.birthDate));
-  drawKv(ctx, 'Sex', patient.sex ?? snapshot.input.demographics.sex ?? '—');
-  drawKv(ctx, 'Age', resolvePatientAge(snapshot, patient));
-
-  // ─── 3. Assessment metadata ───
-  drawHeading(ctx, 'Assessment');
-  drawKv(ctx, 'Assessment ID', snapshot.assessment.id);
-  drawKv(ctx, 'Performed at', formatIsoDateTime(snapshot.assessment.createdAt));
-  drawKv(ctx, 'Status', snapshot.assessment.status ?? 'completed');
-  drawKv(
-    ctx,
-    'Clinician',
-    clinician?.fullName?.trim() || clinician?.email || '—',
-  );
-  drawKv(
-    ctx,
-    'Composite risk',
-    `${formatValue(snapshot.compositeRisk.numeric)} (${snapshot.compositeRisk.level})`,
-  );
-
-  // ─── 4. Composite risk breakdown ───
-  drawHeading(ctx, 'Composite risk breakdown');
-  const domains: Array<{ key: string; label: string }> = [
-    { key: 'cardiovascular', label: 'Cardiovascular' },
-    { key: 'metabolic', label: 'Metabolic' },
-    { key: 'hepatic', label: 'Hepatic' },
-    { key: 'renal', label: 'Renal' },
-    { key: 'frailty', label: 'Frailty' },
-  ];
-  for (const { key, label } of domains) {
-    const domain = (snapshot.compositeRisk as Record<string, unknown>)[key] as
-      | { level: string; reasoning: string }
-      | null
-      | undefined;
-    if (!domain) continue;
-    ensureSpace(ctx, LINE_HEIGHT * 2);
-    drawText(ctx, `${label}: ${domain.level.toUpperCase()}`, {
-      bold: true,
-      size: 11,
-      color: severityColor(domain.level),
-    });
-    if (domain.reasoning) {
-      drawWrapped(ctx, domain.reasoning, PAGE_WIDTH - 2 * MARGIN_X, 10, COLOR_MUTED);
-    }
-    ctx.cursorY -= 2;
-  }
-
-  // ─── 5. Validated scores ───
-  drawHeading(ctx, 'Validated clinical scores');
-  if (snapshot.scoreResults.length === 0) {
-    drawText(ctx, 'No scores computed.', { size: 10, color: COLOR_MUTED });
-  }
-  for (const score of snapshot.scoreResults) {
-    ensureSpace(ctx, LINE_HEIGHT * 2);
-    drawText(ctx, `${score.label} [${score.scoreCode}]`, { bold: true, size: 11 });
-    drawText(ctx, `Value: ${formatValue(score.valueNumeric)}`, { size: 10 });
-    if (score.category) {
-      drawText(ctx, `Category: ${score.category}`, { size: 10, color: COLOR_MUTED });
-    }
-    ctx.cursorY -= 4;
-  }
-
-  // ─── 6. Lifestyle ───
-  drawHeading(ctx, 'Lifestyle');
-  drawKv(
-    ctx,
-    'PREDIMED',
-    snapshot.nutritionSummary.predimedScore != null
-      ? `${snapshot.nutritionSummary.predimedScore} (${snapshot.nutritionSummary.adherenceBand ?? '—'})`
-      : '—',
-  );
-  drawKv(ctx, 'BMR', `${Math.round(snapshot.nutritionSummary.bmrKcal)} kcal/day`);
-  drawKv(ctx, 'TDEE', `${Math.round(snapshot.nutritionSummary.tdeeKcal)} kcal/day`);
-  drawKv(ctx, 'Activity level', snapshot.nutritionSummary.activityLevel);
-  drawKv(
-    ctx,
-    'Physical activity',
-    snapshot.activitySummary.minutesPerWeek != null
-      ? `${snapshot.activitySummary.minutesPerWeek} min/week (${snapshot.activitySummary.qualitativeBand})`
-      : '—',
-  );
-  drawKv(
-    ctx,
-    'WHO guidelines',
-    snapshot.activitySummary.meetsWhoGuidelines ? 'Met' : 'Not met',
-  );
-  drawKv(
-    ctx,
-    'Sedentary risk',
-    snapshot.activitySummary.sedentaryRiskLevel.toUpperCase(),
-  );
-  drawKv(ctx, 'Smoking', snapshot.input.clinicalContext.smoking ? 'Yes' : 'No');
-
-  // ─── 7. Alerts ───
-  if (snapshot.alerts.length > 0) {
-    drawHeading(ctx, `Active alerts (${snapshot.alerts.length})`);
-    for (const alert of snapshot.alerts) {
-      ensureSpace(ctx, LINE_HEIGHT * 2);
-      drawText(ctx, `[${alert.severity.toUpperCase()}] ${alert.title}`, {
-        bold: true,
-        size: 11,
-        color: severityColor(alert.severity),
-      });
-      drawWrapped(ctx, alert.message, PAGE_WIDTH - 2 * MARGIN_X, 10);
-      if (alert.timestamp) {
-        drawText(ctx, `Raised: ${formatIsoDateTime(alert.timestamp)}`, {
-          size: 8,
-          color: COLOR_MUTED,
-        });
-      }
-      ctx.cursorY -= 4;
-    }
-  }
-
-  // ─── 8. Follow-up plan ───
-  drawHeading(ctx, 'Follow-up plan');
-  drawKv(ctx, 'Priority', snapshot.followupPlan.priorityLevel.toUpperCase());
-  drawKv(
-    ctx,
-    'Next review',
-    `${formatIsoDate(snapshot.followupPlan.nextReviewDate)} (${snapshot.followupPlan.intervalMonths} months)`,
-  );
-  if (snapshot.followupPlan.actions.length > 0) {
-    drawText(ctx, 'Actions:', { bold: true, size: 10 });
-    for (const action of snapshot.followupPlan.actions) {
-      drawWrapped(
-        ctx,
-        `• ${action}`,
-        PAGE_WIDTH - 2 * MARGIN_X - 12,
-        10,
-      );
-    }
-  }
-  if (snapshot.followupPlan.domainMonitoring.length > 0) {
-    ctx.cursorY -= 2;
-    drawText(ctx, 'Domain monitoring:', { bold: true, size: 10 });
-    for (const domain of snapshot.followupPlan.domainMonitoring) {
-      drawText(ctx, `• ${domain}`, { size: 10 });
-    }
-  }
-
-  // ─── 9. Required screenings ───
-  if (snapshot.screenings.length > 0) {
-    drawHeading(ctx, 'Required screenings');
-    for (const s of snapshot.screenings) {
-      ensureSpace(ctx, LINE_HEIGHT * 2);
-      drawText(
-        ctx,
-        `• ${s.screening}  [${s.priority.toUpperCase()}${s.intervalMonths ? `, every ${s.intervalMonths} mo` : ''}]`,
-        { size: 10, bold: true },
-      );
-      if (s.reason) {
-        drawWrapped(
-          ctx,
-          `   ${s.reason}`,
-          PAGE_WIDTH - 2 * MARGIN_X - 12,
-          9,
-          COLOR_MUTED,
-        );
-      }
-    }
-  }
-
-  // ─── 10. Footer (every page) ───
-  const totalPages = pdf.getPageCount();
-  const generatedAt = new Date().toISOString();
-  for (let i = 0; i < totalPages; i++) {
-    const p = pdf.getPage(i);
-    p.drawText(
-      sanitize(
-        `Generated ${generatedAt}  •  Page ${i + 1} / ${totalPages}  •  Confidential clinical document`,
-      ),
-      {
-        x: MARGIN_X,
-        y: 30,
-        size: 8,
-        font,
-        color: COLOR_MUTED,
-      },
-    );
-    p.drawText(
-      sanitize(
-        'Contains validated deterministic scores. Any AI-generated commentary is supportive and non-authoritative.',
-      ),
-      {
-        x: MARGIN_X,
-        y: 18,
-        size: 7,
-        font,
-        color: COLOR_MUTED,
-      },
-    );
-  }
-
-  return await pdf.save();
 }

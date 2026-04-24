@@ -386,6 +386,52 @@ export interface ClinicalFinding {
   source?: string;
 }
 
+/**
+ * Public, wire-serialisable projection of the server-side guideline
+ * catalog entry (`backend/.../guideline-catalog`). Added in WS6 to let the
+ * UI and PDF renderer surface family / year / section / URL alongside the
+ * legacy free-text `guidelineSource`.
+ *
+ * Wire contract
+ *   - Every field is publicly shareable metadata (journal DOI, title,
+ *     evidence-level bucket). No tenant, patient, or internal-policy data
+ *     is exposed here.
+ *   - All fields are primitives or arrays of string literals so the
+ *     payload is round-trippable through JSON without custom reviver logic.
+ *   - The shape mirrors `GuidelineReference` minus the `readonly`
+ *     modifiers; consumers (frontend, PDF) must treat it as read-only
+ *     regardless.
+ *
+ * Population rules
+ *   - `guideline` is populated by the assessment service when and only
+ *     when the item's `guidelineSource` string is registered in the
+ *     catalog. Legacy persisted rows with off-catalog strings resolve to
+ *     `null`, and callers fall back to rendering the raw `guidelineSource`.
+ *   - Changing the rendered wording of `guidelineSource` is a
+ *     behaviour-visible action controlled by WS5's catalog; this object
+ *     never alters it.
+ */
+export interface PublicGuidelineRef {
+  /** Stable catalog id (UPPER_SNAKE_CASE). */
+  id: string;
+  /** Issuing body or bodies — e.g. `['ESC']` or `['ADA','KDIGO']`. */
+  families: string[];
+  /** Short clinician-facing label (fits in a table badge). */
+  shortLabel: string;
+  /** Publication year, or null for timeless/internal policies. */
+  year: number | null;
+  /** Section identifier within the source doc, or null. */
+  section: string | null;
+  /** Full document title. */
+  title: string;
+  /** Authoritative DOI/URL, or null when none is stable. */
+  url: string | null;
+  /** Evidence-level bucket — `'A' | 'B' | 'C' | 'consensus' | 'policy'`. */
+  evidenceLevel: string;
+  /** Clinical domain(s) this reference supports. */
+  domains: string[];
+}
+
 /** Rule-driven follow-up action with a due date and provenance. */
 export interface FollowUpItem {
   code: string;
@@ -395,6 +441,13 @@ export interface FollowUpItem {
   priority: 'routine' | 'moderate' | 'urgent';
   recurrenceMonths?: number;
   guidelineSource?: string;
+  /**
+   * Optional structured projection of `guidelineSource` (WS6). Present
+   * when the `guidelineSource` string is registered in the server
+   * guideline catalog; otherwise `null`/absent and the UI falls back to
+   * rendering the raw string.
+   */
+  guideline?: PublicGuidelineRef | null;
 }
 
 /** Rule-driven recommended screening with interval and provenance. */
@@ -404,6 +457,8 @@ export interface ScreeningItem {
   priority: 'routine' | 'moderate' | 'urgent';
   intervalMonths: number;
   guidelineSource?: string;
+  /** See `FollowUpItem.guideline` for semantics. */
+  guideline?: PublicGuidelineRef | null;
 }
 
 export interface AssessmentSnapshot {
@@ -499,6 +554,8 @@ export interface AssessmentSnapshot {
     priority: 'routine' | 'moderate' | 'urgent';
     authority: 'supportive';
     guidelineSource: string;
+    /** See `FollowUpItem.guideline` for semantics. */
+    guideline?: PublicGuidelineRef | null;
   }[];
 
   alerts: {

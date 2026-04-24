@@ -28,6 +28,7 @@
  */
 
 import type { ActivityAssessment } from '../activity-engine/activity-assessment.js';
+import { GUIDELINES } from '../guideline-catalog/index.js';
 import type { NutritionSummary } from '../nutrition-engine/predimed.js';
 
 // ============================================================================
@@ -120,7 +121,7 @@ function smokingRule(snapshot: ClinicalSnapshot): LifestyleRecommendation | null
       'Current smoker — cessation reduces 10-year CVD risk by ~35% at 1 year.',
     priority: 'urgent',
     authority: 'supportive',
-    guidelineSource: 'ESC 2021 CVD prevention §4',
+    guidelineSource: GUIDELINES.ESC_2021_PREVENTION_S4.displayString,
   };
 }
 
@@ -145,7 +146,7 @@ function mvpaRule(activity: ActivityAssessment | null | undefined): LifestyleRec
         : 'Current activity below the WHO MVPA target of 150 min/week moderate or 75 min/week vigorous.',
     priority: activity.qualitativeBand === 'insufficient' ? 'moderate' : 'routine',
     authority: 'supportive',
-    guidelineSource: 'WHO 2020 Physical Activity',
+    guidelineSource: GUIDELINES.WHO_2020_ACTIVITY.displayString,
   };
 }
 
@@ -171,7 +172,7 @@ function sedentaryRule(activity: ActivityAssessment | null | undefined): Lifesty
       activity.sedentaryRiskLevel === 'high' ? 'moderate' :
       'routine',
     authority: 'supportive',
-    guidelineSource: 'ESC 2021 CVD prevention §3',
+    guidelineSource: GUIDELINES.ESC_2021_PREVENTION_S3.displayString,
   };
 }
 
@@ -194,7 +195,7 @@ function mediterraneanDietRule(
         + 'Target ≥10/14 — emphasise olive oil, vegetables, legumes, fish; reduce red/processed meat and pastries.',
     priority: nutrition.adherenceBand === 'low' ? 'moderate' : 'routine',
     authority: 'supportive',
-    guidelineSource: 'Estruch et al. PREDIMED (NEJM 2018) + ESC 2021',
+    guidelineSource: GUIDELINES.PREDIMED_ESC_2021.displayString,
   };
 }
 
@@ -231,7 +232,7 @@ function weightRule(snapshot: ClinicalSnapshot): LifestyleRecommendation | null 
         + ' — a 5–10% weight loss improves glycaemia, lipid profile and BP.',
     priority,
     authority: 'supportive',
-    guidelineSource: 'ESC 2021 + NCEP ATP III',
+    guidelineSource: GUIDELINES.ESC_2021_NCEP.displayString,
   };
 }
 
@@ -252,7 +253,7 @@ function saltRule(snapshot: ClinicalSnapshot): LifestyleRecommendation | null {
         + 'Target <5 g/day sodium — reduce processed foods and added salt.',
     priority: 'moderate',
     authority: 'supportive',
-    guidelineSource: 'ESC/ESH 2023 Hypertension',
+    guidelineSource: GUIDELINES.ESC_ESH_2023_HTN.displayString,
   };
 }
 
@@ -271,7 +272,7 @@ function saturatedFatRule(snapshot: ClinicalSnapshot): LifestyleRecommendation |
       `LDL-C ${ldl.toFixed(0)} mg/dL — shift to mono/polyunsaturated fats, limit tropical oils and fatty red meat.`,
     priority: ldl >= 190 ? 'moderate' : 'routine',
     authority: 'supportive',
-    guidelineSource: 'ESC/EAS 2019 Dyslipidaemia',
+    guidelineSource: GUIDELINES.ESC_EAS_2019_LIPIDS.displayString,
   };
 }
 
@@ -298,7 +299,7 @@ function carbQualityRule(snapshot: ClinicalSnapshot): LifestyleRecommendation | 
         + 'Favour whole grains, legumes, vegetables; limit refined sugars and white flour.',
     priority: snapshot.hasDiabetes ? 'moderate' : 'routine',
     authority: 'supportive',
-    guidelineSource: 'ADA Standards of Care 2024 §5',
+    guidelineSource: GUIDELINES.ADA_SOC_2024_S5.displayString,
   };
 }
 
