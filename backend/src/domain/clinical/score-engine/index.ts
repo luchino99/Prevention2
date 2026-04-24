@@ -17,6 +17,12 @@ import {
 
 import { computeScore2 } from './score2.js';
 import { computeScore2Diabetes } from './score2-diabetes.js';
+import {
+  evaluateScore2Eligibility,
+  evaluateScore2DiabetesEligibility,
+  buildScore2SkipEntry,
+  buildScore2DiabetesSkipEntry,
+} from './score2-eligibility.js';
 import { computeAda } from './ada.js';
 import { computeFli } from './fli.js';
 import { computeFrail } from './frail.js';
@@ -86,120 +92,215 @@ export function computeAllScores(input: AssessmentInput): ScoreResultEntry[] {
   }
 
   // =========================================================================
-  // 2. SCORE2 - Compute if labs available
+  // 2. SCORE2 — range-aware orchestration
+  // -------------------------------------------------------------------------
+  // `computeScore2` throws when an input is outside the validated domain
+  // (age ∉ [40,80], SBP ∉ [60,250], chol ∉ [50,400], HDL ∉ [20,150]).
+  // Previously the throw was swallowed by a blanket try/catch and no entry
+  // was emitted, which caused the composite-risk aggregator to fall back to
+  // a misleading "missing lipid panel and/or blood pressure" reasoning — a
+  // lie whenever the clinician had provided complete but out-of-range data.
+  //
+  // We now evaluate eligibility explicitly. If ineligible we emit a SCORE2
+  // ScoreResultEntry with valueNumeric=null and a structured skipReason so
+  // downstream layers can produce truthful, clinically-actionable messaging.
   // =========================================================================
-  if (
-    input.labs.totalCholMgDl &&
-    input.labs.hdlMgDl &&
-    input.vitals.sbpMmHg
-  ) {
-    try {
-      const score2Result = computeScore2({
-        age: input.demographics.age,
-        sex: input.demographics.sex,
-        smoking: input.clinicalContext.smoking,
-        sbpMmHg: input.vitals.sbpMmHg,
-        totalCholMgDl: input.labs.totalCholMgDl,
-        hdlMgDl: input.labs.hdlMgDl,
-        riskRegion: input.clinicalContext.cvRiskRegion,
-      });
+  {
+    const inputContext = {
+      age: input.demographics.age,
+      sex: input.demographics.sex,
+      smoking: input.clinicalContext.smoking,
+      sbpMmHg: input.vitals.sbpMmHg,
+      totalCholMgDl: input.labs.totalCholMgDl ?? null,
+      hdlMgDl: input.labs.hdlMgDl ?? null,
+      region: input.clinicalContext.cvRiskRegion,
+    };
 
-      results.push({
-        scoreCode: 'SCORE2',
-        valueNumeric: score2Result.riskPercent,
-        category: score2Result.category,
-        label: 'SCORE2 Cardiovascular Risk',
-        inputPayload: {
+    const elig = evaluateScore2Eligibility(input);
+    if (elig.eligible) {
+      try {
+        const score2Result = computeScore2({
           age: input.demographics.age,
           sex: input.demographics.sex,
           smoking: input.clinicalContext.smoking,
           sbpMmHg: input.vitals.sbpMmHg,
-          totalCholMgDl: input.labs.totalCholMgDl,
-          hdlMgDl: input.labs.hdlMgDl,
-          region: input.clinicalContext.cvRiskRegion,
-        },
-        rawPayload: score2Result as unknown as Record<string, unknown>,
-      });
-    } catch (error) {
-      console.error('Error computing SCORE2:', error);
+          totalCholMgDl: input.labs.totalCholMgDl as number,
+          hdlMgDl: input.labs.hdlMgDl as number,
+          riskRegion: input.clinicalContext.cvRiskRegion,
+        });
+
+        results.push({
+          scoreCode: 'SCORE2',
+          valueNumeric: score2Result.riskPercent,
+          category: score2Result.category,
+          label: 'SCORE2 Cardiovascular Risk',
+          inputPayload: inputContext,
+          rawPayload: score2Result as unknown as Record<string, unknown>,
+        });
+      } catch (error) {
+        // Defensive: eligibility passed but formula still threw (schema
+        // drift, coefficient bug). Emit structured skip so the UI never
+        // silently loses CV stratification.
+        console.error('Unexpected SCORE2 failure post-eligibility:', error);
+        results.push(
+          buildScore2SkipEntry(
+            { eligible: false, skipReason: 'SCORE2_UNEXPECTED_ERROR', missingFields: [] },
+            inputContext,
+          ),
+        );
+      }
+    } else {
+      results.push(buildScore2SkipEntry(elig, inputContext));
     }
   }
 
   // =========================================================================
-  // 3. SCORE2-Diabetes - Only if hasDiabetes + required labs
+  // 3. SCORE2-Diabetes — range-aware orchestration.
+  // -------------------------------------------------------------------------
+  // Same defensive pattern as SCORE2: evaluate eligibility, emit skip entry
+  // for ineligible cases. We DO NOT emit a SCORE2_DIABETES entry when the
+  // patient is not flagged as diabetic — that is the normal path, not a
+  // data gap, and polluting the results array with SCORE2_DIABETES_NOT_APPLICABLE
+  // rows would only noise up the UI.
   // =========================================================================
-  if (
-    input.clinicalContext.hasDiabetes &&
-    input.labs.totalCholMgDl &&
-    input.labs.hdlMgDl &&
-    input.vitals.sbpMmHg &&
-    input.clinicalContext.ageAtDiabetesDiagnosis &&
-    input.labs.hba1cPct &&
-    input.labs.eGFR
-  ) {
-    try {
-      const score2DmResult = computeScore2Diabetes({
+  {
+    const dmElig = evaluateScore2DiabetesEligibility(input);
+    if (dmElig.eligible) {
+      const inputContext = {
         age: input.demographics.age,
         sex: input.demographics.sex,
         smoking: input.clinicalContext.smoking,
         sbpMmHg: input.vitals.sbpMmHg,
-        totalCholMgDl: input.labs.totalCholMgDl,
-        hdlMgDl: input.labs.hdlMgDl,
-        riskRegion: input.clinicalContext.cvRiskRegion,
-        ageAtDiabetesDiagnosis: input.clinicalContext.ageAtDiabetesDiagnosis,
-        hba1cPercent: input.labs.hba1cPct,
-        eGFR: input.labs.eGFR,
-      });
-
-      results.push({
-        scoreCode: 'SCORE2_DIABETES',
-        valueNumeric: score2DmResult.riskPercent,
-        category: score2DmResult.category,
-        label: 'SCORE2-Diabetes Cardiovascular Risk',
-        inputPayload: {
+        totalCholMgDl: input.labs.totalCholMgDl as number,
+        hdlMgDl: input.labs.hdlMgDl as number,
+        region: input.clinicalContext.cvRiskRegion,
+        ageAtDiabetesDiagnosis: input.clinicalContext.ageAtDiabetesDiagnosis as number,
+        hba1cPercent: input.labs.hba1cPct as number,
+        eGFR: input.labs.eGFR as number,
+      };
+      try {
+        const score2DmResult = computeScore2Diabetes({
           age: input.demographics.age,
           sex: input.demographics.sex,
           smoking: input.clinicalContext.smoking,
           sbpMmHg: input.vitals.sbpMmHg,
-          totalCholMgDl: input.labs.totalCholMgDl,
-          hdlMgDl: input.labs.hdlMgDl,
-          region: input.clinicalContext.cvRiskRegion,
-          ageAtDiabetesDiagnosis: input.clinicalContext.ageAtDiabetesDiagnosis,
-          hba1cPercent: input.labs.hba1cPct,
-          eGFR: input.labs.eGFR,
-        },
-        rawPayload: score2DmResult as unknown as Record<string, unknown>,
-      });
-    } catch (error) {
-      console.error('Error computing SCORE2-Diabetes:', error);
+          totalCholMgDl: input.labs.totalCholMgDl as number,
+          hdlMgDl: input.labs.hdlMgDl as number,
+          riskRegion: input.clinicalContext.cvRiskRegion,
+          ageAtDiabetesDiagnosis: input.clinicalContext.ageAtDiabetesDiagnosis as number,
+          hba1cPercent: input.labs.hba1cPct as number,
+          eGFR: input.labs.eGFR as number,
+        });
+
+        results.push({
+          scoreCode: 'SCORE2_DIABETES',
+          valueNumeric: score2DmResult.riskPercent,
+          category: score2DmResult.category,
+          label: 'SCORE2-Diabetes Cardiovascular Risk',
+          inputPayload: inputContext,
+          rawPayload: score2DmResult as unknown as Record<string, unknown>,
+        });
+      } catch (error) {
+        console.error('Unexpected SCORE2-Diabetes failure post-eligibility:', error);
+        results.push(
+          buildScore2DiabetesSkipEntry(
+            {
+              eligible: false,
+              skipReason: 'SCORE2_DIABETES_UNEXPECTED_ERROR',
+              missingFields: [],
+            },
+            inputContext,
+          ),
+        );
+      }
+    } else if (dmElig.skipReason !== 'SCORE2_DIABETES_NOT_APPLICABLE') {
+      // Patient IS diabetic but data is missing or out of range — this is an
+      // actionable data gap, surface it as a structured skip entry.
+      const inputContext = {
+        age: input.demographics.age,
+        sex: input.demographics.sex,
+        smoking: input.clinicalContext.smoking,
+        sbpMmHg: input.vitals.sbpMmHg,
+        totalCholMgDl: input.labs.totalCholMgDl ?? null,
+        hdlMgDl: input.labs.hdlMgDl ?? null,
+        region: input.clinicalContext.cvRiskRegion,
+        ageAtDiabetesDiagnosis: input.clinicalContext.ageAtDiabetesDiagnosis ?? null,
+        hba1cPercent: input.labs.hba1cPct ?? null,
+        eGFR: input.labs.eGFR ?? null,
+      };
+      results.push(buildScore2DiabetesSkipEntry(dmElig, inputContext));
     }
+    // Not applicable case: silently skip — the patient has no diabetes flag.
   }
 
   // =========================================================================
-  // 4. ADA - Only if !hasDiabetes (screening for non-diabetics)
+  // 4. Diabetology-aware interpretation layer (WS3).
+  // -------------------------------------------------------------------------
+  // Previous behaviour: the ADA risk-of-diabetes screening score was
+  // emitted for every non-diabetic patient — including those whose
+  // glucose/HbA1c values ALREADY satisfied ADA SOC diagnostic criteria
+  // (fasting glucose ≥ 126 mg/dL, HbA1c ≥ 6.5%). This produced
+  // misleading "low/moderate risk of developing diabetes" messaging for
+  // patients who already meet the diagnostic threshold and have merely
+  // not been formally diagnosed yet — a dangerous interpretive error.
+  //
+  // New behaviour:
+  //   * If the patient is not flagged as diabetic AND labs show overt
+  //     hyperglycemia → emit an `UNDIAGNOSED_DIABETES_SUSPECTED` entry
+  //     (valueNumeric=null, category='suspected') and SUPPRESS the ADA
+  //     screening score. The composite-risk layer reads this entry to
+  //     drive metabolic stratification and downstream follow-up.
+  //   * If the patient is not flagged as diabetic AND no overt
+  //     hyperglycemia → run ADA as before.
+  //   * If the patient IS flagged as diabetic → emit a
+  //     `GLYCEMIC_CONTROL` entry describing the degree of control
+  //     (well_controlled / suboptimal / severely_decompensated).
+  //     Deterministic thresholds from ADA SOC 2024 §6.
+  //
+  // Thresholds (ADA SOC 2024):
+  //   - fasting glucose ≥ 126 mg/dL  → diabetes
+  //   - HbA1c            ≥ 6.5%      → diabetes
+  //   - HbA1c > 7%                   → suboptimal glycemic control
+  //   - HbA1c > 9% or glucose > 250  → severe decompensation
   // =========================================================================
-  if (!input.clinicalContext.hasDiabetes) {
-    try {
-      const adaResult = computeAda({
-        age: input.demographics.age,
-        sex: input.demographics.sex,
-        gestationalDiabetes: input.clinicalContext.gestationalDiabetes,
-        familyHistoryDiabetes: input.clinicalContext.familyHistoryDiabetes,
-        hypertension: input.clinicalContext.hypertension,
-        physicallyActive:
-          input.lifestyle.weeklyActivityMinutes !== undefined
-            ? input.lifestyle.weeklyActivityMinutes >= 150
-            : false,
-        heightCm: input.vitals.heightCm,
-        weightKg: input.vitals.weightKg,
-      });
+  {
+    const glucose = input.labs.glucoseMgDl;
+    const hba1c = input.labs.hba1cPct;
+    const hasOvertHyperglycemia =
+      (glucose != null && glucose >= 126) || (hba1c != null && hba1c >= 6.5);
 
+    if (!input.clinicalContext.hasDiabetes && hasOvertHyperglycemia) {
+      // Suppress ADA screening (it is not appropriate when the patient
+      // already meets diagnostic criteria) and emit a diabetology finding.
       results.push({
-        scoreCode: 'ADA',
-        valueNumeric: adaResult.score,
-        category: adaResult.category,
-        label: 'ADA Diabetes Risk Score',
+        scoreCode: 'UNDIAGNOSED_DIABETES_SUSPECTED',
+        valueNumeric: null,
+        category: 'suspected',
+        label: 'Undiagnosed diabetes suspected',
         inputPayload: {
+          glucoseMgDl: glucose ?? null,
+          hba1cPct: hba1c ?? null,
+          hasDiabetesFlag: false,
+        },
+        rawPayload: {
+          skipped: false,
+          diabetologyFlag: 'UNDIAGNOSED_DIABETES_SUSPECTED',
+          triggers: {
+            fastingGlucoseOverThreshold: glucose != null && glucose >= 126,
+            hba1cOverThreshold: hba1c != null && hba1c >= 6.5,
+            glucoseMgDl: glucose ?? null,
+            hba1cPct: hba1c ?? null,
+          },
+          guidelineSource: 'ADA Standards of Care 2024 §2 (Classification & Diagnosis)',
+          suggestedAction:
+            'Confirm diagnosis with repeat testing (fasting glucose, HbA1c or OGTT) '
+            + 'per ADA SOC §2. Initiate diabetology pathway.',
+        },
+      });
+    } else if (!input.clinicalContext.hasDiabetes) {
+      // Standard ADA screening path (unchanged clinical logic).
+      try {
+        const adaResult = computeAda({
           age: input.demographics.age,
           sex: input.demographics.sex,
           gestationalDiabetes: input.clinicalContext.gestationalDiabetes,
@@ -211,11 +312,71 @@ export function computeAllScores(input: AssessmentInput): ScoreResultEntry[] {
               : false,
           heightCm: input.vitals.heightCm,
           weightKg: input.vitals.weightKg,
-        },
-        rawPayload: adaResult as unknown as Record<string, unknown>,
-      });
-    } catch (error) {
-      console.error('Error computing ADA:', error);
+        });
+
+        results.push({
+          scoreCode: 'ADA',
+          valueNumeric: adaResult.score,
+          category: adaResult.category,
+          label: 'ADA Diabetes Risk Score',
+          inputPayload: {
+            age: input.demographics.age,
+            sex: input.demographics.sex,
+            gestationalDiabetes: input.clinicalContext.gestationalDiabetes,
+            familyHistoryDiabetes: input.clinicalContext.familyHistoryDiabetes,
+            hypertension: input.clinicalContext.hypertension,
+            physicallyActive:
+              input.lifestyle.weeklyActivityMinutes !== undefined
+                ? input.lifestyle.weeklyActivityMinutes >= 150
+                : false,
+            heightCm: input.vitals.heightCm,
+            weightKg: input.vitals.weightKg,
+          },
+          rawPayload: adaResult as unknown as Record<string, unknown>,
+        });
+      } catch (error) {
+        console.error('Error computing ADA:', error);
+      }
+    } else {
+      // Known diabetic — emit glycemic-control entry if HbA1c / glucose
+      // are available. The composite-risk metabolic domain reads this to
+      // drive stratification.
+      let controlCategory: string | null = null;
+      let severity: 'well_controlled' | 'suboptimal' | 'severely_decompensated' | null = null;
+
+      if (hba1c != null && hba1c > 9) {
+        severity = 'severely_decompensated';
+        controlCategory = 'severely_decompensated';
+      } else if (glucose != null && glucose > 250) {
+        severity = 'severely_decompensated';
+        controlCategory = 'severely_decompensated';
+      } else if (hba1c != null && hba1c > 7) {
+        severity = 'suboptimal';
+        controlCategory = 'suboptimal';
+      } else if (hba1c != null) {
+        severity = 'well_controlled';
+        controlCategory = 'well_controlled';
+      }
+
+      if (severity) {
+        results.push({
+          scoreCode: 'GLYCEMIC_CONTROL',
+          valueNumeric: hba1c ?? null,
+          category: controlCategory as string,
+          label: 'Glycemic control (HbA1c-based)',
+          inputPayload: {
+            glucoseMgDl: glucose ?? null,
+            hba1cPct: hba1c ?? null,
+            hasDiabetesFlag: true,
+          },
+          rawPayload: {
+            severity,
+            hba1cPct: hba1c ?? null,
+            glucoseMgDl: glucose ?? null,
+            guidelineSource: 'ADA Standards of Care 2024 §6 (Glycemic Targets)',
+          },
+        });
+      }
     }
   }
 

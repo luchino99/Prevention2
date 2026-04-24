@@ -68,6 +68,18 @@ export interface FollowupInput {
   compositeRisk: CompositeRiskProfile;
   scoreResults: ScoreResultEntry[];
   /**
+   * Whether the patient has a pre-existing diagnosis of diabetes (type 1
+   * or type 2). Sourced from the clinical context, NOT from lab-derived
+   * inference — so that:
+   *   - chronic-care pathways (annual retinopathy, annual foot exam,
+   *     annual urine ACR) are scheduled only for truly diagnosed patients,
+   *   - the undiagnosed-diabetes-suspected branch (lab-based) remains
+   *     distinct from the known-diabetic branch (context-based).
+   * Defaults to `false` when not provided to preserve backward
+   * compatibility with callers that pre-date WS4.
+   */
+  hasDiabetes?: boolean;
+  /**
    * Optional anchor for date computations. Pass the assessment's
    * `createdAt` when rehydrating so the plan is byte-equivalent to the
    * one originally produced. Defaults to `new Date()` for convenience.
@@ -289,11 +301,101 @@ function hepaticItems(scoreResults: ScoreResultEntry[]): FollowUpItem[] {
 
 /**
  * Metabolic follow-up items (MetS / ADA / diabetes control).
+ *
+ * Diabetology-aware rules (WS4):
+ *   - UNDIAGNOSED_DIABETES_SUSPECTED → urgent diagnostic confirmation
+ *     within 7 days (ADA SOC 2024 §2).
+ *   - GLYCEMIC_CONTROL severely_decompensated (HbA1c>9 or glucose>250)
+ *     → endocrinology referral within 1 month (ADA SOC 2024 §6).
+ *   - GLYCEMIC_CONTROL suboptimal (HbA1c>7) → therapy review within
+ *     3 months (ADA SOC 2024 §6).
+ *   - Every known diabetic → annual retinopathy exam, annual foot exam,
+ *     annual urine ACR (nephropathy), lipid target review (ADA §10, §12).
  */
-function metabolicItems(scoreResults: ScoreResultEntry[]): FollowUpItem[] {
+function metabolicItems(
+  scoreResults: ScoreResultEntry[],
+  hasDiabetes: boolean,
+): FollowUpItem[] {
   const items: FollowUpItem[] = [];
   const ada = findScoreByCode(scoreResults, 'ADA');
   const mets = findScoreByCode(scoreResults, 'METABOLIC_SYNDROME');
+  const undiagnosedDm = findScoreByCode(scoreResults, 'UNDIAGNOSED_DIABETES_SUSPECTED');
+  const glycemicControl = findScoreByCode(scoreResults, 'GLYCEMIC_CONTROL');
+
+  // WS3/WS4 — undiagnosed diabetes: URGENT confirmation.
+  if (undiagnosedDm) {
+    items.push({
+      code: 'metabolic_undiagnosed_dm_confirmation',
+      title: 'Confirm diabetes diagnosis (repeat fasting glucose / HbA1c or OGTT)',
+      rationale:
+        'Patient not flagged as diabetic but labs meet ADA diagnostic thresholds. '
+          + 'Confirm with repeat testing before initiating care pathway.',
+      dueInMonths: 0, // ~7 days — expressed as 0.25 is not supported; UI layer renders "within 1 week"
+      priority: 'urgent',
+      guidelineSource: 'ADA Standards of Care 2024 §2',
+    });
+  }
+
+  // Glycemic control in known diabetics.
+  if (glycemicControl) {
+    const severity =
+      ((glycemicControl.rawPayload ?? {}) as { severity?: string }).severity
+      ?? glycemicControl.category;
+    const hba1c = glycemicControl.valueNumeric;
+
+    if (severity === 'severely_decompensated') {
+      items.push({
+        code: 'metabolic_endocrinology_urgent',
+        title: 'Urgent endocrinology referral — severe glycemic decompensation',
+        rationale: `HbA1c ${hba1c ?? '—'}% > 9% or fasting glucose > 250 mg/dL.`,
+        dueInMonths: 1,
+        priority: 'urgent',
+        recurrenceMonths: 3,
+        guidelineSource: 'ADA Standards of Care 2024 §6',
+      });
+    } else if (severity === 'suboptimal') {
+      items.push({
+        code: 'metabolic_uncontrolled_glycemia',
+        title: 'Therapy review — suboptimal glycemic control',
+        rationale: `HbA1c ${hba1c ?? '—'}% > 7% target. Review regimen intensification.`,
+        dueInMonths: 3,
+        priority: 'moderate',
+        recurrenceMonths: 3,
+        guidelineSource: 'ADA Standards of Care 2024 §6',
+      });
+    }
+  }
+
+  // Baseline annual screenings for every known diabetic (ADA SOC §10, §12).
+  if (hasDiabetes) {
+    items.push({
+      code: 'dm_retinopathy_screening',
+      title: 'Dilated eye exam — diabetic retinopathy screening',
+      rationale: 'Annual ophthalmologic exam recommended for all diabetic patients.',
+      dueInMonths: 12,
+      priority: 'routine',
+      recurrenceMonths: 12,
+      guidelineSource: 'ADA Standards of Care 2024 §12',
+    });
+    items.push({
+      code: 'dm_foot_screening',
+      title: 'Comprehensive foot exam — diabetic foot screening',
+      rationale: 'Annual foot inspection + monofilament / vibration testing.',
+      dueInMonths: 12,
+      priority: 'routine',
+      recurrenceMonths: 12,
+      guidelineSource: 'ADA Standards of Care 2024 §12',
+    });
+    items.push({
+      code: 'dm_annual_urine_acr',
+      title: 'Annual urine ACR — diabetic nephropathy screening',
+      rationale: 'Albumin-creatinine ratio annually to detect early nephropathy.',
+      dueInMonths: 12,
+      priority: 'routine',
+      recurrenceMonths: 12,
+      guidelineSource: 'ADA Standards of Care 2024 §11 + KDIGO 2024',
+    });
+  }
 
   const adaVal = typeof ada?.valueNumeric === 'number' ? ada.valueNumeric : null;
   const metsPositive = (mets?.valueNumeric ?? 0) >= 3 ||
@@ -483,7 +585,12 @@ function narrativeDomainMonitoring(scoreResults: ScoreResultEntry[]): string[] {
  * read-path of `loadAssessmentSnapshot`).
  */
 export function determineFollowupPlan(input: FollowupInput): FollowupPlan {
-  const { compositeRisk, scoreResults, now = new Date() } = input;
+  const {
+    compositeRisk,
+    scoreResults,
+    hasDiabetes = false,
+    now = new Date(),
+  } = input;
 
   const level: RiskLevel = compositeRisk.level;
   const intervalMonths = INTERVAL_BY_LEVEL[level];
@@ -496,7 +603,7 @@ export function determineFollowupPlan(input: FollowupInput): FollowupPlan {
     ...cardiovascularItems(scoreResults, level),
     ...renalItems(scoreResults),
     ...hepaticItems(scoreResults),
-    ...metabolicItems(scoreResults),
+    ...metabolicItems(scoreResults, hasDiabetes),
     ...frailtyItems(scoreResults),
   ];
 

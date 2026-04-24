@@ -57,52 +57,83 @@ const VitalsSchema = z.object({
 });
 
 /**
- * Labs section - optional laboratory measurements
- * Patients may not have all lab results available
+ * Labs section.
+ *
+ * Policy: as of WS1 (2026), a fixed panel of 10 lab values is REQUIRED for
+ * every assessment submitted through the clinical workflow. The cardio-
+ * nephro-metabolic vertical cannot deliver a meaningful stratification
+ * without them. Making these fields mandatory at the schema boundary:
+ *
+ *   1. prevents silent "not computable" UX caused by missing inputs;
+ *   2. aligns the operator expectation ("if the lab isn't collected, the
+ *      assessment isn't accepted") with the engine semantics;
+ *   3. keeps the orchestrator's existing presence gates safe (they remain
+ *      as belt-and-braces for pass-through or legacy calls).
+ *
+ * Required (10): totalCholMgDl, hdlMgDl, ldlMgDl, triglyceridesMgDl,
+ *   glucoseMgDl, hba1cPct, creatinineMgDl, ggtUL, astUL, plateletsGigaL.
+ *
+ * Optional: altUL (redundant with AST for FIB-4), eGFR (derived from
+ *   creatinine unless clinician-supplied), ACR / urineAlbuminMgL /
+ *   urineCreatinineMgDl (staging-only inputs, not used by all pathways).
  */
 const LabsSchema = z.object({
+  // -------------------------------------------------------------------
+  // Required fields (WS1 — enforced at validation boundary)
+  // -------------------------------------------------------------------
   totalCholMgDl: z
     .number()
     .positive('Total cholesterol must be positive')
     .min(CLINICAL_RANGES.totalCholMgDl.min, `Total cholesterol must be at least ${CLINICAL_RANGES.totalCholMgDl.min} mg/dL`)
-    .max(CLINICAL_RANGES.totalCholMgDl.max, `Total cholesterol must not exceed ${CLINICAL_RANGES.totalCholMgDl.max} mg/dL`)
-    .optional()
-    .nullable(),
+    .max(CLINICAL_RANGES.totalCholMgDl.max, `Total cholesterol must not exceed ${CLINICAL_RANGES.totalCholMgDl.max} mg/dL`),
   hdlMgDl: z
     .number()
     .positive('HDL must be positive')
     .min(CLINICAL_RANGES.hdlMgDl.min, `HDL must be at least ${CLINICAL_RANGES.hdlMgDl.min} mg/dL`)
-    .max(CLINICAL_RANGES.hdlMgDl.max, `HDL must not exceed ${CLINICAL_RANGES.hdlMgDl.max} mg/dL`)
-    .optional()
-    .nullable(),
+    .max(CLINICAL_RANGES.hdlMgDl.max, `HDL must not exceed ${CLINICAL_RANGES.hdlMgDl.max} mg/dL`),
   ldlMgDl: z
     .number()
     .positive('LDL must be positive')
     .min(CLINICAL_RANGES.ldlMgDl.min, `LDL must be at least ${CLINICAL_RANGES.ldlMgDl.min} mg/dL`)
-    .max(CLINICAL_RANGES.ldlMgDl.max, `LDL must not exceed ${CLINICAL_RANGES.ldlMgDl.max} mg/dL`)
-    .optional()
-    .nullable(),
+    .max(CLINICAL_RANGES.ldlMgDl.max, `LDL must not exceed ${CLINICAL_RANGES.ldlMgDl.max} mg/dL`),
   triglyceridesMgDl: z
     .number()
     .positive('Triglycerides must be positive')
     .min(CLINICAL_RANGES.triglyceridesMgDl.min, `Triglycerides must be at least ${CLINICAL_RANGES.triglyceridesMgDl.min} mg/dL`)
-    .max(CLINICAL_RANGES.triglyceridesMgDl.max, `Triglycerides must not exceed ${CLINICAL_RANGES.triglyceridesMgDl.max} mg/dL`)
-    .optional()
-    .nullable(),
+    .max(CLINICAL_RANGES.triglyceridesMgDl.max, `Triglycerides must not exceed ${CLINICAL_RANGES.triglyceridesMgDl.max} mg/dL`),
   glucoseMgDl: z
     .number()
     .positive('Glucose must be positive')
     .min(CLINICAL_RANGES.glucoseMgDl.min, `Glucose must be at least ${CLINICAL_RANGES.glucoseMgDl.min} mg/dL`)
-    .max(CLINICAL_RANGES.glucoseMgDl.max, `Glucose must not exceed ${CLINICAL_RANGES.glucoseMgDl.max} mg/dL`)
-    .optional()
-    .nullable(),
+    .max(CLINICAL_RANGES.glucoseMgDl.max, `Glucose must not exceed ${CLINICAL_RANGES.glucoseMgDl.max} mg/dL`),
   hba1cPct: z
     .number()
     .positive('HbA1c must be positive')
     .min(CLINICAL_RANGES.hba1cPct.min, `HbA1c must be at least ${CLINICAL_RANGES.hba1cPct.min}%`)
-    .max(CLINICAL_RANGES.hba1cPct.max, `HbA1c must not exceed ${CLINICAL_RANGES.hba1cPct.max}%`)
-    .optional()
-    .nullable(),
+    .max(CLINICAL_RANGES.hba1cPct.max, `HbA1c must not exceed ${CLINICAL_RANGES.hba1cPct.max}%`),
+  creatinineMgDl: z
+    .number()
+    .positive('Creatinine must be positive')
+    .min(CLINICAL_RANGES.creatinineMgDl.min, `Creatinine must be at least ${CLINICAL_RANGES.creatinineMgDl.min} mg/dL`)
+    .max(CLINICAL_RANGES.creatinineMgDl.max, `Creatinine must not exceed ${CLINICAL_RANGES.creatinineMgDl.max} mg/dL`),
+  ggtUL: z
+    .number()
+    .positive('GGT must be positive')
+    .min(CLINICAL_RANGES.ggtUL.min, `GGT must be at least ${CLINICAL_RANGES.ggtUL.min} U/L`)
+    .max(CLINICAL_RANGES.ggtUL.max, `GGT must not exceed ${CLINICAL_RANGES.ggtUL.max} U/L`),
+  astUL: z
+    .number()
+    .positive('AST must be positive')
+    .min(CLINICAL_RANGES.astUL.min, `AST must be at least ${CLINICAL_RANGES.astUL.min} U/L`)
+    .max(CLINICAL_RANGES.astUL.max, `AST must not exceed ${CLINICAL_RANGES.astUL.max} U/L`),
+  plateletsGigaL: z
+    .number()
+    .positive('Platelets must be positive')
+    .min(CLINICAL_RANGES.plateletsGigaL.min, `Platelets must be at least ${CLINICAL_RANGES.plateletsGigaL.min} G/L`)
+    .max(CLINICAL_RANGES.plateletsGigaL.max, `Platelets must not exceed ${CLINICAL_RANGES.plateletsGigaL.max} G/L`),
+  // -------------------------------------------------------------------
+  // Optional fields (retained for backward compatibility and staging)
+  // -------------------------------------------------------------------
   eGFR: z
     .number()
     .positive('eGFR must be positive')
@@ -110,39 +141,11 @@ const LabsSchema = z.object({
     .max(CLINICAL_RANGES.eGFR.max, `eGFR must not exceed ${CLINICAL_RANGES.eGFR.max}`)
     .optional()
     .nullable(),
-  creatinineMgDl: z
-    .number()
-    .positive('Creatinine must be positive')
-    .min(CLINICAL_RANGES.creatinineMgDl.min, `Creatinine must be at least ${CLINICAL_RANGES.creatinineMgDl.min} mg/dL`)
-    .max(CLINICAL_RANGES.creatinineMgDl.max, `Creatinine must not exceed ${CLINICAL_RANGES.creatinineMgDl.max} mg/dL`)
-    .optional()
-    .nullable(),
-  ggtUL: z
-    .number()
-    .positive('GGT must be positive')
-    .min(CLINICAL_RANGES.ggtUL.min, `GGT must be at least ${CLINICAL_RANGES.ggtUL.min} U/L`)
-    .max(CLINICAL_RANGES.ggtUL.max, `GGT must not exceed ${CLINICAL_RANGES.ggtUL.max} U/L`)
-    .optional()
-    .nullable(),
-  astUL: z
-    .number()
-    .positive('AST must be positive')
-    .min(CLINICAL_RANGES.astUL.min, `AST must be at least ${CLINICAL_RANGES.astUL.min} U/L`)
-    .max(CLINICAL_RANGES.astUL.max, `AST must not exceed ${CLINICAL_RANGES.astUL.max} U/L`)
-    .optional()
-    .nullable(),
   altUL: z
     .number()
     .positive('ALT must be positive')
     .min(CLINICAL_RANGES.altUL.min, `ALT must be at least ${CLINICAL_RANGES.altUL.min} U/L`)
     .max(CLINICAL_RANGES.altUL.max, `ALT must not exceed ${CLINICAL_RANGES.altUL.max} U/L`)
-    .optional()
-    .nullable(),
-  plateletsGigaL: z
-    .number()
-    .positive('Platelets must be positive')
-    .min(CLINICAL_RANGES.plateletsGigaL.min, `Platelets must be at least ${CLINICAL_RANGES.plateletsGigaL.min} G/L`)
-    .max(CLINICAL_RANGES.plateletsGigaL.max, `Platelets must not exceed ${CLINICAL_RANGES.plateletsGigaL.max} G/L`)
     .optional()
     .nullable(),
   albuminCreatinineRatio: z
@@ -212,13 +215,37 @@ const LifestyleSchema = z.object({
   weeklyActivityMinutes: z
     .number()
     .nonnegative('Activity minutes must be non-negative')
+    .max(10080, 'Activity minutes cannot exceed 10080 (1 week)')
     .optional()
     .nullable()
-    .describe('Minutes of physical activity per week'),
+    .describe('Aggregate weekly activity minutes (legacy — prefer MET split)'),
+  // WS5 — MET-based activity breakdown (WHO/GPAQ methodology).
+  moderateActivityMinutes: z
+    .number()
+    .nonnegative('Moderate-activity minutes must be non-negative')
+    .max(10080, 'Moderate-activity minutes cannot exceed 10080 (1 week)')
+    .optional()
+    .nullable()
+    .describe('Minutes/week of moderate-intensity aerobic activity (~4 METs)'),
+  vigorousActivityMinutes: z
+    .number()
+    .nonnegative('Vigorous-activity minutes must be non-negative')
+    .max(10080, 'Vigorous-activity minutes cannot exceed 10080 (1 week)')
+    .optional()
+    .nullable()
+    .describe('Minutes/week of vigorous-intensity aerobic activity (~8 METs)'),
+  sedentaryHoursPerDay: z
+    .number()
+    .nonnegative('Sedentary hours must be non-negative')
+    .max(24, 'Sedentary hours cannot exceed 24')
+    .optional()
+    .nullable()
+    .describe('Average daily sedentary hours (sitting/reclining, excl. sleep)'),
   activityFrequency: z
     .number()
     .int()
     .nonnegative()
+    .max(7, 'Activity frequency cannot exceed 7 days per week')
     .optional()
     .nullable()
     .describe('Days per week of activity'),
@@ -312,6 +339,11 @@ export const AssessmentInputSchema = RawAssessmentInputSchema.transform(
     lifestyle: {
       predimedAnswers: v.lifestyle.predimedAnswers ?? undefined,
       weeklyActivityMinutes: v.lifestyle.weeklyActivityMinutes ?? undefined,
+      moderateActivityMinutes:
+        v.lifestyle.moderateActivityMinutes ?? undefined,
+      vigorousActivityMinutes:
+        v.lifestyle.vigorousActivityMinutes ?? undefined,
+      sedentaryHoursPerDay: v.lifestyle.sedentaryHoursPerDay ?? undefined,
       activityFrequency: v.lifestyle.activityFrequency ?? undefined,
       activityType: v.lifestyle.activityType ?? undefined,
       intensityLevel: v.lifestyle.intensityLevel ?? undefined,

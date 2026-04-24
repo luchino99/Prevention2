@@ -245,22 +245,40 @@ export function deriveCompletenessAlerts(
 ): AlertEntry[] {
   const alerts: AlertEntry[] = [];
 
-  // Check for missing inputs needed for core scores
+  // Check for missing inputs needed for core scores.
+  //
+  // Important: the score-engine orchestrator now ALWAYS emits a SCORE2
+  // ScoreResultEntry (computed or structured skip). So `!score2` no longer
+  // means "missing data" — we must distinguish `score2 not emitted` (only
+  // happens for SCORE2-Diabetes when patient is non-diabetic) from
+  // `skipped due to missing input / out-of-range data` (valueNumeric=null).
   const score2 = findScoreByCode(currentScores, 'SCORE2');
-  const egfr = findScoreByCode(currentScores, 'eGFR');
+  const egfr = findScoreByCode(currentScores, 'EGFR');
 
-  if (!score2) {
+  const score2NotComputable =
+    !score2 || (score2.valueNumeric === null);
+  // When SCORE2 is skipped because of an out-of-range input (not missing
+  // data), the cardiovascular reasoning already carries a truthful message;
+  // we only surface this completeness alert when the skip is due to missing
+  // input — i.e. the skipReason is SCORE2_MISSING_INPUT or SCORE2 is absent.
+  const score2SkipReason =
+    (score2?.rawPayload as { skipReason?: string } | undefined)?.skipReason;
+  const score2IsMissingInput =
+    !score2 || score2SkipReason === 'SCORE2_MISSING_INPUT';
+  if (score2NotComputable && score2IsMissingInput) {
+    const missing =
+      ((score2?.rawPayload as { missingFields?: string[] } | undefined)
+        ?.missingFields ?? []).join(', ') || 'lipid panel and blood pressure';
     alerts.push({
       type: 'missing_critical_data',
       severity: 'warning',
       title: 'SCORE2 Data Missing',
-      message:
-        'Cardiovascular risk assessment requires lipid panel (total cholesterol, HDL) and blood pressure. Please obtain labs.',
+      message: `Cardiovascular risk assessment requires: ${missing}. Please obtain the missing inputs.`,
       timestamp: new Date().toISOString(),
     });
   }
 
-  if (!egfr) {
+  if (!egfr || egfr.valueNumeric === null) {
     alerts.push({
       type: 'missing_critical_data',
       severity: 'warning',

@@ -236,7 +236,30 @@ export interface AssessmentInput {
 
   lifestyle: {
     predimedAnswers?: boolean[];
+    /**
+     * Legacy aggregate weekly minutes (WHO ≥150 moderate or ≥75 vigorous
+     * equivalents). Retained for backwards compatibility — new assessments
+     * should populate the MET-split fields below and leave this derived.
+     */
     weeklyActivityMinutes?: number;
+    /**
+     * Minutes of moderate-intensity aerobic activity per week
+     * (brisk walking, leisurely cycling, doubles tennis). MET ≈ 3–6,
+     * WHO/GPAQ methodology uses a nominal 4 METs for aggregation.
+     */
+    moderateActivityMinutes?: number;
+    /**
+     * Minutes of vigorous-intensity aerobic activity per week
+     * (running, fast cycling, singles tennis). MET ≈ 7–10,
+     * WHO/GPAQ methodology uses a nominal 8 METs for aggregation.
+     */
+    vigorousActivityMinutes?: number;
+    /**
+     * Self-reported average hours spent sitting or reclining per day
+     * (excluding sleep). ≥8h/day is a CV risk signal independent of
+     * meeting MVPA targets (ESC 2021 CVD prevention §3).
+     */
+    sedentaryHoursPerDay?: number;
     activityFrequency?: number;
     activityType?: string;
     intensityLevel?: string;
@@ -446,10 +469,37 @@ export interface AssessmentSnapshot {
 
   activitySummary: {
     minutesPerWeek: number | null;
+    moderateMinutesPerWeek: number | null;
+    vigorousMinutesPerWeek: number | null;
+    metMinutesPerWeek: number | null;
     qualitativeBand: 'insufficient' | 'borderline' | 'sufficient' | 'active';
     meetsWhoGuidelines: boolean;
     sedentaryRiskLevel: 'low' | 'moderate' | 'high' | 'very_high';
+    sedentaryHoursPerDay: number | null;
   };
+
+  /**
+   * Bounded lifestyle recommendations (WS6). Each entry carries
+   * `authority: 'supportive'` to guarantee the UI/PDF consumers render
+   * them as counselling nudges, never as prescriptions.
+   */
+  lifestyleRecommendations: {
+    code: string;
+    domain:
+      | 'activity'
+      | 'sedentary'
+      | 'diet'
+      | 'smoking'
+      | 'alcohol'
+      | 'weight'
+      | 'sleep'
+      | 'hydration';
+    title: string;
+    rationale: string;
+    priority: 'routine' | 'moderate' | 'urgent';
+    authority: 'supportive';
+    guidelineSource: string;
+  }[];
 
   alerts: {
     type: string;

@@ -38,6 +38,7 @@ import { determineRequiredScreenings } from '../domain/clinical/screening-engine
 import { determineFollowupPlan } from '../domain/clinical/followup-engine/followup-plan.js';
 import { applyLabDerivations } from '../domain/clinical/derivations/index.js';
 import { checkAssessmentCompleteness } from '../domain/clinical/completeness/completeness-checker.js';
+import { deriveLifestyleRecommendations } from '../domain/clinical/lifestyle-recommendation-engine/lifestyle-recommendations.js';
 
 import type {
   AssessmentInput,
@@ -316,6 +317,140 @@ function bestEffort(
   );
 }
 
+/**
+ * Narrow projection of the enriched assessment input shape consumed by
+ * the lifestyle-recommendation engine. Extracted into a helper so the
+ * write-path and the read-path both build the exact same snapshot —
+ * keeping the recommendations byte-equivalent across rehydrations.
+ */
+function buildLifestyleSnapshot(
+  enrichedInput: AssessmentInput,
+  scoreResults: ReturnType<typeof computeAllScores>,
+) {
+  const bmiEntry = scoreResults.find(
+    (r) => r.scoreCode.toLowerCase() === 'bmi',
+  );
+  const bmi =
+    bmiEntry && typeof bmiEntry.valueNumeric === 'number'
+      ? bmiEntry.valueNumeric
+      : undefined;
+
+  return {
+    smoking: enrichedInput.clinicalContext.smoking === true,
+    hasDiabetes: enrichedInput.clinicalContext.hasDiabetes === true,
+    hypertension: enrichedInput.clinicalContext.hypertension === true,
+    bmi,
+    waistCm: enrichedInput.vitals.waistCm,
+    sex: enrichedInput.demographics.sex,
+    sbpMmHg: enrichedInput.vitals.sbpMmHg,
+    ldlMgDl: enrichedInput.labs.ldlMgDl,
+    hba1cPct: enrichedInput.labs.hba1cPct,
+    glucoseMgDl: enrichedInput.labs.glucoseMgDl,
+  };
+}
+
+/**
+ * Map a FollowUpItem / ScreeningItem code to a UI-friendly domain bucket.
+ * The enum values match the CHECK constraint in migration 007
+ * (`cardiovascular | metabolic | renal | hepatic | frailty |
+ * diabetic_complications | core_review | other`).
+ */
+function inferDueItemDomain(code: string):
+  | 'cardiovascular'
+  | 'metabolic'
+  | 'renal'
+  | 'hepatic'
+  | 'frailty'
+  | 'diabetic_complications'
+  | 'core_review'
+  | 'other'
+{
+  const c = code.toLowerCase();
+  if (c === 'core_review') return 'core_review';
+  if (c.startsWith('cv_') || c.startsWith('cardiovascular')) return 'cardiovascular';
+  if (c.startsWith('renal')) return 'renal';
+  if (c.startsWith('hepatic')) return 'hepatic';
+  if (c.startsWith('frailty')) return 'frailty';
+  if (c.startsWith('dm_')) return 'diabetic_complications';
+  if (c.startsWith('metabolic')) return 'metabolic';
+  return 'other';
+}
+
+/**
+ * Convert a `due_in_months` integer into an ISO date anchored on `now`.
+ * `0` is treated as "today" (same-day urgent); fractional months are
+ * rounded to whole-month semantics to avoid locale drift.
+ */
+function monthsFromNowIso(now: Date, months: number): string {
+  const d = new Date(now.getTime());
+  d.setUTCMonth(d.getUTCMonth() + Math.max(0, Math.round(months)));
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * Build the row payload for the `due_items` upsert. Keeping this pure
+ * makes the write path easier to audit and enables future unit testing
+ * without database fixtures.
+ */
+function buildDueItemRows(args: {
+  tenantId: string;
+  patientId: string;
+  assessmentId: string;
+  followupItems: ReturnType<typeof determineFollowupPlan>['items'];
+  screenings: ReturnType<typeof determineRequiredScreenings>;
+  createdByUserId: string | null;
+  now: Date;
+}): Array<Record<string, unknown>> {
+  const rows: Array<Record<string, unknown>> = [];
+
+  for (const item of args.followupItems) {
+    rows.push({
+      tenant_id: args.tenantId,
+      patient_id: args.patientId,
+      assessment_id: args.assessmentId,
+      source_engine: 'followup',
+      item_code: item.code,
+      title: item.title,
+      rationale: item.rationale ?? null,
+      guideline_source: item.guidelineSource ?? null,
+      priority: item.priority,
+      domain: inferDueItemDomain(item.code),
+      due_at: monthsFromNowIso(args.now, item.dueInMonths),
+      recurrence_months: item.recurrenceMonths ?? null,
+      status: 'open',
+      created_by: args.createdByUserId,
+    });
+  }
+
+  for (const s of args.screenings) {
+    // Screenings don't carry a code today; derive a stable one from the
+    // screening title + guideline to avoid collisions across runs.
+    const codeBase = s.screening
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .slice(0, 64) || 'screening';
+    rows.push({
+      tenant_id: args.tenantId,
+      patient_id: args.patientId,
+      assessment_id: args.assessmentId,
+      source_engine: 'screening',
+      item_code: `scr_${codeBase}`,
+      title: s.screening,
+      rationale: s.reason ?? null,
+      guideline_source: s.guidelineSource ?? null,
+      priority: s.priority,
+      domain: inferDueItemDomain(codeBase),
+      due_at: monthsFromNowIso(args.now, s.intervalMonths),
+      recurrence_months: s.intervalMonths ?? null,
+      status: 'open',
+      created_by: args.createdByUserId,
+    });
+  }
+
+  return rows;
+}
+
 // ============================================================================
 // Core: createAssessment
 // ============================================================================
@@ -355,6 +490,12 @@ export async function createAssessment(
 
   const activity = assessActivity({
     minutesPerWeek: enrichedInput.lifestyle.weeklyActivityMinutes ?? undefined,
+    moderateMinutesPerWeek:
+      enrichedInput.lifestyle.moderateActivityMinutes ?? undefined,
+    vigorousMinutesPerWeek:
+      enrichedInput.lifestyle.vigorousActivityMinutes ?? undefined,
+    sedentaryHoursPerDay:
+      enrichedInput.lifestyle.sedentaryHoursPerDay ?? undefined,
     frequency: enrichedInput.lifestyle.activityFrequency ?? undefined,
     activityType: enrichedInput.lifestyle.activityType ?? undefined,
     intensityLevel: enrichedInput.lifestyle.intensityLevel ?? undefined,
@@ -375,7 +516,17 @@ export async function createAssessment(
   const followupPlan = determineFollowupPlan({
     compositeRisk,
     scoreResults,
+    hasDiabetes: enrichedInput.clinicalContext.hasDiabetes === true,
     now,
+  });
+
+  // WS6 — bounded lifestyle recommendations. Pure function of the
+  // clinical snapshot + activity/nutrition summaries; never overrides a
+  // deterministic score and is marked `authority: 'supportive'`.
+  const lifestyleRecommendations = deriveLifestyleRecommendations({
+    snapshot: buildLifestyleSnapshot(enrichedInput, scoreResults),
+    activity,
+    nutrition,
   });
 
   // Best-effort load of the previous composite risk for risk-trend alerts.
@@ -541,6 +692,34 @@ export async function createAssessment(
     }),
   );
 
+  // ─── 8b. Due items (WS7) ───
+  // Materialise the structured follow-up items and screening items as
+  // `due_items` rows so the patient-detail countdown UI can render them
+  // without recomputing the engines on the read path. Upsert keyed on
+  // (patient_id, source_engine, item_code) so re-running an assessment
+  // updates the due_at / priority / rationale in place (partial unique
+  // index in migration 007 restricts the constraint to non-terminal
+  // rows).
+  const dueItemRows = buildDueItemRows({
+    tenantId: tenant_id,
+    patientId,
+    assessmentId,
+    followupItems: followupPlan.items,
+    screenings,
+    createdByUserId: auth.userId,
+    now,
+  });
+  if (dueItemRows.length > 0) {
+    await bestEffort('due_items', () =>
+      supabaseAdmin
+        .from('due_items')
+        .upsert(dueItemRows, {
+          onConflict: 'patient_id,source_engine,item_code',
+          ignoreDuplicates: false,
+        }),
+    );
+  }
+
   // ─── 9. Alerts ───
   if (alerts.length > 0) {
     const alertRows = alerts.map((a) => ({
@@ -592,6 +771,7 @@ export async function createAssessment(
     followupPlan,
     nutrition,
     activity,
+    lifestyleRecommendations,
     alerts,
     completenessWarnings,
   });
@@ -667,6 +847,12 @@ export async function loadAssessmentSnapshot(
 
   const activity = assessActivity({
     minutesPerWeek: enrichedInput.lifestyle.weeklyActivityMinutes ?? undefined,
+    moderateMinutesPerWeek:
+      enrichedInput.lifestyle.moderateActivityMinutes ?? undefined,
+    vigorousMinutesPerWeek:
+      enrichedInput.lifestyle.vigorousActivityMinutes ?? undefined,
+    sedentaryHoursPerDay:
+      enrichedInput.lifestyle.sedentaryHoursPerDay ?? undefined,
     frequency: enrichedInput.lifestyle.activityFrequency ?? undefined,
     activityType: enrichedInput.lifestyle.activityType ?? undefined,
     intensityLevel: enrichedInput.lifestyle.intensityLevel ?? undefined,
@@ -690,7 +876,16 @@ export async function loadAssessmentSnapshot(
   const followupPlan = determineFollowupPlan({
     compositeRisk,
     scoreResults,
+    hasDiabetes: enrichedInput.clinicalContext.hasDiabetes === true,
     now,
+  });
+
+  // WS6 — regenerate bounded lifestyle recommendations on the read path.
+  // Determinism is preserved because every input is itself deterministic.
+  const lifestyleRecommendations = deriveLifestyleRecommendations({
+    snapshot: buildLifestyleSnapshot(enrichedInput, scoreResults),
+    activity,
+    nutrition,
   });
 
   // Prefer persisted alerts — they carry acknowledgements and timestamps.
@@ -739,6 +934,7 @@ export async function loadAssessmentSnapshot(
     followupPlan,
     nutrition,
     activity,
+    lifestyleRecommendations,
     alerts,
     completenessWarnings,
   });
@@ -763,6 +959,7 @@ type SnapshotAssembly = {
   followupPlan: ReturnType<typeof determineFollowupPlan>;
   nutrition: ReturnType<typeof buildNutritionSummary>;
   activity: ReturnType<typeof assessActivity>;
+  lifestyleRecommendations: ReturnType<typeof deriveLifestyleRecommendations>;
   alerts: ReturnType<typeof deriveAlerts>;
   completenessWarnings: CompletenessWarning[];
 };
@@ -794,6 +991,7 @@ function buildSnapshot(a: SnapshotAssembly): AssessmentSnapshot {
     followupPlan: a.followupPlan,
     nutritionSummary: a.nutrition,
     activitySummary: a.activity,
+    lifestyleRecommendations: a.lifestyleRecommendations,
     alerts: a.alerts,
   };
 }

@@ -238,6 +238,64 @@ function deriveEchocardiogramScreening(
   };
 }
 
+/**
+ * Annual dilated retinopathy screening for every known diabetic patient
+ * (ADA Standards of Care 2024 §12). The ADA allows 2-year spacing when
+ * the exam is normal AND glycemia is well-controlled; we conservatively
+ * default to 12 months to keep the engine deterministic without
+ * introducing a dependency on prior-exam history.
+ */
+function deriveDiabeticRetinopathyScreening(
+  diagnoses: string[],
+): ScreeningItem | null {
+  if (!hasDiagnosis(diagnoses, 'diabetes')) return null;
+  return {
+    screening: 'Dilated Fundus Examination (retinopathy screening)',
+    reason: 'Annual ophthalmologic exam recommended for all diabetic patients',
+    priority: 'routine',
+    intervalMonths: 12,
+    guidelineSource: 'ADA Standards of Care 2024 §12',
+  };
+}
+
+/**
+ * Annual comprehensive foot exam (visual inspection + monofilament /
+ * vibration / pedal pulses) for every known diabetic patient
+ * (ADA Standards of Care 2024 §12).
+ */
+function deriveDiabeticFootScreening(
+  diagnoses: string[],
+): ScreeningItem | null {
+  if (!hasDiagnosis(diagnoses, 'diabetes')) return null;
+  return {
+    screening: 'Comprehensive Foot Examination (diabetic foot screening)',
+    reason:
+      'Annual inspection + monofilament / vibration / pedal-pulse testing',
+    priority: 'routine',
+    intervalMonths: 12,
+    guidelineSource: 'ADA Standards of Care 2024 §12',
+  };
+}
+
+/**
+ * Annual urine albumin-to-creatinine ratio (ACR) for every known diabetic
+ * patient. The renal-risk rule above already emits a combined eGFR+ACR
+ * panel, but keeping a dedicated ACR item makes the diabetology checklist
+ * explicit even when renal risk is not elevated (ADA §11 + KDIGO 2024).
+ */
+function deriveDiabeticUrineACRScreening(
+  diagnoses: string[],
+): ScreeningItem | null {
+  if (!hasDiagnosis(diagnoses, 'diabetes')) return null;
+  return {
+    screening: 'Urine Albumin-to-Creatinine Ratio (ACR) — diabetic nephropathy',
+    reason: 'Annual ACR to detect incipient diabetic nephropathy',
+    priority: 'routine',
+    intervalMonths: 12,
+    guidelineSource: 'ADA Standards of Care 2024 §11 + KDIGO 2024',
+  };
+}
+
 function deriveABIScreening(
   age: number,
   cvLevel: RiskLevel | undefined,
@@ -285,6 +343,10 @@ export function determineRequiredScreenings(
     deriveFrailtyScreening(age),
     deriveEchocardiogramScreening(cvLevel),
     deriveABIScreening(age, cvLevel),
+    // WS4 — diabetic complication screenings (ADA Standards of Care 2024).
+    deriveDiabeticRetinopathyScreening(diagnoses),
+    deriveDiabeticFootScreening(diagnoses),
+    deriveDiabeticUrineACRScreening(diagnoses),
   ];
 
   // Prioritize priorityForCvLevel consumer-side (kept as public helper so

@@ -58,9 +58,19 @@ async function apiFetch(path, { method = 'GET', body, query } = {}) {
   if (query) {
     const qs = new URLSearchParams();
     for (const [k, v] of Object.entries(query)) {
-      if (v !== undefined && v !== null) qs.append(k, String(v));
+      if (v === undefined || v === null) continue;
+      if (Array.isArray(v)) {
+        // Repeated keys — `?status=open&status=acknowledged` — so the
+        // server-side Zod union (enum | array) deserialises correctly.
+        for (const item of v) {
+          if (item !== undefined && item !== null) qs.append(k, String(item));
+        }
+      } else {
+        qs.append(k, String(v));
+      }
     }
-    url += '?' + qs.toString();
+    const qsStr = qs.toString();
+    if (qsStr) url += '?' + qsStr;
   }
   const res = await fetch(url, {
     method,
@@ -136,6 +146,10 @@ export const api = {
       method: 'POST',
       body: { action, note },
     }),
+
+  // Due items (WS7 — materialised follow-up / screening countdown)
+  listPatientDueItems: (patientId, query) =>
+    apiFetch(`/api/v1/patients/${encodeURIComponent(patientId)}/due-items`, { query }),
 
   // Consents
   listConsents:      (patientId) => apiFetch('/api/v1/consents', { query: { patientId } }),

@@ -102,26 +102,134 @@ function findScoreByCode(
 // ============================================================================
 
 /**
+ * Translate a structured SCORE2 / SCORE2-Diabetes skip reason into a
+ * truthful, clinically-actionable one-liner. No hard-coded "missing lipid
+ * panel" fallback — the message is derived strictly from the skip reason
+ * emitted by the score-engine orchestrator.
+ */
+function humanizeScore2SkipReason(entry: ScoreResultEntry): string {
+  const raw = entry.rawPayload as {
+    skipReason?: string;
+    missingFields?: string[];
+    outOfRange?: { field: string; value: number; min: number; max: number } | null;
+  } | undefined;
+  const skipReason = raw?.skipReason ?? 'UNKNOWN';
+  const missing = raw?.missingFields ?? [];
+  const oor = raw?.outOfRange ?? null;
+
+  const humanMissing = (fields: string[]): string => {
+    const map: Record<string, string> = {
+      'labs.totalCholMgDl': 'total cholesterol',
+      'labs.hdlMgDl': 'HDL',
+      'vitals.sbpMmHg': 'systolic BP',
+      'labs.hba1cPct': 'HbA1c',
+      'labs.eGFR': 'eGFR',
+      'clinicalContext.ageAtDiabetesDiagnosis': 'age at diabetes diagnosis',
+    };
+    return fields.map((f) => map[f] ?? f).join(', ');
+  };
+
+  switch (skipReason) {
+    case 'SCORE2_MISSING_INPUT':
+      return `SCORE2 cannot be computed — missing input: ${humanMissing(missing) || 'required fields'}.`;
+    case 'SCORE2_AGE_OUT_OF_RANGE':
+      return oor
+        ? `SCORE2 is validated only for ages ${oor.min}–${oor.max} (patient age ${oor.value}). Consider individual risk factors; SCORE2 is not applicable at this age.`
+        : 'SCORE2 age out of validated range (40–80).';
+    case 'SCORE2_SBP_OUT_OF_RANGE':
+      return oor
+        ? `SCORE2 validated range for SBP is ${oor.min}–${oor.max} mmHg (measured ${oor.value}). Verify measurement or treat acute hypertension before risk stratification.`
+        : 'SCORE2 SBP out of validated range.';
+    case 'SCORE2_TOTAL_CHOL_OUT_OF_RANGE':
+      return oor
+        ? `SCORE2 validated range for total cholesterol is ${oor.min}–${oor.max} mg/dL (measured ${oor.value}). Verify lab or consider secondary dyslipidemia.`
+        : 'SCORE2 total cholesterol out of validated range.';
+    case 'SCORE2_HDL_OUT_OF_RANGE':
+      return oor
+        ? `SCORE2 validated range for HDL is ${oor.min}–${oor.max} mg/dL (measured ${oor.value}). Verify lab before CV stratification.`
+        : 'SCORE2 HDL out of validated range.';
+    case 'SCORE2_DIABETES_MISSING_INPUT':
+      return `SCORE2-Diabetes cannot be computed — missing: ${humanMissing(missing) || 'required fields'}.`;
+    case 'SCORE2_DIABETES_AGE_OUT_OF_RANGE':
+      return oor
+        ? `SCORE2-Diabetes is validated only for ages ${oor.min}–${oor.max} (patient age ${oor.value}).`
+        : 'SCORE2-Diabetes age out of validated range (40–80).';
+    case 'SCORE2_DIABETES_SBP_OUT_OF_RANGE':
+      return oor
+        ? `SCORE2-Diabetes SBP range ${oor.min}–${oor.max} mmHg (measured ${oor.value}).`
+        : 'SCORE2-Diabetes SBP out of validated range.';
+    case 'SCORE2_DIABETES_TOTAL_CHOL_OUT_OF_RANGE':
+      return oor
+        ? `SCORE2-Diabetes total cholesterol range ${oor.min}–${oor.max} mg/dL (measured ${oor.value}).`
+        : 'SCORE2-Diabetes total cholesterol out of validated range.';
+    case 'SCORE2_DIABETES_HDL_OUT_OF_RANGE':
+      return oor
+        ? `SCORE2-Diabetes HDL range ${oor.min}–${oor.max} mg/dL (measured ${oor.value}).`
+        : 'SCORE2-Diabetes HDL out of validated range.';
+    case 'SCORE2_DIABETES_HBA1C_OUT_OF_RANGE':
+      return oor
+        ? `SCORE2-Diabetes HbA1c range ${oor.min}–${oor.max}% (measured ${oor.value}). Verify lab.`
+        : 'SCORE2-Diabetes HbA1c out of validated range.';
+    case 'SCORE2_DIABETES_EGFR_OUT_OF_RANGE':
+      return oor
+        ? `SCORE2-Diabetes eGFR range ${oor.min}–${oor.max} mL/min/1.73m² (measured ${oor.value}). Advanced CKD may require dedicated risk tools (e.g., CKD-specific scores).`
+        : 'SCORE2-Diabetes eGFR out of validated range.';
+    case 'SCORE2_UNEXPECTED_ERROR':
+    case 'SCORE2_DIABETES_UNEXPECTED_ERROR':
+      return 'Cardiovascular stratification failed unexpectedly — please re-submit or contact support.';
+    default:
+      return 'Cardiovascular risk not stratified (see data completeness notices).';
+  }
+}
+
+/**
  * Cardiovascular risk from SCORE2 / SCORE2-Diabetes category.
- * Returns 'indeterminate' when neither score is available — never 'low',
- * because absence of lipid/BP data cannot be interpreted as safety.
+ * Returns 'indeterminate' when neither score is stratifiable — never 'low',
+ * because absence of stratification cannot be interpreted as safety.
+ *
+ * Skipped entries (valueNumeric === null) carry a structured skipReason in
+ * their rawPayload so the reasoning produced here tells the clinician the
+ * TRUTH: out-of-range age vs. missing lab vs. missing BP, etc. The previous
+ * implementation unconditionally reported "missing lipid panel and/or blood
+ * pressure", which was factually wrong for out-of-range inputs.
  */
 function deriveCardiovascularRisk(
   results: ScoreResultEntry[],
 ): DomainRiskEntry {
   const score2 = findScoreByCode(results, 'SCORE2');
   const score2Diabetes = findScoreByCode(results, 'SCORE2_DIABETES');
-  const scoreResult = score2Diabetes ?? score2;
+
+  // Prefer the computed (non-skipped) entry; fall back to the skipped one
+  // so we can still emit truthful reasoning. SCORE2-Diabetes always wins
+  // over plain SCORE2 when both are computed (diabetic risk equations are
+  // the more specific estimator for DM patients).
+  const candidates: ScoreResultEntry[] = [];
+  if (score2Diabetes) candidates.push(score2Diabetes);
+  if (score2) candidates.push(score2);
+
+  const computed = candidates.find((e) => e.valueNumeric !== null);
+  const skipped = candidates.find((e) => e.valueNumeric === null);
+  const scoreResult = computed ?? skipped;
 
   if (!scoreResult) {
     return {
       level: 'indeterminate',
       reasoning:
-        'SCORE2 / SCORE2-Diabetes not computable (missing lipid panel and/or blood pressure).',
+        'Cardiovascular risk not stratified: SCORE2 / SCORE2-Diabetes not evaluated for this assessment.',
       evidence: [],
     };
   }
 
+  // Skipped path — surface the structured, truthful reason.
+  if (scoreResult.valueNumeric === null) {
+    return {
+      level: 'indeterminate',
+      reasoning: humanizeScore2SkipReason(scoreResult),
+      evidence: [],
+    };
+  }
+
+  // Computed path — category-based stratification (unchanged).
   const category = scoreResult.category?.toLowerCase() || '';
 
   let level: RiskLevel = 'low';
@@ -138,20 +246,87 @@ function deriveCardiovascularRisk(
 }
 
 /**
- * Metabolic risk from metabolic syndrome, ADA score, and BMI.
- * Returns 'indeterminate' when we have no signal at all (no MetS result,
- * no ADA, no BMI).
+ * Metabolic risk.
+ *
+ * Diabetology-aware stratification (WS3):
+ *   1. UNDIAGNOSED_DIABETES_SUSPECTED → very_high. Overt hyperglycemia
+ *      without a formal diagnosis is a diabetology emergency from a
+ *      monitoring standpoint (ADA SOC 2024 §2) and dominates any other
+ *      metabolic signal.
+ *   2. GLYCEMIC_CONTROL=severely_decompensated (HbA1c>9 or glucose>250
+ *      in a known diabetic) → very_high. ADA SOC 2024 §6.
+ *   3. GLYCEMIC_CONTROL=suboptimal (HbA1c>7) → high.
+ *   4. MetS present + (ADA ≥ 5 or BMI ≥ 30) → high (unchanged).
+ *   5. MetS or ADA ≥ 3 → moderate (unchanged).
+ *   6. Otherwise → low.
+ *
+ * Returns 'indeterminate' when we have no metabolic signal at all
+ * (no MetS, no ADA, no BMI, no glycemic-control entry, no undiagnosed-
+ * diabetes flag).
  */
 function deriveMetabolicRisk(results: ScoreResultEntry[]): DomainRiskEntry {
   const metsResult = findScoreByCode(results, 'METABOLIC_SYNDROME');
   const adaResult = findScoreByCode(results, 'ADA');
   const bmiResult = findScoreByCode(results, 'BMI');
+  const undiagnosedDm = findScoreByCode(results, 'UNDIAGNOSED_DIABETES_SUSPECTED');
+  const glycemicControl = findScoreByCode(results, 'GLYCEMIC_CONTROL');
 
-  if (!metsResult && !adaResult && !bmiResult) {
+  // 1. Overt hyperglycemia without diagnosis — top priority override.
+  if (undiagnosedDm) {
+    const raw = (undiagnosedDm.rawPayload ?? {}) as {
+      triggers?: {
+        glucoseMgDl?: number | null;
+        hba1cPct?: number | null;
+      };
+    };
+    const glucose = raw.triggers?.glucoseMgDl;
+    const hba1c = raw.triggers?.hba1cPct;
+    const triggerBits: string[] = [];
+    if (glucose != null) triggerBits.push(`glucose ${glucose} mg/dL`);
+    if (hba1c != null) triggerBits.push(`HbA1c ${hba1c}%`);
+    return {
+      level: 'very_high',
+      reasoning:
+        `Overt hyperglycemia without a formal diabetes diagnosis `
+          + `(${triggerBits.join(', ') || 'values meet ADA diagnostic thresholds'}). `
+          + 'Urgent diagnostic confirmation and diabetology pathway required (ADA SOC 2024 §2).',
+      evidence: ['UNDIAGNOSED_DIABETES_SUSPECTED'],
+    };
+  }
+
+  // 2/3. Glycemic control in known diabetics.
+  if (glycemicControl) {
+    const severity =
+      ((glycemicControl.rawPayload ?? {}) as { severity?: string }).severity
+      ?? glycemicControl.category;
+    const hba1c = glycemicControl.valueNumeric;
+    if (severity === 'severely_decompensated') {
+      return {
+        level: 'very_high',
+        reasoning:
+          `Severe glycemic decompensation (HbA1c ${hba1c ?? '—'}%). `
+            + 'Urgent intensification / endocrinology review (ADA SOC 2024 §6).',
+        evidence: ['GLYCEMIC_CONTROL'],
+      };
+    }
+    if (severity === 'suboptimal') {
+      return {
+        level: 'high',
+        reasoning:
+          `Suboptimal glycemic control (HbA1c ${hba1c ?? '—'}% > 7%). `
+            + 'Therapy review recommended (ADA SOC 2024 §6).',
+        evidence: ['GLYCEMIC_CONTROL'],
+      };
+    }
+    // well_controlled falls through to signal-aggregation below, adding
+    // GLYCEMIC_CONTROL as evidence so the UI shows it in provenance.
+  }
+
+  if (!metsResult && !adaResult && !bmiResult && !glycemicControl) {
     return {
       level: 'indeterminate',
       reasoning:
-        'Metabolic syndrome, ADA score and BMI are all unavailable.',
+        'Metabolic syndrome, ADA score, BMI and glycemic-control data are all unavailable.',
       evidence: [],
     };
   }
@@ -164,6 +339,7 @@ function deriveMetabolicRisk(results: ScoreResultEntry[]): DomainRiskEntry {
     ...(metsResult ? ['METABOLIC_SYNDROME'] : []),
     ...(adaResult ? ['ADA'] : []),
     ...(bmiResult ? ['BMI'] : []),
+    ...(glycemicControl ? ['GLYCEMIC_CONTROL'] : []),
   ];
 
   let level: RiskLevel = 'low';

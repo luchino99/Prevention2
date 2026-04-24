@@ -55,8 +55,39 @@
       </section>
 
       <section class="card">
-        <h3>Open alerts</h3>
-        <div id="alerts-wrap"><p class="muted">Loading…</p></div>
+        <div class="flex between">
+          <h3 style="margin:0;">Due items</h3>
+          <span class="muted" id="due-items-subline">—</span>
+        </div>
+        <div class="muted mt-4" style="font-size:0.85em;">
+          Follow-up and screening items materialised from the deterministic
+          clinical engines. Countdown is computed from server time.
+        </div>
+        <div id="due-items-wrap" class="mt-16"><p class="muted">Loading…</p></div>
+      </section>
+
+      <section class="card">
+        <div class="flex between">
+          <h3 style="margin:0;">Open alerts</h3>
+          <span class="muted" id="alerts-subline">—</span>
+        </div>
+        <div class="muted mt-4" style="font-size:0.85em;">
+          Real-time clinical alerts and safety flags that require attention.
+          Data-collection gaps are surfaced separately below.
+        </div>
+        <div id="alerts-wrap" class="mt-16"><p class="muted">Loading…</p></div>
+      </section>
+
+      <section class="card">
+        <div class="flex between">
+          <h3 style="margin:0;">Completeness notices</h3>
+          <span class="muted" id="completeness-subline">—</span>
+        </div>
+        <div class="muted mt-4" style="font-size:0.85em;">
+          Data-collection gaps that prevented one or more scores from being
+          computed. Soft nudges — not time-bound clinical alerts.
+        </div>
+        <div id="completeness-wrap" class="mt-16"><p class="muted">Loading…</p></div>
       </section>
 
       <section class="card">
@@ -164,10 +195,29 @@
       }
     }
 
+    /**
+     * Memoise the paginated assessment list so that `renderAssessments` and
+     * `renderCompletenessNotices` do not issue two concurrent GETs against
+     * the same endpoint. Promise-level memo → safe under `Promise.all`.
+     */
+    let assessmentsListPromise = null;
+    function getAssessmentsList() {
+      if (!assessmentsListPromise) {
+        assessmentsListPromise = api
+          .listAssessments(patientId, { page: 1, pageSize: 20 })
+          .catch((e) => {
+            // Reset so a later retry (e.g. completeness) can re-fetch.
+            assessmentsListPromise = null;
+            throw e;
+          });
+      }
+      return assessmentsListPromise;
+    }
+
     async function renderAssessments() {
       const wrap = document.getElementById('assessments-wrap');
       try {
-        const { assessments } = await api.listAssessments(patientId, { page: 1, pageSize: 20 });
+        const { assessments } = await getAssessmentsList();
         if (!assessments?.length) {
           wrap.innerHTML = `<p class="muted">No assessments recorded yet.</p>`;
           return;
@@ -198,17 +248,145 @@
       }
     }
 
+    /**
+     * Due items — materialised follow-up / screening countdown (WS7).
+     *
+     * - Server returns `nowIso` for monotonic countdown across clock drift.
+     * - Items are grouped by priority (urgent → moderate → routine) and
+     *   sorted within each group by `dueInDays` ascending so overdue items
+     *   bubble to the top.
+     * - Dismissed / completed items are filtered server-side by default.
+     */
+    function dueInLabel(days) {
+      if (typeof days !== 'number' || Number.isNaN(days)) return '—';
+      if (days < 0) return `Overdue ${Math.abs(days)} day${Math.abs(days) === 1 ? '' : 's'}`;
+      if (days === 0) return 'Due today';
+      if (days === 1) return 'Due in 1 day';
+      if (days < 30) return `Due in ${days} days`;
+      const months = Math.round(days / 30);
+      return months === 1 ? 'Due in ~1 month' : `Due in ~${months} months`;
+    }
+
+    function dueBadgeClass(days, priority) {
+      if (typeof days === 'number' && days < 0) return 'danger';
+      if (priority === 'urgent') return 'danger';
+      if (priority === 'moderate') return 'warning';
+      return 'ok';
+    }
+
+    async function renderDueItems() {
+      const wrap = document.getElementById('due-items-wrap');
+      const subline = document.getElementById('due-items-subline');
+      try {
+        const { items, pagination } = await api.listPatientDueItems(patientId, {
+          // Repeated keys so server-side union (enum | array) matches.
+          status: ['open', 'acknowledged'],
+          pageSize: 100,
+        });
+        if (!items?.length) {
+          wrap.innerHTML = `<p class="muted">No pending follow-up or screening items.</p>`;
+          subline.textContent = '0 pending';
+          return;
+        }
+        const total = pagination?.total ?? items.length;
+        const overdue = items.filter((it) => typeof it.dueInDays === 'number' && it.dueInDays < 0).length;
+        subline.textContent = overdue > 0
+          ? `${total} pending · ${overdue} overdue`
+          : `${total} pending`;
+
+        const priorityOrder = { urgent: 0, moderate: 1, routine: 2 };
+        const groups = { urgent: [], moderate: [], routine: [] };
+        for (const it of items) {
+          const p = groups[it.priority] ? it.priority : 'routine';
+          groups[p].push(it);
+        }
+        for (const p of Object.keys(groups)) {
+          groups[p].sort((a, b) => {
+            const da = typeof a.dueInDays === 'number' ? a.dueInDays : Number.MAX_SAFE_INTEGER;
+            const db = typeof b.dueInDays === 'number' ? b.dueInDays : Number.MAX_SAFE_INTEGER;
+            return da - db;
+          });
+        }
+
+        const renderGroup = (label, list) => {
+          if (!list.length) return '';
+          const rows = list.map((it) => {
+            const days = it.dueInDays;
+            const label2 = dueInLabel(days);
+            const badgeCls = dueBadgeClass(days, it.priority);
+            const sourceBadge = it.sourceEngine
+              ? `<span class="badge muted" style="margin-left:6px;">${escapeHtml(it.sourceEngine)}</span>`
+              : '';
+            const domainBadge = it.domain
+              ? `<span class="badge muted" style="margin-left:6px;">${escapeHtml(it.domain)}</span>`
+              : '';
+            const rationale = it.rationale
+              ? `<div class="muted mt-4" style="font-size:0.9em;">${escapeHtml(it.rationale)}</div>`
+              : '';
+            const guideline = it.guidelineSource
+              ? `<div class="muted mt-4" style="font-size:0.8em;">Source: ${escapeHtml(it.guidelineSource)}</div>`
+              : '';
+            return `
+              <li class="mt-8" style="padding:10px 12px;border:1px solid var(--border,#e5e7eb);border-radius:6px;">
+                <div class="flex between" style="align-items:flex-start;">
+                  <div>
+                    <strong>${escapeHtml(it.title)}</strong>
+                    ${sourceBadge}${domainBadge}
+                    ${rationale}
+                    ${guideline}
+                  </div>
+                  <div style="text-align:right;white-space:nowrap;">
+                    <span class="badge ${escapeHtml(badgeCls)}">${escapeHtml(label2)}</span>
+                    <div class="muted mt-4" style="font-size:0.8em;">Due ${escapeHtml(it.dueAt ?? '—')}</div>
+                  </div>
+                </div>
+              </li>`;
+          }).join('');
+          return `
+            <div class="mt-16">
+              <div class="kpi-label">${escapeHtml(label)} (${list.length})</div>
+              <ul class="list-plain">${rows}</ul>
+            </div>`;
+        };
+
+        wrap.innerHTML = [
+          renderGroup('Urgent', groups.urgent),
+          renderGroup('Moderate', groups.moderate),
+          renderGroup('Routine', groups.routine),
+        ].filter(Boolean).join('') || `<p class="muted">No pending items.</p>`;
+      } catch (e) {
+        wrap.innerHTML = `<div class="inline-alert danger">Failed to load due items: ${escapeHtml(e.message)}</div>`;
+        subline.textContent = '—';
+      }
+    }
+
+    /**
+     * Open clinical alerts (WS8).
+     *
+     * The alert engine has been split so that `missing_critical_data`
+     * belongs to the separate completeness stream (see
+     * `completeness-checker.ts`). We defensively filter any legacy rows of
+     * that type out of the inbox on the UI too, so a historical write can
+     * never re-pollute the clinical alerts inbox.
+     */
     async function renderAlerts() {
       const wrap = document.getElementById('alerts-wrap');
+      const subline = document.getElementById('alerts-subline');
       try {
         const { alerts } = await api.listPatientAlerts(patientId, { status: 'open', pageSize: 20 });
-        if (!alerts?.length) {
+        const clinical = (alerts ?? []).filter(
+          (a) => a?.type !== 'missing_critical_data',
+        );
+        subline.textContent = clinical.length
+          ? `${clinical.length} open`
+          : '0 open';
+        if (!clinical.length) {
           wrap.innerHTML = `<p class="muted">No open alerts.</p>`;
           return;
         }
         wrap.innerHTML = `
           <ul class="list-plain">
-            ${alerts.map((a) => `
+            ${clinical.map((a) => `
               <li>
                 <span class="badge ${escapeHtml(a.severity)}">${escapeHtml(a.severity)}</span>
                 <strong>${escapeHtml(a.title ?? a.type ?? 'Alert')}</strong>
@@ -219,6 +397,95 @@
           </ul>`;
       } catch (e) {
         wrap.innerHTML = `<div class="inline-alert danger">Failed to load alerts: ${escapeHtml(e.message)}</div>`;
+        subline.textContent = '—';
+      }
+    }
+
+    /**
+     * Completeness notices (WS8 — data-collection punch list).
+     *
+     * Sourced from the most recent assessment snapshot's
+     * `completenessWarnings` array. Kept explicitly separate from the
+     * clinical alerts inbox because these are soft nudges, not time-bound
+     * actions. Severity maps:
+     *   - warning → yellow "needed" badge
+     *   - info    → neutral "optional" badge
+     *   - critical is never produced by the checker (see module doc).
+     */
+    function completenessBadge(severity) {
+      if (severity === 'warning') return '<span class="badge warning">needed</span>';
+      return '<span class="badge muted">optional</span>';
+    }
+
+    async function renderCompletenessNotices() {
+      const wrap = document.getElementById('completeness-wrap');
+      const subline = document.getElementById('completeness-subline');
+      try {
+        const { assessments } = await getAssessmentsList();
+        if (!assessments?.length) {
+          wrap.innerHTML = `<p class="muted">No assessments on file — completeness will be evaluated once the first assessment is recorded.</p>`;
+          subline.textContent = '—';
+          return;
+        }
+        const latest = assessments[0];
+        const { snapshot } = await api.getAssessment(latest.id);
+        const warnings = Array.isArray(snapshot?.completenessWarnings)
+          ? snapshot.completenessWarnings
+          : [];
+        const asOf = latest.assessmentDate || latest.createdAt || '';
+        if (!warnings.length) {
+          wrap.innerHTML = `
+            <p class="muted">
+              No missing-data gaps as of the most recent assessment
+              ${asOf ? `(${escapeHtml(asOf)})` : ''}.
+            </p>`;
+          subline.textContent = 'up to date';
+          return;
+        }
+
+        // Order: warnings first (directly in scope), then info.
+        const ordered = [...warnings].sort((a, b) => {
+          const rank = (s) => (s === 'warning' ? 0 : s === 'info' ? 1 : 2);
+          return rank(a.severity) - rank(b.severity);
+        });
+
+        const warningCount = ordered.filter((w) => w.severity === 'warning').length;
+        subline.textContent = warningCount > 0
+          ? `${ordered.length} gaps · ${warningCount} needed`
+          : `${ordered.length} optional gaps`;
+
+        wrap.innerHTML = `
+          <div class="muted mt-4" style="font-size:0.8em;">
+            As of assessment ${escapeHtml(asOf || '—')}.
+          </div>
+          <ul class="list-plain mt-8">
+            ${ordered.map((w) => {
+              const missing = Array.isArray(w.missingFields) && w.missingFields.length
+                ? `<div class="mono muted mt-4" style="font-size:0.8em;">Missing: ${w.missingFields.map(escapeHtml).join(', ')}</div>`
+                : '';
+              const action = w.suggestedAction
+                ? `<div class="muted mt-4" style="font-size:0.85em;"><em>Suggested:</em> ${escapeHtml(w.suggestedAction)}</div>`
+                : '';
+              return `
+                <li class="mt-8" style="padding:10px 12px;border:1px solid var(--border,#e5e7eb);border-radius:6px;">
+                  <div class="flex between" style="align-items:flex-start;gap:12px;">
+                    <div>
+                      <strong>${escapeHtml(w.title ?? w.code ?? 'Missing data')}</strong>
+                      <span class="mono muted" style="margin-left:6px;font-size:0.8em;">${escapeHtml(w.code ?? '')}</span>
+                      <div class="muted mt-4" style="font-size:0.9em;">${escapeHtml(w.detail ?? '')}</div>
+                      ${missing}
+                      ${action}
+                    </div>
+                    <div style="white-space:nowrap;">
+                      ${completenessBadge(w.severity)}
+                    </div>
+                  </div>
+                </li>`;
+            }).join('')}
+          </ul>`;
+      } catch (e) {
+        wrap.innerHTML = `<div class="inline-alert danger">Failed to load completeness notices: ${escapeHtml(e.message)}</div>`;
+        subline.textContent = '—';
       }
     }
 
@@ -252,7 +519,14 @@
       }
     }
 
-    await Promise.all([renderPatient(), renderAssessments(), renderAlerts(), renderConsents()]);
+    await Promise.all([
+      renderPatient(),
+      renderAssessments(),
+      renderDueItems(),
+      renderAlerts(),
+      renderCompletenessNotices(),
+      renderConsents(),
+    ]);
 
     document.getElementById('signout-link').addEventListener('click', async (e) => {
       e.preventDefault();

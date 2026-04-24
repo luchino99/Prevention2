@@ -104,28 +104,30 @@
           </div>
         </div>
 
-        <h3 class="mt-16">Labs (optional)</h3>
+        <h3 class="mt-16">Labs</h3>
         <p class="section-note">
-          Entries here are optional, but missing key values will be shown as
-          data-completeness warnings in the resulting assessment (e.g. no
-          lipid panel ⇒ SCORE2 cannot be computed).
+          The cardio-nephro-metabolic workflow requires a core panel of 10
+          lab values to produce a defensible stratification. Fields marked
+          <strong>*</strong> are required; the remaining fields are
+          supporting data (staging, passthrough). Submissions missing any
+          required lab will be rejected at validation.
         </p>
         <div class="grid three">
-          <div class="field"><label>Total cholesterol (mg/dL)</label><input name="totalCholMgDl" type="number" step="0.1" /></div>
-          <div class="field"><label>HDL (mg/dL)</label><input name="hdlMgDl" type="number" step="0.1" /></div>
-          <div class="field"><label>LDL (mg/dL)</label><input name="ldlMgDl" type="number" step="0.1" /></div>
-          <div class="field"><label>Triglycerides (mg/dL)</label><input name="triglyceridesMgDl" type="number" step="0.1" /></div>
-          <div class="field"><label>Glucose (mg/dL)</label><input name="glucoseMgDl" type="number" step="0.1" /></div>
-          <div class="field"><label>HbA1c (%)</label><input name="hba1cPct" type="number" step="0.01" /></div>
-          <div class="field"><label>eGFR</label><input name="eGFR" type="number" step="0.1" /></div>
-          <div class="field"><label>Creatinine (mg/dL)</label><input name="creatinineMgDl" type="number" step="0.01" /></div>
-          <div class="field"><label>GGT (U/L)</label><input name="ggtUL" type="number" step="0.1" /></div>
-          <div class="field"><label>AST (U/L)</label><input name="astUL" type="number" step="0.1" /></div>
-          <div class="field"><label>ALT (U/L)</label><input name="altUL" type="number" step="0.1" /></div>
-          <div class="field"><label>Platelets (G/L)</label><input name="plateletsGigaL" type="number" step="0.1" /></div>
-          <div class="field"><label>ACR (mg/g)</label><input name="albuminCreatinineRatio" type="number" step="0.01" /></div>
-          <div class="field"><label>Urine albumin (mg/L)</label><input name="urineAlbuminMgL" type="number" step="0.1" /></div>
-          <div class="field"><label>Urine creatinine (mg/dL)</label><input name="urineCreatinineMgDl" type="number" step="0.1" /></div>
+          <div class="field"><label>Total cholesterol (mg/dL) *</label><input name="totalCholMgDl" type="number" step="0.1" required /></div>
+          <div class="field"><label>HDL (mg/dL) *</label><input name="hdlMgDl" type="number" step="0.1" required /></div>
+          <div class="field"><label>LDL (mg/dL) *</label><input name="ldlMgDl" type="number" step="0.1" required /></div>
+          <div class="field"><label>Triglycerides (mg/dL) *</label><input name="triglyceridesMgDl" type="number" step="0.1" required /></div>
+          <div class="field"><label>Glucose (mg/dL) *</label><input name="glucoseMgDl" type="number" step="0.1" required /></div>
+          <div class="field"><label>HbA1c (%) *</label><input name="hba1cPct" type="number" step="0.01" required /></div>
+          <div class="field"><label>Creatinine (mg/dL) *</label><input name="creatinineMgDl" type="number" step="0.01" required /></div>
+          <div class="field"><label>GGT (U/L) *</label><input name="ggtUL" type="number" step="0.1" required /></div>
+          <div class="field"><label>AST (U/L) *</label><input name="astUL" type="number" step="0.1" required /></div>
+          <div class="field"><label>Platelets (G/L) *</label><input name="plateletsGigaL" type="number" step="0.1" required /></div>
+          <div class="field"><label>eGFR (optional — derived from creatinine)</label><input name="eGFR" type="number" step="0.1" /></div>
+          <div class="field"><label>ALT (U/L) (optional)</label><input name="altUL" type="number" step="0.1" /></div>
+          <div class="field"><label>ACR (mg/g) (optional)</label><input name="albuminCreatinineRatio" type="number" step="0.01" /></div>
+          <div class="field"><label>Urine albumin (mg/L) (optional)</label><input name="urineAlbuminMgL" type="number" step="0.1" /></div>
+          <div class="field"><label>Urine creatinine (mg/dL) (optional)</label><input name="urineCreatinineMgDl" type="number" step="0.1" /></div>
         </div>
         <p class="section-note">
           If ACR is not provided but both urine albumin (mg/L) and urine
@@ -156,14 +158,35 @@
         <label class="checkbox-row"><input name="familyHistoryCvd" type="checkbox" /> Family history of CVD</label>
         <label class="checkbox-row"><input name="gestationalDiabetes" type="checkbox" /> Gestational diabetes history</label>
 
-        <h3 class="mt-16">Lifestyle</h3>
+        <h3 class="mt-16">Lifestyle — Physical activity (WHO / GPAQ)</h3>
+        <p class="section-note">
+          Split the weekly activity into <strong>moderate</strong>
+          (e.g. brisk walking, leisurely cycling) and <strong>vigorous</strong>
+          (e.g. running, fast cycling). The engine computes MET-minutes
+          using the WHO/GPAQ convention (moderate ≈ 4 METs, vigorous ≈
+          8 METs) and evaluates the ≥600 MET-min/week target. Sedentary
+          hours are captured independently, because prolonged sitting is
+          an independent CV risk factor (ESC 2021 §3).
+        </p>
         <div class="grid two">
           <div class="field">
-            <label>Weekly activity (minutes)</label>
-            <input name="weeklyActivityMinutes" type="number" min="0" max="3000" />
+            <label>Moderate activity — min/week (~4 METs)</label>
+            <input name="moderateActivityMinutes" type="number" min="0" max="10080" step="5" />
           </div>
           <div class="field">
-            <label>Sedentary level</label>
+            <label>Vigorous activity — min/week (~8 METs)</label>
+            <input name="vigorousActivityMinutes" type="number" min="0" max="10080" step="5" />
+          </div>
+          <div class="field">
+            <label>Sedentary hours per day (excl. sleep)</label>
+            <input name="sedentaryHoursPerDay" type="number" min="0" max="24" step="0.5" />
+          </div>
+          <div class="field">
+            <label>Weekly activity — legacy aggregate (min, optional)</label>
+            <input name="weeklyActivityMinutes" type="number" min="0" max="10080" />
+          </div>
+          <div class="field">
+            <label>Sedentary level — qualitative (optional)</label>
             <select name="sedentaryLevel">
               <option value="">—</option>
               <option value="low">Low</option>
@@ -380,8 +403,11 @@
             diagnoses:              [],
           },
           lifestyle: {
-            weeklyActivityMinutes: num(form, 'weeklyActivityMinutes'),
-            sedentaryLevel:        form.sedentaryLevel.value || undefined,
+            weeklyActivityMinutes:    num(form, 'weeklyActivityMinutes'),
+            moderateActivityMinutes:  num(form, 'moderateActivityMinutes'),
+            vigorousActivityMinutes:  num(form, 'vigorousActivityMinutes'),
+            sedentaryHoursPerDay:     num(form, 'sedentaryHoursPerDay'),
+            sedentaryLevel:           form.sedentaryLevel.value || undefined,
             // PREDIMED MEDAS: submitted only when the clinician has
             // explicitly enabled the questionnaire. An omitted array lets
             // the backend emit a PREDIMED_INCOMPLETE completeness warning
