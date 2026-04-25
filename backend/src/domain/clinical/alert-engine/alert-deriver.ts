@@ -67,6 +67,38 @@ export interface AlertDeriverInput {
    * relative to the assessment being evaluated.
    */
   now?: Date;
+  /**
+   * Raw vital signs captured at this assessment. Used by the guideline-
+   * threshold red-flag rules that are not expressible as a score (severe
+   * hypertension per ESH 2023). Optional — when missing, the corresponding
+   * alerts simply do not fire (no false positives on incomplete data).
+   */
+  vitals?: {
+    sbpMmHg?: number | null;
+    dbpMmHg?: number | null;
+  };
+  /**
+   * Raw laboratory values captured at this assessment. Used by the
+   * guideline-threshold red-flag rules for hyperglycaemic crisis
+   * (ADA 2024), severe albuminuria (KDIGO 2024), and transaminase rise
+   * (AASLD 2023).
+   */
+  labs?: {
+    glucoseMgDl?: number | null;
+    hba1cPct?: number | null;
+    astUL?: number | null;
+    altUL?: number | null;
+    albuminCreatinineRatio?: number | null;
+  };
+  /**
+   * Minimal clinical context flags needed to interpret raw labs in
+   * context (e.g. HbA1c 9% is "uncontrolled diabetes" only when the
+   * patient is diabetic). Never used to gate the existence of a score —
+   * scores remain driven by the full enriched input.
+   */
+  clinicalContext?: {
+    hasDiabetes?: boolean;
+  };
 }
 
 // ============================================================================
@@ -446,6 +478,205 @@ function deriveActivityDeclineAlert(
 }
 
 // ============================================================================
+// Guideline-threshold red-flags on RAW input (not score-backed)
+// ============================================================================
+//
+// These rules fire on raw vital / lab values that exceed a validated
+// guideline-driven critical threshold. They are complementary to the
+// score-backed `deriveRedFlagAlerts` above — we alert on values that are
+// acutely dangerous regardless of what a multi-variable score summarises.
+//
+// All rules:
+//   - are pure, deterministic, and idempotent on the same input;
+//   - return `null` when the relevant input is missing (no substitution
+//     of zero or inferred defaults — missing data must never fire a
+//     critical alert);
+//   - carry their guideline citation in the `message` so the alert inbox
+//     is auditable without a separate lookup.
+// ============================================================================
+
+/**
+ * Severe hypertension (hypertensive crisis / urgency).
+ * Source: ESH 2023 Guidelines for the Management of Arterial Hypertension,
+ *   Table 10 — SBP ≥ 180 mmHg OR DBP ≥ 110 mmHg requires urgent same-day
+ *   evaluation and prompt BP-lowering treatment.
+ */
+function deriveSevereHypertensionAlert(
+  vitals: AlertDeriverInput['vitals'],
+  nowISO: string,
+): AlertEntry | null {
+  const sbp = vitals?.sbpMmHg;
+  const dbp = vitals?.dbpMmHg;
+  const sbpNumeric = typeof sbp === 'number' ? sbp : null;
+  const dbpNumeric = typeof dbp === 'number' ? dbp : null;
+  if (sbpNumeric === null && dbpNumeric === null) return null;
+
+  const sbpSevere = sbpNumeric !== null && sbpNumeric >= 180;
+  const dbpSevere = dbpNumeric !== null && dbpNumeric >= 110;
+  if (!sbpSevere && !dbpSevere) return null;
+
+  const bpLabel =
+    sbpNumeric !== null && dbpNumeric !== null
+      ? `${sbpNumeric}/${dbpNumeric} mmHg`
+      : sbpNumeric !== null
+        ? `SBP ${sbpNumeric} mmHg`
+        : `DBP ${dbpNumeric} mmHg`;
+
+  return {
+    type: 'red_flag',
+    severity: 'critical',
+    title: 'Severe Hypertension',
+    message:
+      `Blood pressure is ${bpLabel}, meeting ESH 2023 threshold for `
+      + 'hypertensive urgency (SBP ≥180 or DBP ≥110). Same-day clinical '
+      + 'evaluation and prompt BP-lowering treatment recommended.',
+    timestamp: nowISO,
+  };
+}
+
+/**
+ * Hyperglycaemic crisis threshold.
+ * Source: ADA Standards of Care 2024 §4.5 — fasting glucose ≥ 250 mg/dL
+ *   warrants urgent evaluation for DKA / HHS regardless of diabetic
+ *   status; insulin therapy and fluid management considerations apply.
+ */
+function deriveHyperglycaemicCrisisAlert(
+  labs: AlertDeriverInput['labs'],
+  nowISO: string,
+): AlertEntry | null {
+  const glucose = labs?.glucoseMgDl;
+  if (typeof glucose !== 'number') return null;
+  if (glucose < 250) return null;
+  return {
+    type: 'red_flag',
+    severity: 'critical',
+    title: 'Severe Hyperglycaemia',
+    message:
+      `Fasting glucose is ${glucose.toFixed(0)} mg/dL (ADA 2024 threshold `
+      + '≥250). Urgent evaluation for diabetic ketoacidosis / hyperosmolar '
+      + 'state recommended.',
+    timestamp: nowISO,
+  };
+}
+
+/**
+ * Very high HbA1c — ongoing severe glycaemic dysregulation.
+ * Source: ADA Standards of Care 2024 §6 — HbA1c ≥ 10 % denotes severely
+ *   uncontrolled glycaemia with high near-term vascular risk; immediate
+ *   therapy escalation recommended.
+ */
+function deriveVeryHighHbA1cAlert(
+  labs: AlertDeriverInput['labs'],
+  nowISO: string,
+): AlertEntry | null {
+  const hba1c = labs?.hba1cPct;
+  if (typeof hba1c !== 'number') return null;
+  if (hba1c < 10) return null;
+  return {
+    type: 'red_flag',
+    severity: 'critical',
+    title: 'Very High HbA1c',
+    message:
+      `HbA1c is ${hba1c.toFixed(1)}% (ADA 2024 threshold ≥10). Severe `
+      + 'glycaemic dysregulation; urgent therapy escalation recommended.',
+    timestamp: nowISO,
+  };
+}
+
+/**
+ * Uncontrolled diabetes (HbA1c ≥ 9 % in a known diabetic).
+ * Source: ADA Standards of Care 2024 §6 — HbA1c ≥ 9 % in patients with
+ *   established diabetes is the consensus threshold for "poorly
+ *   controlled" and triggers intensified monitoring + therapy review.
+ * Dedup rule: we do NOT emit this when the patient is already flagged
+ * by `deriveVeryHighHbA1cAlert` (≥10 %), because a single finding should
+ * raise one alert, not two.
+ */
+function deriveUncontrolledDiabetesAlert(
+  labs: AlertDeriverInput['labs'],
+  clinicalContext: AlertDeriverInput['clinicalContext'],
+  nowISO: string,
+): AlertEntry | null {
+  if (!clinicalContext?.hasDiabetes) return null;
+  const hba1c = labs?.hba1cPct;
+  if (typeof hba1c !== 'number') return null;
+  if (hba1c < 9 || hba1c >= 10) return null; // upper bound owned by very-high rule
+  return {
+    type: 'red_flag',
+    severity: 'warning',
+    title: 'Uncontrolled Diabetes',
+    message:
+      `HbA1c is ${hba1c.toFixed(1)}% in a diabetic patient (ADA 2024 `
+      + 'threshold ≥9 for "poorly controlled"). Intensify monitoring and '
+      + 'review pharmacotherapy.',
+    timestamp: nowISO,
+  };
+}
+
+/**
+ * Severe albuminuria (KDIGO A3).
+ * Source: KDIGO 2024 Clinical Practice Guideline for CKD, §2 — UACR
+ *   ≥ 300 mg/g corresponds to category A3 ("severely increased") and
+ *   independently predicts CKD progression and CV events; nephrology
+ *   referral is warranted.
+ */
+function deriveSevereAlbuminuriaAlert(
+  labs: AlertDeriverInput['labs'],
+  nowISO: string,
+): AlertEntry | null {
+  const acr = labs?.albuminCreatinineRatio;
+  if (typeof acr !== 'number') return null;
+  if (acr < 300) return null;
+  return {
+    type: 'red_flag',
+    severity: 'critical',
+    title: 'Severe Albuminuria (KDIGO A3)',
+    message:
+      `Urine albumin/creatinine ratio is ${acr.toFixed(0)} mg/g (KDIGO 2024 `
+      + 'category A3, threshold ≥300). Nephrology referral and optimisation '
+      + 'of renoprotective therapy recommended.',
+    timestamp: nowISO,
+  };
+}
+
+/**
+ * Severe transaminase elevation (≥ 3× upper limit of normal).
+ * Source: AASLD 2023 Practice Guidance on abnormal liver chemistries —
+ *   ALT or AST ≥ 3× ULN (≈120 U/L) marks "severe" elevation and prompts
+ *   rapid workup for drug-induced injury, viral hepatitis, or other
+ *   acute hepatocellular insult.
+ */
+function deriveSevereTransaminaseAlert(
+  labs: AlertDeriverInput['labs'],
+  nowISO: string,
+): AlertEntry | null {
+  const ast = labs?.astUL;
+  const alt = labs?.altUL;
+  const astNumeric = typeof ast === 'number' ? ast : null;
+  const altNumeric = typeof alt === 'number' ? alt : null;
+  if (astNumeric === null && altNumeric === null) return null;
+
+  const astSevere = astNumeric !== null && astNumeric >= 120;
+  const altSevere = altNumeric !== null && altNumeric >= 120;
+  if (!astSevere && !altSevere) return null;
+
+  const parts: string[] = [];
+  if (altSevere) parts.push(`ALT ${altNumeric!.toFixed(0)}`);
+  if (astSevere) parts.push(`AST ${astNumeric!.toFixed(0)}`);
+
+  return {
+    type: 'red_flag',
+    severity: 'warning',
+    title: 'Severe Transaminase Elevation',
+    message:
+      `${parts.join(', ')} U/L (≥3× ULN, AASLD 2023). Rapid workup for `
+      + 'drug-induced liver injury, viral hepatitis, or other acute '
+      + 'hepatocellular insult recommended.',
+    timestamp: nowISO,
+  };
+}
+
+// ============================================================================
 // Main Alert Derivation Function (Pure)
 // ============================================================================
 
@@ -486,6 +717,9 @@ export function deriveAlerts(input: AlertDeriverInput): AlertEntry[] {
     followupPlan,
     now = new Date(),
     missingDataFlags,
+    vitals,
+    labs,
+    clinicalContext,
   } = input;
 
   // Legacy parameter kept for type compatibility. Intentionally unused —
@@ -507,10 +741,27 @@ export function deriveAlerts(input: AlertDeriverInput): AlertEntry[] {
   const followupAlert = deriveFollowupDueAlert(followupPlan ?? null, now);
   if (followupAlert) alerts.push(followupAlert);
 
-  // 3. Red-flag findings
+  // 3. Score-backed red-flags (SCORE2 very-high, eGFR G4–G5, FIB-4 advanced, FRAIL)
   alerts.push(...deriveRedFlagAlerts(currentScoreResults, nowISO));
 
-  // 4. Diet adherence drop (only with a previous PREDIMED)
+  // 4. Guideline-threshold red-flags on raw input (ISSUE 5).
+  //    Each rule is independent, pure, and fires on a single validated
+  //    threshold. All are deduped only by their internal bounds logic
+  //    (uncontrolled-diabetes steps back when very-high-HbA1c owns the
+  //    patient's value). The inbox is allowed to hold multiple red-flags
+  //    simultaneously when they describe genuinely different findings
+  //    (e.g. severe HTN + severe albuminuria).
+  const rawInputAlerts: Array<AlertEntry | null> = [
+    deriveSevereHypertensionAlert(vitals, nowISO),
+    deriveHyperglycaemicCrisisAlert(labs, nowISO),
+    deriveVeryHighHbA1cAlert(labs, nowISO),
+    deriveUncontrolledDiabetesAlert(labs, clinicalContext, nowISO),
+    deriveSevereAlbuminuriaAlert(labs, nowISO),
+    deriveSevereTransaminaseAlert(labs, nowISO),
+  ];
+  for (const a of rawInputAlerts) if (a) alerts.push(a);
+
+  // 5. Diet adherence drop (only with a previous PREDIMED)
   const dietAlert = deriveDietAdherenceAlert(
     currentScoreResults,
     previousScoreResults,
@@ -518,7 +769,7 @@ export function deriveAlerts(input: AlertDeriverInput): AlertEntry[] {
   );
   if (dietAlert) alerts.push(dietAlert);
 
-  // 5. Activity decline (only with a previous activity score)
+  // 6. Activity decline (only with a previous activity score)
   const activityAlert = deriveActivityDeclineAlert(
     currentScoreResults,
     previousScoreResults,
@@ -526,5 +777,16 @@ export function deriveAlerts(input: AlertDeriverInput): AlertEntry[] {
   );
   if (activityAlert) alerts.push(activityAlert);
 
-  return alerts;
+  // 7. Defensive dedup by (type, title) — should be a no-op today but
+  //    guarantees a single alert even if two call sites were to pipe the
+  //    same reading through the engine twice (e.g. on re-derivation).
+  const seen = new Set<string>();
+  const deduped: AlertEntry[] = [];
+  for (const a of alerts) {
+    const key = `${a.type}::${a.title}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(a);
+  }
+  return deduped;
 }

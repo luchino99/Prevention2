@@ -1575,3 +1575,62 @@ code, pre, .mono {
     scroll-behavior: auto !important;
   }
 }
+
+/* ============================================================
+   Confirmation modal (used by Delete assessment / future flows)
+   ------------------------------------------------------------
+   Layout-only: the modal stays ARIA-driven and keyboard-friendly.
+   Rendering is opt-in via `.hidden`; the JS toggles it. Backdrop
+   blocks pointer events from the rest of the page. Card is
+   centered, capped at 480px, padded, and carries the page's
+   standard elevation.
+   ============================================================ */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(12, 24, 40, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+.modal-backdrop.hidden { display: none; }
+
+.modal-card {
+  background: var(--c-surface, #fff);
+  color: var(--c-text, #1a1a1a);
+  border-radius: 12px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.22);
+  padding: 24px;
+  max-width: 480px;
+  width: 100%;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+.modal-card h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+.modal-card p {
+  margin: 8px 0;
+  line-height: 1.45;
+}
+.modal-card .input {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--c-border, #d4d9df);
+  border-radius: 8px;
+  background: #fff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+.modal-card .input:focus {
+  outline: none;
+  border-color: var(--c-primary, #2563eb);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+}
+

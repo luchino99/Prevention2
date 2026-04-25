@@ -43,7 +43,14 @@ export type RecommendationDomain =
   | 'alcohol'
   | 'weight'
   | 'sleep'
-  | 'hydration';
+  | 'hydration'
+  /**
+   * Self-monitoring domain — covers structured patient-led measurement
+   * counselling (e.g. home BP monitoring per ESC/ESH 2023 §10). Kept
+   * separate from `activity` / `weight` because the action is a
+   * measurement protocol, not a behaviour change in those domains.
+   */
+  | 'self_monitoring';
 
 export type RecommendationPriority = 'routine' | 'moderate' | 'urgent';
 
@@ -258,6 +265,52 @@ function saltRule(snapshot: ClinicalSnapshot): LifestyleRecommendation | null {
 }
 
 /**
+ * Home blood-pressure self-monitoring nudge — ESC/ESH 2023 §10.
+ *
+ * The 2023 ESC/ESH hypertension guideline recommends out-of-office BP
+ * measurement (HBPM or ABPM) for ALL patients with confirmed
+ * hypertension and for patients with high-normal office values
+ * (130–139 / 85–89 mmHg) to confirm/exclude masked or white-coat
+ * hypertension. We surface this as a bounded supportive nudge so the
+ * clinician can hand the patient a structured self-monitoring plan
+ * without the engine prescribing a device or a schedule.
+ *
+ * Trigger logic (deterministic):
+ *   - Any documented hypertension diagnosis, OR
+ *   - SBP ≥ 130 mmHg recorded at this visit (covers high-normal AND
+ *     hypertensive ranges — the office reading alone is enough to
+ *     warrant home confirmation).
+ *
+ * Intentionally does NOT trigger on isolated DBP elevation when SBP is
+ * normal AND there is no diagnosis: the office systolic is the more
+ * actionable surface for self-monitoring counselling.
+ */
+function homeBpMonitoringRule(snapshot: ClinicalSnapshot): LifestyleRecommendation | null {
+  const sbp = typeof snapshot.sbpMmHg === 'number' ? snapshot.sbpMmHg : null;
+  const sbpAboveHomeThreshold = sbp !== null && sbp >= 130;
+  if (!snapshot.hypertension && !sbpAboveHomeThreshold) return null;
+
+  const reasonParts: string[] = [];
+  if (snapshot.hypertension) reasonParts.push('Known hypertension.');
+  if (sbpAboveHomeThreshold) reasonParts.push(`Office SBP ${sbp} mmHg.`);
+  reasonParts.push(
+    'Home self-monitoring (7-day series, 2 morning + 2 evening readings,'
+      + ' validated upper-arm device) confirms diagnosis and detects'
+      + ' masked/white-coat hypertension.',
+  );
+
+  return {
+    code: 'ls_home_bp_monitoring',
+    domain: 'self_monitoring',
+    title: 'Structured home blood-pressure self-monitoring',
+    rationale: reasonParts.join(' '),
+    priority: snapshot.hypertension ? 'moderate' : 'routine',
+    authority: 'supportive',
+    guidelineSource: GUIDELINES.ESC_ESH_2023_HTN.displayString,
+  };
+}
+
+/**
  * Saturated-fat reduction nudge — gated on elevated LDL.
  * Kept generic; no specific food plan.
  */
@@ -326,6 +379,7 @@ export function deriveLifestyleRecommendations(
     mediterraneanDietRule(nutrition),
     weightRule(snapshot),
     saltRule(snapshot),
+    homeBpMonitoringRule(snapshot),
     saturatedFatRule(snapshot),
     carbQualityRule(snapshot),
   ];

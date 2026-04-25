@@ -62,6 +62,7 @@ import {
 } from './pdf/pdf-tokens.js';
 import {
   RenderCtx,
+  beginAtomicSection,
   createCtx,
   drawAllFooters,
   drawBandedCard,
@@ -106,6 +107,8 @@ export async function renderAssessmentReportPdf(
   const ctx = createCtx(pdf, fonts, (c) => drawPageHeader(c, headerOpts));
 
   // ─── 1. Patient identification ───
+  // 5 key-value rows × ~14pt + section title (~28pt) ≈ 100pt floor.
+  beginAtomicSection(ctx, { minHeight: 110 });
   sectionTitle(ctx, 'Patient identification');
   drawKeyValue(ctx, 'Reference', resolvePatientReference(patient));
   const hasName = Boolean(patient.firstName || patient.lastName);
@@ -125,6 +128,8 @@ export async function renderAssessmentReportPdf(
   drawKeyValue(ctx, 'Age', resolvePatientAge(snapshot, patient));
 
   // ─── 2. Assessment metadata ───
+  // 4 key-value rows + composite-risk headline + section title.
+  beginAtomicSection(ctx, { minHeight: 160 });
   sectionTitle(ctx, 'Assessment');
   drawKeyValue(ctx, 'Assessment ID', snapshot.assessment.id);
   drawKeyValue(ctx, 'Performed at', formatIsoDateTime(snapshot.assessment.createdAt));
@@ -230,6 +235,8 @@ function renderCompositeHeadline(ctx: RenderCtx, snapshot: AssessmentSnapshot): 
 }
 
 function renderDomainBreakdown(ctx: RenderCtx, snapshot: AssessmentSnapshot): void {
+  // Title + first banded card (~60pt) must stay together.
+  beginAtomicSection(ctx, { minHeight: 110 });
   sectionTitle(ctx, 'Composite risk breakdown');
   const DOMAINS: Array<{ key: 'cardiovascular' | 'metabolic' | 'hepatic' | 'renal' | 'frailty'; label: string }> = [
     { key: 'cardiovascular', label: 'Cardiovascular' },
@@ -301,6 +308,8 @@ function renderDomainBreakdown(ctx: RenderCtx, snapshot: AssessmentSnapshot): vo
 }
 
 function renderValidatedScores(ctx: RenderCtx, snapshot: AssessmentSnapshot): void {
+  // Title + first score row (label + value + pill ≈ 24pt) stay together.
+  beginAtomicSection(ctx, { minHeight: 90 });
   sectionTitle(ctx, 'Validated clinical scores');
   if (!snapshot.scoreResults?.length) {
     drawLine(ctx, 'No scores computed.', { size: TYPE.body, color: COLOR.muted, font: 'italic' });
@@ -361,6 +370,9 @@ function renderValidatedScores(ctx: RenderCtx, snapshot: AssessmentSnapshot): vo
 }
 
 function renderLifestyleSummary(ctx: RenderCtx, snapshot: AssessmentSnapshot): void {
+  // 9 key-value rows + section title — full block ≈ 200pt; reserve at
+  // least the title + first 3 rows so the section opens cohesively.
+  beginAtomicSection(ctx, { minHeight: 110 });
   sectionTitle(ctx, 'Lifestyle');
 
   const predimed = snapshot.nutritionSummary.predimedScore;
@@ -411,6 +423,9 @@ function renderLifestyleSummary(ctx: RenderCtx, snapshot: AssessmentSnapshot): v
 }
 
 function renderLifestyleRecommendations(ctx: RenderCtx, snapshot: AssessmentSnapshot): void {
+  // Section title + caption + first banded recommendation card need to
+  // stay together (≈ 130pt floor).
+  beginAtomicSection(ctx, { minHeight: 140 });
   sectionTitle(ctx, 'Lifestyle recommendations');
   drawLine(
     ctx,
@@ -483,6 +498,8 @@ function mapRecommendationDomain(domain: string): string {
 }
 
 function renderCompletenessWarnings(ctx: RenderCtx, snapshot: AssessmentSnapshot): void {
+  // Title + caption + first warning card need to stay together (~140pt).
+  beginAtomicSection(ctx, { minHeight: 150 });
   sectionTitle(ctx, 'Data completeness warnings');
   drawLine(
     ctx,
@@ -545,6 +562,8 @@ function renderCompletenessWarnings(ctx: RenderCtx, snapshot: AssessmentSnapshot
 }
 
 function renderAlerts(ctx: RenderCtx, snapshot: AssessmentSnapshot): void {
+  // Title + first alert card stay together (~140pt floor).
+  beginAtomicSection(ctx, { minHeight: 150 });
   sectionTitle(ctx, `Active clinical alerts (${snapshot.alerts.length})`);
   for (const a of snapshot.alerts) {
     const { ink, band } = severityPalette(a.severity);
@@ -590,6 +609,9 @@ function renderAlerts(ctx: RenderCtx, snapshot: AssessmentSnapshot): void {
 }
 
 function renderFollowupPlan(ctx: RenderCtx, snapshot: AssessmentSnapshot): void {
+  // Title + priority + next-review key/value rows + 1 follow-up bullet
+  // need cohesion (~150pt floor).
+  beginAtomicSection(ctx, { minHeight: 160 });
   sectionTitle(ctx, 'Follow-up plan');
   drawKeyValue(ctx, 'Priority', snapshot.followupPlan.priorityLevel.toUpperCase());
   drawKeyValue(
@@ -666,6 +688,8 @@ function renderFollowupPlan(ctx: RenderCtx, snapshot: AssessmentSnapshot): void 
 }
 
 function renderScreenings(ctx: RenderCtx, snapshot: AssessmentSnapshot): void {
+  // Title + first screening bullet (3 lines + pill) stay together.
+  beginAtomicSection(ctx, { minHeight: 110 });
   sectionTitle(ctx, 'Required screenings');
   for (const s of snapshot.screenings) {
     const { ink, band } = severityPalette(s.priority);
@@ -809,6 +833,8 @@ function renderReferenceFramework(
   const refs = collectReferenceFramework(items);
   if (refs.length === 0) return;
 
+  // Title + caption + first reference entry (~150pt floor).
+  beginAtomicSection(ctx, { minHeight: 160 });
   sectionTitle(ctx, 'Reference framework');
   drawLine(
     ctx,

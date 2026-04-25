@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex,nofollow" />
   <title>Patient — Uelfy Clinical</title>
+  <!-- Favicon set (clinical-context) — see frontend/assets/icons/favicon.svg -->
+  <link rel="icon" type="image/svg+xml" href="../assets/icons/favicon.svg" />
+  <link rel="alternate icon" type="image/png" sizes="32x32" href="../assets/icons/favicon-32.png" />
+  <link rel="alternate icon" type="image/png" sizes="16x16" href="../assets/icons/favicon-16.png" />
+  <link rel="shortcut icon" href="../assets/icons/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/icons/apple-touch-icon.png" />
+  <meta name="theme-color" content="#0E5C7B" />
   <link rel="stylesheet" href="../assets/css/app.css" />
 </head>
 <body>
@@ -66,6 +73,19 @@
           anchored on the assessment dates; latest value on the right.
         </div>
         <div id="progress-wrap" class="mt-16"><p class="muted">Loading…</p></div>
+      </section>
+
+      <section class="card">
+        <div class="flex between">
+          <h3 style="margin:0;">Lifestyle profile</h3>
+          <span class="muted" id="lifestyle-subline">—</span>
+        </div>
+        <div class="muted mt-4" style="font-size:0.85em;">
+          Snapshot from the most recent assessment — Mediterranean-diet
+          adherence, physical-activity volume and the supportive
+          recommendations the engine emitted.
+        </div>
+        <div id="lifestyle-wrap" class="mt-16"><p class="muted">Loading…</p></div>
       </section>
 
       <section class="card">
@@ -310,6 +330,34 @@
           });
       }
       return assessmentsListPromise;
+    }
+
+    /**
+     * Memoise the latest assessment SNAPSHOT. Multiple cards on this page
+     * (completeness notices, lifestyle profile) need the same snapshot; we
+     * share a single GET so the page does not re-fetch the (potentially
+     * large) assessment payload twice.
+     *
+     * Resolves to `{ latest, snapshot }` or `{ latest: null, snapshot: null }`
+     * when no assessments exist. Keeps the per-consumer code path simple.
+     */
+    let latestSnapshotPromise = null;
+    function getLatestAssessmentSnapshot() {
+      if (!latestSnapshotPromise) {
+        latestSnapshotPromise = (async () => {
+          const { assessments } = await getAssessmentsList();
+          const latest = Array.isArray(assessments) && assessments.length > 0
+            ? assessments[0]
+            : null;
+          if (!latest) return { latest: null, snapshot: null };
+          const { snapshot } = await api.getAssessment(latest.id);
+          return { latest, snapshot: snapshot ?? null };
+        })().catch((e) => {
+          latestSnapshotPromise = null;
+          throw e;
+        });
+      }
+      return latestSnapshotPromise;
     }
 
     async function renderAssessments() {
@@ -586,14 +634,12 @@
       const wrap = document.getElementById('completeness-wrap');
       const subline = document.getElementById('completeness-subline');
       try {
-        const { assessments } = await getAssessmentsList();
-        if (!assessments?.length) {
+        const { latest, snapshot } = await getLatestAssessmentSnapshot();
+        if (!latest) {
           wrap.innerHTML = `<p class="muted">No assessments on file — completeness will be evaluated once the first assessment is recorded.</p>`;
           subline.textContent = '—';
           return;
         }
-        const latest = assessments[0];
-        const { snapshot } = await api.getAssessment(latest.id);
         const warnings = Array.isArray(snapshot?.completenessWarnings)
           ? snapshot.completenessWarnings
           : [];
@@ -654,6 +700,153 @@
       }
     }
 
+    /**
+     * Lifestyle profile (ISSUE 3 — patient-overview surfacing).
+     *
+     * Pulls the most recent assessment snapshot (memoised, shared with the
+     * completeness card) and renders a compact view of:
+     *   - PREDIMED MEDAS score + adherence band
+     *   - Physical-activity volume (MET-min/wk) + WHO 2020 status
+     *   - Sedentary risk band
+     *   - Smoking flag
+     *   - Top 3 supportive lifestyle recommendations (priority-ordered)
+     *
+     * "Recommendations" come straight from the bounded WS6 engine, so the
+     * card is byte-equivalent to the assessment-view section but without
+     * the prescriptive framing. Each row carries the engine's guideline
+     * citation and a `supportive` micro-label so the user understands the
+     * authority boundary.
+     */
+    function priorityBadge(priority) {
+      const p = String(priority ?? '').toLowerCase();
+      if (p === 'urgent') return '<span class="badge danger">urgent</span>';
+      if (p === 'moderate') return '<span class="badge warning">moderate</span>';
+      return '<span class="badge muted">routine</span>';
+    }
+
+    function adherenceBadge(band) {
+      if (band === 'high') return '<span class="badge ok">high</span>';
+      if (band === 'medium') return '<span class="badge warning">medium</span>';
+      if (band === 'low') return '<span class="badge danger">low</span>';
+      return '<span class="badge muted">—</span>';
+    }
+
+    function whoStatusBadge(meets) {
+      if (meets === true)  return '<span class="badge ok">met</span>';
+      if (meets === false) return '<span class="badge warning">not met</span>';
+      return '<span class="badge muted">—</span>';
+    }
+
+    function sedentaryBadge(level) {
+      const v = String(level ?? '').toLowerCase();
+      if (v === 'very_high') return '<span class="badge danger">very high</span>';
+      if (v === 'high')      return '<span class="badge warning">high</span>';
+      if (v === 'moderate')  return '<span class="badge warning">moderate</span>';
+      if (v === 'low')       return '<span class="badge ok">low</span>';
+      return '<span class="badge muted">—</span>';
+    }
+
+    async function renderLifestyleProfile() {
+      const wrap = document.getElementById('lifestyle-wrap');
+      const subline = document.getElementById('lifestyle-subline');
+      try {
+        const { latest, snapshot } = await getLatestAssessmentSnapshot();
+        if (!latest || !snapshot) {
+          wrap.innerHTML = `<p class="muted">No assessments on file — lifestyle profile will be available once the first assessment is recorded.</p>`;
+          subline.textContent = '—';
+          return;
+        }
+
+        const asOf = latest.assessmentDate || latest.createdAt || '';
+        const nutrition = snapshot.nutritionSummary || {};
+        const activity  = snapshot.activitySummary  || {};
+        const smokingFlag = snapshot?.input?.clinicalContext?.smoking === true;
+        const recommendations = Array.isArray(snapshot.lifestyleRecommendations)
+          ? snapshot.lifestyleRecommendations
+          : [];
+
+        // Sort priority urgent → moderate → routine, stable within each.
+        const priRank = (p) => (p === 'urgent' ? 0 : p === 'moderate' ? 1 : 2);
+        const ordered = [...recommendations].sort((a, b) => priRank(a.priority) - priRank(b.priority));
+        const top = ordered.slice(0, 3);
+        const remaining = ordered.length - top.length;
+
+        const predimed = nutrition.predimedScore;
+        const predimedCell = predimed != null
+          ? `<strong>${escapeHtml(String(predimed))}/14</strong> ${adherenceBadge(nutrition.adherenceBand)}`
+          : '<span class="muted">—</span>';
+
+        const metMin = activity.metMinutesPerWeek;
+        const minsWeek = activity.minutesPerWeek;
+        const metaPieces = [];
+        if (metMin != null) metaPieces.push(`${Math.round(metMin)} MET-min/wk`);
+        if (minsWeek != null) metaPieces.push(`${minsWeek} min/wk`);
+        const activityCell = metaPieces.length
+          ? `<strong>${escapeHtml(metaPieces.join(' · '))}</strong> ${whoStatusBadge(activity.meetsWhoGuidelines)}`
+          : `<span class="muted">—</span> ${whoStatusBadge(activity.meetsWhoGuidelines)}`;
+
+        const sedentaryCell = sedentaryBadge(activity.sedentaryRiskLevel);
+        const smokingCell = smokingFlag
+          ? '<span class="badge danger">current smoker</span>'
+          : '<span class="badge ok">non-smoker</span>';
+
+        const summaryCount = recommendations.length;
+        subline.textContent = summaryCount > 0
+          ? `${summaryCount} recommendation${summaryCount === 1 ? '' : 's'}`
+          : 'no nudges';
+
+        const recsHtml = top.length === 0
+          ? `<p class="muted mt-8">
+               No lifestyle nudges from the most recent assessment — current
+               profile is within the engine's supportive thresholds.
+             </p>`
+          : `
+            <ul class="list-plain mt-8">
+              ${top.map((r) => {
+                const sourceLine = guidelineSourceLineHtml(r);
+                return `
+                  <li class="mt-8" style="padding:10px 12px;border:1px solid var(--border,#e5e7eb);border-radius:6px;">
+                    <div class="flex between" style="align-items:flex-start;gap:12px;">
+                      <div>
+                        <strong>${escapeHtml(r.title ?? r.code ?? 'Recommendation')}</strong>
+                        <span class="badge muted" style="margin-left:6px;">supportive</span>
+                        <div class="muted mt-4" style="font-size:0.9em;">${escapeHtml(r.rationale ?? '')}</div>
+                        ${sourceLine}
+                      </div>
+                      <div style="white-space:nowrap;">
+                        ${priorityBadge(r.priority)}
+                      </div>
+                    </div>
+                  </li>`;
+              }).join('')}
+            </ul>
+            ${remaining > 0
+              ? `<div class="muted mt-8" style="font-size:0.85em;">
+                   + ${remaining} additional recommendation${remaining === 1 ? '' : 's'} —
+                   <a href="./assessment-view.html?id=${encodeURIComponent(latest.id)}">open the latest assessment</a>
+                   for the full list.
+                 </div>`
+              : ''}
+          `;
+
+        wrap.innerHTML = `
+          <div class="muted mt-4" style="font-size:0.8em;">
+            As of assessment ${escapeHtml(asOf || '—')}.
+          </div>
+          <div class="grid two mt-8" style="gap:8px 16px;">
+            <div><div class="kpi-label">PREDIMED (MEDAS)</div><div>${predimedCell}</div></div>
+            <div><div class="kpi-label">Physical activity</div><div>${activityCell}</div></div>
+            <div><div class="kpi-label">Sedentary risk</div><div>${sedentaryCell}</div></div>
+            <div><div class="kpi-label">Smoking</div><div>${smokingCell}</div></div>
+          </div>
+          ${recsHtml}
+        `;
+      } catch (e) {
+        wrap.innerHTML = `<div class="inline-alert danger">Failed to load lifestyle profile: ${escapeHtml(e.message)}</div>`;
+        subline.textContent = '—';
+      }
+    }
+
     async function renderConsents() {
       const wrap = document.getElementById('consents-wrap');
       try {
@@ -688,6 +881,7 @@
       renderPatient(),
       renderAssessments(),
       renderProgress(),
+      renderLifestyleProfile(),
       renderDueItems(),
       renderAlerts(),
       renderCompletenessNotices(),

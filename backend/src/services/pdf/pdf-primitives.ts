@@ -68,6 +68,44 @@ export function ensureSpace(ctx: RenderCtx, needed: number): void {
   if (ctx.cursorY - needed < PAGE.marginBottom) newPage(ctx);
 }
 
+/**
+ * Atomic-section guard.
+ *
+ * Forces a page break BEFORE the section is rendered if the remaining
+ * vertical space on the current page is below `minHeight`. This solves
+ * the "orphan section title" failure mode where a `sectionTitle()`
+ * draws near the bottom of a page, then the section's first card
+ * triggers `newPage()` from inside `drawBandedCard`, leaving the title
+ * stranded alone above a page break.
+ *
+ * Sizing rule of thumb (pass as `minHeight`):
+ *   - the height of the section title block (~ 28pt with the rule),
+ *   - PLUS a generous reservation for the section's first
+ *     "indivisible unit" (one banded card, one paragraph, one
+ *     key-value triplet, etc).
+ *
+ * Intentional non-goals:
+ *   - This primitive does NOT keep the entire section on one page.
+ *     For long sections (e.g. recommendations, screenings) doing so
+ *     would force unnecessary page breaks. Individual cards remain
+ *     responsible for their own page-break safety via the
+ *     `estimatedHeight` they hand to `drawBandedCard`.
+ *   - This primitive does NOT undo drawing — pdf-lib has no rollback.
+ *     The caller MUST invoke this BEFORE drawing anything for the
+ *     section.
+ *
+ * Pure side-effect on `ctx`: either no-op, or a single `newPage`.
+ */
+export function beginAtomicSection(
+  ctx: RenderCtx,
+  opts: { minHeight?: number } = {},
+): void {
+  const min = opts.minHeight ?? 140;
+  if (ctx.cursorY - PAGE.marginBottom < min) {
+    newPage(ctx);
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Text primitives
 // ─────────────────────────────────────────────────────────────────────────────

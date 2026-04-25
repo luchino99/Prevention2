@@ -51,6 +51,17 @@ export interface ScreeningInput {
    * "urgent" without evidence.
    */
   compositeRisk?: CompositeRiskProfile;
+  /**
+   * Latest office blood pressure reading. Used by the BP screening rule
+   * (ESH 2023) to stratify monitoring cadence into three tiers instead
+   * of the legacy one-size-fits-all 12-month cadence. When absent or
+   * partial the rule falls back to the hypertension-diagnosis-only
+   * decision branch (backwards compatible).
+   */
+  vitals?: {
+    sbpMmHg?: number | null;
+    dbpMmHg?: number | null;
+  };
 }
 
 // ============================================================================
@@ -200,17 +211,83 @@ function deriveLiverFunctionScreening(
   };
 }
 
+/**
+ * Blood-pressure monitoring cadence.
+ * -----------------------------------
+ * ISSUE 4 — clinically correct rule.
+ *
+ * The previous rule applied a single 12-month cadence to everyone without a
+ * hypertension diagnosis, which contradicted ESH 2023. The guideline
+ * stratifies follow-up BP measurement into three tiers:
+ *
+ *   - Hypertensive (known diagnosis OR SBP ≥140 / DBP ≥90):
+ *       3-month office check (intensive control)
+ *   - High-normal / pre-hypertensive (SBP 130–139 or DBP 85–89, no dx):
+ *       12-month office check + home self-monitoring
+ *   - Optimal / normal (SBP <130 and DBP <85, no dx):
+ *       36-month office check (routine)
+ *
+ * When vitals are absent (legacy call-sites or a paper-only visit) we fall
+ * back to the diagnosis-only branch: hypertensive → 3 mo, otherwise 36 mo.
+ * This is a SAFE default: the former 12-mo cadence was an over-screening
+ * bias we deliberately remove for confirmed-normotensive patients.
+ *
+ * The home-monitoring arm of the rule is not a screening — it is a
+ * lifestyle recommendation, emitted by `homeBpMonitoringRule` in the
+ * lifestyle-recommendation engine.
+ */
 function deriveBloodPressureScreening(
   diagnoses: string[],
+  vitals: ScreeningInput['vitals'],
 ): ScreeningItem {
-  const hasHypertension = hasDiagnosis(diagnoses, 'hypertension');
+  const hasHypertensionDx = hasDiagnosis(diagnoses, 'hypertension');
+  const sbp = typeof vitals?.sbpMmHg === 'number' ? vitals.sbpMmHg : null;
+  const dbp = typeof vitals?.dbpMmHg === 'number' ? vitals.dbpMmHg : null;
+
+  // Grade-1 hypertension threshold per ESH 2023 Table 5.
+  const meetsHypertensiveBp =
+    (sbp !== null && sbp >= 140) || (dbp !== null && dbp >= 90);
+
+  if (hasHypertensionDx || meetsHypertensiveBp) {
+    return {
+      screening: 'Blood Pressure (office)',
+      reason: hasHypertensionDx
+        ? 'Hypertension management and control (ESH 2023)'
+        : `Office BP ${sbp ?? '—'}/${dbp ?? '—'} mmHg meets hypertensive threshold (ESH 2023)`,
+      priority: 'moderate',
+      intervalMonths: 3,
+      guidelineSource: GUIDELINES.ESC_ESH_2023_HTN.displayString,
+    };
+  }
+
+  // Elevated / high-normal range — annual office check plus a home
+  // self-monitoring recommendation emitted separately.
+  const isHighNormal =
+    (sbp !== null && sbp >= 130) || (dbp !== null && dbp >= 85);
+  if (isHighNormal) {
+    return {
+      screening: 'Blood Pressure (office)',
+      reason:
+        `Office BP ${sbp ?? '—'}/${dbp ?? '—'} mmHg in high-normal range; `
+        + 'annual office reassessment + home self-monitoring (ESH 2023)',
+      priority: 'routine',
+      intervalMonths: 12,
+      guidelineSource: GUIDELINES.ESC_ESH_2023_HTN.displayString,
+    };
+  }
+
+  // Optimal / normotensive — routine triennial cadence (ESH 2023
+  // Section 10: adults <60 yrs with optimal BP may extend the interval
+  // up to every 5 yrs; we keep 36 months as a conservative default that
+  // stays safe across the full age range).
   return {
-    screening: 'Blood Pressure',
-    reason: hasHypertension
-      ? 'Hypertension management and control'
-      : 'Routine cardiovascular health screening',
-    priority: hasHypertension ? 'moderate' : 'routine',
-    intervalMonths: hasHypertension ? 3 : 12,
+    screening: 'Blood Pressure (office)',
+    reason:
+      sbp !== null && dbp !== null
+        ? `Normotensive (${sbp}/${dbp} mmHg); routine reassessment every 3 years (ESH 2023)`
+        : 'Routine cardiovascular health screening (ESH 2023)',
+    priority: 'routine',
+    intervalMonths: 36,
     guidelineSource: GUIDELINES.ESC_ESH_2023_HTN.displayString,
   };
 }
@@ -340,7 +417,7 @@ export function determineRequiredScreenings(
     deriveHbA1cScreening(scoreResults, diagnoses),
     deriveRenalScreening(scoreResults, diagnoses),
     deriveLiverFunctionScreening(scoreResults),
-    deriveBloodPressureScreening(diagnoses),
+    deriveBloodPressureScreening(diagnoses, input.vitals),
     deriveFrailtyScreening(age),
     deriveEchocardiogramScreening(cvLevel),
     deriveABIScreening(age, cvLevel),

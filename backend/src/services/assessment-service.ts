@@ -508,6 +508,10 @@ export async function createAssessment(
     scoreResults,
     diagnoses: enrichedInput.clinicalContext.diagnoses ?? [],
     compositeRisk,
+    vitals: {
+      sbpMmHg: enrichedInput.vitals.sbpMmHg ?? null,
+      dbpMmHg: enrichedInput.vitals.dbpMmHg ?? null,
+    },
   });
 
   // Anchor all date-sensitive engines to a single `now`. This is what
@@ -547,6 +551,23 @@ export async function createAssessment(
     previousCompositeRisk,
     followupPlan,
     now,
+    // ISSUE 5 — feed raw input so guideline-threshold red-flag rules
+    // (severe HTN, hyperglycaemic crisis, very-high HbA1c, uncontrolled
+    // diabetes, severe albuminuria, severe transaminase rise) can fire.
+    vitals: {
+      sbpMmHg: enrichedInput.vitals.sbpMmHg ?? null,
+      dbpMmHg: enrichedInput.vitals.dbpMmHg ?? null,
+    },
+    labs: {
+      glucoseMgDl: enrichedInput.labs.glucoseMgDl ?? null,
+      hba1cPct: enrichedInput.labs.hba1cPct ?? null,
+      astUL: enrichedInput.labs.astUL ?? null,
+      altUL: enrichedInput.labs.altUL ?? null,
+      albuminCreatinineRatio: enrichedInput.labs.albuminCreatinineRatio ?? null,
+    },
+    clinicalContext: {
+      hasDiabetes: enrichedInput.clinicalContext.hasDiabetes === true,
+    },
   });
 
   // ─── 2. Persist assessment header ───
@@ -909,6 +930,10 @@ export async function loadAssessmentSnapshot(
     scoreResults,
     diagnoses: enrichedInput.clinicalContext.diagnoses ?? [],
     compositeRisk,
+    vitals: {
+      sbpMmHg: enrichedInput.vitals.sbpMmHg ?? null,
+      dbpMmHg: enrichedInput.vitals.dbpMmHg ?? null,
+    },
   });
 
   // Rehydration uses the assessment's original `created_at` as the `now`
@@ -961,6 +986,25 @@ export async function loadAssessmentSnapshot(
       previousCompositeRisk,
       followupPlan,
       now,
+      // ISSUE 5 — keep read-path in lockstep with the write-path so a
+      // rehydrated snapshot yields the same alert set as the original
+      // createAssessment call. See the write-path deriveAlerts(...) for
+      // the reference wiring.
+      vitals: {
+        sbpMmHg: enrichedInput.vitals.sbpMmHg ?? null,
+        dbpMmHg: enrichedInput.vitals.dbpMmHg ?? null,
+      },
+      labs: {
+        glucoseMgDl: enrichedInput.labs.glucoseMgDl ?? null,
+        hba1cPct: enrichedInput.labs.hba1cPct ?? null,
+        astUL: enrichedInput.labs.astUL ?? null,
+        altUL: enrichedInput.labs.altUL ?? null,
+        albuminCreatinineRatio:
+          enrichedInput.labs.albuminCreatinineRatio ?? null,
+      },
+      clinicalContext: {
+        hasDiabetes: enrichedInput.clinicalContext.hasDiabetes === true,
+      },
     });
   }
 
@@ -1139,4 +1183,211 @@ export interface ReportPayload {
     fullName: string;
     email: string;
   } | null;
+}
+
+// ============================================================================
+// Delete path: deleteAssessment
+// ============================================================================
+
+/**
+ * Name of the private bucket that stores generated clinical PDFs.
+ * Duplicated intentionally from api/v1/assessments/[id]/report.ts — both
+ * files are entry-point adapters for the same object storage folder; we
+ * keep them in sync by convention (one-line constant, not worth a shared
+ * module yet).
+ */
+const CLINICAL_REPORT_BUCKET = 'clinical-reports';
+
+/**
+ * Summary returned by `deleteAssessment` so the route can relay a
+ * concrete receipt to the UI and include rich metadata in the audit log.
+ */
+export interface DeleteAssessmentResult {
+  assessmentId: string;
+  patientId: string;
+  tenantId: string;
+  /** Number of storage objects (PDF exports) attempted to delete. */
+  storageObjectsAttempted: number;
+  /** Objects that were removed from object storage successfully. */
+  storageObjectsRemoved: number;
+  /** Objects that FAILED to delete from storage but whose DB rows were
+   *  still cascaded away. We never rollback over a storage failure —
+   *  the DB is the source of truth; dangling objects are garbage and
+   *  are listed here so ops can sweep them. */
+  storageObjectsOrphaned: string[];
+  /** Count of due_items rows proactively removed (the FK is SET NULL; we
+   *  delete the sibling rows so the patient page doesn't show stale
+   *  action items pointing to an assessment that no longer exists). */
+  dueItemsRemoved: number;
+}
+
+/**
+ * Permanently delete an assessment and its entire clinical trail.
+ *
+ * Authorization model (stricter than the read path):
+ *   - platform_admin       — always allowed
+ *   - tenant_admin         — allowed within their tenant
+ *   - clinician            — allowed only on assessments they authored
+ *   - assistant_staff /    — denied
+ *     patient
+ *
+ * Side effects, in order:
+ *   1. Load the assessment row (tenant check, ownership check).
+ *   2. Enumerate `report_exports.storage_path` rows for this assessment
+ *      and remove every object from the clinical-reports bucket.
+ *   3. Delete all `due_items` rows whose `assessment_id` matches (the
+ *      FK is SET NULL by design — see migration 007 — and we want a
+ *      full sweep, not an orphaned projection).
+ *   4. `DELETE FROM assessments WHERE id = ... AND tenant_id = ...` —
+ *      migration 009 cascades assessment_measurements, score_results,
+ *      risk_profiles, nutrition_snapshots, activity_snapshots, alerts,
+ *      followup_plans, report_exports.
+ *   5. Write an audit_event with full metadata.
+ *
+ * The function is idempotent in the sense that if the assessment was
+ * already deleted between load and delete, it returns 404 rather than
+ * silently succeeding.
+ */
+export async function deleteAssessment(
+  auth: AuthContext,
+  assessmentId: string,
+): Promise<DeleteAssessmentResult> {
+  // ─── 1. Load + authorize ───
+  const { data: row, error: loadErr } = await supabaseAdmin
+    .from('assessments')
+    .select('id, tenant_id, patient_id, assessed_by, status')
+    .eq('id', assessmentId)
+    .maybeSingle();
+
+  if (loadErr) {
+    throw new AssessmentServiceError(500, 'DB_ERROR', loadErr.message);
+  }
+  if (!row) {
+    throw new AssessmentServiceError(
+      404,
+      'ASSESSMENT_NOT_FOUND',
+      'Assessment not found',
+    );
+  }
+
+  const isPlatformAdmin = auth.role === 'platform_admin';
+  const isTenantAdmin =
+    auth.role === 'tenant_admin' && row.tenant_id === auth.tenantId;
+  const isAuthoringClinician =
+    auth.role === 'clinician'
+    && row.tenant_id === auth.tenantId
+    && row.assessed_by === auth.userId;
+
+  if (!isPlatformAdmin && !isTenantAdmin && !isAuthoringClinician) {
+    throw new AssessmentServiceError(
+      403,
+      'DELETE_FORBIDDEN',
+      'Only the authoring clinician or a tenant administrator may delete this assessment',
+    );
+  }
+
+  // ─── 2. Enumerate + remove storage objects ───
+  const { data: exportRows } = await supabaseAdmin
+    .from('report_exports')
+    .select('id, storage_path')
+    .eq('assessment_id', assessmentId);
+
+  const storagePaths = (exportRows ?? [])
+    .map((r: any) => (typeof r?.storage_path === 'string' ? r.storage_path : null))
+    .filter((p: string | null): p is string => !!p);
+
+  const orphaned: string[] = [];
+  let removed = 0;
+  if (storagePaths.length > 0) {
+    const { data: removedData, error: removeErr } = await supabaseAdmin.storage
+      .from(CLINICAL_REPORT_BUCKET)
+      .remove(storagePaths);
+    if (removeErr) {
+      // Don't rollback — DB is source of truth. Surface the orphans so
+      // ops can sweep them from a cron.
+      // eslint-disable-next-line no-console
+      console.error(
+        '[deleteAssessment] storage.remove failed — DB delete will still proceed',
+        removeErr,
+      );
+      orphaned.push(...storagePaths);
+    } else {
+      removed = Array.isArray(removedData) ? removedData.length : storagePaths.length;
+      const removedPaths = new Set(
+        (removedData ?? [])
+          .map((o: any) => (typeof o?.name === 'string' ? o.name : null))
+          .filter((n: string | null): n is string => !!n),
+      );
+      for (const p of storagePaths) {
+        if (removedPaths.size > 0 && !removedPaths.has(p)) orphaned.push(p);
+      }
+    }
+  }
+
+  // ─── 3. Proactively remove materialised due_items (FK is SET NULL) ───
+  const { data: dueRemoved } = await supabaseAdmin
+    .from('due_items')
+    .delete()
+    .eq('assessment_id', assessmentId)
+    .select('id');
+  const dueItemsRemoved = Array.isArray(dueRemoved) ? dueRemoved.length : 0;
+
+  // ─── 4. Cascade delete the assessment ───
+  // Defense-in-depth: match BOTH id and tenant_id so a race with a
+  // cross-tenant hijack attempt cannot remove the wrong row. We return
+  // the deleted row (`.select('id')`) so we can distinguish a true
+  // hit from a race that already removed the row between load and delete.
+  const { data: deletedRows, error: delErr } = await supabaseAdmin
+    .from('assessments')
+    .delete()
+    .eq('id', assessmentId)
+    .eq('tenant_id', row.tenant_id as string)
+    .select('id');
+
+  if (delErr) {
+    // eslint-disable-next-line no-console
+    console.error('[deleteAssessment] assessments.delete failed', delErr);
+    throw new AssessmentServiceError(
+      500,
+      'DELETE_FAILED',
+      'Assessment delete failed',
+      { pgMessage: delErr.message },
+    );
+  }
+  if (!Array.isArray(deletedRows) || deletedRows.length === 0) {
+    // Race: row vanished between load and delete. Treat as not-found so
+    // the UI can refresh cleanly.
+    throw new AssessmentServiceError(
+      404,
+      'ASSESSMENT_NOT_FOUND',
+      'Assessment was already removed',
+    );
+  }
+
+  // ─── 5. Audit ───
+  await recordAudit(auth, {
+    action: 'assessment.delete',
+    resourceType: 'assessment',
+    resourceId: assessmentId,
+    metadata: {
+      patient_id: row.patient_id,
+      tenant_id: row.tenant_id,
+      prior_status: row.status,
+      authoring_user_id: row.assessed_by,
+      storage_objects_attempted: storagePaths.length,
+      storage_objects_removed: removed,
+      storage_objects_orphaned: orphaned.length,
+      due_items_removed: dueItemsRemoved,
+    },
+  });
+
+  return {
+    assessmentId,
+    patientId: row.patient_id as string,
+    tenantId: row.tenant_id as string,
+    storageObjectsAttempted: storagePaths.length,
+    storageObjectsRemoved: removed,
+    storageObjectsOrphaned: orphaned,
+    dueItemsRemoved,
+  };
 }

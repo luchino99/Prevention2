@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex,nofollow" />
   <title>Assessment — Uelfy Clinical</title>
+  <!-- Favicon set (clinical-context) — see frontend/assets/icons/favicon.svg -->
+  <link rel="icon" type="image/svg+xml" href="../assets/icons/favicon.svg" />
+  <link rel="alternate icon" type="image/png" sizes="32x32" href="../assets/icons/favicon-32.png" />
+  <link rel="alternate icon" type="image/png" sizes="16x16" href="../assets/icons/favicon-16.png" />
+  <link rel="shortcut icon" href="../assets/icons/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/icons/apple-touch-icon.png" />
+  <meta name="theme-color" content="#0E5C7B" />
   <link rel="stylesheet" href="../assets/css/app.css" />
   <!--
     Risk-level visual system (`.badge.indeterminate`, `.completeness-list`)
@@ -35,11 +42,52 @@
         </div>
         <div class="flex gap-8">
           <button class="btn" id="report-btn">Generate PDF report</button>
+          <button class="btn danger" id="delete-btn" title="Delete this assessment">Delete</button>
         </div>
       </div>
 
       <div id="error-banner" class="inline-alert danger hidden"></div>
       <div id="report-banner" class="inline-alert hidden"></div>
+
+      <!--
+        Delete-assessment confirmation modal.
+        ------------------------------------
+        Purpose: gate an irreversible destructive action behind an
+        explicit, typed confirmation step. The user must type the
+        assessment's short id to enable the confirm button. Backdrop
+        click + Escape both cancel. ARIA dialog semantics for screen
+        readers.
+      -->
+      <div id="delete-modal"
+           class="modal-backdrop hidden"
+           role="dialog"
+           aria-modal="true"
+           aria-labelledby="delete-modal-title">
+        <div class="modal-card">
+          <h3 id="delete-modal-title">Delete this assessment?</h3>
+          <p class="muted">
+            This permanently removes the assessment and everything derived from
+            it — measurements, score results, risk profile, nutrition &amp;
+            activity snapshots, follow-up plan, alerts, due-items, and any
+            generated PDF reports. It cannot be undone.
+          </p>
+          <p>
+            To confirm, type the short id
+            <code id="delete-short-id" class="mono">—</code> below:
+          </p>
+          <input type="text"
+                 id="delete-confirm-input"
+                 class="input"
+                 autocomplete="off"
+                 autocapitalize="off"
+                 spellcheck="false"
+                 placeholder="short id" />
+          <div class="flex gap-8 mt-12" style="justify-content:flex-end;">
+            <button class="btn ghost" id="delete-cancel-btn">Cancel</button>
+            <button class="btn danger" id="delete-confirm-btn" disabled>Delete permanently</button>
+          </div>
+        </div>
+      </div>
 
       <section class="card">
         <h3>Composite risk</h3>
@@ -200,8 +248,13 @@
       reportBanner.innerHTML = msg;
     }
 
+    // Captured for client-side role gating (see delete-btn visibility).
+    // Server-side authorization is the source of truth; this only hides
+    // affordances from users who would be rejected anyway.
+    let currentUser = null;
     try {
       const { user } = await api.me();
+      currentUser = user;
       if (user.role === 'tenant_admin' || user.role === 'platform_admin') {
         document.getElementById('nav-audit').classList.remove('hidden');
       }
@@ -514,6 +567,17 @@
         // parallel so the chip and the prev/next chips appear as soon
         // as available. Any failure here must not break the snapshot
         // render above.
+        //
+        // ISSUE 1 fix — prev/next navigation binding
+        // ------------------------------------------
+        // The sibling-list response envelope has varied over time:
+        // legacy pages returned `{ assessments: [...] }`, newer paginated
+        // endpoints return `{ items: [...] }`, and callers that wrap
+        // deeper may ship a bare array. We normalise all three shapes
+        // here so the chips render correctly regardless of which route
+        // is eventually bound. We also always call `renderNavHeader`
+        // once the promises settle, even if both fetches rejected — so
+        // the skeleton chips never stay stuck in their initial state.
         if (cachedPatientId) {
           Promise.allSettled([
             api.getPatient(cachedPatientId),
@@ -523,16 +587,35 @@
               navState.patient = patientResult.value?.patient ?? null;
             }
             if (listResult.status === 'fulfilled') {
-              const list = listResult.value?.assessments ?? [];
+              const v = listResult.value;
+              const list = Array.isArray(v)
+                ? v
+                : Array.isArray(v?.assessments)
+                  ? v.assessments
+                  : Array.isArray(v?.items)
+                    ? v.items
+                    : [];
               const neighbours = resolveAssessmentNeighbours(
-                list.map((a) => ({ id: a.id, createdAt: a.assessmentDate ?? a.createdAt })),
+                list
+                  .filter((a) => a && a.id)
+                  .map((a) => ({
+                    id: a.id,
+                    createdAt:
+                      a.assessmentDate || a.createdAt || a.created_at || a.completedAt,
+                  })),
                 assessmentId,
               );
               navState.prevAssessmentId = neighbours.prev;
               navState.nextAssessmentId = neighbours.next;
             }
+            // Always re-render after settlement so the chips reflect the
+            // resolved (or empty) neighbour state. Idempotent call.
             renderNavHeader();
-          }).catch(() => { /* nav-header enrichment is best-effort */ });
+          }).catch(() => {
+            // Re-render defensively even on catch — mountNavHeader is
+            // idempotent and returns quickly.
+            renderNavHeader();
+          });
         }
 
         // If a report already exists, fetch its signed URL non-fatally.
@@ -577,6 +660,83 @@
       e.preventDefault();
       await api.signOut();
       window.location.href = './login.html';
+    });
+
+    // ────────────────────────────────────────────────────────────────────
+    // Delete assessment (ISSUE 6)
+    //
+    // Opens the confirmation modal. The destructive action stays disabled
+    // until the user types the assessment's short (8-char) id, so a
+    // misclick cannot accidentally delete clinical data. Server-side
+    // authorization remains the source of truth — we only hide the
+    // button for roles we know will be rejected.
+    // ────────────────────────────────────────────────────────────────────
+    const deleteBtn = document.getElementById('delete-btn');
+    const deleteModal = document.getElementById('delete-modal');
+    const deleteShortIdEl = document.getElementById('delete-short-id');
+    const deleteInput = document.getElementById('delete-confirm-input');
+    const deleteCancel = document.getElementById('delete-cancel-btn');
+    const deleteConfirm = document.getElementById('delete-confirm-btn');
+    const shortId = assessmentId.slice(0, 8);
+    deleteShortIdEl.textContent = shortId;
+
+    function openDeleteModal() {
+      deleteInput.value = '';
+      deleteConfirm.disabled = true;
+      deleteModal.classList.remove('hidden');
+      // Defer focus so the modal is rendered before the input grabs it.
+      setTimeout(() => deleteInput.focus(), 0);
+    }
+    function closeDeleteModal() {
+      deleteModal.classList.add('hidden');
+    }
+    deleteInput.addEventListener('input', () => {
+      deleteConfirm.disabled = deleteInput.value.trim() !== shortId;
+    });
+    deleteCancel.addEventListener('click', (e) => {
+      e.preventDefault();
+      closeDeleteModal();
+    });
+    // Backdrop click cancels — only when the click actually lands on the
+    // backdrop itself, not the card it contains.
+    deleteModal.addEventListener('click', (e) => {
+      if (e.target === deleteModal) closeDeleteModal();
+    });
+    // Escape cancels.
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !deleteModal.classList.contains('hidden')) {
+        closeDeleteModal();
+      }
+    });
+
+    deleteBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openDeleteModal();
+    });
+
+    deleteConfirm.addEventListener('click', async (e) => {
+      e.preventDefault();
+      if (deleteConfirm.disabled) return;
+      deleteConfirm.disabled = true;
+      deleteCancel.disabled = true;
+      deleteBtn.disabled = true;
+      deleteConfirm.textContent = 'Deleting…';
+      try {
+        await api.deleteAssessment(assessmentId);
+        // Navigate back to the patient page — all data on that page is
+        // server-driven, so the removed assessment disappears from the
+        // history, progress chart, due items, and alerts on next render.
+        const dest = cachedPatientId
+          ? `./patient-detail.html?id=${encodeURIComponent(cachedPatientId)}&deleted=1`
+          : './patients.html';
+        window.location.href = dest;
+      } catch (err) {
+        deleteConfirm.textContent = 'Delete permanently';
+        deleteCancel.disabled = false;
+        deleteBtn.disabled = false;
+        showError(`Delete failed: ${err.message}`);
+        closeDeleteModal();
+      }
     });
 
     load();

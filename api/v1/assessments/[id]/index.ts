@@ -1,7 +1,18 @@
 /**
- * GET /api/v1/assessments/[id]
- * Returns the full AssessmentSnapshot for a stored assessment.
- * Used by the patient detail / assessment-detail UI and as input for PDF.
+ * /api/v1/assessments/[id]
+ *
+ *   GET     — loadAssessmentSnapshot() for UI + PDF rendering.
+ *   DELETE  — permanently remove this assessment and its full clinical
+ *             trail (measurements, scores, risk profile, nutrition/activity
+ *             snapshots, follow-up plan, alerts, report exports, materialised
+ *             due_items, and the PDF binaries from object storage).
+ *
+ * Authorization for DELETE is stricter than for GET: only platform admins,
+ * tenant admins in the owning tenant, or the clinician who authored the
+ * assessment may remove it. All other roles receive 403. Every successful
+ * deletion emits `assessment.delete` into the audit trail with the full
+ * before-image metadata (patient, tenant, status, authoring user, and the
+ * storage cleanup receipt).
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
@@ -11,6 +22,7 @@ import { applySecurityHeaders } from '../../../../backend/src/middleware/securit
 import { checkRateLimit, RATE_LIMITS, applyRateLimitHeaders } from '../../../../backend/src/middleware/rate-limit.js';
 import {
   loadAssessmentSnapshot,
+  deleteAssessment,
   AssessmentServiceError,
 } from '../../../../backend/src/services/assessment-service.js';
 import { recordAudit } from '../../../../backend/src/audit/audit-logger.js';
@@ -25,8 +37,9 @@ function getId(req: VercelRequest): string | null {
 export default withAuth(async (req, res: VercelResponse) => {
   applySecurityHeaders(res);
 
-  if (req.method !== 'GET') {
-    res.setHeader('Allow', 'GET');
+  const method = req.method ?? 'GET';
+  if (method !== 'GET' && method !== 'DELETE') {
+    res.setHeader('Allow', 'GET, DELETE');
     res.status(405).json({ error: { code: 'METHOD_NOT_ALLOWED', message: '' } });
     return;
   }
@@ -37,26 +50,58 @@ export default withAuth(async (req, res: VercelResponse) => {
     return;
   }
 
-  const rl = checkRateLimit(req, { routeId: 'assessments.read', ...RATE_LIMITS.read });
+  // Separate rate-limit buckets for read vs destructive write. Delete is
+  // strictly throttled to protect against accidental bulk-delete loops.
+  const rlConfig = method === 'DELETE'
+    ? { routeId: 'assessments.delete', ...RATE_LIMITS.write }
+    : { routeId: 'assessments.read',   ...RATE_LIMITS.read };
+  const rl = checkRateLimit(req, rlConfig);
   applyRateLimitHeaders(res, rl);
   if (!rl.allowed) return res.status(429).json({ error: { code: 'RATE_LIMITED', message: '' } }) as any;
 
   await requireTenantMember(async (r: any, s: VercelResponse) => {
+    if (method === 'GET') {
+      try {
+        const snapshot = await loadAssessmentSnapshot(r.auth, id);
+        await recordAudit(r.auth, {
+          action: 'assessment.read',
+          resourceType: 'assessment',
+          resourceId: id,
+        });
+        s.status(200).json({ snapshot });
+      } catch (err: any) {
+        if (err instanceof AssessmentServiceError) {
+          s.status(err.status).json({ error: { code: err.code, message: err.message } });
+          return;
+        }
+        console.error('[assessments.read] unexpected', err);
+        s.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Read failed' } });
+      }
+      return;
+    }
+
+    // method === 'DELETE'
     try {
-      const snapshot = await loadAssessmentSnapshot(r.auth, id);
-      await recordAudit(r.auth, {
-        action: 'assessment.read',
-        resourceType: 'assessment',
-        resourceId: id,
+      const receipt = await deleteAssessment(r.auth, id);
+      // The audit row is written inside deleteAssessment() with the full
+      // before-image; don't double-log here.
+      s.status(200).json({
+        assessmentId: receipt.assessmentId,
+        patientId: receipt.patientId,
+        storage: {
+          attempted: receipt.storageObjectsAttempted,
+          removed: receipt.storageObjectsRemoved,
+          orphaned: receipt.storageObjectsOrphaned.length,
+        },
+        dueItemsRemoved: receipt.dueItemsRemoved,
       });
-      s.status(200).json({ snapshot });
     } catch (err: any) {
       if (err instanceof AssessmentServiceError) {
         s.status(err.status).json({ error: { code: err.code, message: err.message } });
         return;
       }
-      console.error('[assessments.read] unexpected', err);
-      s.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Read failed' } });
+      console.error('[assessments.delete] unexpected', err);
+      s.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Delete failed' } });
     }
   })(req as any, res);
 });

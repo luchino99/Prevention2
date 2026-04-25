@@ -130,6 +130,7 @@ export const api = {
   createAssessment:  (patientId, body) =>
     apiFetch(`/api/v1/patients/${encodeURIComponent(patientId)}/assessments`, { method: 'POST', body }),
   getAssessment:     (id) => apiFetch(`/api/v1/assessments/${encodeURIComponent(id)}`),
+  deleteAssessment:  (id) => apiFetch(`/api/v1/assessments/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 
   // Reports
   generateReport:    (assessmentId) =>
