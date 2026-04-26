@@ -42,12 +42,19 @@ const DIST = join(ROOT, 'frontend-dist');
 // assessment-new.html, assessment-view.html). The previous entry
 // `pages/patient.html` was a stale alias from an older rename and never
 // existed in `frontend/pages/`, so it failed every production deploy.
+//
+// `assets/vendor/supabase-js.esm.js` is the build-time-vendored Supabase
+// SDK bundle (see scripts/fetch-supabase-sdk.mjs). If it is missing,
+// every page silently fails to load the auth client. We make that a
+// hard production gate.
 const REQUIRED_FILES = [
   'index.html',
   'pages/login.html',
   'pages/dashboard.html',
   'pages/patient-detail.html',
   'pages/assessment-new.html',
+  'assets/js/public-config.js',
+  'assets/vendor/supabase-js.esm.js',
 ];
 
 const FORBIDDEN_SUBSTRINGS = [

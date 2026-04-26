@@ -7,7 +7,14 @@
  * works in vanilla HTML pages during the incremental refactor.
  */
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+// Same-origin import: the Supabase SDK is vendored at build time by
+// scripts/fetch-supabase-sdk.mjs into frontend/assets/vendor/supabase-js.esm.js.
+// Importing from a third-party CDN (esm.sh) was rejected on three counts:
+//   - violates CSP `script-src 'self'` (audit blocker B-13);
+//   - introduces an undeclared sub-processor under GDPR Art.30;
+//   - opens a supply-chain path with no integrity check.
+// See scripts/fetch-supabase-sdk.mjs for the version pin and rationale.
+import { createClient } from '../vendor/supabase-js.esm.js';
 
 /**
  * SECURITY: Anon key + project URL are injected at build time into
