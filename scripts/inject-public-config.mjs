@@ -136,15 +136,34 @@ function validateInputs(values) {
 
 /* --------------------------- substitution ------------------------------ */
 
-function walkHtmlFiles(dir) {
+/**
+ * Walk the build output and return every file whose extension is in
+ * `extensions`. Used to find the placeholder-bearing files we need to
+ * patch.
+ *
+ * Why both .html AND .js
+ * ----------------------
+ * The CSP we ship (`script-src 'self'`) forbids inline scripts. The
+ * `window.__UELFY_CONFIG__` initialiser used to live in inline
+ * `<script>` blocks at the top of every HTML page; CSP enforcement
+ * blocks those. We extracted the config initialiser into
+ * `assets/js/public-config.js`, which carries the same placeholders
+ * and must be patched at build time. Per-page logic was extracted into
+ * `pages/<name>.js`, which never carries placeholders but is included
+ * for forward-compatibility with future patching.
+ */
+function walkSourceFiles(dir, extensions) {
   const out = [];
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry);
     const st = statSync(full);
     if (st.isDirectory()) {
-      out.push(...walkHtmlFiles(full));
-    } else if (st.isFile() && entry.toLowerCase().endsWith('.html')) {
-      out.push(full);
+      out.push(...walkSourceFiles(full, extensions));
+    } else if (st.isFile()) {
+      const lower = entry.toLowerCase();
+      if (extensions.some((ext) => lower.endsWith(ext))) {
+        out.push(full);
+      }
     }
   }
   return out;
@@ -208,11 +227,14 @@ function main() {
   cpSync(SOURCE_DIR, OUTPUT_DIR, { recursive: true });
   info(`Copied ${SOURCE_DIR} -> ${OUTPUT_DIR}`);
 
-  // Substitute in every HTML file under the output directory
-  const htmlFiles = walkHtmlFiles(OUTPUT_DIR);
+  // Substitute in every HTML and JS file under the output directory.
+  // The placeholder lives in `assets/js/public-config.js` after the
+  // CSP-driven inline-script extraction; legacy HTML pages may still
+  // carry it during transition, so both extensions are scanned.
+  const targetFiles = walkSourceFiles(OUTPUT_DIR, ['.html', '.js']);
   let totalReplacements = 0;
   let touchedFiles = 0;
-  for (const file of htmlFiles) {
+  for (const file of targetFiles) {
     const n = injectInto(file, values);
     if (n > 0) {
       touchedFiles += 1;

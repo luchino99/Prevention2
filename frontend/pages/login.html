@@ -41,46 +41,7 @@
   </main>
 
   <!-- Public env config (anon key + project URL only — never service role) -->
-  <script>
-    window.__UELFY_CONFIG__ = {
-      supabaseUrl: window.location.origin.includes('localhost')
-        ? 'http://localhost:54321'
-        : '__PUBLIC_SUPABASE_URL__',
-      supabaseAnonKey: '__PUBLIC_SUPABASE_ANON_KEY__'
-    };
-  </script>
-  <script type="module">
-    import { api, supabase } from '../assets/js/api-client.js';
-
-    const form    = document.getElementById('login-form');
-    const banner  = document.getElementById('error-banner');
-    const button  = document.getElementById('submit-btn');
-
-    // If already authenticated, send them to the dashboard
-    (async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data?.session) window.location.href = './dashboard.html';
-    })();
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      banner.classList.add('hidden');
-      button.disabled = true;
-      button.textContent = 'Signing in...';
-      try {
-        await api.signIn(
-          form.email.value.trim(),
-          form.password.value
-        );
-        window.location.href = './dashboard.html';
-      } catch (err) {
-        banner.textContent = err?.message || 'Sign-in failed';
-        banner.classList.remove('hidden');
-      } finally {
-        button.disabled = false;
-        button.textContent = 'Sign in';
-      }
-    });
-  </script>
+  <script src="../assets/js/public-config.js"></script>
+  <script type="module" src="./login.js"></script>
 </body>
 </html>
