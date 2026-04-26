@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "buildCommand": "npm run build",
-  "installCommand": "npm install",
+  "installCommand": "npm install --no-audit --no-fund",
   "outputDirectory": "frontend-dist",
   "functions": {
     "api/v1/assessments/[id]/report.ts": { "maxDuration": 30 },
