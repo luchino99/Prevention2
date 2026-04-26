@@ -36,11 +36,17 @@ const __dirname = dirname(__filename);
 const ROOT = resolve(__dirname, '..');
 const DIST = join(ROOT, 'frontend-dist');
 
+// NOTE: keep this list small and focused on entry-point regressions.
+// The canonical patient detail page is `patient-detail.html` (referenced
+// from nav-header.js, dashboard.html, patients.html, alerts.html,
+// assessment-new.html, assessment-view.html). The previous entry
+// `pages/patient.html` was a stale alias from an older rename and never
+// existed in `frontend/pages/`, so it failed every production deploy.
 const REQUIRED_FILES = [
   'index.html',
   'pages/login.html',
   'pages/dashboard.html',
-  'pages/patient.html',
+  'pages/patient-detail.html',
   'pages/assessment-new.html',
 ];
 
