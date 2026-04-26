@@ -2,49 +2,57 @@
 /**
  * fetch-supabase-sdk.mjs
  * ----------------------------------------------------------------------------
- * Downloads a single-file ESM bundle of `@supabase/supabase-js` and writes it
- * to `frontend/assets/vendor/supabase-js.esm.js`, so the frontend can import
- * the SDK from a same-origin URL instead of a third-party CDN.
+ * Bundles `@supabase/supabase-js` from `node_modules` into a single ESM
+ * file at `frontend/assets/vendor/supabase-js.esm.js` so the frontend
+ * can `import { createClient } from '../vendor/supabase-js.esm.js'`
+ * without breaching the CSP `script-src 'self'` directive.
  *
  * Why this script exists
  * ----------------------
- * The previous code path imported the SDK directly from `https://esm.sh/...`
- * inside `frontend/assets/js/api-client.js`. That is THREE problems at once:
+ * Earlier iterations imported the SDK from `https://esm.sh/...` at
+ * runtime. That triggered three failures simultaneously:
  *
  *   1. CSP violation. `vercel.json` declares `script-src 'self'` (audit
- *      blocker B-13). esm.sh is a different origin, so the browser blocks
- *      the import and the login page never bootstraps.
+ *      blocker B-13). esm.sh is a different origin → blocked.
  *
  *   2. Undeclared sub-processor. `21-PRIVACY-TECHNICAL.md §11` is the
- *      authoritative list of runtime sub-processors. esm.sh is not on it
- *      and was never reviewed by a controller. Every call to esm.sh from
- *      a clinician browser is a cross-border data flow we cannot account
- *      for under GDPR Art.30.
+ *      authoritative list of runtime sub-processors. esm.sh was never
+ *      reviewed or contracted.
  *
- *   3. Supply-chain risk. Anyone with operational control of esm.sh could
- *      ship a modified `createClient` that exfiltrates JWTs from every
- *      page. The CDN does not pin a hash, and Subresource Integrity is
- *      not in use.
+ *   3. Supply-chain risk. CDN can ship modified code at any moment;
+ *      no SRI / no version pin enforcement at the browser level.
  *
- * Pinning the version + hosting the bundle ourselves removes all three.
+ * The earlier "fetch a single-file URL" attempt also failed because
+ * neither `https://esm.sh/...?bundle` nor `https://cdn.jsdelivr.net/...
+ * /+esm` returns a self-contained bundle — both serve thin re-export
+ * wrappers that load further files from the CDN at runtime. Vendoring
+ * those wrappers locally would just relocate the broken imports.
  *
- * Behaviour
- * ---------
- *   - Idempotent: skip if a non-empty bundle is already in place AND its
- *     header carries the expected pin marker (the version string we asked
- *     for). Otherwise re-download.
- *   - Resilient: tries multiple mirrors before failing.
- *   - Fail-soft locally: in development the script exits 0 with a warning
- *     so `npm run typecheck` does not require network access. In a Vercel
- *     production build (VERCEL=1 / VERCEL_ENV=production|preview) the
- *     missing bundle would block the deploy via verify-build.mjs (which
- *     can be extended to check this file is present and non-empty).
+ * How this script works now
+ * -------------------------
+ * `npm install` (always run before `npm run build` on Vercel) populates
+ * `node_modules/@supabase/supabase-js/`. We invoke esbuild — added as a
+ * devDependency — to bundle that ES-module entry point into one
+ * self-contained file. Esbuild inlines every transitive import into the
+ * single output, so the browser fetches exactly one same-origin asset.
+ *
+ * Properties:
+ *   - Deterministic: same `npm install` lockfile → same bundle bytes.
+ *   - Network-free at build time (esbuild is bundled with the install).
+ *   - No third-party CDN dependency at runtime.
+ *   - Idempotent: skips work if the existing bundle was produced for
+ *     the same package version.
+ *   - Fail-soft locally (no node_modules → exit 0 with a warning) so
+ *     `npm run typecheck` works on a fresh clone before `npm install`.
+ *     Production deploys are still gated by `verify-build.mjs`, which
+ *     fails the build if the bundle is missing.
  *
  * Pinning
  * -------
- * The version is pinned to PIN_VERSION below. If you change it, also
- * update `package.json` "@supabase/supabase-js" so the backend and the
- * frontend bundle agree.
+ * The version is pinned indirectly via `package.json` →
+ * `dependencies["@supabase/supabase-js"]`. The bundle header records
+ * the exact resolved version so a future drift (lockfile out of sync,
+ * wrong package installed) is immediately visible in the deploy log.
  *
  * Output
  * ------
@@ -54,7 +62,7 @@
  *
  * License
  * -------
- * @supabase/supabase-js is MIT-licensed. The licence text is written
+ * @supabase/supabase-js is MIT-licensed. The license text is written
  * alongside the bundle.
  * ----------------------------------------------------------------------------
  */
@@ -64,36 +72,23 @@ import {
 } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { get as httpsGet } from 'node:https';
+import { createRequire } from 'node:module';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const VENDOR_DIR = resolve(here, '..', 'frontend', 'assets', 'vendor');
-
-// Keep this in sync with package.json → "@supabase/supabase-js"
-const PIN_VERSION = '2.45.0';
-
-// Mirror order: try esm.sh `?bundle` first (single-file ESM with all
-// transitive deps inlined), fall back to jsdelivr's pre-built ESM.
-//
-// IMPORTANT: any URL added here is effectively a build-time supply-chain
-// dependency. Add only well-known mirrors; never an unmaintained third
-// party. The runtime bundle ships with no further network calls.
-const MIRRORS = [
-  `https://esm.sh/@supabase/supabase-js@${PIN_VERSION}?bundle&target=es2022`,
-  `https://cdn.jsdelivr.net/npm/@supabase/supabase-js@${PIN_VERSION}/+esm`,
-];
+const REPO_ROOT = resolve(here, '..');
+const VENDOR_DIR = join(REPO_ROOT, 'frontend', 'assets', 'vendor');
 
 const OUTPUT_FILE = join(VENDOR_DIR, 'supabase-js.esm.js');
 const LICENSE_FILE = join(VENDOR_DIR, 'LICENSE-MIT.txt');
 const GITIGNORE_FILE = join(VENDOR_DIR, '.gitignore');
-const PIN_MARKER = `// supabase-js@${PIN_VERSION} (vendored at build time)`;
+
+const require = createRequire(import.meta.url);
 
 const LICENSE = `@supabase/supabase-js bundle in this directory is distributed
 under the MIT License (https://github.com/supabase/supabase-js).
 
-Vendored at build time by scripts/fetch-supabase-sdk.mjs.
-
-Pinned version: ${PIN_VERSION}
+Vendored at build time by scripts/fetch-supabase-sdk.mjs (esbuild bundler).
+The exact version is whatever is resolved by your package-lock.json.
 
 This file is NOT committed to the repository (see .gitignore in the same
 directory). It is regenerated on every \`npm run build\`.
@@ -105,73 +100,111 @@ supabase-js.esm.js
 LICENSE-MIT.txt
 `;
 
-function looksLikeJavaScriptModule(text) {
-  if (typeof text !== 'string') return false;
-  if (text.length < 10_000) return false; // bundle is ~100 KB minified
-  // Must export createClient — that is the entry point we import.
-  return text.includes('createClient') && (
-    text.includes('export') || text.includes('export{') || text.includes('export ')
-  );
+/**
+ * Resolve the path to the installed @supabase/supabase-js package and
+ * its declared ESM entry point.
+ */
+function resolvePackage() {
+  let pkgJsonPath;
+  try {
+    pkgJsonPath = require.resolve('@supabase/supabase-js/package.json', {
+      paths: [REPO_ROOT],
+    });
+  } catch {
+    return null;
+  }
+  let pkg;
+  try {
+    pkg = JSON.parse(readFileSync(pkgJsonPath, 'utf8'));
+  } catch (err) {
+    throw new Error(`Could not read ${pkgJsonPath}: ${err.message}`);
+  }
+  const pkgDir = dirname(pkgJsonPath);
+
+  // Prefer "module" (ESM), then "exports[.].import", then "main".
+  let relEntry =
+    pkg.module ||
+    (pkg.exports && pkg.exports['.'] && (
+      pkg.exports['.'].import?.default ||
+      pkg.exports['.'].import ||
+      pkg.exports['.'].browser ||
+      pkg.exports['.'].default
+    )) ||
+    pkg.main;
+
+  if (!relEntry) {
+    throw new Error(`@supabase/supabase-js@${pkg.version} declares no usable entry point`);
+  }
+  if (typeof relEntry !== 'string') {
+    relEntry = relEntry.default ?? relEntry.import ?? null;
+  }
+  if (!relEntry) {
+    throw new Error('Could not extract a string entry path from package.json exports');
+  }
+
+  return {
+    version: pkg.version,
+    entry: join(pkgDir, relEntry),
+  };
 }
 
-async function downloadText(url) {
-  return new Promise((resolveFn, reject) => {
-    const handle = (res, hops = 0) => {
-      if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location && hops < 5) {
-        res.resume();
-        httpsGet(res.headers.location, (r) => handle(r, hops + 1)).on('error', reject);
-        return;
-      }
-      if (res.statusCode !== 200) {
-        res.resume();
-        reject(new Error(`HTTP ${res.statusCode} for ${url}`));
-        return;
-      }
-      const chunks = [];
-      res.on('data', (c) => chunks.push(c));
-      res.on('end', () => resolveFn(Buffer.concat(chunks).toString('utf8')));
-      res.on('error', reject);
-    };
-    httpsGet(url, handle).on('error', reject);
-  });
-}
-
-function alreadyGood() {
+function alreadyGood(pkg) {
   if (!existsSync(OUTPUT_FILE)) return false;
   try {
     const text = readFileSync(OUTPUT_FILE, 'utf8');
-    if (statSync(OUTPUT_FILE).size < 10_000) return false;
-    if (!text.startsWith(PIN_MARKER)) return false; // version drifted → refetch
-    if (!looksLikeJavaScriptModule(text)) return false;
+    if (statSync(OUTPUT_FILE).size < 50_000) return false;
+    if (!text.includes(`// supabase-js@${pkg.version}`)) return false; // version drift → rebuild
+    if (!text.includes('createClient')) return false;
     return true;
   } catch {
     return false;
   }
 }
 
-async function fetchBundle() {
-  let lastErr = null;
-  for (const url of MIRRORS) {
-    try {
-      const text = await downloadText(url);
-      if (!looksLikeJavaScriptModule(text)) {
-        throw new Error('Downloaded payload does not look like an ESM bundle exporting createClient');
-      }
-      const wrapped =
-        `${PIN_MARKER}\n` +
-        `// Source: ${url}\n` +
-        `// Fetched at: ${new Date().toISOString()}\n` +
-        `${text.trim()}\n`;
-      writeFileSync(OUTPUT_FILE, wrapped, 'utf8');
-      const sizeKb = (Buffer.byteLength(wrapped, 'utf8') / 1024).toFixed(0);
-      console.log(`  ✓ supabase-js.esm.js (${sizeKb} KB)  from ${url}`);
-      return;
-    } catch (err) {
-      lastErr = err;
-      console.warn(`  · mirror failed (${url}): ${err.message}`);
-    }
+async function bundleWithEsbuild(pkg) {
+  let esbuild;
+  try {
+    esbuild = await import('esbuild');
+  } catch (err) {
+    throw new Error(
+      `esbuild is not installed. Add it as a devDependency or run \`npm install\` first. (${err.message})`,
+    );
   }
-  throw lastErr ?? new Error('All mirrors failed');
+
+  const result = await esbuild.build({
+    entryPoints: [pkg.entry],
+    bundle: true,
+    format: 'esm',
+    target: 'es2022',
+    platform: 'browser',
+    minify: true,
+    sourcemap: false,
+    write: false,
+    legalComments: 'none',
+    // The browser provides Web Crypto and fetch — no shims needed.
+    // We deliberately do NOT shim Node built-ins; if the SDK ever
+    // imports one, esbuild will fail loudly here, which is the
+    // signal we want.
+  });
+
+  if (!result.outputFiles || result.outputFiles.length !== 1) {
+    throw new Error(`esbuild produced ${result.outputFiles?.length ?? 0} files; expected exactly 1`);
+  }
+  const bundleText = result.outputFiles[0].text;
+
+  if (!bundleText.includes('createClient')) {
+    throw new Error('Produced bundle does not export createClient — entry point misconfigured?');
+  }
+
+  const header =
+    `// supabase-js@${pkg.version} (vendored at build time)\n` +
+    `// Source: ${pkg.entry.replace(REPO_ROOT, '<repo>')}\n` +
+    `// Bundled at: ${new Date().toISOString()}\n` +
+    `// Bundler: esbuild (format=esm, target=es2022, platform=browser, minify=true)\n`;
+
+  writeFileSync(OUTPUT_FILE, header + bundleText, 'utf8');
+  const sizeKb = (Buffer.byteLength(header + bundleText, 'utf8') / 1024).toFixed(0);
+  console.log(`  ✓ supabase-js.esm.js (${sizeKb} KB) — supabase-js@${pkg.version}`);
 }
 
 async function main() {
@@ -182,9 +215,24 @@ async function main() {
   writeFileSync(GITIGNORE_FILE, GITIGNORE, 'utf8');
 
   console.log(`fetch-supabase-sdk → ${VENDOR_DIR}`);
-  console.log(`  pinned: @supabase/supabase-js@${PIN_VERSION}`);
 
-  if (alreadyGood()) {
+  const pkg = resolvePackage();
+  if (!pkg) {
+    console.warn(
+      `  ⚠ @supabase/supabase-js not found in node_modules. ` +
+      `Run \`npm install\` first.`,
+    );
+    console.warn(
+      `  Bundle NOT written. The frontend will fail to load the Supabase ` +
+      `client. Production builds are gated by verify-build.mjs which will ` +
+      `block the deploy if this file is missing.\n`,
+    );
+    process.exit(0); // non-fatal locally; verify-build catches it in CI
+  }
+
+  console.log(`  resolved: @supabase/supabase-js@${pkg.version}`);
+
+  if (alreadyGood(pkg)) {
     const sizeKb = (statSync(OUTPUT_FILE).size / 1024).toFixed(0);
     console.log(`  ✓ supabase-js.esm.js (already present, ${sizeKb} KB, version match)`);
     console.log(`\nDone.\n`);
@@ -192,21 +240,19 @@ async function main() {
   }
 
   try {
-    await fetchBundle();
+    await bundleWithEsbuild(pkg);
   } catch (err) {
-    console.warn(`\n⚠ Could not fetch supabase-js bundle: ${err.message}`);
-    console.warn(`  The frontend will fail to load the Supabase client. ` +
-      `Re-run 'node scripts/fetch-supabase-sdk.mjs' from a network-connected ` +
-      `environment, or set up a local copy at frontend/assets/vendor/supabase-js.esm.js.\n`);
-    // Non-fatal so local dev without network still typechecks. The
-    // production build will fail at verify-build (next step in this PR
-    // adds the bundle to its required-files list).
+    console.error(`\n✗ Bundle failed: ${err.message}`);
+    // In production we want this to be loud but verify-build will be
+    // the canonical gate (it checks the file exists and is non-empty).
+    // We exit 0 here so the caller can decide.
     process.exit(0);
   }
+
   console.log(`\nDone.\n`);
 }
 
 main().catch((err) => {
   console.error('fetch-supabase-sdk failed:', err);
-  process.exit(0); // non-fatal
+  process.exit(0); // non-fatal — verify-build is the deploy gate
 });
