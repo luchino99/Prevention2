@@ -186,12 +186,14 @@ export default withAuth(async (req: AuthenticatedRequest, res: VercelResponse) =
     const v = parse.data;
 
     // ── Load + tenant scope ───────────────────────────────────────────
+    // NB: select string MUST be a single string literal — see explanation
+    // in api/v1/admin/dsr/[id]/index.ts. Concat collapses to `string` and
+    // supabase-js v2 then types `data` as `GenericStringError`, breaking
+    // every downstream property access.
     const { data: row, error: loadErr } = await supabaseAdmin
       .from('data_subject_requests')
       .select(
-        'id, tenant_id, subject_patient_id, subject_user_id, kind, status, '
-          + 'requested_by_user_id, fulfilled_by_user_id, export_storage_path, '
-          + 'rejection_reason, notes, requested_at, fulfilled_at, sla_deadline',
+        'id, tenant_id, subject_patient_id, subject_user_id, kind, status, requested_by_user_id, fulfilled_by_user_id, export_storage_path, rejection_reason, notes, requested_at, fulfilled_at, sla_deadline',
       )
       .eq('id', dsrId)
       .maybeSingle();

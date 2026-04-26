@@ -297,12 +297,14 @@ async function handleCreate(req: AuthenticatedRequest, res: VercelResponse): Pro
     // sla_deadline default (NOW() + 30 days) is set by the schema.
   };
 
+  // NB: select string MUST be a single string literal — see explanation
+  // in api/v1/admin/dsr/[id]/index.ts. Concat collapses to `string` and
+  // supabase-js v2 then types `data` as `GenericStringError`.
   const { data: inserted, error: insErr } = await supabaseAdmin
     .from('data_subject_requests')
     .insert(insertRow)
     .select(
-      'id, tenant_id, subject_patient_id, subject_user_id, kind, status, '
-        + 'requested_by_user_id, requested_at, sla_deadline, notes',
+      'id, tenant_id, subject_patient_id, subject_user_id, kind, status, requested_by_user_id, requested_at, sla_deadline, notes',
     )
     .single();
 

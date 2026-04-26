@@ -83,12 +83,15 @@ export default withAuth(async (req: AuthenticatedRequest, res: VercelResponse) =
     }
     const dsrId = idParse.data;
 
+    // NB: keep the select string as a SINGLE string literal (no runtime
+    // concatenation). supabase-js v2 infers the row type only when the
+    // literal is statically analysable; a `string + string` expression
+    // collapses to `string` and the type degrades to `GenericStringError`,
+    // which then fails every property access downstream.
     const { data: row, error } = await supabaseAdmin
       .from('data_subject_requests')
       .select(
-        'id, tenant_id, subject_patient_id, subject_user_id, kind, status, '
-          + 'requested_by_user_id, fulfilled_by_user_id, export_storage_path, '
-          + 'rejection_reason, notes, requested_at, fulfilled_at, sla_deadline',
+        'id, tenant_id, subject_patient_id, subject_user_id, kind, status, requested_by_user_id, fulfilled_by_user_id, export_storage_path, rejection_reason, notes, requested_at, fulfilled_at, sla_deadline',
       )
       .eq('id', dsrId)
       .maybeSingle();

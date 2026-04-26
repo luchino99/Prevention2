@@ -51,6 +51,10 @@ export type AuditAction =
   | 'assessment.delete'
   | 'report.generate'
   | 'report.download'
+  // Read-side audit (B-10 sensitive-read logging). 'list' actions cover
+  // collection-scoped reads (e.g. all alerts for a patient); per-row
+  // 'read' actions remain for entity reads.
+  | 'alert.list'
   | 'alert.create'
   | 'alert.acknowledge'
   | 'alert.resolve'
@@ -58,6 +62,7 @@ export type AuditAction =
   | 'consent.revoke'
   | 'followup.create'
   | 'followup.update'
+  | 'due_items.list'
   | 'admin.role_change'
   | 'admin.tenant_update'
   | 'admin.user_suspend'
@@ -70,7 +75,13 @@ export type AuditAction =
   | 'dsr.start'
   | 'dsr.fulfill'
   | 'dsr.reject'
-  | 'dsr.cancel';
+  | 'dsr.cancel'
+  // Cron / system actions. The cron handlers in api/v1/internal/* write
+  // these via direct INSERT (no actor JWT context to feed recordAudit),
+  // but we keep the names registered here so monitoring dashboards
+  // and the changelog have a single source of truth for every action.
+  | 'retention.run'
+  | 'anonymize.run';
 
 export type AuditResourceType =
   | 'user'
@@ -84,7 +95,11 @@ export type AuditResourceType =
   | 'consent'
   | 'report_export'
   | 'session'
-  | 'data_subject_request';
+  | 'data_subject_request'
+  | 'due_item'
+  // Used by cron handlers in api/v1/internal/* to scope system-level
+  // events that are not tied to a single domain entity.
+  | 'system';
 
 export interface AuditEvent {
   action: AuditAction;
