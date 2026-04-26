@@ -77,8 +77,11 @@ Three trust boundaries, three gates:
 3. **Tenant boundary.** A `tenant_id` column gates *every* row in *every*
    PHI-bearing table. RLS policies (`002_rls_policies.sql`,
    `010_security_hardening.sql`) ensure no clinician of tenant A can ever
-   read data of tenant B. `assertSameTenant` (in `rbac.ts`) is the
-   application-layer mirror.
+   read data of tenant B. Migration `012_force_row_level_security.sql`
+   additionally sets `FORCE ROW LEVEL SECURITY` on all 20 PHI / tenant /
+   identity tables so RLS evaluates even for the table owner — only
+   `service_role` (with `BYPASSRLS`) bypasses, by design. `assertSameTenant`
+   (in `rbac.ts`) is the application-layer mirror.
 
 ## 3. Authentication
 

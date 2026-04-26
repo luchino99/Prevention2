@@ -92,8 +92,9 @@ migration after it has been applied to production.
 | `007_due_items.sql` | Due-items table + countdown |
 | `008_activity_mets_persistence.sql` | METs persistence |
 | `009_assessment_delete_cascade.sql` | Cascade rules for assessment delete |
-| `010_security_hardening.sql` | B-01 / B-02 / B-15 — RLS forced ON, sensitive grants revoked |
+| `010_security_hardening.sql` | B-01 / B-02 / B-15 — narrows clinician policies to PPL-linked patients, scopes consent + audit insert, locks down clinical-reports bucket |
 | `011_atomic_assessment.sql` | `create_assessment` RPC — B-03 atomicity |
+| `012_force_row_level_security.sql` | B-01 defence-in-depth — `FORCE ROW LEVEL SECURITY` on all 20 PHI / tenant / identity tables |
 
 ### Migration procedure
 

@@ -40,7 +40,7 @@
 
 | ID | Title | Severity | Status | Mitigation reference |
 |---|---|---|---|---|
-| B-01 | RLS not forced on PHI tables | Critical | ✅ Resolved | Migration `010_security_hardening.sql` — `ALTER TABLE ... FORCE ROW LEVEL SECURITY` on every PHI table |
+| B-01 | RLS not forced on PHI tables | Critical | ✅ Resolved | Migration `010_security_hardening.sql` narrows per-clinician RLS policies (PPL-scoped reads); migration `012_force_row_level_security.sql` adds explicit `ALTER TABLE … FORCE ROW LEVEL SECURITY` on all 20 PHI / tenant / identity tables (defence-in-depth — `service_role` bypasses by design via `BYPASSRLS`, but FORCE catches any non-service-role table-owner connection) |
 | B-02 | Sensitive grants exposed to anon role | Critical | ✅ Resolved | Migration 010 — `REVOKE` on PHI tables from `anon`; service-role only for backend writes |
 | B-03 | Non-atomic assessment create (ghost rows possible) | Critical | ✅ Resolved | Migration `011_atomic_assessment.sql` — single `create_assessment(...)` RPC writes assessment + snapshot + score_results in one TX (Task #59) |
 | B-04 | Cron endpoints unauthenticated | Critical | ✅ Resolved | `CRON_SIGNING_SECRET` bearer with constant-time compare; Vercel `x-vercel-cron` header verified (Task #54) |

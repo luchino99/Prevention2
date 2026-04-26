@@ -35,11 +35,26 @@
 
 ### A.2 Migrations
 
-- [ ] Migrations 001–011 applied in target Supabase project (in order)
+- [ ] Migrations 001–012 applied in target Supabase project (in order)
 - [ ] `select * from pg_extension` shows expected extensions
-- [ ] `select schemaname, tablename, rowsecurity, forcerowsecurity from
-      pg_tables where schemaname='public'` shows RLS forced on every
-      PHI table (B-01 verification)
+- [ ] Both ENABLE and FORCE RLS active on every PHI table (B-01
+      verification — set by migration 012). Use the canonical query
+      below — `pg_tables` only exposes `rowsecurity`; the FORCE flag
+      lives on `pg_class.relforcerowsecurity` so we must join
+      `pg_class` + `pg_namespace`:
+
+      ```sql
+      SELECT c.relname AS tablename,
+             c.relrowsecurity      AS rowsecurity,
+             c.relforcerowsecurity AS forcerowsecurity
+      FROM pg_class c
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'public'
+        AND c.relkind = 'r'
+        AND c.relname IN (<the 20 PHI tables — see migration 012>)
+      ORDER BY c.relname;
+      -- expected: 20 rows, all with both flags = true
+      ```
 - [ ] `\du` confirms `anon` has **no** SELECT/INSERT/UPDATE/DELETE on
       PHI tables (B-02 verification)
 - [ ] `select fn_anonymize_patient` and `fn_retention_prune` exist
