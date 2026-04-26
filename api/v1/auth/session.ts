@@ -17,20 +17,23 @@ import { validateAccessToken } from '../../../backend/src/middleware/auth-middle
 import { recordAudit, recordFailedLogin } from '../../../backend/src/audit/audit-logger.js';
 import { applySecurityHeaders } from '../../../backend/src/middleware/security-headers.js';
 import { checkRateLimit, RATE_LIMITS, applyRateLimitHeaders } from '../../../backend/src/middleware/rate-limit.js';
+import { replyError, replyServiceError } from '../../../backend/src/middleware/http-errors.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   applySecurityHeaders(res);
 
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
-    res.status(405).json({ error: { code: 'METHOD_NOT_ALLOWED', message: 'POST only' } });
+    replyError(res, 405, 'METHOD_NOT_ALLOWED');
     return;
   }
 
   const rl = checkRateLimit(req, { routeId: 'auth.session', ...RATE_LIMITS.auth });
   applyRateLimitHeaders(res, rl);
   if (!rl.allowed) {
-    res.status(429).json({ error: { code: 'RATE_LIMITED', message: 'Too many requests' } });
+    replyError(res, 429, 'RATE_LIMITED', {
+      retryAfterSec: Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000)),
+    });
     return;
   }
 
@@ -42,13 +45,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
   if (!token) {
     await recordFailedLogin('', undefined, undefined, 'missing_bearer_token');
-    res.status(401).json({ error: { code: 'MISSING_TOKEN', message: 'Missing Bearer token' } });
+    replyError(res, 401, 'MISSING_TOKEN');
     return;
   }
 
   try {
     const auth = await validateAccessToken(token, req);
-    await recordAudit(auth, { action: 'auth.login', resourceType: 'session' });
+    // Best-effort audit on login: a missed audit row should not stop the user
+    // logging in (auth itself is the security boundary; audit is observability).
+    try {
+      await recordAudit(auth, { action: 'auth.login', resourceType: 'session' });
+    } catch (auditErr) {
+      // eslint-disable-next-line no-console
+      console.error('[auth.session] audit best-effort failed', { auditErr });
+    }
 
     res.status(200).json({
       user: {
@@ -60,8 +70,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     });
   } catch (err: any) {
     await recordFailedLogin('', undefined, undefined, err?.code ?? 'unknown');
-    const status = err?.status ?? 401;
-    const code = err?.code ?? 'AUTH_FAILED';
-    res.status(status).json({ error: { code, message: err?.message ?? 'Auth failed' } });
+    // Service-error envelope: any auth-middleware error code that is on the
+    // SAFE_TO_ECHO_CODES allowlist (UNAUTHORIZED, FORBIDDEN, …) gets its
+    // hand-written message echoed; anything else collapses to opaque code +
+    // requestId so we never reflect raw JWT-validation errors back.
+    replyServiceError(res, err, 'auth.session');
   }
 }

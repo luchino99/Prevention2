@@ -16,8 +16,14 @@ import { applySecurityHeaders } from '../../../../../backend/src/middleware/secu
 import { checkRateLimit, RATE_LIMITS, applyRateLimitHeaders } from '../../../../../backend/src/middleware/rate-limit.js';
 import { supabaseAdmin } from '../../../../../backend/src/config/supabase.js';
 import { recordAudit } from '../../../../../backend/src/audit/audit-logger.js';
-import { createAssessment, AssessmentServiceError } from '../../../../../backend/src/services/assessment-service.js';
+import { createAssessment } from '../../../../../backend/src/services/assessment-service.js';
 import { assessmentInputSchema } from '../../../../../shared/schemas/assessment-input.js';
+import {
+  replyDbError,
+  replyValidationError,
+  replyError,
+  replyServiceError,
+} from '../../../../../backend/src/middleware/http-errors.js';
 
 function getPatientId(req: VercelRequest): string | null {
   const id = req.query.id;
@@ -34,25 +40,31 @@ const listQuerySchema = z.object({
 async function handleList(req: any, res: VercelResponse, patientId: string): Promise<void> {
   const parse = listQuerySchema.safeParse(req.query);
   if (!parse.success) {
-    res.status(422).json({ error: { code: 'VALIDATION_FAILED', message: 'Invalid query' } });
+    replyValidationError(res, parse.error.issues, 'patients.assessments.list.query');
     return;
   }
   const { page, pageSize } = parse.data;
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
-  // Verify tenant ownership
-  const { data: patient } = await supabaseAdmin
+  // Verify tenant ownership. Collapse "row absent" and "real DB error"
+  // into one opaque 404 so we don't leak whether a patient id exists in
+  // a sibling tenant.
+  const { data: patient, error: patientErr } = await supabaseAdmin
     .from('patients')
     .select('id, tenant_id')
     .eq('id', patientId)
-    .single();
+    .maybeSingle();
+  if (patientErr) {
+    replyDbError(res, patientErr, 'patients.assessments.list.patient');
+    return;
+  }
   if (!patient) {
-    res.status(404).json({ error: { code: 'PATIENT_NOT_FOUND', message: '' } });
+    replyError(res, 404, 'PATIENT_NOT_FOUND');
     return;
   }
   if (req.auth.role !== 'platform_admin' && patient.tenant_id !== req.auth.tenantId) {
-    res.status(403).json({ error: { code: 'CROSS_TENANT_FORBIDDEN', message: '' } });
+    replyError(res, 403, 'CROSS_TENANT_FORBIDDEN');
     return;
   }
 
@@ -87,16 +99,30 @@ async function handleList(req: any, res: VercelResponse, patientId: string): Pro
     .range(from, to);
 
   if (error) {
-    res.status(500).json({ error: { code: 'DB_ERROR', message: error.message } });
+    replyDbError(res, error, 'patients.assessments.list.select');
     return;
   }
 
-  await recordAudit(req.auth, {
-    action: 'assessment.read',
-    resourceType: 'patient',
-    resourceId: patientId,
-    metadata: { list_size: data?.length ?? 0 },
-  });
+  // B-10 — sensitive read audit. Listing a patient's assessment history
+  // is PHI access; record best-effort so audit hiccups can't block reads.
+  try {
+    await recordAudit(req.auth, {
+      action: 'assessment.read',
+      resourceType: 'patient',
+      resourceId: patientId,
+      metadata: {
+        list_size: data?.length ?? 0,
+        page,
+        page_size: pageSize,
+      },
+    });
+  } catch (auditErr) {
+    // eslint-disable-next-line no-console
+    console.error('[patients.assessments.list] audit best-effort failed', {
+      patientId,
+      auditErr,
+    });
+  }
 
   // Normalize Supabase nested-relation shape (array vs single) into a single
   // `riskProfile` field for the UI. Supabase returns the join as an array even
@@ -134,40 +160,20 @@ async function handleList(req: any, res: VercelResponse, patientId: string): Pro
 async function handleCreate(req: any, res: VercelResponse, patientId: string): Promise<void> {
   const parse = assessmentInputSchema.safeParse(req.body);
   if (!parse.success) {
-    res.status(422).json({
-      error: {
-        code: 'VALIDATION_FAILED',
-        message: 'Invalid assessment input',
-        details: parse.error.issues,
-      },
-    });
+    replyValidationError(res, parse.error.issues, 'patients.assessments.create.body');
     return;
   }
 
   try {
     const snapshot = await createAssessment(req.auth, patientId, parse.data);
     res.status(201).json({ snapshot });
-  } catch (err: any) {
-    if (err instanceof AssessmentServiceError) {
-      const body: { error: { code: string; message: string; details?: unknown } } = {
-        error: { code: err.code, message: err.message },
-      };
-      if (err.details !== undefined) body.error.details = err.details;
-      res.status(err.status).json(body);
-      return;
-    }
-    // Unexpected error path. We log the full stack to Vercel logs and
-    // return a sanitised message to the client. The server-side console
-    // line is the only place the stack is retained.
-    // eslint-disable-next-line no-console
-    console.error('[assessments.create] unexpected', err);
-    res.status(500).json({
-      error: {
-        code: 'INTERNAL_ERROR',
-        message: 'Assessment creation failed',
-        details: { cause: String(err?.message ?? err ?? 'unknown') },
-      },
-    });
+  } catch (err) {
+    // Service-layer errors (AssessmentServiceError) carry stable codes;
+    // `replyServiceError` only echoes the message when the code is on
+    // the SAFE_TO_ECHO_CODES allowlist. Anything unknown collapses to
+    // INTERNAL_ERROR + opaque requestId so we never reflect raw PG /
+    // engine errors back to the client.
+    replyServiceError(res, err, 'patients.assessments.create');
   }
 }
 
@@ -175,14 +181,19 @@ export default withAuth(async (req, res: VercelResponse) => {
   applySecurityHeaders(res);
   const patientId = getPatientId(req);
   if (!patientId) {
-    res.status(400).json({ error: { code: 'INVALID_ID', message: 'Invalid patient id' } });
+    replyError(res, 400, 'INVALID_ID');
     return;
   }
 
   if (req.method === 'GET') {
     const rl = checkRateLimit(req, { routeId: 'assessments.list', ...RATE_LIMITS.read });
     applyRateLimitHeaders(res, rl);
-    if (!rl.allowed) return res.status(429).json({ error: { code: 'RATE_LIMITED', message: '' } }) as any;
+    if (!rl.allowed) {
+      replyError(res, 429, 'RATE_LIMITED', {
+        retryAfterSec: Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000)),
+      });
+      return;
+    }
     await requireTenantMember((r, s) => handleList(r, s, patientId))(req as any, res);
     return;
   }
@@ -190,11 +201,16 @@ export default withAuth(async (req, res: VercelResponse) => {
   if (req.method === 'POST') {
     const rl = checkRateLimit(req, { routeId: 'assessments.create', ...RATE_LIMITS.write });
     applyRateLimitHeaders(res, rl);
-    if (!rl.allowed) return res.status(429).json({ error: { code: 'RATE_LIMITED', message: '' } }) as any;
+    if (!rl.allowed) {
+      replyError(res, 429, 'RATE_LIMITED', {
+        retryAfterSec: Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000)),
+      });
+      return;
+    }
     await requireClinicalWrite((r, s) => handleCreate(r, s, patientId))(req as any, res);
     return;
   }
 
   res.setHeader('Allow', 'GET, POST');
-  res.status(405).json({ error: { code: 'METHOD_NOT_ALLOWED', message: '' } });
+  replyError(res, 405, 'METHOD_NOT_ALLOWED');
 });

@@ -20,10 +20,14 @@ import { supabaseAdmin } from '../../../../backend/src/config/supabase.js';
 import {
   loadAssessmentSnapshot,
   buildReportPayload,
-  AssessmentServiceError,
 } from '../../../../backend/src/services/assessment-service.js';
-import { recordAudit } from '../../../../backend/src/audit/audit-logger.js';
+import { recordAuditStrict, AuditWriteError } from '../../../../backend/src/audit/audit-logger.js';
 import { renderAssessmentReportPdf } from '../../../../backend/src/services/pdf-report-service.js';
+import {
+  replyDbError,
+  replyError,
+  replyServiceError,
+} from '../../../../backend/src/middleware/http-errors.js';
 
 const REPORT_BUCKET = 'clinical-reports';
 const SIGNED_URL_EXPIRY_SECONDS = 60 * 5; // 5 minutes
@@ -52,8 +56,9 @@ async function handleGenerate(req: any, res: VercelResponse, assessmentId: strin
       });
 
     if (uploadErr) {
-      console.error('[report] upload failed', uploadErr);
-      res.status(500).json({ error: { code: 'UPLOAD_FAILED', message: uploadErr.message } });
+      // Server log keeps the full storage error (path, content-type, etc.).
+      // Client gets only the opaque code + a requestId for support.
+      replyDbError(res, uploadErr, 'report.generate.upload');
       return;
     }
 
@@ -78,7 +83,11 @@ async function handleGenerate(req: any, res: VercelResponse, assessmentId: strin
       .single();
 
     if (exportErr || !exportRow) {
-      console.error('[report] export row insert failed', exportErr);
+      // We tolerate a missing report_exports row only because the file
+      // was already written. Surface the failure server-side so ops can
+      // reconcile, but keep the client flow alive (signed URL still works).
+      // eslint-disable-next-line no-console
+      console.error('[report] export row insert failed', { exportErr });
     }
 
     const { data: signed, error: signErr } = await supabaseAdmin.storage
@@ -86,32 +95,49 @@ async function handleGenerate(req: any, res: VercelResponse, assessmentId: strin
       .createSignedUrl(fileName, SIGNED_URL_EXPIRY_SECONDS);
 
     if (signErr || !signed) {
-      res.status(500).json({ error: { code: 'SIGN_FAILED', message: 'Signed URL failed' } });
+      replyDbError(res, signErr ?? new Error('sign-failed'), 'report.generate.sign');
       return;
     }
 
-    await recordAudit(req.auth, {
-      action: 'report.generate',
-      resourceType: 'report_export',
-      resourceId: exportRow?.id ?? null,
-      metadata: {
-        assessment_id: assessmentId,
-        size_bytes: pdfBuffer.byteLength,
-      },
-    });
+    // B-09 — audit guarantee for report exports. PHI is leaving the system
+    // boundary (PDF bytes uploaded to storage + signed URL minted). A
+    // missing audit row would defeat Art.30 traceability, so we fail loudly
+    // and rely on the existing storage object being reconciled out-of-band.
+    // recordAuditStrict throws AuditWriteError on persistence failure so
+    // this catch branch is reachable in practice.
+    try {
+      await recordAuditStrict(req.auth, {
+        action: 'report.generate',
+        resourceType: 'report_export',
+        resourceId: exportRow?.id ?? null,
+        metadata: {
+          assessment_id: assessmentId,
+          size_bytes: pdfBuffer.byteLength,
+          storage_path: fileName,
+        },
+      });
+    } catch (auditErr) {
+      // eslint-disable-next-line no-console
+      console.error('[report.generate] audit write failed', {
+        assessmentId,
+        exportId: exportRow?.id ?? null,
+        isAuditWriteError: auditErr instanceof AuditWriteError,
+        auditErr,
+      });
+      replyError(res, 500, 'AUDIT_WRITE_FAILED');
+      return;
+    }
 
     res.status(201).json({
       reportExportId: exportRow?.id ?? null,
       signedUrl: signed.signedUrl,
       expiresInSeconds: SIGNED_URL_EXPIRY_SECONDS,
     });
-  } catch (err: any) {
-    if (err instanceof AssessmentServiceError) {
-      res.status(err.status).json({ error: { code: err.code, message: err.message } });
-      return;
-    }
-    console.error('[report.generate] unexpected', err);
-    res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Report generation failed' } });
+  } catch (err) {
+    // Wraps loadAssessmentSnapshot / buildReportPayload / pdf render. Echoes
+    // only allow-listed service-error codes; everything else collapses to
+    // INTERNAL_ERROR + opaque requestId.
+    replyServiceError(res, err, 'report.generate');
   }
 }
 
@@ -127,15 +153,15 @@ async function handleGetSignedUrl(req: any, res: VercelResponse, assessmentId: s
 
   const { data, error } = await query.maybeSingle();
   if (error) {
-    res.status(500).json({ error: { code: 'DB_ERROR', message: error.message } });
+    replyDbError(res, error, 'report.read.select');
     return;
   }
   if (!data) {
-    res.status(404).json({ error: { code: 'REPORT_NOT_FOUND', message: 'No report for this assessment' } });
+    replyError(res, 404, 'REPORT_NOT_FOUND');
     return;
   }
   if (req.auth.role !== 'platform_admin' && data.tenant_id !== req.auth.tenantId) {
-    res.status(403).json({ error: { code: 'CROSS_TENANT_FORBIDDEN', message: '' } });
+    replyError(res, 403, 'CROSS_TENANT_FORBIDDEN');
     return;
   }
 
@@ -145,15 +171,33 @@ async function handleGetSignedUrl(req: any, res: VercelResponse, assessmentId: s
     .createSignedUrl(String(data.storage_path), SIGNED_URL_EXPIRY_SECONDS);
 
   if (signErr || !signed) {
-    res.status(500).json({ error: { code: 'SIGN_FAILED', message: 'Signed URL failed' } });
+    replyDbError(res, signErr ?? new Error('sign-failed'), 'report.read.sign');
     return;
   }
 
-  await recordAudit(req.auth, {
-    action: 'report.download',
-    resourceType: 'report_export',
-    resourceId: data.id,
-  });
+  // B-09 — audit guarantee. Issuing a fresh signed URL for stored PHI is
+  // a download event; we must record who and when. Failure to log is a
+  // 500 so the URL doesn't reach the client without a corresponding
+  // audit row. recordAuditStrict throws AuditWriteError on failure so the
+  // catch branch is reachable.
+  try {
+    await recordAuditStrict(req.auth, {
+      action: 'report.download',
+      resourceType: 'report_export',
+      resourceId: data.id,
+      metadata: { assessment_id: assessmentId },
+    });
+  } catch (auditErr) {
+    // eslint-disable-next-line no-console
+    console.error('[report.download] audit write failed', {
+      assessmentId,
+      reportId: data.id,
+      isAuditWriteError: auditErr instanceof AuditWriteError,
+      auditErr,
+    });
+    replyError(res, 500, 'AUDIT_WRITE_FAILED');
+    return;
+  }
 
   res.status(200).json({
     reportExportId: data.id,
@@ -166,14 +210,19 @@ export default withAuth(async (req, res: VercelResponse) => {
   applySecurityHeaders(res);
   const id = getId(req);
   if (!id) {
-    res.status(400).json({ error: { code: 'INVALID_ID', message: '' } });
+    replyError(res, 400, 'INVALID_ID');
     return;
   }
 
   if (req.method === 'POST') {
     const rl = checkRateLimit(req, { routeId: 'report.generate', ...RATE_LIMITS.reportExport });
     applyRateLimitHeaders(res, rl);
-    if (!rl.allowed) return res.status(429).json({ error: { code: 'RATE_LIMITED', message: '' } }) as any;
+    if (!rl.allowed) {
+      replyError(res, 429, 'RATE_LIMITED', {
+        retryAfterSec: Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000)),
+      });
+      return;
+    }
     await requireTenantMember((r, s) => handleGenerate(r, s, id))(req as any, res);
     return;
   }
@@ -181,11 +230,16 @@ export default withAuth(async (req, res: VercelResponse) => {
   if (req.method === 'GET') {
     const rl = checkRateLimit(req, { routeId: 'report.read', ...RATE_LIMITS.read });
     applyRateLimitHeaders(res, rl);
-    if (!rl.allowed) return res.status(429).json({ error: { code: 'RATE_LIMITED', message: '' } }) as any;
+    if (!rl.allowed) {
+      replyError(res, 429, 'RATE_LIMITED', {
+        retryAfterSec: Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000)),
+      });
+      return;
+    }
     await requireTenantMember((r, s) => handleGetSignedUrl(r, s, id))(req as any, res);
     return;
   }
 
   res.setHeader('Allow', 'GET, POST');
-  res.status(405).json({ error: { code: 'METHOD_NOT_ALLOWED', message: '' } });
+  replyError(res, 405, 'METHOD_NOT_ALLOWED');
 });

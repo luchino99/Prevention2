@@ -548,7 +548,8 @@ export interface AssessmentSnapshot {
       | 'alcohol'
       | 'weight'
       | 'sleep'
-      | 'hydration';
+      | 'hydration'
+      | 'self_monitoring';
     title: string;
     rationale: string;
     priority: 'routine' | 'moderate' | 'urgent';

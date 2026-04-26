@@ -13,8 +13,9 @@
     "typecheck:prod": "tsc --noEmit --project tsconfig.prod.check.json",
     "inject:public-config": "node scripts/inject-public-config.mjs",
     "fetch:fonts": "node scripts/fetch-noto-fonts.mjs",
-    "build": "node scripts/fetch-noto-fonts.mjs && node scripts/inject-public-config.mjs",
-    "build:check": "node scripts/fetch-noto-fonts.mjs && node scripts/inject-public-config.mjs && tsc --noEmit --project tsconfig.json",
+    "build": "node scripts/fetch-noto-fonts.mjs && node scripts/inject-public-config.mjs && node scripts/verify-build.mjs",
+    "build:check": "node scripts/fetch-noto-fonts.mjs && node scripts/inject-public-config.mjs && node scripts/verify-build.mjs && tsc --noEmit --project tsconfig.json",
+    "verify:build": "node scripts/verify-build.mjs",
     "test": "vitest run"
   },
   "dependencies": {

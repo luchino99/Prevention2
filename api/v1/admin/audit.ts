@@ -12,6 +12,11 @@ import { requireTenantAdmin } from '../../../backend/src/middleware/rbac.js';
 import { applySecurityHeaders } from '../../../backend/src/middleware/security-headers.js';
 import { checkRateLimit, RATE_LIMITS, applyRateLimitHeaders } from '../../../backend/src/middleware/rate-limit.js';
 import { supabaseAdmin } from '../../../backend/src/config/supabase.js';
+import {
+  replyDbError,
+  replyValidationError,
+  replyError,
+} from '../../../backend/src/middleware/http-errors.js';
 
 const querySchema = z.object({
   actorUserId: z.string().uuid().optional(),
@@ -29,18 +34,23 @@ export default withAuth(async (req, res: VercelResponse) => {
 
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET');
-    res.status(405).json({ error: { code: 'METHOD_NOT_ALLOWED', message: '' } });
+    replyError(res, 405, 'METHOD_NOT_ALLOWED');
     return;
   }
 
   const rl = checkRateLimit(req, { routeId: 'admin.audit', ...RATE_LIMITS.admin });
   applyRateLimitHeaders(res, rl);
-  if (!rl.allowed) return res.status(429).json({ error: { code: 'RATE_LIMITED', message: '' } }) as any;
+  if (!rl.allowed) {
+    replyError(res, 429, 'RATE_LIMITED', {
+      retryAfterSec: Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000)),
+    });
+    return;
+  }
 
   await requireTenantAdmin(async (r: any, s: VercelResponse) => {
     const parse = querySchema.safeParse(req.query);
     if (!parse.success) {
-      s.status(422).json({ error: { code: 'VALIDATION_FAILED', message: 'Invalid query' } });
+      replyValidationError(s, parse.error.issues, 'admin.audit.query');
       return;
     }
     const q = parse.data;
@@ -69,7 +79,7 @@ export default withAuth(async (req, res: VercelResponse) => {
 
     const { data, error, count } = await query;
     if (error) {
-      s.status(500).json({ error: { code: 'DB_ERROR', message: error.message } });
+      replyDbError(s, error, 'admin.audit.select');
       return;
     }
 

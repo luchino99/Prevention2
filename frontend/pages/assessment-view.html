@@ -50,41 +50,35 @@
       <div id="report-banner" class="inline-alert hidden"></div>
 
       <!--
-        Delete-assessment confirmation modal.
+        Delete-assessment confirmation modal (REFINE-4).
         ------------------------------------
-        Purpose: gate an irreversible destructive action behind an
-        explicit, typed confirmation step. The user must type the
-        assessment's short id to enable the confirm button. Backdrop
-        click + Escape both cancel. ARIA dialog semantics for screen
-        readers.
+        Purpose: gate an irreversible destructive action behind a single
+        explicit confirmation click — no typing. The previous typed-id
+        gate was deemed friction without commensurate safety value
+        (server-side authZ + audit trail are the actual safety net).
+        We retain: focus management on open, backdrop click cancel,
+        Escape cancel, ARIA dialog semantics. The destructive button is
+        styled `btn danger` and is *not* the default focus target — the
+        Cancel button is — to bias the user toward the safe action when
+        confirming with Enter.
       -->
       <div id="delete-modal"
            class="modal-backdrop hidden"
            role="dialog"
            aria-modal="true"
-           aria-labelledby="delete-modal-title">
+           aria-labelledby="delete-modal-title"
+           aria-describedby="delete-modal-desc">
         <div class="modal-card">
           <h3 id="delete-modal-title">Delete this assessment?</h3>
-          <p class="muted">
+          <p id="delete-modal-desc" class="muted">
             This permanently removes the assessment and everything derived from
             it — measurements, score results, risk profile, nutrition &amp;
             activity snapshots, follow-up plan, alerts, due-items, and any
-            generated PDF reports. It cannot be undone.
+            generated PDF reports. <strong>This action cannot be undone.</strong>
           </p>
-          <p>
-            To confirm, type the short id
-            <code id="delete-short-id" class="mono">—</code> below:
-          </p>
-          <input type="text"
-                 id="delete-confirm-input"
-                 class="input"
-                 autocomplete="off"
-                 autocapitalize="off"
-                 spellcheck="false"
-                 placeholder="short id" />
           <div class="flex gap-8 mt-12" style="justify-content:flex-end;">
-            <button class="btn ghost" id="delete-cancel-btn">Cancel</button>
-            <button class="btn danger" id="delete-confirm-btn" disabled>Delete permanently</button>
+            <button class="btn ghost" id="delete-cancel-btn" type="button">Cancel</button>
+            <button class="btn danger" id="delete-confirm-btn" type="button">Confirm Delete</button>
           </div>
         </div>
       </div>
@@ -663,36 +657,39 @@
     });
 
     // ────────────────────────────────────────────────────────────────────
-    // Delete assessment (ISSUE 6)
+    // Delete assessment (REFINE-4)
     //
-    // Opens the confirmation modal. The destructive action stays disabled
-    // until the user types the assessment's short (8-char) id, so a
-    // misclick cannot accidentally delete clinical data. Server-side
-    // authorization remains the source of truth — we only hide the
-    // button for roles we know will be rejected.
+    // Standard one-click + confirm modal. No typed short-id; the previous
+    // typed gate was deemed friction without commensurate safety value
+    // because:
+    //   - Server-side authorization (deleteAssessment in
+    //     backend/src/services/assessment-service.ts) restricts the
+    //     operation to: platform_admin, the tenant_admin owning the
+    //     row, OR the authoring clinician.
+    //   - The action is fully audited (`assessment.delete` event) with
+    //     actor, tenant, patient, assessment id, IP, user-agent.
+    //   - Recovery via DB backups is operationally available.
+    // We bias the modal toward the safe action by focusing Cancel by
+    // default and treating Escape / backdrop click as cancel.
     // ────────────────────────────────────────────────────────────────────
     const deleteBtn = document.getElementById('delete-btn');
     const deleteModal = document.getElementById('delete-modal');
-    const deleteShortIdEl = document.getElementById('delete-short-id');
-    const deleteInput = document.getElementById('delete-confirm-input');
     const deleteCancel = document.getElementById('delete-cancel-btn');
     const deleteConfirm = document.getElementById('delete-confirm-btn');
-    const shortId = assessmentId.slice(0, 8);
-    deleteShortIdEl.textContent = shortId;
 
     function openDeleteModal() {
-      deleteInput.value = '';
-      deleteConfirm.disabled = true;
+      deleteConfirm.disabled = false;
+      deleteCancel.disabled = false;
+      deleteConfirm.textContent = 'Confirm Delete';
       deleteModal.classList.remove('hidden');
-      // Defer focus so the modal is rendered before the input grabs it.
-      setTimeout(() => deleteInput.focus(), 0);
+      // Default focus to the SAFE button (Cancel) — pressing Enter does
+      // not destroy data. The clinician must take a deliberate action
+      // (Tab → Enter, or click) to confirm.
+      setTimeout(() => deleteCancel.focus(), 0);
     }
     function closeDeleteModal() {
       deleteModal.classList.add('hidden');
     }
-    deleteInput.addEventListener('input', () => {
-      deleteConfirm.disabled = deleteInput.value.trim() !== shortId;
-    });
     deleteCancel.addEventListener('click', (e) => {
       e.preventDefault();
       closeDeleteModal();
@@ -717,6 +714,10 @@
     deleteConfirm.addEventListener('click', async (e) => {
       e.preventDefault();
       if (deleteConfirm.disabled) return;
+      // Lock the entire interaction surface while the network request is
+      // in flight, so a double-click does not fire two DELETE requests
+      // (the second would 404 because the row is already gone, but it
+      // would still pollute the audit trail with a noisy error event).
       deleteConfirm.disabled = true;
       deleteCancel.disabled = true;
       deleteBtn.disabled = true;
@@ -724,14 +725,21 @@
       try {
         await api.deleteAssessment(assessmentId);
         // Navigate back to the patient page — all data on that page is
-        // server-driven, so the removed assessment disappears from the
-        // history, progress chart, due items, and alerts on next render.
+        // server-driven (charts, due items, alerts, latest-snapshot),
+        // so the removed assessment disappears on the next render.
+        // The `?deleted=1` flag lets patient-detail.html surface a
+        // brief confirmation toast and then strip the param.
         const dest = cachedPatientId
           ? `./patient-detail.html?id=${encodeURIComponent(cachedPatientId)}&deleted=1`
           : './patients.html';
         window.location.href = dest;
       } catch (err) {
-        deleteConfirm.textContent = 'Delete permanently';
+        // Restore the interaction surface and surface the error verbatim
+        // so the clinician can decide whether to retry. We close the
+        // modal so the inline-alert is visible — keeping the modal
+        // open would obscure it.
+        deleteConfirm.textContent = 'Confirm Delete';
+        deleteConfirm.disabled = false;
         deleteCancel.disabled = false;
         deleteBtn.disabled = false;
         showError(`Delete failed: ${err.message}`);

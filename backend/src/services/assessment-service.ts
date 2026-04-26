@@ -298,25 +298,11 @@ async function loadPreviousCompositeRisk(
   }
 }
 
-function bestEffort(
-  label: string,
-  // PostgREST query builders returned by `supabase.from(...).insert(...)` are
-  // `PromiseLike`, not full `Promise` (they lack `.catch` / `.finally` /
-  // `Symbol.toStringTag`). Accepting `PromiseLike<unknown>` keeps the call
-  // sites free of `Promise.resolve(...)` wrappers while still triggering
-  // execution via the wrapper below.
-  fn: () => PromiseLike<unknown>,
-): Promise<void> {
-  return Promise.resolve(fn()).then(
-    () => undefined,
-    (err: unknown) => {
-      // Non-fatal subsystem failures are logged so the caller still gets a
-      // snapshot; the assessment itself is already committed.
-      // eslint-disable-next-line no-console
-      console.error(`[assessment-service] ${label} failed`, err);
-    },
-  );
-}
+// `bestEffort(...)` was the per-table swallow-and-log helper used by the
+// pre-B-03 write pipeline. It was removed in the migration 011 cutover —
+// the entire write is now a single transactional RPC and partial-state
+// failure modes no longer exist. See createAssessment §4 for the new
+// error-handling contract.
 
 /**
  * Narrow projection of the enriched assessment input shape consumed by
@@ -392,11 +378,20 @@ function monthsFromNowIso(now: Date, months: number): string {
  * Build the row payload for the `due_items` upsert. Keeping this pure
  * makes the write path easier to audit and enables future unit testing
  * without database fixtures.
+ *
+ * Note on FK columns:
+ *   `tenant_id` / `patient_id` are included so the rows are
+ *   self-describing for log inspection and future direct-insert paths;
+ *   `assessment_id` is intentionally OMITTED — it is injected by the
+ *   `create_assessment_atomic` SQL function (migration 011) once the new
+ *   parent row id is known. The SQL `||` operator overwrites
+ *   tenant/patient with the canonical values from the function's
+ *   transaction context, so passing them here is safe and a useful
+ *   defence-in-depth check.
  */
 function buildDueItemRows(args: {
   tenantId: string;
   patientId: string;
-  assessmentId: string;
   followupItems: ReturnType<typeof determineFollowupPlan>['items'];
   screenings: ReturnType<typeof determineRequiredScreenings>;
   createdByUserId: string | null;
@@ -408,7 +403,6 @@ function buildDueItemRows(args: {
     rows.push({
       tenant_id: args.tenantId,
       patient_id: args.patientId,
-      assessment_id: args.assessmentId,
       source_engine: 'followup',
       item_code: item.code,
       title: item.title,
@@ -434,7 +428,6 @@ function buildDueItemRows(args: {
     rows.push({
       tenant_id: args.tenantId,
       patient_id: args.patientId,
-      assessment_id: args.assessmentId,
       source_engine: 'screening',
       item_code: `scr_${codeBase}`,
       title: s.screening,
@@ -570,266 +563,241 @@ export async function createAssessment(
     },
   });
 
-  // ─── 2. Persist assessment header ───
-  const { data: assessmentRow, error: assessErr } = await supabaseAdmin
-    .from('assessments')
-    .insert({
-      tenant_id,
-      patient_id: patientId,
-      assessed_by: auth.userId,
-      status: 'completed',
-      completed_at: new Date().toISOString(),
-      engine_version: '1.0.0',
-      clinical_input_snapshot: input, // added by migration 003
-    })
-    .select('id, created_at, assessment_date, status')
-    .single();
-
-  if (assessErr || !assessmentRow) {
-    // Log the full PostgREST error server-side so ops can see pgCode + hint
-    // without leaking them to unauthenticated callers.
-    // eslint-disable-next-line no-console
-    console.error('[assessment-service] assessments.insert failed', assessErr);
-    throw classifyAssessmentInsertError(assessErr as any);
-  }
-  const assessmentId: string = assessmentRow.id as string;
-
-  // ─── 3. Persist normalized assessment_measurements ───
-  // Uses `enrichedInput` so any boundary-derived value (e.g. ACR derived
-  // from urine albumin + urine creatinine) is persisted into the
-  // measurement projection. The canonical `clinical_input_snapshot`
-  // column below keeps the clinician's original payload intact.
+  // ─── 3. Assemble the atomic-write payload ───
+  // Single transactional write via `create_assessment_atomic` (migration
+  // 011, B-03). The function persists assessments + 8 child tables as
+  // one transaction; on any sub-step failure the entire write rolls
+  // back, so the read path can never see a partially-populated
+  // assessment again.
+  //
+  // Each sub-payload carries only NON-FK columns. The SQL function
+  // injects assessment_id (and patient_id/tenant_id where applicable)
+  // once the parent row id is known.
+  //
+  // The pre-existing `bestEffort(...)` chain that this replaces silently
+  // swallowed errors and produced clinically misleading partial records;
+  // see migration 011 header for the full rationale.
   const bmiScore = findScore(scoreResults, 'BMI');
   const egfrScore = findScore(scoreResults, 'EGFR');
-  await bestEffort('assessment_measurements', () =>
-    supabaseAdmin.from('assessment_measurements').insert({
-      assessment_id: assessmentId,
-      height_cm: enrichedInput.vitals.heightCm,
-      weight_kg: enrichedInput.vitals.weightKg,
-      bmi: bmiScore?.valueNumeric ?? null,
-      waist_cm: enrichedInput.vitals.waistCm,
-      sbp: enrichedInput.vitals.sbpMmHg,
-      dbp: enrichedInput.vitals.dbpMmHg,
-      total_chol_mgdl: enrichedInput.labs.totalCholMgDl ?? null,
-      hdl_mgdl: enrichedInput.labs.hdlMgDl ?? null,
-      ldl_mgdl: enrichedInput.labs.ldlMgDl ?? null,
-      triglycerides_mgdl: enrichedInput.labs.triglyceridesMgDl ?? null,
-      glucose_mgdl: enrichedInput.labs.glucoseMgDl ?? null,
-      hba1c_pct: enrichedInput.labs.hba1cPct ?? null,
-      egfr: egfrScore?.valueNumeric ?? enrichedInput.labs.eGFR ?? null,
-      creatinine_mgdl: enrichedInput.labs.creatinineMgDl ?? null,
-      albumin_creatinine_ratio:
-        enrichedInput.labs.albuminCreatinineRatio ?? null,
-      ggt: enrichedInput.labs.ggtUL ?? null,
-      ast: enrichedInput.labs.astUL ?? null,
-      alt: enrichedInput.labs.altUL ?? null,
-      platelets: enrichedInput.labs.plateletsGigaL ?? null,
-    }),
-  );
 
-  // ─── 4. Persist score_results ───
-  if (scoreResults.length > 0) {
-    const scoreRows = scoreResults.map((s) => ({
-      assessment_id: assessmentId,
-      score_code: s.scoreCode.toLowerCase(),
-      value_numeric: s.valueNumeric,
-      category: s.category,
-      label: s.label,
-      input_payload: s.inputPayload,
-      raw_payload: s.rawPayload,
-      engine_version: '1.0.0',
-    }));
-    await bestEffort('score_results', () =>
-      supabaseAdmin.from('score_results').insert(scoreRows),
-    );
-  }
+  const measurementsPayload = {
+    height_cm: enrichedInput.vitals.heightCm,
+    weight_kg: enrichedInput.vitals.weightKg,
+    bmi: bmiScore?.valueNumeric ?? null,
+    waist_cm: enrichedInput.vitals.waistCm,
+    sbp: enrichedInput.vitals.sbpMmHg,
+    dbp: enrichedInput.vitals.dbpMmHg,
+    total_chol_mgdl: enrichedInput.labs.totalCholMgDl ?? null,
+    hdl_mgdl: enrichedInput.labs.hdlMgDl ?? null,
+    ldl_mgdl: enrichedInput.labs.ldlMgDl ?? null,
+    triglycerides_mgdl: enrichedInput.labs.triglyceridesMgDl ?? null,
+    glucose_mgdl: enrichedInput.labs.glucoseMgDl ?? null,
+    hba1c_pct: enrichedInput.labs.hba1cPct ?? null,
+    egfr: egfrScore?.valueNumeric ?? enrichedInput.labs.eGFR ?? null,
+    creatinine_mgdl: enrichedInput.labs.creatinineMgDl ?? null,
+    albumin_creatinine_ratio:
+      enrichedInput.labs.albuminCreatinineRatio ?? null,
+    ggt: enrichedInput.labs.ggtUL ?? null,
+    ast: enrichedInput.labs.astUL ?? null,
+    alt: enrichedInput.labs.altUL ?? null,
+    platelets: enrichedInput.labs.plateletsGigaL ?? null,
+  };
 
-  // ─── 5. Risk profile ───
-  await bestEffort('risk_profiles', () =>
-    supabaseAdmin.from('risk_profiles').insert({
-      assessment_id: assessmentId,
-      composite_risk_level: compositeRisk.level,
-      composite_score: compositeRisk.numeric,
-      cardiovascular_risk: compositeRisk.cardiovascular.level,
-      metabolic_risk: compositeRisk.metabolic.level,
-      hepatic_risk: compositeRisk.hepatic.level,
-      renal_risk: compositeRisk.renal.level,
-      frailty_risk: compositeRisk.frailty?.level ?? null,
-      summary_json: {
-        cardiovascular: compositeRisk.cardiovascular,
-        metabolic: compositeRisk.metabolic,
-        hepatic: compositeRisk.hepatic,
-        renal: compositeRisk.renal,
-        frailty: compositeRisk.frailty,
-      },
-      action_flags: alerts
-        .filter((a) => a.severity === 'critical')
-        .map((a) => ({ type: a.type, title: a.title })),
-    }),
-  );
+  const scoreRowsPayload = scoreResults.map((s) => ({
+    score_code: s.scoreCode.toLowerCase(),
+    value_numeric: s.valueNumeric,
+    category: s.category,
+    label: s.label,
+    input_payload: s.inputPayload,
+    raw_payload: s.rawPayload,
+    engine_version: '1.0.0',
+  }));
 
-  // ─── 6. Nutrition snapshot ───
-  await bestEffort('nutrition_snapshots', () =>
-    supabaseAdmin.from('nutrition_snapshots').insert({
-      assessment_id: assessmentId,
-      predimed_score: nutrition.predimedScore,
-      predimed_answers: input.lifestyle.predimedAnswers ?? null,
-      adherence_band: nutrition.adherenceBand,
-      bmr_kcal: nutrition.bmrKcal,
-      tdee_kcal: nutrition.tdeeKcal,
-      activity_factor: nutrition.activityFactor,
-    }),
-  );
+  const riskProfilePayload = {
+    composite_risk_level: compositeRisk.level,
+    composite_score: compositeRisk.numeric,
+    cardiovascular_risk: compositeRisk.cardiovascular.level,
+    metabolic_risk: compositeRisk.metabolic.level,
+    hepatic_risk: compositeRisk.hepatic.level,
+    renal_risk: compositeRisk.renal.level,
+    frailty_risk: compositeRisk.frailty?.level ?? null,
+    summary_json: {
+      cardiovascular: compositeRisk.cardiovascular,
+      metabolic: compositeRisk.metabolic,
+      hepatic: compositeRisk.hepatic,
+      renal: compositeRisk.renal,
+      frailty: compositeRisk.frailty,
+    },
+    action_flags: alerts
+      .filter((a) => a.severity === 'critical')
+      .map((a) => ({ type: a.type, title: a.title })),
+  };
 
-  // ─── 7. Activity snapshot ───
-  // Migration 008 extends this table with the MET projection so the
-  // trend charts on the patient page can plot MVPA (MET-min/week) and
-  // sedentary hours/day. The legacy aggregate columns stay populated
-  // for backward compatibility.
-  await bestEffort('activity_snapshots', () =>
-    supabaseAdmin.from('activity_snapshots').insert({
-      assessment_id: assessmentId,
-      minutes_per_week: activity.minutesPerWeek,
-      frequency_per_week: input.lifestyle.activityFrequency ?? null,
-      activity_type: input.lifestyle.activityType ?? null,
-      intensity_level: input.lifestyle.intensityLevel ?? null,
-      sedentary_level: input.lifestyle.sedentaryLevel ?? null,
-      qualitative_band: activity.qualitativeBand,
-      meets_who_guidelines: activity.meetsWhoGuidelines,
-      // WS5 MET projection (migration 008)
-      moderate_minutes_per_week: activity.moderateMinutesPerWeek,
-      vigorous_minutes_per_week: activity.vigorousMinutesPerWeek,
-      met_minutes_per_week: activity.metMinutesPerWeek,
-      sedentary_hours_per_day: activity.sedentaryHoursPerDay,
-      sedentary_risk_level: activity.sedentaryRiskLevel,
-    }),
-  );
+  const nutritionPayload = {
+    predimed_score: nutrition.predimedScore,
+    predimed_answers: input.lifestyle.predimedAnswers ?? null,
+    adherence_band: nutrition.adherenceBand,
+    bmr_kcal: nutrition.bmrKcal,
+    tdee_kcal: nutrition.tdeeKcal,
+    activity_factor: nutrition.activityFactor,
+  };
 
-  // ─── 8. Follow-up plan ───
-  await bestEffort('followup_plans', () =>
-    supabaseAdmin.from('followup_plans').insert({
-      patient_id: patientId,
-      assessment_id: assessmentId,
-      next_review_date: followupPlan.nextReviewDate,
-      review_interval_months: followupPlan.intervalMonths,
-      timeline_json: followupPlan.actions.map((action) => ({
-        action,
-        due_date: followupPlan.nextReviewDate,
-        priority: followupPlan.priorityLevel,
-        completed: false,
-      })),
-      recommended_screenings: screenings,
-      owner_user_id: auth.userId,
-      is_active: true,
-    }),
-  );
+  const activityPayload = {
+    minutes_per_week: activity.minutesPerWeek,
+    frequency_per_week: input.lifestyle.activityFrequency ?? null,
+    activity_type: input.lifestyle.activityType ?? null,
+    intensity_level: input.lifestyle.intensityLevel ?? null,
+    sedentary_level: input.lifestyle.sedentaryLevel ?? null,
+    qualitative_band: activity.qualitativeBand,
+    meets_who_guidelines: activity.meetsWhoGuidelines,
+    // WS5 MET projection (migration 008)
+    moderate_minutes_per_week: activity.moderateMinutesPerWeek,
+    vigorous_minutes_per_week: activity.vigorousMinutesPerWeek,
+    met_minutes_per_week: activity.metMinutesPerWeek,
+    sedentary_hours_per_day: activity.sedentaryHoursPerDay,
+    sedentary_risk_level: activity.sedentaryRiskLevel,
+  };
 
-  // ─── 8b. Due items (WS7) ───
-  // Materialise the structured follow-up and screening items as
-  // `due_items` rows so the patient-detail countdown UI can render them
-  // without re-running the engines on the read path.
-  //
-  // Why not upsert:
-  //   Migration 007 enforces uniqueness with a PARTIAL unique index
-  //   (`idx_due_items_open_unique ... WHERE status IN ('open',
-  //   'acknowledged')`). PostgREST's `.upsert(..., { onConflict })`
-  //   compiles to `INSERT ... ON CONFLICT (cols) DO UPDATE` which
-  //   requires either a full unique constraint OR a simple unique
-  //   index — partial indexes are NOT accepted as conflict targets.
-  //   The call therefore raised PostgREST error 42P10 ("no unique or
-  //   exclusion constraint matching the ON CONFLICT specification")
-  //   every time an assessment was re-created, which `bestEffort`
-  //   silently swallowed. Net effect: no due items ever reached the
-  //   UI. See ISSUE 1 in the WS9 remediation plan.
-  //
-  // Strategy:
-  //   DELETE open/acknowledged rows for the engine-owned codes being
-  //   regenerated, then INSERT the fresh batch. This:
-  //     - preserves the completed/dismissed audit trail,
-  //     - leaves `manual` rows untouched (only 'followup' and
-  //       'screening' codes are replaced),
-  //     - restores a clean "last assessment wins" semantic.
-  //
-  // Best-effort wrapping is retained so a due_items write failure
-  // never rolls back the already-committed assessment, but each stage
-  // logs its own error for ops visibility.
+  const followupPayload = {
+    next_review_date: followupPlan.nextReviewDate,
+    review_interval_months: followupPlan.intervalMonths,
+    timeline_json: followupPlan.actions.map((action) => ({
+      action,
+      due_date: followupPlan.nextReviewDate,
+      priority: followupPlan.priorityLevel,
+      completed: false,
+    })),
+    recommended_screenings: screenings,
+    owner_user_id: auth.userId,
+    is_active: true,
+  };
+
+  // due_items: build engine-owned rows. The SQL function injects
+  // tenant_id/patient_id/assessment_id; we pass tenant/patient anyway
+  // for defence-in-depth and inspectability of the payload. The DELETE
+  // step that removes stale open/acknowledged rows for the same
+  // engine codes is performed inside the function (atomic with the
+  // INSERT) — see migration 011 §8.
   const dueItemRows = buildDueItemRows({
     tenantId: tenant_id,
     patientId,
-    assessmentId,
     followupItems: followupPlan.items,
     screenings,
     createdByUserId: auth.userId,
     now,
   });
-  if (dueItemRows.length > 0) {
-    const engineCodes = Array.from(
-      new Set(
-        dueItemRows
-          .filter((r) => r.source_engine === 'followup' || r.source_engine === 'screening')
-          .map((r) => String(r.item_code)),
-      ),
-    );
-    if (engineCodes.length > 0) {
-      await bestEffort('due_items.delete_open', () =>
-        supabaseAdmin
-          .from('due_items')
-          .delete()
-          .eq('patient_id', patientId)
-          .in('source_engine', ['followup', 'screening'])
-          .in('status', ['open', 'acknowledged'])
-          .in('item_code', engineCodes),
-      );
-    }
-    await bestEffort('due_items.insert', () =>
-      supabaseAdmin.from('due_items').insert(dueItemRows),
+
+  const alertRowsPayload = alerts.map((a) => ({
+    type: a.type,
+    severity: a.severity,
+    status: 'open' as const,
+    audience: 'clinician' as const,
+    title: a.title,
+    message: a.message,
+  }));
+
+  const rpcPayload = {
+    tenant_id,
+    patient_id: patientId,
+    assessed_by: auth.userId,
+    engine_version: '1.0.0',
+    clinical_input_snapshot: input, // canonical, untouched clinician payload
+    measurements: measurementsPayload,
+    score_results: scoreRowsPayload,
+    risk_profile: riskProfilePayload,
+    nutrition_snapshot: nutritionPayload,
+    activity_snapshot: activityPayload,
+    followup_plan: followupPayload,
+    due_items: dueItemRows,
+    alerts: alertRowsPayload,
+  };
+
+  // ─── 4. Single atomic RPC ───
+  const { data: rpcData, error: rpcErr } = await supabaseAdmin.rpc(
+    'create_assessment_atomic',
+    { payload: rpcPayload },
+  );
+
+  if (rpcErr) {
+    // Server-side log keeps the full PostgREST error for ops triage.
+    // The route boundary collapses this into an opaque envelope via
+    // `replyServiceError`. We retain the targeted "MIGRATION_REQUIRED"
+    // detection for the snapshot column path so a missing migration
+    // 003 still surfaces a one-step actionable hint.
+    // eslint-disable-next-line no-console
+    console.error('[assessment-service] create_assessment_atomic failed', rpcErr);
+    throw classifyAssessmentInsertError(rpcErr as any);
+  }
+
+  if (!rpcData || typeof rpcData !== 'object') {
+    throw new AssessmentServiceError(
+      500,
+      'ASSESSMENT_WRITE_FAILED',
+      'Atomic create returned an empty envelope',
     );
   }
 
-  // ─── 9. Alerts ───
-  if (alerts.length > 0) {
-    const alertRows = alerts.map((a) => ({
-      tenant_id,
-      patient_id: patientId,
-      assessment_id: assessmentId,
-      type: a.type,
-      severity: a.severity,
-      status: 'open' as const,
-      audience: 'clinician' as const,
-      title: a.title,
-      message: a.message,
-    }));
-    await bestEffort('alerts', () =>
-      supabaseAdmin.from('alerts').insert(alertRows),
+  const env = rpcData as Record<string, unknown>;
+  const assessmentId = typeof env.assessment_id === 'string'
+    ? (env.assessment_id as string)
+    : null;
+  const createdAtIso = typeof env.created_at === 'string'
+    ? (env.created_at as string)
+    : new Date().toISOString();
+  const persistedStatus = typeof env.status === 'string'
+    ? (env.status as string)
+    : 'completed';
+
+  if (!assessmentId) {
+    throw new AssessmentServiceError(
+      500,
+      'ASSESSMENT_WRITE_FAILED',
+      'Atomic create returned an envelope without assessment_id',
     );
   }
 
-  // ─── 10. Audit log ───
-  await recordAudit(auth, {
-    action: 'assessment.create',
-    resourceType: 'assessment',
-    resourceId: assessmentId,
-    metadata: {
-      patient_id: patientId,
-      composite_risk_level: compositeRisk.level,
-      alert_count: alerts.length,
-      score_count: scoreResults.length,
-      // Stable, machine-readable completeness signal. Sourced from the
-      // canonical `checkAssessmentCompleteness` projection so the audit
-      // trail and the UI share a single source of truth. Codes only —
-      // no free-text, no PHI.
-      completeness_warning_codes: completenessWarnings.map((w) => w.code),
-    },
-  });
+  // ─── 5. Audit log (best-effort, separate observability concern) ───
+  // Audit lives outside the atomic transaction on purpose: a missed
+  // audit row should never block a clinical save, and the assessment is
+  // already durably persisted by this point. We swallow audit failure
+  // and console.error it so ops can correlate via X-Request-Id.
+  try {
+    await recordAudit(auth, {
+      action: 'assessment.create',
+      resourceType: 'assessment',
+      resourceId: assessmentId,
+      metadata: {
+        patient_id: patientId,
+        composite_risk_level: compositeRisk.level,
+        alert_count: alerts.length,
+        score_count: scoreResults.length,
+        // Stable, machine-readable completeness signal. Sourced from the
+        // canonical `checkAssessmentCompleteness` projection so the audit
+        // trail and the UI share a single source of truth. Codes only —
+        // no free-text, no PHI.
+        completeness_warning_codes: completenessWarnings.map((w) => w.code),
+      },
+    });
+  } catch (auditErr) {
+    // eslint-disable-next-line no-console
+    console.error('[assessment-service] assessment.create audit best-effort failed', {
+      assessmentId,
+      auditErr,
+    });
+  }
 
-  // ─── 11. Return AssessmentSnapshot ───
+  // ─── 6. Return AssessmentSnapshot from in-memory engine outputs ───
+  // The snapshot is built from the engine outputs we already have in
+  // memory — this avoids a round-trip and guarantees byte-equivalence
+  // with the row that just landed in the database (the SQL function
+  // does not transform values).
   return buildSnapshot({
     assessmentId,
     tenantId: tenant_id,
     patientId,
-    createdAt: (assessmentRow.created_at as string) ?? new Date().toISOString(),
+    createdAt: createdAtIso,
     createdByUserId: auth.userId,
-    status: (assessmentRow.status as string) ?? 'completed',
+    status: persistedStatus,
     input,
     scoreResults,
     compositeRisk,

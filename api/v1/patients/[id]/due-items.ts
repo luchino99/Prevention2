@@ -43,6 +43,12 @@ import {
 } from '../../../../backend/src/middleware/rate-limit.js';
 import { supabaseAdmin } from '../../../../backend/src/config/supabase.js';
 import { resolvePublicGuidelineRef } from '../../../../backend/src/domain/clinical/guideline-catalog/index.js';
+import { recordAudit } from '../../../../backend/src/audit/audit-logger.js';
+import {
+  replyDbError,
+  replyValidationError,
+  replyError,
+} from '../../../../backend/src/middleware/http-errors.js';
 
 // ============================================================================
 // Schema
@@ -136,17 +142,13 @@ export default withAuth(async (req, res: VercelResponse) => {
 
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET');
-    res.status(405).json({
-      error: { code: 'METHOD_NOT_ALLOWED', message: 'Only GET is supported.' },
-    });
+    replyError(res, 405, 'METHOD_NOT_ALLOWED');
     return;
   }
 
   const patientId = getPatientId(req);
   if (!patientId) {
-    res.status(400).json({
-      error: { code: 'INVALID_ID', message: 'Invalid patient id.' },
-    });
+    replyError(res, 400, 'INVALID_ID');
     return;
   }
 
@@ -156,8 +158,8 @@ export default withAuth(async (req, res: VercelResponse) => {
   });
   applyRateLimitHeaders(res, rl);
   if (!rl.allowed) {
-    res.status(429).json({
-      error: { code: 'RATE_LIMITED', message: 'Too many requests.' },
+    replyError(res, 429, 'RATE_LIMITED', {
+      retryAfterSec: Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000)),
     });
     return;
   }
@@ -165,13 +167,7 @@ export default withAuth(async (req, res: VercelResponse) => {
   await requireTenantMember(async (r: any, s: VercelResponse) => {
     const parse = querySchema.safeParse(req.query);
     if (!parse.success) {
-      s.status(422).json({
-        error: {
-          code: 'VALIDATION_FAILED',
-          message: 'Invalid query parameters.',
-          details: parse.error.flatten(),
-        },
-      });
+      replyValidationError(s, parse.error.issues, 'patients.due-items.query');
       return;
     }
     const {
@@ -223,10 +219,37 @@ export default withAuth(async (req, res: VercelResponse) => {
       .range(from, to);
 
     if (error) {
-      s.status(500).json({
-        error: { code: 'DB_ERROR', message: error.message },
-      });
+      replyDbError(s, error, 'patients.due-items.select');
       return;
+    }
+
+    // B-10 — sensitive read audit. Listing due items reveals upcoming
+    // screenings / follow-ups for a specific patient. Best-effort: a
+    // failed audit row must not block the read because countdown
+    // refreshes are high-frequency.
+    try {
+      await recordAudit(r.auth, {
+        action: 'due_items.list',
+        resourceType: 'due_item',
+        resourceId: null,
+        metadata: {
+          patient_id: patientId,
+          status: statusFilter,
+          source: sourceFilter ?? null,
+          priority: priorityFilter ?? null,
+          due_within_days: dueWithinDays ?? null,
+          include_past: includePast,
+          result_count: data?.length ?? 0,
+          page,
+          page_size: pageSize,
+        },
+      });
+    } catch (auditErr) {
+      // eslint-disable-next-line no-console
+      console.error('[patients.due-items] audit best-effort failed', {
+        patientId,
+        auditErr,
+      });
     }
 
     const items = (data ?? []).map((row: any) => {

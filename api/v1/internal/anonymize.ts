@@ -25,21 +25,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { supabaseAdmin } from '../../../backend/src/config/supabase.js';
 import { applySecurityHeaders } from '../../../backend/src/middleware/security-headers.js';
+import { isCronAuthorized, denyCron } from '../../../backend/src/middleware/cron-auth.js';
 
-const CRON_SECRET = process.env.CRON_SIGNING_SECRET;
 const GRACE_DAYS = Number(process.env.ANONYMIZE_GRACE_DAYS ?? '30');
 const MAX_PER_RUN = Number(process.env.ANONYMIZE_MAX_PER_RUN ?? '100');
-
-function authorized(req: VercelRequest): boolean {
-  if (!CRON_SECRET || CRON_SECRET.length < 16) return false;
-  const header = req.headers['authorization'];
-  if (typeof header !== 'string' || !header.startsWith('Bearer ')) return false;
-  const token = header.slice(7).trim();
-  if (token.length !== CRON_SECRET.length) return false;
-  let diff = 0;
-  for (let i = 0; i < token.length; i++) diff |= token.charCodeAt(i) ^ CRON_SECRET.charCodeAt(i);
-  return diff === 0;
-}
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   applySecurityHeaders(res);
@@ -49,8 +38,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     res.status(405).end();
     return;
   }
-  if (!authorized(req)) {
-    res.status(401).json({ error: { code: 'UNAUTHORIZED', message: '' } });
+  if (!isCronAuthorized(req)) {
+    denyCron(res);
     return;
   }
 
@@ -68,7 +57,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   if (error) {
     // eslint-disable-next-line no-console
     console.error('[anonymize] candidate query failed', error);
-    res.status(500).json({ error: { code: 'DB_ERROR', message: error.message } });
+    // Opaque body — never echo PostgREST error.message to the caller.
+    res.status(500).json({ error: { code: 'DB_ERROR' } });
     return;
   }
 

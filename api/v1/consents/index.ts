@@ -32,7 +32,43 @@ import { requireTenantMember, requireClinicalWrite } from '../../../backend/src/
 import { applySecurityHeaders } from '../../../backend/src/middleware/security-headers.js';
 import { checkRateLimit, RATE_LIMITS, applyRateLimitHeaders } from '../../../backend/src/middleware/rate-limit.js';
 import { supabaseAdmin } from '../../../backend/src/config/supabase.js';
-import { recordAudit } from '../../../backend/src/audit/audit-logger.js';
+import { recordAuditStrict, AuditWriteError } from '../../../backend/src/audit/audit-logger.js';
+import { replyDbError, replyValidationError, replyError } from '../../../backend/src/middleware/http-errors.js';
+
+/**
+ * B-08 — clinician → patient consent gate.
+ *
+ * Returns true iff the caller is allowed to grant/revoke consent on behalf
+ * of `patientId` according to the role matrix:
+ *
+ *   - platform_admin → always allowed
+ *   - tenant_admin   → allowed for patients in own tenant
+ *   - clinician      → allowed iff there is an ACTIVE professional_patient_links
+ *                      row tying this user to this patient
+ *   - assistant_staff / patient → never (handled upstream by RBAC HOF)
+ *
+ * RLS gives us tenant isolation; this gate adds the per-clinician
+ * relationship requirement that RLS deliberately doesn't model.
+ */
+async function isPplGated(
+  auth: { role?: string; userId?: string; tenantId?: string },
+  patientId: string,
+): Promise<boolean> {
+  if (auth.role === 'platform_admin') return true;
+  if (auth.role === 'tenant_admin') return true;
+  if (auth.role !== 'clinician') return false;
+  if (!auth.userId || !auth.tenantId) return false;
+  const { data, error } = await supabaseAdmin
+    .from('professional_patient_links')
+    .select('id')
+    .eq('professional_user_id', auth.userId)
+    .eq('patient_id', patientId)
+    .eq('tenant_id', auth.tenantId)
+    .eq('is_active', true)
+    .limit(1);
+  if (error) return false;
+  return Array.isArray(data) && data.length > 0;
+}
 
 const listQuery = z.object({
   patientId: z.string().uuid(),
@@ -71,7 +107,7 @@ const grantBody = z.object({
 async function handleList(req: any, res: VercelResponse): Promise<void> {
   const parse = listQuery.safeParse(req.query);
   if (!parse.success) {
-    res.status(422).json({ error: { code: 'VALIDATION_FAILED', message: 'Invalid query' } });
+    replyValidationError(res, parse.error.issues, 'consents.list.query');
     return;
   }
   const { patientId } = parse.data;
@@ -85,15 +121,23 @@ async function handleList(req: any, res: VercelResponse): Promise<void> {
     .eq('id', patientId)
     .maybeSingle();
   if (patientErr) {
-    res.status(500).json({ error: { code: 'DB_ERROR', message: patientErr.message } });
+    replyDbError(res, patientErr, 'consents.list.patient');
     return;
   }
   if (!patient) {
-    res.status(404).json({ error: { code: 'PATIENT_NOT_FOUND', message: '' } });
+    replyError(res, 404, 'PATIENT_NOT_FOUND');
     return;
   }
   if (req.auth.role !== 'platform_admin' && patient.tenant_id !== req.auth.tenantId) {
-    res.status(403).json({ error: { code: 'CROSS_TENANT_FORBIDDEN', message: '' } });
+    replyError(res, 403, 'CROSS_TENANT_FORBIDDEN');
+    return;
+  }
+
+  // B-08 — also require PPL for clinicians on consent listing. Reading
+  // historical consent decisions is itself sensitive (reveals AI/marketing
+  // preferences) and must not bypass the per-clinician relationship gate.
+  if (!(await isPplGated(req.auth, patientId))) {
+    replyError(res, 403, 'NO_PATIENT_LINK');
     return;
   }
 
@@ -105,7 +149,7 @@ async function handleList(req: any, res: VercelResponse): Promise<void> {
     .order('created_at', { ascending: false });
 
   if (error) {
-    res.status(500).json({ error: { code: 'DB_ERROR', message: error.message } });
+    replyDbError(res, error, 'consents.list.select');
     return;
   }
 
@@ -115,9 +159,7 @@ async function handleList(req: any, res: VercelResponse): Promise<void> {
 async function handleGrant(req: any, res: VercelResponse): Promise<void> {
   const parse = grantBody.safeParse(req.body);
   if (!parse.success) {
-    res.status(422).json({
-      error: { code: 'VALIDATION_FAILED', message: 'Invalid payload', details: parse.error.issues },
-    });
+    replyValidationError(res, parse.error.issues, 'consents.grant.body');
     return;
   }
   const p = parse.data;
@@ -129,15 +171,21 @@ async function handleGrant(req: any, res: VercelResponse): Promise<void> {
     .eq('id', p.patientId)
     .maybeSingle();
   if (patientErr) {
-    res.status(500).json({ error: { code: 'DB_ERROR', message: patientErr.message } });
+    replyDbError(res, patientErr, 'consents.grant.patient');
     return;
   }
   if (!patient) {
-    res.status(404).json({ error: { code: 'PATIENT_NOT_FOUND', message: '' } });
+    replyError(res, 404, 'PATIENT_NOT_FOUND');
     return;
   }
   if (req.auth.role !== 'platform_admin' && patient.tenant_id !== req.auth.tenantId) {
-    res.status(403).json({ error: { code: 'CROSS_TENANT_FORBIDDEN', message: '' } });
+    replyError(res, 403, 'CROSS_TENANT_FORBIDDEN');
+    return;
+  }
+
+  // B-08 — clinician PPL gate. tenant_admin / platform_admin bypass.
+  if (!(await isPplGated(req.auth, p.patientId))) {
+    replyError(res, 403, 'NO_PATIENT_LINK');
     return;
   }
 
@@ -165,7 +213,7 @@ async function handleGrant(req: any, res: VercelResponse): Promise<void> {
     .single();
 
   if (error) {
-    res.status(500).json({ error: { code: 'DB_ERROR', message: error.message } });
+    replyDbError(res, error, 'consents.grant.insert');
     return;
   }
 
@@ -179,17 +227,34 @@ async function handleGrant(req: any, res: VercelResponse): Promise<void> {
       .eq('id', p.patientId);
   }
 
-  await recordAudit(req.auth, {
-    action: granted ? 'consent.grant' : 'consent.revoke',
-    resourceType: 'consent',
-    resourceId: data.id,
-    metadata: {
-      consent_type: p.consentType,
-      policy_version: p.policyVersion,
-      legal_basis: p.legalBasis,
-      patient_id: p.patientId,
-    },
-  });
+  // B-09 — audit guarantee: await + propagate. A consent grant/revoke
+  // without a corresponding audit row is a regulatory hole (Art.7 §1
+  // requires demonstrable consent), so we surface 500 if the audit
+  // write fails and log the original PG error server-side.
+  // recordAuditStrict throws AuditWriteError on persistence failure (vs.
+  // recordAudit which only logs), so this catch branch is reachable.
+  try {
+    await recordAuditStrict(req.auth, {
+      action: granted ? 'consent.grant' : 'consent.revoke',
+      resourceType: 'consent',
+      resourceId: data.id,
+      metadata: {
+        consent_type: p.consentType,
+        policy_version: p.policyVersion,
+        legal_basis: p.legalBasis,
+        patient_id: p.patientId,
+      },
+    });
+  } catch (auditErr) {
+    // eslint-disable-next-line no-console
+    console.error('[consents.grant] audit write failed', {
+      id: data.id,
+      isAuditWriteError: auditErr instanceof AuditWriteError,
+      auditErr,
+    });
+    replyError(res, 500, 'AUDIT_WRITE_FAILED');
+    return;
+  }
 
   res.status(201).json({ consent: data });
 }
@@ -200,7 +265,10 @@ export default withAuth(async (req, res: VercelResponse) => {
   if (req.method === 'GET') {
     const rl = checkRateLimit(req, { routeId: 'consents.list', ...RATE_LIMITS.read });
     applyRateLimitHeaders(res, rl);
-    if (!rl.allowed) return res.status(429).json({ error: { code: 'RATE_LIMITED', message: '' } }) as any;
+    if (!rl.allowed) {
+      replyError(res, 429, 'RATE_LIMITED', { retryAfterSec: Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000)) });
+      return;
+    }
     await requireTenantMember((r, s) => handleList(r, s))(req as any, res);
     return;
   }
@@ -208,11 +276,14 @@ export default withAuth(async (req, res: VercelResponse) => {
   if (req.method === 'POST') {
     const rl = checkRateLimit(req, { routeId: 'consents.grant', ...RATE_LIMITS.write });
     applyRateLimitHeaders(res, rl);
-    if (!rl.allowed) return res.status(429).json({ error: { code: 'RATE_LIMITED', message: '' } }) as any;
+    if (!rl.allowed) {
+      replyError(res, 429, 'RATE_LIMITED', { retryAfterSec: Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000)) });
+      return;
+    }
     await requireClinicalWrite((r, s) => handleGrant(r, s))(req as any, res);
     return;
   }
 
   res.setHeader('Allow', 'GET, POST');
-  res.status(405).json({ error: { code: 'METHOD_NOT_ALLOWED', message: '' } });
+  replyError(res, 405, 'METHOD_NOT_ALLOWED');
 });

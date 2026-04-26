@@ -22,8 +22,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { supabaseAdmin } from '../../../backend/src/config/supabase.js';
 import { applySecurityHeaders } from '../../../backend/src/middleware/security-headers.js';
+import { isCronAuthorized, denyCron } from '../../../backend/src/middleware/cron-auth.js';
+import { replyError, replyDbError } from '../../../backend/src/middleware/http-errors.js';
 
-const CRON_SECRET = process.env.CRON_SIGNING_SECRET;
 const MAX_STORAGE_DELETIONS = 500; // per run — keep latency bounded
 
 /**
@@ -39,30 +40,17 @@ interface OrphanRow {
   storage_path: string;
 }
 
-function authorized(req: VercelRequest): boolean {
-  if (!CRON_SECRET || CRON_SECRET.length < 16) return false;
-  const header = req.headers['authorization'];
-  if (typeof header !== 'string') return false;
-  if (!header.startsWith('Bearer ')) return false;
-  const token = header.slice(7).trim();
-  // constant-time compare — the secret is short but still a nicety
-  if (token.length !== CRON_SECRET.length) return false;
-  let diff = 0;
-  for (let i = 0; i < token.length; i++) diff |= token.charCodeAt(i) ^ CRON_SECRET.charCodeAt(i);
-  return diff === 0;
-}
-
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   applySecurityHeaders(res);
 
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
-    res.status(405).end();
+    replyError(res, 405, 'METHOD_NOT_ALLOWED');
     return;
   }
 
-  if (!authorized(req)) {
-    res.status(401).json({ error: { code: 'UNAUTHORIZED', message: '' } });
+  if (!isCronAuthorized(req)) {
+    denyCron(res);
     return;
   }
 
@@ -72,9 +60,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   // 1) Prune at the database layer (single transactional call)
   const { data: pruneResult, error: pruneErr } = await supabaseAdmin.rpc('fn_retention_prune');
   if (pruneErr) {
-    // eslint-disable-next-line no-console
-    console.error('[retention] fn_retention_prune failed', pruneErr);
-    res.status(500).json({ error: { code: 'PRUNE_FAILED', message: pruneErr.message } });
+    // Opaque body + requestId via replyDbError. Server log keeps the full
+    // PG error (including any schema-bearing message) under `[db-error]`
+    // for ops triage, so the cron caller only sees `DB_ERROR + requestId`.
+    replyDbError(res, pruneErr, 'retention.prune');
     return;
   }
 

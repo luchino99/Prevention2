@@ -10,6 +10,8 @@ import { requireTenantMember } from '../../../../backend/src/middleware/rbac.js'
 import { applySecurityHeaders } from '../../../../backend/src/middleware/security-headers.js';
 import { checkRateLimit, RATE_LIMITS, applyRateLimitHeaders } from '../../../../backend/src/middleware/rate-limit.js';
 import { supabaseAdmin } from '../../../../backend/src/config/supabase.js';
+import { recordAudit } from '../../../../backend/src/audit/audit-logger.js';
+import { replyDbError, replyValidationError, replyError } from '../../../../backend/src/middleware/http-errors.js';
 
 const querySchema = z.object({
   status: z.enum(['open', 'acknowledged', 'resolved', 'dismissed']).optional(),
@@ -30,24 +32,27 @@ export default withAuth(async (req, res: VercelResponse) => {
 
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET');
-    res.status(405).json({ error: { code: 'METHOD_NOT_ALLOWED', message: '' } });
+    replyError(res, 405, 'METHOD_NOT_ALLOWED');
     return;
   }
 
   const patientId = getPatientId(req);
   if (!patientId) {
-    res.status(400).json({ error: { code: 'INVALID_ID', message: '' } });
+    replyError(res, 400, 'INVALID_ID');
     return;
   }
 
   const rl = checkRateLimit(req, { routeId: 'alerts.list', ...RATE_LIMITS.read });
   applyRateLimitHeaders(res, rl);
-  if (!rl.allowed) return res.status(429).json({ error: { code: 'RATE_LIMITED', message: '' } }) as any;
+  if (!rl.allowed) {
+    replyError(res, 429, 'RATE_LIMITED', { retryAfterSec: Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000)) });
+    return;
+  }
 
   await requireTenantMember(async (r: any, s: VercelResponse) => {
     const parse = querySchema.safeParse(req.query);
     if (!parse.success) {
-      s.status(422).json({ error: { code: 'VALIDATION_FAILED', message: 'Invalid query' } });
+      replyValidationError(s, parse.error.issues, 'patients.alerts.query');
       return;
     }
     const { status, severity, page, pageSize } = parse.data;
@@ -68,8 +73,26 @@ export default withAuth(async (req, res: VercelResponse) => {
       .range(from, to);
 
     if (error) {
-      s.status(500).json({ error: { code: 'DB_ERROR', message: error.message } });
+      replyDbError(s, error, 'patients.alerts.select');
       return;
+    }
+
+    // B-10 — sensitive read audit (per-patient alert listing).
+    try {
+      await recordAudit(r.auth, {
+        action: 'alert.list',
+        resourceType: 'alert',
+        resourceId: null,
+        metadata: {
+          patient_id: patientId,
+          status: status ?? null,
+          severity: severity ?? null,
+          result_count: data?.length ?? 0,
+        },
+      });
+    } catch (auditErr) {
+      // eslint-disable-next-line no-console
+      console.error('[patients.alerts] audit best-effort failed', { patientId, auditErr });
     }
 
     s.status(200).json({

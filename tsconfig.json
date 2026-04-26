@@ -38,7 +38,7 @@
   "exclude": [
     "node_modules",
     ".build",
-    "_legacy_archive",
+    "_archive_legacy",
     "engine/**/*.js",
     "tests/**/*.ts",
     "types/**/*.d.ts"

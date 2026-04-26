@@ -54,6 +54,7 @@ import {
   BOX,
   COLOR,
   CONTENT_WIDTH,
+  LINE_HEIGHT,
   PAGE,
   SPACING,
   TYPE,
@@ -62,6 +63,7 @@ import {
 } from './pdf/pdf-tokens.js';
 import {
   RenderCtx,
+  beginAtomicBlock,
   beginAtomicSection,
   createCtx,
   drawAllFooters,
@@ -308,65 +310,164 @@ function renderDomainBreakdown(ctx: RenderCtx, snapshot: AssessmentSnapshot): vo
 }
 
 function renderValidatedScores(ctx: RenderCtx, snapshot: AssessmentSnapshot): void {
-  // Title + first score row (label + value + pill ≈ 24pt) stay together.
-  beginAtomicSection(ctx, { minHeight: 90 });
+  // Title + first score block stays together. minHeight covers the
+  // section title (~28pt), one wrapped 2-line label (~28pt), the value
+  // sub-line (~16pt) and a hairline (~8pt) ≈ 80pt; reserve 100pt to
+  // leave room for an interpretation/skip-reason line on the first
+  // entry.
+  beginAtomicSection(ctx, { minHeight: 100 });
   sectionTitle(ctx, 'Validated clinical scores');
   if (!snapshot.scoreResults?.length) {
     drawLine(ctx, 'No scores computed.', { size: TYPE.body, color: COLOR.muted, font: 'italic' });
     return;
   }
 
-  // Two-column table: [ Score label + code ][ Value ][ Category pill ]
-  const xLabel = PAGE.marginX;
-  const xValue = PAGE.marginX + 260;
-  const xCategory = PAGE.marginX + 330;
-  const rowGap = SPACING.xs;
+  // ─── REFINE-1: vertical score block layout ────────────────────────
+  //
+  // Previous design rendered every score on a single horizontal line:
+  //   [ label ][value @ x=260][pill @ x=330]
+  // Long labels such as
+  //   "SCORE2-Diabetes Cardiovascular Risk (not computable)"
+  //   "Unknown diabetes suspected — hyperglycaemic episode"
+  // overflowed into the value column at x=260 and the pill at x=330,
+  // producing visible glyph collision in the PDF.
+  //
+  // New design: each score is a self-contained vertical block:
+  //   ┌─ row ────────────────────────────────────────────────────────┐
+  //   │ Score Label (bold, may wrap up to 2 lines)            [PILL] │
+  //   │ [SCORE2] · 7.4 · CV 10y  (or "—" / "not computable")         │
+  //   │ ↳ Optional interpretation / skip reason (italic muted, wrap) │
+  //   │ ──── hairline ─────────────────────────────────────────────── │
+  //   └──────────────────────────────────────────────────────────────┘
+  // The pill is anchored to the right edge of the content area so it
+  // never lives at a fixed x that a long label can collide with. The
+  // label wrap-width subtracts the pill width + gutter so wrapped
+  // glyphs cannot overlap the pill.
+  // The whole row is pre-measured and ensureSpace() is called once with
+  // the full block height, so a row never splits across pages.
+
+  const PILL_GUTTER = SPACING.sm;
+  // Sub-line uses the standard normal line-height; we reserve one
+  // SUBLINE_LH worth of vertical space in the measurement for the
+  // [code] · value muted line below the label.
+  const SUBLINE_LH = TYPE.label * LINE_HEIGHT.normal;
+  const ROW_PAD_BOTTOM = SPACING.sm;
 
   for (const s of snapshot.scoreResults) {
-    ensureSpace(ctx, TYPE.body * 2 + rowGap);
-    const labelY = ctx.cursorY - TYPE.body;
+    const { ink, band } = severityPalette(s.category);
 
-    // Label
-    ctx.page.drawText(prepare(ctx, s.label), {
-      x: xLabel,
-      y: labelY,
+    // ── 1. Measure ─────────────────────────────────────────────────
+    const pillText = (s.category || '—').toUpperCase().replace(/_/g, ' ');
+    const pw = pillWidth(ctx.fonts, pillText);
+    const labelMaxW = CONTENT_WIDTH - pw - PILL_GUTTER;
+
+    const labelHeight = measureWrapped(
+      ctx.fonts,
+      s.label,
+      labelMaxW,
+      { size: TYPE.body, font: 'bold' },
+    );
+
+    const valueText = formatValue(s.valueNumeric);
+    const subline = `[${s.scoreCode}] · ${valueText}`;
+
+    // Pull a human-readable interpretation / skip reason from the raw
+    // payload when the entry is non-computable or carries a structured
+    // explanation. We never invent text — we surface what the score
+    // engine itself emitted, falling back to a generic message only
+    // when nothing structured is available.
+    const interpretation = extractScoreNote(s);
+    const interpretationHeight = interpretation
+      ? measureWrapped(
+          ctx.fonts,
+          interpretation,
+          CONTENT_WIDTH,
+          { size: TYPE.label, font: 'italic' },
+        )
+      : 0;
+
+    const rowHeight =
+      labelHeight +
+      SUBLINE_LH +
+      interpretationHeight +
+      ROW_PAD_BOTTOM +
+      // hairline + its top margin
+      SPACING.xs + 1;
+
+    // ── 2. Reserve atomic space for the whole block ────────────────
+    ensureSpace(ctx, rowHeight);
+
+    // Capture the baseline y of the FIRST label line so we can anchor
+    // the pill flush right next to it.
+    const firstLineBaselineY = ctx.cursorY - TYPE.body;
+
+    // ── 3. Draw label (wraps automatically) ────────────────────────
+    drawWrapped(ctx, s.label, labelMaxW, {
       size: TYPE.body,
-      font: ctx.fonts.bold,
+      font: 'bold',
       color: COLOR.text,
     });
-    // Score code in muted font on the same line
-    const labelWidth = textWidth(ctx.fonts, s.label, { size: TYPE.body, font: 'bold' });
-    ctx.page.drawText(`[${s.scoreCode}]`, {
-      x: xLabel + labelWidth + 6,
-      y: labelY,
+
+    // ── 4. Draw the pill flush right at the first label baseline ───
+    drawPill(ctx, pillText, {
+      x: PAGE.marginX + CONTENT_WIDTH - pw,
+      baselineY: firstLineBaselineY,
+      fill: band,
+      ink,
+    });
+
+    // ── 5. Sub-line: code · value (muted) ──────────────────────────
+    drawLine(ctx, subline, {
       size: TYPE.label,
-      font: ctx.fonts.regular,
       color: COLOR.muted,
     });
 
-    // Numeric value
-    ctx.page.drawText(formatValue(s.valueNumeric), {
-      x: xValue,
-      y: labelY,
-      size: TYPE.body,
-      font: ctx.fonts.regular,
-      color: COLOR.text,
-    });
-
-    // Category pill
-    if (s.category) {
-      const { ink, band } = severityPalette(s.category);
-      drawPill(ctx, s.category.toUpperCase(), {
-        x: xCategory,
-        baselineY: labelY,
-        fill: band,
-        ink,
+    // ── 6. Optional interpretation / skip reason ───────────────────
+    if (interpretation) {
+      drawWrapped(ctx, interpretation, CONTENT_WIDTH, {
+        size: TYPE.label,
+        font: 'italic',
+        color: COLOR.textSoft,
       });
     }
 
-    ctx.cursorY -= TYPE.body * 1.25 + rowGap;
+    // ── 7. Hairline separator ──────────────────────────────────────
     hrule(ctx, { color: COLOR.lineFaint, marginTop: 0, marginBottom: SPACING.xs });
   }
+}
+
+/**
+ * Extract a human-readable interpretation / skip note from a
+ * ScoreResultEntry, preferring structured fields over free text and
+ * never inventing content.
+ *
+ * Order of preference:
+ *   1. `rawPayload.interpretation` — set by interpretive scores
+ *      (FLI, FIB-4, eGFR staging) for clinician-facing context.
+ *   2. `rawPayload.skipReason` — set by SCORE2 / SCORE2-Diabetes
+ *      eligibility gates when the score is non-computable, with an
+ *      explanation such as "missing total cholesterol, HDL".
+ *   3. Implicit "—" when the category is `not_computable` but no
+ *      structured reason was provided (defensive fallback so the
+ *      reader still sees that something was attempted).
+ *
+ * Returns null when none of the above apply, so the renderer can skip
+ * the interpretation line entirely (no orphan empty paragraph).
+ */
+function extractScoreNote(s: { rawPayload?: Record<string, unknown>; category?: string }): string | null {
+  const raw = s.rawPayload ?? {};
+  const interpretation = raw['interpretation'];
+  if (typeof interpretation === 'string' && interpretation.trim()) {
+    return interpretation.trim();
+  }
+  const skip = raw['skipReason'];
+  if (typeof skip === 'string' && skip.trim()) {
+    return `Not computable: ${skip.trim()}`;
+  }
+  if ((s.category ?? '').toLowerCase() === 'not_computable') {
+    return 'Not computable for this assessment.';
+  }
+  return null;
 }
 
 function renderLifestyleSummary(ctx: RenderCtx, snapshot: AssessmentSnapshot): void {
@@ -436,8 +537,15 @@ function renderLifestyleRecommendations(ctx: RenderCtx, snapshot: AssessmentSnap
   for (const r of snapshot.lifestyleRecommendations) {
     const { ink, band } = severityPalette(r.priority);
     const innerWidth = CONTENT_WIDTH - BOX.paddingX * 2;
+    // ─ REFINE-2 ─ accurate height estimate so drawBandedCard's own
+    // ensureSpace check pushes the entire card to the next page when
+    // it doesn't fit, instead of letting drawWrapped/drawGuidelineTag
+    // split the card mid-rationale or strand the source line alone.
     const rationaleH = measureWrapped(ctx.fonts, r.rationale, innerWidth, { size: TYPE.body });
-    const estH = TYPE.cardTitle + SPACING.xs + rationaleH + TYPE.label + SPACING.sm;
+    const sourceH    = TYPE.label * LINE_HEIGHT.normal;
+    const tagH       = measureGuidelineTagHeight(r.guideline);
+    const titleH     = TYPE.cardTitle * 1.25;
+    const estH       = titleH + rationaleH + sourceH + tagH + SPACING.sm;
     drawBandedCard(
       ctx,
       { bandColor: domainAccent(mapRecommendationDomain(r.domain)), estimatedHeight: estH },
@@ -479,6 +587,23 @@ function renderLifestyleRecommendations(ctx: RenderCtx, snapshot: AssessmentSnap
   }
 }
 
+/**
+ * Height (in pt) the guideline tag will consume when rendered, or 0
+ * when the tag is null / empty. Used by atomic-block measurements so
+ * the per-bullet `beginAtomicBlock` floor accounts for the tag without
+ * the caller having to duplicate the formatting logic.
+ *
+ * Mirrors the layout in `drawGuidelineTag`: a single label-size line
+ * at normal line-height, drawn only if `formatGuidelineTag` returns
+ * a non-empty string.
+ */
+function measureGuidelineTagHeight(g: PublicGuidelineRef | null | undefined): number {
+  if (!g) return 0;
+  const tag = formatGuidelineTag(g);
+  if (!tag) return 0;
+  return TYPE.label * LINE_HEIGHT.normal;
+}
+
 /** Map the finer-grained recommendation domain to the 5 chart domains. */
 function mapRecommendationDomain(domain: string): string {
   switch (domain) {
@@ -491,6 +616,12 @@ function mapRecommendationDomain(domain: string): string {
     case 'smoking':
       return 'lifestyle';
     case 'diet':
+      return 'lifestyle';
+    case 'self_monitoring':
+      // Home BP / glucose self-monitoring is a behavioural support nudge,
+      // not a clinical prescription. Bucketed under the generic "lifestyle"
+      // chart domain for visual consistency with the other behavioural
+      // recommendations.
       return 'lifestyle';
     default:
       return 'lifestyle';
@@ -625,7 +756,27 @@ function renderFollowupPlan(ctx: RenderCtx, snapshot: AssessmentSnapshot): void 
     drawLine(ctx, 'Structured follow-up items', { size: TYPE.cardTitle, font: 'bold' });
     for (const it of snapshot.followupPlan.items) {
       const { ink, band } = severityPalette(it.priority);
-      ensureSpace(ctx, TYPE.body * 3);
+
+      // ─ REFINE-2 ─ pre-measure the ENTIRE bullet block so the title,
+      // wrapped rationale, source line and guideline tag never split
+      // across pages. Each bullet is now an atomic clinical unit.
+      const titleH = TYPE.body * 1.25;
+      const rationaleH = measureWrapped(
+        ctx.fonts,
+        it.rationale,
+        CONTENT_WIDTH - SPACING.md,
+        { size: TYPE.label },
+      );
+      const srcLine = [
+        `Due in ${it.dueInMonths} month(s)`,
+        it.recurrenceMonths ? `recurs every ${it.recurrenceMonths} month(s)` : null,
+        it.guidelineSource ? `source: ${it.guidelineSource}` : null,
+      ].filter(Boolean).join(' · ');
+      const srcH = srcLine ? TYPE.label * LINE_HEIGHT.normal : 0;
+      const tagH = measureGuidelineTagHeight(it.guideline);
+      const blockH = titleH + rationaleH + srcH + tagH + SPACING.xs;
+      beginAtomicBlock(ctx, blockH);
+
       const baselineY = ctx.cursorY - TYPE.body;
       // Bullet title + priority pill
       ctx.page.drawText(`• ${prepare(ctx, it.title)}`, {
@@ -643,18 +794,13 @@ function renderFollowupPlan(ctx: RenderCtx, snapshot: AssessmentSnapshot): void 
         fill: band,
         ink,
       });
-      ctx.cursorY -= TYPE.body * 1.25;
+      ctx.cursorY -= titleH;
       drawWrapped(
         ctx,
         it.rationale,
         CONTENT_WIDTH - SPACING.md,
         { size: TYPE.label, color: COLOR.textSoft, x: PAGE.marginX + SPACING.md },
       );
-      const srcLine = [
-        `Due in ${it.dueInMonths} month(s)`,
-        it.recurrenceMonths ? `recurs every ${it.recurrenceMonths} month(s)` : null,
-        it.guidelineSource ? `source: ${it.guidelineSource}` : null,
-      ].filter(Boolean).join(' · ');
       if (srcLine) {
         drawLine(ctx, srcLine, {
           size: TYPE.label,
@@ -667,10 +813,19 @@ function renderFollowupPlan(ctx: RenderCtx, snapshot: AssessmentSnapshot): void 
       verticalGap(ctx, SPACING.xs);
     }
   } else if (snapshot.followupPlan.actions?.length > 0) {
-    // Legacy projection — render as plain bullets.
+    // Legacy projection — render as plain bullets. Each bullet is a
+    // single wrapped paragraph; we still pre-measure so a long action
+    // does not split mid-paragraph.
     verticalGap(ctx, SPACING.xs);
     drawLine(ctx, 'Actions', { size: TYPE.cardTitle, font: 'bold' });
     for (const action of snapshot.followupPlan.actions) {
+      const actionH = measureWrapped(
+        ctx.fonts,
+        `• ${action}`,
+        CONTENT_WIDTH - SPACING.sm,
+        { size: TYPE.body },
+      );
+      beginAtomicBlock(ctx, actionH);
       drawWrapped(ctx, `• ${action}`, CONTENT_WIDTH - SPACING.sm, {
         size: TYPE.body,
         x: PAGE.marginX + SPACING.xs,
@@ -682,6 +837,10 @@ function renderFollowupPlan(ctx: RenderCtx, snapshot: AssessmentSnapshot): void 
     verticalGap(ctx, SPACING.xs);
     drawLine(ctx, 'Domain monitoring', { size: TYPE.cardTitle, font: 'bold' });
     for (const d of snapshot.followupPlan.domainMonitoring) {
+      // Single-line bullets — the existing drawLine handles its own
+      // ensureSpace, but we still guard against a sub-heading orphan
+      // by treating the heading + first bullet as one logical pair via
+      // the SPACING.xs gap above.
       drawLine(ctx, `• ${d}`, { size: TYPE.body, x: PAGE.marginX + SPACING.xs });
     }
   }
@@ -693,7 +852,24 @@ function renderScreenings(ctx: RenderCtx, snapshot: AssessmentSnapshot): void {
   sectionTitle(ctx, 'Required screenings');
   for (const s of snapshot.screenings) {
     const { ink, band } = severityPalette(s.priority);
-    ensureSpace(ctx, TYPE.body * 3);
+
+    // ─ REFINE-2 ─ atomic-block guard: pre-measure full bullet height
+    // (title + reason + source + guideline tag + bottom gap) so the
+    // screening never splits across pages.
+    const titleH = TYPE.body * 1.25;
+    const reasonH = s.reason
+      ? measureWrapped(
+          ctx.fonts,
+          s.reason,
+          CONTENT_WIDTH - SPACING.md,
+          { size: TYPE.label },
+        )
+      : 0;
+    const srcH = s.guidelineSource ? TYPE.label * LINE_HEIGHT.normal : 0;
+    const tagH = measureGuidelineTagHeight(s.guideline);
+    const blockH = titleH + reasonH + srcH + tagH + SPACING.xs;
+    beginAtomicBlock(ctx, blockH);
+
     const baselineY = ctx.cursorY - TYPE.body;
     ctx.page.drawText(`• ${prepare(ctx, s.screening)}`, {
       x: PAGE.marginX + SPACING.xs,
@@ -710,7 +886,7 @@ function renderScreenings(ctx: RenderCtx, snapshot: AssessmentSnapshot): void {
       fill: band,
       ink,
     });
-    ctx.cursorY -= TYPE.body * 1.25;
+    ctx.cursorY -= titleH;
 
     if (s.reason) {
       drawWrapped(ctx, s.reason, CONTENT_WIDTH - SPACING.md, {

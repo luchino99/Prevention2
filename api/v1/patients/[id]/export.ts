@@ -33,7 +33,11 @@ import { requireTenantMember } from '../../../../backend/src/middleware/rbac.js'
 import { applySecurityHeaders } from '../../../../backend/src/middleware/security-headers.js';
 import { checkRateLimitAsync, applyRateLimitHeaders } from '../../../../backend/src/middleware/rate-limit.js';
 import { supabaseAdmin } from '../../../../backend/src/config/supabase.js';
-import { recordAudit } from '../../../../backend/src/audit/audit-logger.js';
+import { recordAuditStrict, AuditWriteError } from '../../../../backend/src/audit/audit-logger.js';
+import {
+  replyDbError,
+  replyError,
+} from '../../../../backend/src/middleware/http-errors.js';
 
 const UUID_RX = /^[0-9a-fA-F-]{36}$/;
 
@@ -54,21 +58,21 @@ async function handleExport(req: any, res: VercelResponse, patientId: string): P
     .maybeSingle();
 
   if (patientErr) {
-    res.status(500).json({ error: { code: 'DB_ERROR', message: patientErr.message } });
+    replyDbError(res, patientErr, 'patients.export.patient');
     return;
   }
   if (!patient) {
-    res.status(404).json({ error: { code: 'PATIENT_NOT_FOUND', message: '' } });
+    replyError(res, 404, 'PATIENT_NOT_FOUND');
     return;
   }
   if (req.auth.role !== 'platform_admin' && patient.tenant_id !== req.auth.tenantId) {
-    res.status(403).json({ error: { code: 'CROSS_TENANT_FORBIDDEN', message: '' } });
+    replyError(res, 403, 'CROSS_TENANT_FORBIDDEN');
     return;
   }
 
   // Role gate — assistant_staff excluded from export even if tenant-matched
   if (req.auth.role === 'assistant_staff' || req.auth.role === 'patient') {
-    res.status(403).json({ error: { code: 'INSUFFICIENT_ROLE', message: '' } });
+    replyError(res, 403, 'INSUFFICIENT_ROLE');
     return;
   }
 
@@ -82,7 +86,7 @@ async function handleExport(req: any, res: VercelResponse, patientId: string): P
       .eq('is_active', true)
       .maybeSingle();
     if (!link) {
-      res.status(403).json({ error: { code: 'NO_PATIENT_LINK', message: '' } });
+      replyError(res, 403, 'NO_PATIENT_LINK');
       return;
     }
   }
@@ -168,19 +172,35 @@ async function handleExport(req: any, res: VercelResponse, patientId: string): P
     .select('id')
     .maybeSingle();
 
-  // ----- Audit -----
-  await recordAudit(req.auth, {
-    action: 'patient.export',
-    resourceType: 'patient',
-    resourceId: patientId,
-    metadata: {
-      dsr_id: dsrRow?.id ?? null,
-      assessments_count: assessments.data?.length ?? 0,
-      alerts_count: alerts.data?.length ?? 0,
-      consents_count: consents.data?.length ?? 0,
-      reports_count: reportExports.data?.length ?? 0,
-    },
-  });
+  // ----- B-09 audit guarantee -----
+  // GDPR Art.15/20 export is a high-impact PHI release; the audit row is the
+  // primary evidence that the request was honoured (Art.30 §1 record). If we
+  // can't write it, refuse to ship the envelope to the caller.
+  // recordAuditStrict throws AuditWriteError on persistence failure so this
+  // catch branch is reachable in practice.
+  try {
+    await recordAuditStrict(req.auth, {
+      action: 'patient.export',
+      resourceType: 'patient',
+      resourceId: patientId,
+      metadata: {
+        dsr_id: dsrRow?.id ?? null,
+        assessments_count: assessments.data?.length ?? 0,
+        alerts_count: alerts.data?.length ?? 0,
+        consents_count: consents.data?.length ?? 0,
+        reports_count: reportExports.data?.length ?? 0,
+      },
+    });
+  } catch (auditErr) {
+    // eslint-disable-next-line no-console
+    console.error('[patients.export] audit write failed', {
+      patientId,
+      isAuditWriteError: auditErr instanceof AuditWriteError,
+      auditErr,
+    });
+    replyError(res, 500, 'AUDIT_WRITE_FAILED');
+    return;
+  }
 
   // ----- Envelope -----
   const envelope = {
@@ -225,13 +245,13 @@ export default withAuth(async (req, res: VercelResponse) => {
 
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET');
-    res.status(405).json({ error: { code: 'METHOD_NOT_ALLOWED', message: '' } });
+    replyError(res, 405, 'METHOD_NOT_ALLOWED');
     return;
   }
 
   const patientId = getPatientId(req);
   if (!patientId) {
-    res.status(400).json({ error: { code: 'INVALID_ID', message: '' } });
+    replyError(res, 400, 'INVALID_ID');
     return;
   }
 
@@ -239,7 +259,9 @@ export default withAuth(async (req, res: VercelResponse) => {
   const rl = await checkRateLimitAsync(req, { routeId: 'patient.export', max: 5, windowMs: 60_000 });
   applyRateLimitHeaders(res, rl);
   if (!rl.allowed) {
-    res.status(429).json({ error: { code: 'RATE_LIMITED', message: '' } });
+    replyError(res, 429, 'RATE_LIMITED', {
+      retryAfterSec: Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000)),
+    });
     return;
   }
 

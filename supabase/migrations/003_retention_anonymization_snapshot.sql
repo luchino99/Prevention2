@@ -240,9 +240,15 @@ BEGIN
   -- 3. Purge patient-originated free text from alerts & followup plans
   UPDATE alerts SET message = '[anonymized]' WHERE patient_id = p_patient_id;
 
-  -- 4. Audit the action (service role context)
+  -- 4. Audit the action (service role context).
+  -- NOTE: canonical column names per 001_schema_foundation.sql §15
+  -- are `metadata_json` (NOT `metadata`) and `ip_hash` (NOT
+  -- `ip_address_hash`). Postgres does not validate column names in
+  -- plpgsql function bodies at definition time, so the previous wrong
+  -- names compiled but would fail at runtime the first time the cron
+  -- worker actually invoked this function on a soft-deleted patient.
   INSERT INTO audit_events(
-    tenant_id, actor_user_id, action, entity_type, entity_id, metadata, ip_address_hash
+    tenant_id, actor_user_id, action, entity_type, entity_id, metadata_json, ip_hash
   ) VALUES (
     v_tenant, p_actor_user_id, 'patient.anonymize', 'patient', p_patient_id,
     jsonb_build_object('reason', 'retention_policy_or_dsr'), NULL

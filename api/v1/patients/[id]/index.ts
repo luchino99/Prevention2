@@ -13,8 +13,13 @@ import { requireTenantMember, requireClinicalWrite, requireTenantAdmin } from '.
 import { applySecurityHeaders } from '../../../../backend/src/middleware/security-headers.js';
 import { checkRateLimit, RATE_LIMITS, applyRateLimitHeaders } from '../../../../backend/src/middleware/rate-limit.js';
 import { supabaseAdmin } from '../../../../backend/src/config/supabase.js';
-import { recordAudit } from '../../../../backend/src/audit/audit-logger.js';
+import {
+  recordAudit,
+  recordAuditStrict,
+  AuditWriteError,
+} from '../../../../backend/src/audit/audit-logger.js';
 import { updatePatientSchema } from '../../../../shared/schemas/patient-input.js';
+import { replyDbError, replyValidationError, replyError } from '../../../../backend/src/middleware/http-errors.js';
 
 function getPatientId(req: VercelRequest): string | null {
   const id = req.query.id;
@@ -29,7 +34,9 @@ async function loadPatient(req: any, res: VercelResponse, patientId: string): Pr
   if (req.auth.role !== 'platform_admin') q = q.eq('tenant_id', req.auth.tenantId);
   const { data, error } = await q.single();
   if (error || !data) {
-    res.status(404).json({ error: { code: 'PATIENT_NOT_FOUND', message: 'Patient not found' } });
+    // Return 404 even on real DB errors — disclosing "DB error" vs "not
+    // found" lets an attacker enumerate patient IDs across tenants.
+    replyError(res, 404, 'PATIENT_NOT_FOUND');
     return null;
   }
   return data;
@@ -74,9 +81,7 @@ async function handleGet(req: any, res: VercelResponse, patientId: string): Prom
 async function handleUpdate(req: any, res: VercelResponse, patientId: string): Promise<void> {
   const parse = updatePatientSchema.safeParse(req.body);
   if (!parse.success) {
-    res.status(422).json({
-      error: { code: 'VALIDATION_FAILED', message: 'Invalid payload', details: parse.error.issues },
-    });
+    replyValidationError(res, parse.error.issues, 'patients.update.body');
     return;
   }
   const patient = await loadPatient(req, res, patientId);
@@ -128,7 +133,7 @@ async function handleUpdate(req: any, res: VercelResponse, patientId: string): P
   }
 
   if (Object.keys(update).length === 0) {
-    res.status(400).json({ error: { code: 'NO_FIELDS', message: 'No fields to update' } });
+    replyError(res, 400, 'NO_FIELDS');
     return;
   }
 
@@ -140,7 +145,7 @@ async function handleUpdate(req: any, res: VercelResponse, patientId: string): P
     .single();
 
   if (error) {
-    res.status(500).json({ error: { code: 'DB_ERROR', message: error.message } });
+    replyDbError(res, error, 'patients.update');
     return;
   }
 
@@ -155,6 +160,14 @@ async function handleUpdate(req: any, res: VercelResponse, patientId: string): P
 }
 
 async function handleDelete(req: any, res: VercelResponse, patientId: string): Promise<void> {
+  // B-07 — DELETE patient privilege:
+  //   * `requireTenantAdmin` (route-level) ensures only tenant_admin /
+  //     platform_admin can call this handler.
+  //   * `loadPatient` enforces same-tenant — non-platform admins cannot
+  //     delete a patient outside their tenant_id.
+  //   * `recordAudit` MUST succeed before we 204 (B-09); a deletion that
+  //     leaves no audit trail is, for our compliance posture, worse than
+  //     refusing the deletion.
   const patient = await loadPatient(req, res, patientId);
   if (!patient) return;
 
@@ -164,15 +177,32 @@ async function handleDelete(req: any, res: VercelResponse, patientId: string): P
     .eq('id', patientId);
 
   if (error) {
-    res.status(500).json({ error: { code: 'DB_ERROR', message: error.message } });
+    replyDbError(res, error, 'patients.delete');
     return;
   }
 
-  await recordAudit(req.auth, {
-    action: 'patient.delete',
-    resourceType: 'patient',
-    resourceId: patientId,
-  });
+  // B-09 — audit guarantee: await + propagate. If the audit write fails we
+  // surface a 500 so the operator notices; the soft-delete is reversible
+  // (anonymisation cron runs T+30d) so this is the safe direction.
+  // recordAuditStrict throws AuditWriteError on persistence failure (vs.
+  // recordAudit which only logs), so this catch branch is reachable.
+  try {
+    await recordAuditStrict(req.auth, {
+      action: 'patient.delete',
+      resourceType: 'patient',
+      resourceId: patientId,
+      metadata: { tenantId: patient.tenant_id },
+    });
+  } catch (auditErr) {
+    // eslint-disable-next-line no-console
+    console.error('[patients.delete] audit write failed', {
+      patientId,
+      isAuditWriteError: auditErr instanceof AuditWriteError,
+      auditErr,
+    });
+    replyError(res, 500, 'AUDIT_WRITE_FAILED');
+    return;
+  }
 
   res.status(204).end();
 }
@@ -182,14 +212,17 @@ export default withAuth(async (req, res: VercelResponse) => {
 
   const patientId = getPatientId(req);
   if (!patientId) {
-    res.status(400).json({ error: { code: 'INVALID_ID', message: 'Invalid patient id' } });
+    replyError(res, 400, 'INVALID_ID');
     return;
   }
 
   if (req.method === 'GET') {
     const rl = checkRateLimit(req, { routeId: 'patients.read', ...RATE_LIMITS.read });
     applyRateLimitHeaders(res, rl);
-    if (!rl.allowed) return res.status(429).json({ error: { code: 'RATE_LIMITED', message: '' } }) as any;
+    if (!rl.allowed) {
+      replyError(res, 429, 'RATE_LIMITED', { retryAfterSec: Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000)) });
+      return;
+    }
     await requireTenantMember((r, s) => handleGet(r, s, patientId))(req as any, res);
     return;
   }
@@ -197,7 +230,10 @@ export default withAuth(async (req, res: VercelResponse) => {
   if (req.method === 'PATCH') {
     const rl = checkRateLimit(req, { routeId: 'patients.update', ...RATE_LIMITS.write });
     applyRateLimitHeaders(res, rl);
-    if (!rl.allowed) return res.status(429).json({ error: { code: 'RATE_LIMITED', message: '' } }) as any;
+    if (!rl.allowed) {
+      replyError(res, 429, 'RATE_LIMITED', { retryAfterSec: Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000)) });
+      return;
+    }
     await requireClinicalWrite((r, s) => handleUpdate(r, s, patientId))(req as any, res);
     return;
   }
@@ -205,11 +241,14 @@ export default withAuth(async (req, res: VercelResponse) => {
   if (req.method === 'DELETE') {
     const rl = checkRateLimit(req, { routeId: 'patients.delete', ...RATE_LIMITS.write });
     applyRateLimitHeaders(res, rl);
-    if (!rl.allowed) return res.status(429).json({ error: { code: 'RATE_LIMITED', message: '' } }) as any;
+    if (!rl.allowed) {
+      replyError(res, 429, 'RATE_LIMITED', { retryAfterSec: Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000)) });
+      return;
+    }
     await requireTenantAdmin((r, s) => handleDelete(r, s, patientId))(req as any, res);
     return;
   }
 
   res.setHeader('Allow', 'GET, PATCH, DELETE');
-  res.status(405).json({ error: { code: 'METHOD_NOT_ALLOWED', message: '' } });
+  replyError(res, 405, 'METHOD_NOT_ALLOWED');
 });

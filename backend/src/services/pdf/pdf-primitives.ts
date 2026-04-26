@@ -106,6 +106,38 @@ export function beginAtomicSection(
   }
 }
 
+/**
+ * Atomic-block guard for sub-section units (bullets, cards, structured
+ * rows) that MUST start AND end on the same page.
+ *
+ * Functionally identical to `ensureSpace`, exposed under a distinct name
+ * so call sites can express intent precisely:
+ *
+ *   - `ensureSpace(h)` says "the next drawable needs at least `h`pt".
+ *     The drawable is allowed to span pages internally.
+ *   - `beginAtomicBlock(h)` says "the next `h`pt of drawing is one
+ *     indivisible unit; if it does not fit, push the whole unit to
+ *     the next page".
+ *
+ * Callers pass the PRE-MEASURED total height of the entire unit
+ * (title + wrapped body + footer line(s) + bottom gap). That measurement
+ * is what makes the guard work — under-measuring re-introduces
+ * mid-page splits, over-measuring wastes vertical space.
+ *
+ * Why this is necessary in clinical PDFs:
+ *   A bullet like "•⃗ Repeat HbA1c — every 3 months" with its rationale
+ *   wrapped on the next line and a guideline citation below MUST not
+ *   end up with the title on one page and the rationale on the next.
+ *   In a clinical document that fragmentation makes the bullet harder
+ *   to interpret and looks unprofessional. This guard prevents it
+ *   without forcing the parent SECTION to be atomic.
+ *
+ * Pure side-effect on `ctx`: either no-op, or a single `newPage`.
+ */
+export function beginAtomicBlock(ctx: RenderCtx, neededHeight: number): void {
+  ensureSpace(ctx, neededHeight);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Text primitives
 // ─────────────────────────────────────────────────────────────────────────────

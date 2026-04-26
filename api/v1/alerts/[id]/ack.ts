@@ -11,7 +11,8 @@ import { requireClinicalWrite } from '../../../../backend/src/middleware/rbac.js
 import { applySecurityHeaders } from '../../../../backend/src/middleware/security-headers.js';
 import { checkRateLimit, RATE_LIMITS, applyRateLimitHeaders } from '../../../../backend/src/middleware/rate-limit.js';
 import { supabaseAdmin } from '../../../../backend/src/config/supabase.js';
-import { recordAudit } from '../../../../backend/src/audit/audit-logger.js';
+import { recordAuditStrict, AuditWriteError } from '../../../../backend/src/audit/audit-logger.js';
+import { replyDbError, replyValidationError, replyError } from '../../../../backend/src/middleware/http-errors.js';
 
 const bodySchema = z.object({
   action: z.enum(['acknowledge', 'resolve', 'dismiss']),
@@ -42,26 +43,27 @@ export default withAuth(async (req, res: VercelResponse) => {
 
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
-    res.status(405).json({ error: { code: 'METHOD_NOT_ALLOWED', message: '' } });
+    replyError(res, 405, 'METHOD_NOT_ALLOWED');
     return;
   }
 
   const id = getId(req);
   if (!id) {
-    res.status(400).json({ error: { code: 'INVALID_ID', message: '' } });
+    replyError(res, 400, 'INVALID_ID');
     return;
   }
 
   const rl = checkRateLimit(req, { routeId: 'alerts.ack', ...RATE_LIMITS.write });
   applyRateLimitHeaders(res, rl);
-  if (!rl.allowed) return res.status(429).json({ error: { code: 'RATE_LIMITED', message: '' } }) as any;
+  if (!rl.allowed) {
+    replyError(res, 429, 'RATE_LIMITED', { retryAfterSec: Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000)) });
+    return;
+  }
 
   await requireClinicalWrite(async (r: any, s: VercelResponse) => {
     const parse = bodySchema.safeParse(req.body);
     if (!parse.success) {
-      s.status(422).json({
-        error: { code: 'VALIDATION_FAILED', message: 'Invalid payload', details: parse.error.issues },
-      });
+      replyValidationError(s, parse.error.issues, 'alerts.ack.body');
       return;
     }
     const { action, note } = parse.data as {
@@ -76,11 +78,13 @@ export default withAuth(async (req, res: VercelResponse) => {
       .eq('id', id)
       .single();
     if (loadErr || !alert) {
-      s.status(404).json({ error: { code: 'ALERT_NOT_FOUND', message: '' } });
+      // Collapse "real DB error" and "row absent" to a single 404 — disclosing
+      // which row exists vs not is itself a tenant-leak primitive.
+      replyError(s, 404, 'ALERT_NOT_FOUND');
       return;
     }
     if (r.auth.role !== 'platform_admin' && alert.tenant_id !== r.auth.tenantId) {
-      s.status(403).json({ error: { code: 'CROSS_TENANT_FORBIDDEN', message: '' } });
+      replyError(s, 403, 'CROSS_TENANT_FORBIDDEN');
       return;
     }
 
@@ -130,16 +134,33 @@ export default withAuth(async (req, res: VercelResponse) => {
       .single();
 
     if (error) {
-      s.status(500).json({ error: { code: 'DB_ERROR', message: error.message } });
+      replyDbError(s, error, 'alerts.ack.update');
       return;
     }
 
-    await recordAudit(r.auth, {
-      action: ACTION_TO_AUDIT[action],
-      resourceType: 'alert',
-      resourceId: id,
-      metadata: { previous_status: alert.status, new_status: newStatus },
-    });
+    // B-09 — audit guarantee for state-changing alert actions. We DO want
+    // alert acks to fail loudly if the audit row can't be written; the
+    // alert state has changed and the reviewer needs assurance this is
+    // recorded. recordAuditStrict throws AuditWriteError if the row cannot
+    // be persisted (vs. recordAudit which only logs), so the catch branch
+    // here is reachable in practice.
+    try {
+      await recordAuditStrict(r.auth, {
+        action: ACTION_TO_AUDIT[action],
+        resourceType: 'alert',
+        resourceId: id,
+        metadata: { previous_status: alert.status, new_status: newStatus },
+      });
+    } catch (auditErr) {
+      // eslint-disable-next-line no-console
+      console.error('[alerts.ack] audit write failed', {
+        id,
+        isAuditWriteError: auditErr instanceof AuditWriteError,
+        auditErr,
+      });
+      replyError(s, 500, 'AUDIT_WRITE_FAILED');
+      return;
+    }
 
     s.status(200).json({ alert: data });
   })(req as any, res);

@@ -7,13 +7,14 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { withAuth } from '../../backend/src/middleware/auth-middleware.js';
 import { applySecurityHeaders } from '../../backend/src/middleware/security-headers.js';
 import { supabaseAdmin } from '../../backend/src/config/supabase.js';
+import { replyError } from '../../backend/src/middleware/http-errors.js';
 
 export default withAuth(async (req, res: VercelResponse) => {
   applySecurityHeaders(res);
 
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET');
-    res.status(405).json({ error: { code: 'METHOD_NOT_ALLOWED', message: 'GET only' } });
+    replyError(res, 405, 'METHOD_NOT_ALLOWED');
     return;
   }
 
@@ -21,10 +22,13 @@ export default withAuth(async (req, res: VercelResponse) => {
     .from('users')
     .select('id, email, full_name, role, tenant_id, created_at')
     .eq('id', req.auth.userId)
-    .single();
+    .maybeSingle();
 
   if (error || !user) {
-    res.status(404).json({ error: { code: 'USER_NOT_FOUND', message: 'User not found' } });
+    // Collapse the PostgREST "0 rows" path and any real DB error into
+    // one opaque 404. Differentiating them would let an attacker probe
+    // user existence without needing the matching JWT.
+    replyError(res, 404, 'USER_NOT_FOUND');
     return;
   }
 

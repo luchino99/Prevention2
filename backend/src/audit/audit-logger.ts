@@ -7,8 +7,28 @@
  *   - never records sensitive payload bodies — only metadata
  *   - all CRUD on patients, assessments, consents, and report exports MUST emit an entry
  *
- * The module fails "open" (does not block the caller) when the DB write errors,
- * but surfaces the failure via console.error + a sentry-friendly log shape.
+ * Two write modes are exposed:
+ *
+ *   - `recordAudit`         — best-effort observability. Used for low-risk
+ *                             reads (e.g. patient.read, dsr.list) where a
+ *                             missing audit line is a monitoring concern but
+ *                             must not break the user-facing operation. All
+ *                             errors are caught and logged.
+ *
+ *   - `recordAuditStrict`   — guarantee mode (B-09). Used for privacy-
+ *                             significant state changes (consent grant /
+ *                             revoke, patient delete, report generate /
+ *                             download, DSR transitions). Throws
+ *                             `AuditWriteError` on failure so the caller can
+ *                             abort the surrounding HTTP request with
+ *                             AUDIT_WRITE_FAILED. Pick this whenever the
+ *                             alternative — silently mutating state without
+ *                             an immutable audit row — would damage our
+ *                             compliance posture.
+ *
+ * NOTE: neither variant participates in the upstream DB transaction. A
+ * future hardening pass may move the most sensitive flows into a
+ * single-RPC pattern that emits the audit row inside the same TX.
  */
 
 import { supabaseAdmin } from '../config/supabase.js';
@@ -41,7 +61,16 @@ export type AuditAction =
   | 'admin.role_change'
   | 'admin.tenant_update'
   | 'admin.user_suspend'
-  | 'admin.user_unsuspend';
+  | 'admin.user_unsuspend'
+  // GDPR Data Subject Request lifecycle (B-14). Each transition is a
+  // privacy-significant event and MUST land in the immutable audit log.
+  | 'dsr.create'
+  | 'dsr.list'
+  | 'dsr.read'
+  | 'dsr.start'
+  | 'dsr.fulfill'
+  | 'dsr.reject'
+  | 'dsr.cancel';
 
 export type AuditResourceType =
   | 'user'
@@ -54,7 +83,8 @@ export type AuditResourceType =
   | 'alert'
   | 'consent'
   | 'report_export'
-  | 'session';
+  | 'session'
+  | 'data_subject_request';
 
 export interface AuditEvent {
   action: AuditAction;
@@ -99,32 +129,84 @@ function sanitizeMetadata(metadata?: Record<string, unknown>): Record<string, un
   return Object.keys(clean).length > 0 ? clean : null;
 }
 
-/** Primary API — record an audit event. Non-throwing: failures are logged. */
+/**
+ * Build the canonical audit_events row from an AuthContext + AuditEvent.
+ *
+ * Column names align with supabase/migrations/001_schema_foundation.sql
+ * (table `audit_events`). `outcome`, `failure_reason`, `user_agent` are
+ * added by migration 004_audit_events_extensions.sql. The internal
+ * AuditEvent TypeScript shape keeps its names (resourceType, resourceId,
+ * metadata) to avoid breaking every call-site; only the DB row mapping
+ * translates them to the canonical schema names.
+ */
+function buildAuditRow(
+  auth: AuthContext | null,
+  event: AuditEvent,
+): Record<string, unknown> {
+  return {
+    tenant_id: auth?.tenantId ?? event.actor?.tenantId ?? null,
+    actor_user_id: auth?.userId ?? event.actor?.userId ?? null,
+    actor_role: auth?.role ?? event.actor?.role ?? null,
+    action: event.action,
+    entity_type: event.resourceType,
+    entity_id: event.resourceId ?? null,
+    outcome: event.outcome ?? 'success',
+    failure_reason: event.failureReason ?? null,
+    ip_hash: auth?.ipHash ?? event.actor?.ipHash ?? null,
+    user_agent: auth?.userAgent ?? event.actor?.userAgent ?? null,
+    metadata_json: sanitizeMetadata(event.metadata),
+  };
+}
+
+/**
+ * AuditWriteError — thrown by `recordAuditStrict` when the immutable
+ * audit row could not be persisted. Callers in guaranteed-audit pathways
+ * (B-09) must catch this and abort the surrounding HTTP request with
+ * AUDIT_WRITE_FAILED so we never mutate state without a matching audit row.
+ *
+ * Carries `action` and `resourceType` for log correlation. The original
+ * driver/PG error is exposed via the standard ES2022 `Error.cause` field
+ * (set through the `super(msg, { cause })` overload) so downstream
+ * observability tools that already understand `Error.cause` can pick it up.
+ */
+export class AuditWriteError extends Error {
+  public readonly action: AuditAction;
+  public readonly resourceType: AuditResourceType;
+
+  constructor(
+    action: AuditAction,
+    resourceType: AuditResourceType,
+    cause: unknown,
+  ) {
+    super(
+      `audit write failed for action='${action}' resource='${resourceType}'`,
+      { cause },
+    );
+    this.name = 'AuditWriteError';
+    this.action = action;
+    this.resourceType = resourceType;
+  }
+}
+
+/**
+ * Primary API — record an audit event in best-effort observability mode.
+ *
+ * Non-throwing on purpose: this variant is for low-risk read events where
+ * losing the audit line is unfortunate but must not abort the user-facing
+ * operation (e.g. patient.read, dsr.list). Failures are logged in a
+ * structured shape so they can be picked up by log-based monitors.
+ *
+ * For privacy-significant write events (consent, DSR transitions, patient
+ * delete, report generation/download) use `recordAuditStrict` instead so a
+ * failed audit row is surfaced to the caller as AUDIT_WRITE_FAILED and the
+ * surrounding request is aborted.
+ */
 export async function recordAudit(
   auth: AuthContext | null,
   event: AuditEvent
 ): Promise<void> {
   try {
-    // Column names align with supabase/migrations/001_schema_foundation.sql
-    // (table `audit_events`). `outcome`, `failure_reason`, `user_agent` are
-    // added by migration 004_audit_events_extensions.sql. The internal
-    // AuditEvent TypeScript shape keeps its names (resourceType, resourceId,
-    // metadata) to avoid breaking every call-site; only the DB row mapping
-    // translates them to the canonical schema names.
-    const row = {
-      tenant_id: auth?.tenantId ?? event.actor?.tenantId ?? null,
-      actor_user_id: auth?.userId ?? event.actor?.userId ?? null,
-      actor_role: auth?.role ?? event.actor?.role ?? null,
-      action: event.action,
-      entity_type: event.resourceType,
-      entity_id: event.resourceId ?? null,
-      outcome: event.outcome ?? 'success',
-      failure_reason: event.failureReason ?? null,
-      ip_hash: auth?.ipHash ?? event.actor?.ipHash ?? null,
-      user_agent: auth?.userAgent ?? event.actor?.userAgent ?? null,
-      metadata_json: sanitizeMetadata(event.metadata),
-    };
-
+    const row = buildAuditRow(auth, event);
     const { error } = await supabaseAdmin.from('audit_events').insert(row);
     if (error) {
       // Some PostgREST error shapes surface the text under `.details` or
@@ -139,6 +221,63 @@ export async function recordAudit(
     }
   } catch (err) {
     console.error('[audit] unexpected error', err);
+  }
+}
+
+/**
+ * Strict variant — record an audit event and THROW if the row cannot be
+ * persisted. Use only for privacy-significant state changes where a missing
+ * audit entry would break our compliance posture (B-09 guarantee).
+ *
+ * Throws `AuditWriteError`. Callers MUST translate this into an HTTP
+ * response via `replyError(res, 500, 'AUDIT_WRITE_FAILED')` and roll back
+ * any logical state they cannot un-do (or, ideally, only call this AFTER
+ * the state mutation has committed so the worst case is a duplicate-write
+ * attempt rather than a silent state change).
+ *
+ * NOTE on transactional semantics: this function does NOT wrap the audit
+ * write in the same DB transaction as the upstream business write. We
+ * accept the (very narrow) window where the business write committed but
+ * the audit write failed — surfaced to the operator via AUDIT_WRITE_FAILED
+ * and a server log line — in exchange for not having to plumb a single
+ * RPC/transaction through every endpoint. A future hardening pass may move
+ * the most sensitive flows (consent revoke, patient delete, DSR fulfil)
+ * into transactional RPCs that emit the audit row inside the same TX.
+ */
+export async function recordAuditStrict(
+  auth: AuthContext | null,
+  event: AuditEvent,
+): Promise<void> {
+  let row: Record<string, unknown>;
+  try {
+    row = buildAuditRow(auth, event);
+  } catch (err) {
+    console.error('[audit:strict] row build failed', {
+      action: event.action,
+      resource: event.resourceType,
+      err,
+    });
+    throw new AuditWriteError(event.action, event.resourceType, err);
+  }
+
+  let dbError: unknown = null;
+  try {
+    const { error } = await supabaseAdmin.from('audit_events').insert(row);
+    if (error) dbError = error;
+  } catch (err) {
+    dbError = err;
+  }
+
+  if (dbError) {
+    const e = dbError as { message?: string; details?: string; hint?: string; code?: string };
+    console.error('[audit:strict] insert failed', {
+      action: event.action,
+      resource: event.resourceType,
+      resourceId: event.resourceId ?? null,
+      dbError: e.message ?? e.details ?? e.hint ?? 'unknown',
+      dbCode: e.code ?? 'unknown',
+    });
+    throw new AuditWriteError(event.action, event.resourceType, dbError);
   }
 }
 

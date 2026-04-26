@@ -23,9 +23,9 @@ import { checkRateLimit, RATE_LIMITS, applyRateLimitHeaders } from '../../../../
 import {
   loadAssessmentSnapshot,
   deleteAssessment,
-  AssessmentServiceError,
 } from '../../../../backend/src/services/assessment-service.js';
 import { recordAudit } from '../../../../backend/src/audit/audit-logger.js';
+import { replyError, replyServiceError } from '../../../../backend/src/middleware/http-errors.js';
 
 function getId(req: VercelRequest): string | null {
   const id = req.query.id;
@@ -40,13 +40,13 @@ export default withAuth(async (req, res: VercelResponse) => {
   const method = req.method ?? 'GET';
   if (method !== 'GET' && method !== 'DELETE') {
     res.setHeader('Allow', 'GET, DELETE');
-    res.status(405).json({ error: { code: 'METHOD_NOT_ALLOWED', message: '' } });
+    replyError(res, 405, 'METHOD_NOT_ALLOWED');
     return;
   }
 
   const id = getId(req);
   if (!id) {
-    res.status(400).json({ error: { code: 'INVALID_ID', message: '' } });
+    replyError(res, 400, 'INVALID_ID');
     return;
   }
 
@@ -57,25 +57,32 @@ export default withAuth(async (req, res: VercelResponse) => {
     : { routeId: 'assessments.read',   ...RATE_LIMITS.read };
   const rl = checkRateLimit(req, rlConfig);
   applyRateLimitHeaders(res, rl);
-  if (!rl.allowed) return res.status(429).json({ error: { code: 'RATE_LIMITED', message: '' } }) as any;
+  if (!rl.allowed) {
+    replyError(res, 429, 'RATE_LIMITED', { retryAfterSec: Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000)) });
+    return;
+  }
 
   await requireTenantMember(async (r: any, s: VercelResponse) => {
     if (method === 'GET') {
       try {
         const snapshot = await loadAssessmentSnapshot(r.auth, id);
-        await recordAudit(r.auth, {
-          action: 'assessment.read',
-          resourceType: 'assessment',
-          resourceId: id,
-        });
+        // B-10 — sensitive read audit. We log every assessment snapshot
+        // load, regardless of who triggered it. recordAudit is wrapped in
+        // its own try so an audit failure does not block clinical reads,
+        // but we DO log the failure server-side.
+        try {
+          await recordAudit(r.auth, {
+            action: 'assessment.read',
+            resourceType: 'assessment',
+            resourceId: id,
+          });
+        } catch (auditErr) {
+          // eslint-disable-next-line no-console
+          console.error('[assessment.read] audit best-effort failed', { id, auditErr });
+        }
         s.status(200).json({ snapshot });
       } catch (err: any) {
-        if (err instanceof AssessmentServiceError) {
-          s.status(err.status).json({ error: { code: err.code, message: err.message } });
-          return;
-        }
-        console.error('[assessments.read] unexpected', err);
-        s.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Read failed' } });
+        replyServiceError(s, err, 'assessments.read');
       }
       return;
     }
@@ -96,12 +103,7 @@ export default withAuth(async (req, res: VercelResponse) => {
         dueItemsRemoved: receipt.dueItemsRemoved,
       });
     } catch (err: any) {
-      if (err instanceof AssessmentServiceError) {
-        s.status(err.status).json({ error: { code: err.code, message: err.message } });
-        return;
-      }
-      console.error('[assessments.delete] unexpected', err);
-      s.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Delete failed' } });
+      replyServiceError(s, err, 'assessments.delete');
     }
   })(req as any, res);
 });

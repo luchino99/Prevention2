@@ -16,6 +16,7 @@ import { checkRateLimit, RATE_LIMITS, applyRateLimitHeaders } from '../../../bac
 import { supabaseAdmin } from '../../../backend/src/config/supabase.js';
 import { recordAudit } from '../../../backend/src/audit/audit-logger.js';
 import { createPatientSchema, getPatientDisplayName } from '../../../shared/schemas/patient-input.js';
+import { replyDbError, replyValidationError, replyError } from '../../../backend/src/middleware/http-errors.js';
 
 const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -26,13 +27,7 @@ const listQuerySchema = z.object({
 async function handleList(req: any, res: VercelResponse): Promise<void> {
   const parse = listQuerySchema.safeParse(req.query);
   if (!parse.success) {
-    res.status(422).json({
-      error: {
-        code: 'VALIDATION_FAILED',
-        message: 'Invalid query',
-        details: parse.error.issues,
-      },
-    });
+    replyValidationError(res, parse.error.issues, 'patients.list.query');
     return;
   }
   const { page, pageSize, search } = parse.data;
@@ -63,7 +58,7 @@ async function handleList(req: any, res: VercelResponse): Promise<void> {
 
   const { data, error, count } = await query;
   if (error) {
-    res.status(500).json({ error: { code: 'DB_ERROR', message: error.message } });
+    replyDbError(res, error, 'patients.list.select');
     return;
   }
 
@@ -76,21 +71,13 @@ async function handleList(req: any, res: VercelResponse): Promise<void> {
 async function handleCreate(req: any, res: VercelResponse): Promise<void> {
   const parse = createPatientSchema.safeParse(req.body);
   if (!parse.success) {
-    res.status(422).json({
-      error: {
-        code: 'VALIDATION_FAILED',
-        message: 'Invalid patient payload',
-        details: parse.error.issues,
-      },
-    });
+    replyValidationError(res, parse.error.issues, 'patients.create.body');
     return;
   }
   const payload = parse.data;
 
   if (!req.auth.tenantId) {
-    res.status(400).json({
-      error: { code: 'NO_TENANT', message: 'User is not associated with a tenant' },
-    });
+    replyError(res, 400, 'NO_TENANT');
     return;
   }
 
@@ -137,7 +124,7 @@ async function handleCreate(req: any, res: VercelResponse): Promise<void> {
     .single();
 
   if (error) {
-    res.status(500).json({ error: { code: 'DB_ERROR', message: error.message } });
+    replyDbError(res, error, 'patients.create.insert');
     return;
   }
 
@@ -191,7 +178,7 @@ export default withAuth(async (req: VercelRequest & { auth: any }, res: VercelRe
     const rl = checkRateLimit(req, { routeId: 'patients.list', ...RATE_LIMITS.read });
     applyRateLimitHeaders(res, rl);
     if (!rl.allowed) {
-      res.status(429).json({ error: { code: 'RATE_LIMITED', message: 'Too many requests' } });
+      replyError(res, 429, 'RATE_LIMITED', { retryAfterSec: Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000)) });
       return;
     }
     await requireTenantMember((r, s) => handleList(r, s))(req as any, res);
@@ -202,7 +189,7 @@ export default withAuth(async (req: VercelRequest & { auth: any }, res: VercelRe
     const rl = checkRateLimit(req, { routeId: 'patients.create', ...RATE_LIMITS.write });
     applyRateLimitHeaders(res, rl);
     if (!rl.allowed) {
-      res.status(429).json({ error: { code: 'RATE_LIMITED', message: 'Too many requests' } });
+      replyError(res, 429, 'RATE_LIMITED', { retryAfterSec: Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000)) });
       return;
     }
     await requireClinicalWrite((r, s) => handleCreate(r, s))(req as any, res);
@@ -210,5 +197,5 @@ export default withAuth(async (req: VercelRequest & { auth: any }, res: VercelRe
   }
 
   res.setHeader('Allow', 'GET, POST');
-  res.status(405).json({ error: { code: 'METHOD_NOT_ALLOWED', message: 'GET or POST only' } });
+  replyError(res, 405, 'METHOD_NOT_ALLOWED');
 });

@@ -22,6 +22,8 @@ import { requireTenantMember } from '../../../backend/src/middleware/rbac.js';
 import { applySecurityHeaders } from '../../../backend/src/middleware/security-headers.js';
 import { checkRateLimit, RATE_LIMITS, applyRateLimitHeaders } from '../../../backend/src/middleware/rate-limit.js';
 import { supabaseAdmin } from '../../../backend/src/config/supabase.js';
+import { recordAudit } from '../../../backend/src/audit/audit-logger.js';
+import { replyDbError, replyValidationError, replyError } from '../../../backend/src/middleware/http-errors.js';
 
 const querySchema = z.object({
   status: z.enum(['open', 'acknowledged', 'resolved', 'dismissed']).default('open'),
@@ -35,13 +37,7 @@ const querySchema = z.object({
 async function handleList(req: any, res: VercelResponse): Promise<void> {
   const parse = querySchema.safeParse(req.query);
   if (!parse.success) {
-    res.status(422).json({
-      error: {
-        code: 'VALIDATION_FAILED',
-        message: 'Invalid query',
-        details: parse.error.issues,
-      },
-    });
+    replyValidationError(res, parse.error.issues, 'alerts.list.query');
     return;
   }
   const q = parse.data;
@@ -68,8 +64,32 @@ async function handleList(req: any, res: VercelResponse): Promise<void> {
 
   const { data, error, count } = await query;
   if (error) {
-    res.status(500).json({ error: { code: 'DB_ERROR', message: error.message } });
+    replyDbError(res, error, 'alerts.list.select');
     return;
+  }
+
+  // B-10 — sensitive read audit. Listing alerts surfaces PHI (titles
+  // include patient-facing context). We log the read intent + filter set,
+  // not the row IDs (volume control). Audit failure is logged only —
+  // alert reads must not be blocked by an audit hiccup.
+  try {
+    await recordAudit(req.auth, {
+      action: 'alert.list',
+      resourceType: 'alert',
+      resourceId: null,
+      metadata: {
+        status: q.status,
+        severity: q.severity ?? null,
+        audience: q.audience ?? null,
+        patient_id: q.patientId ?? null,
+        result_count: data?.length ?? 0,
+        page: q.page,
+        page_size: q.pageSize,
+      },
+    });
+  } catch (auditErr) {
+    // eslint-disable-next-line no-console
+    console.error('[alerts.list] audit best-effort failed', { auditErr });
   }
 
   res.status(200).json({
@@ -83,14 +103,14 @@ export default withAuth(async (req, res: VercelResponse) => {
 
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET');
-    res.status(405).json({ error: { code: 'METHOD_NOT_ALLOWED', message: 'GET only' } });
+    replyError(res, 405, 'METHOD_NOT_ALLOWED');
     return;
   }
 
   const rl = checkRateLimit(req, { routeId: 'alerts.list', ...RATE_LIMITS.read });
   applyRateLimitHeaders(res, rl);
   if (!rl.allowed) {
-    res.status(429).json({ error: { code: 'RATE_LIMITED', message: 'Too many requests' } });
+    replyError(res, 429, 'RATE_LIMITED', { retryAfterSec: Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000)) });
     return;
   }
 
