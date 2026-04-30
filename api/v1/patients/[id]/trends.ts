@@ -47,7 +47,7 @@ import { withAuth } from '../../../../backend/src/middleware/auth-middleware.js'
 import { requireTenantMember } from '../../../../backend/src/middleware/rbac.js';
 import { applySecurityHeaders } from '../../../../backend/src/middleware/security-headers.js';
 import {
-  checkRateLimit,
+  checkRateLimitAsync,
   RATE_LIMITS,
   applyRateLimitHeaders,
 } from '../../../../backend/src/middleware/rate-limit.js';
@@ -127,7 +127,7 @@ export default withAuth(async (req, res: VercelResponse) => {
     return;
   }
 
-  const rl = checkRateLimit(req, {
+  const rl = await checkRateLimitAsync(req, {
     routeId: 'patients.trends',
     ...RATE_LIMITS.read,
   });

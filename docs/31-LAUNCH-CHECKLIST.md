@@ -35,7 +35,7 @@
 
 ### A.2 Migrations
 
-- [ ] Migrations 001–012 applied in target Supabase project (in order)
+- [ ] Migrations 001–013 applied in target Supabase project (in order)
 - [ ] `select * from pg_extension` shows expected extensions
 - [ ] Both ENABLE and FORCE RLS active on every PHI table (B-01
       verification — set by migration 012). Use the canonical query
@@ -103,6 +103,27 @@
 
 **Evidence:** `vercel.json` headers; `26-DEPLOYMENT-RUNBOOK.md §12`.
 
+### A.5b Public security disclosure (M-04, RFC 9116)
+
+- [ ] `security@uelfy.com` mailbox is provisioned and monitored (the
+      single most important box on this page — without it, the
+      `Contact:` line in `security.txt` is dead and our published SLAs
+      cannot be honoured)
+- [ ] `curl -I https://<host>/.well-known/security.txt` returns 200 +
+      `Content-Type: text/plain`
+- [ ] `curl https://<host>/.well-known/security.txt` shows `Expires:`
+      strictly in the future (regenerate yearly per RFC 9116)
+- [ ] `/security.txt` mirror serves the same content as
+      `/.well-known/security.txt` (Vercel rewrite verified)
+- [ ] `/SECURITY.md` (live site) and `SECURITY.md` (repo root) are
+      byte-identical (enforced by `verify-build.mjs` — check the build
+      log shows `SECURITY.md (repo root vs frontend-dist) — identical`)
+- [ ] (Optional) PGP key published at the URL named in `SECURITY.md §6`
+      and the fingerprint added to that section
+
+**Evidence:** `SECURITY.md`, `frontend/.well-known/security.txt`,
+`vercel.json` rewrites, `20-SECURITY.md §13`.
+
 ### A.6 Audit & telemetry
 
 - [ ] `audit_events` table populated within 5 minutes of a test login
@@ -110,13 +131,50 @@
       (post-Phase 7.1 verification)
 - [ ] No `AUDIT_WRITE_FAILED` log lines in last 24 hours of staging
       smoke testing
+- [ ] **Alert wiring (L-04)**: a log filter on
+      `"event":"AUDIT_WRITE_FAILED"` is connected to a destination an
+      on-call engineer actually reads (Slack channel, PagerDuty, email
+      alias). Without this the dashboard query is theoretical. See
+      `27-INCIDENT-RESPONSE.md §11.2` for tier-by-tier thresholds
+- [ ] (Once L-05 lands) Alert wiring on RLS denial signal — same
+      destination
 
-**Evidence:** `21-PRIVACY-TECHNICAL.md §4`, `30-RISK-REGISTER.md` B-09.
+**Evidence:** `21-PRIVACY-TECHNICAL.md §4`, `27-INCIDENT-RESPONSE.md §11`, `30-RISK-REGISTER.md` B-09 / L-04.
+
+### A.6b MFA enforcement for admin roles (L-09)
+
+Procedure for the cutover (do NOT skip step 1, otherwise admins lock
+themselves out of their own platform):
+
+- [ ] Step 1 — every `tenant_admin` and `platform_admin` user opens
+      `/pages/mfa-enroll.html` and completes TOTP enrolment with their
+      authenticator app
+- [ ] Step 2 — confirm each admin can sign in and the resulting
+      Supabase session has `aal === 'aal2'` (browser dev tools →
+      Application → Local Storage → `sb-…-auth-token` → decode)
+- [ ] Step 3 — set `MFA_ENFORCEMENT_ENABLED=true` in Vercel Production
+      env and trigger a redeploy
+- [ ] Step 4 — verify: log in as a SECOND admin with a fresh password
+      session (no MFA challenge yet) → first /api/v1 call must return
+      `403 MFA_REQUIRED` and api-client.js must auto-redirect to
+      `/pages/mfa-enroll.html?reason=mfa_mandate`
+- [ ] Step 5 — confirm one `"event":"ACCESS_DENIED" "reason":"mfa_required"`
+      event landed in the dashboard during step 4
+
+**Evidence:** `26-DEPLOYMENT-RUNBOOK.md §2` (env var), `30-RISK-REGISTER.md` L-09.
 
 ### A.7 Rate limiting
 
 - [ ] Auth endpoints rate-limited (in-memory or Upstash)
-- [ ] If multi-instance deploy: Upstash configured and verified
+- [ ] **Upstash distributed rate limiter is configured (M-01)**: both
+      `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` set in
+      Production env. Without this, a Vercel cold-start fan-out resets
+      every counter and the published thresholds become advisory.
+      Setup procedure: `26-DEPLOYMENT-RUNBOOK §11b`. Add Upstash to the
+      sub-processor list in the per-tenant DPA before flipping the
+      switch
+- [ ] `npm run check:rate-limit` passes (regression gate that no
+      endpoint is using the synchronous in-memory variant)
 - [ ] Limit thresholds documented and accepted by controller
 
 **Evidence:** `20-SECURITY.md §10`.

@@ -16,7 +16,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { validateAccessToken } from '../../../backend/src/middleware/auth-middleware.js';
 import { recordAudit, recordFailedLogin } from '../../../backend/src/audit/audit-logger.js';
 import { applySecurityHeaders } from '../../../backend/src/middleware/security-headers.js';
-import { checkRateLimit, RATE_LIMITS, applyRateLimitHeaders } from '../../../backend/src/middleware/rate-limit.js';
+import { checkRateLimitAsync, RATE_LIMITS, applyRateLimitHeaders } from '../../../backend/src/middleware/rate-limit.js';
 import { replyError, replyServiceError } from '../../../backend/src/middleware/http-errors.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
@@ -28,7 +28,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return;
   }
 
-  const rl = checkRateLimit(req, { routeId: 'auth.session', ...RATE_LIMITS.auth });
+  const rl = await checkRateLimitAsync(req, { routeId: 'auth.session', ...RATE_LIMITS.auth });
   applyRateLimitHeaders(res, rl);
   if (!rl.allowed) {
     replyError(res, 429, 'RATE_LIMITED', {

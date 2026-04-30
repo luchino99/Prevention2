@@ -24,6 +24,12 @@
     { "source": "/", "destination": "/pages/login.html", "permanent": false },
     { "source": "/frontend/:path*", "destination": "/:path*", "permanent": true }
   ],
+  "rewrites": [
+    {
+      "source": "/security.txt",
+      "destination": "/.well-known/security.txt"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",

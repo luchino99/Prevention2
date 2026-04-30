@@ -122,6 +122,139 @@ export interface AuditEvent {
 }
 
 /**
+ * Canonical event tag emitted by every audit-failure log line. Detection
+ * dashboards / log-based alerts (Vercel, Datadog, Logflare, …) match on
+ * this string. Never reuse it for anything else.
+ *
+ * Contract (M-04 follow-up, L-04):
+ *   - Every audit write failure (best-effort or strict) emits exactly
+ *     one log line whose JSON body contains `"event": "AUDIT_WRITE_FAILED"`.
+ *   - The line is `console.error(...)` so it lands at log-level=error.
+ *   - The structured fields are documented in
+ *     `docs/27-INCIDENT-RESPONSE.md §11.1` — DO NOT remove fields without
+ *     also updating the dashboard query there.
+ */
+const AUDIT_FAILURE_EVENT = 'AUDIT_WRITE_FAILED';
+
+/**
+ * Emit a structured, machine-parseable audit-failure log line.
+ *
+ * Why structured (and not the previous prose `console.error` form):
+ *   - Vercel function logs / Supabase logs / external SIEM all parse
+ *     JSON-shaped lines into queryable fields.
+ *   - A single canonical `event` tag means the alert query is one-line
+ *     in any tool: `event = "AUDIT_WRITE_FAILED"`.
+ *   - Rate / count alerts (`> 5 events/min`) become trivially trivial.
+ *   - PHI never leaks into the log: every field below is either a
+ *     scalar enum (action, resourceType), a UUID, or a sanitised DB
+ *     diagnostic string — never the audit payload itself.
+ */
+function emitAuditFailureLog(
+  variant: 'best_effort' | 'strict' | 'row_build',
+  fields: {
+    action: AuditAction;
+    resourceType: AuditResourceType;
+    resourceId?: string | null;
+    dbErrorMessage?: string;
+    dbErrorCode?: string;
+    rawError?: unknown;
+  },
+): void {
+  // Defensive serialisation of `rawError` — stringify Error / unknown
+  // without leaking giant stack traces or PHI-shaped payloads.
+  let rawErrorTag: string | undefined;
+  if (fields.rawError instanceof Error) {
+    rawErrorTag = `${fields.rawError.name}: ${fields.rawError.message}`.slice(0, 256);
+  } else if (typeof fields.rawError === 'string') {
+    rawErrorTag = fields.rawError.slice(0, 256);
+  }
+
+  const payload: Record<string, unknown> = {
+    event: AUDIT_FAILURE_EVENT,
+    variant, // best_effort | strict | row_build
+    action: fields.action,
+    resourceType: fields.resourceType,
+    resourceId: fields.resourceId ?? null,
+    dbErrorMessage: fields.dbErrorMessage ?? null,
+    dbErrorCode: fields.dbErrorCode ?? null,
+  };
+  if (rawErrorTag) payload.rawErrorTag = rawErrorTag;
+
+  // Single console.error so log aggregators get one record per failure.
+  console.error(JSON.stringify(payload));
+}
+
+/**
+ * Canonical event tag for unauthorised-access detection (L-05).
+ * The detection contract — including dashboard queries and severity
+ * thresholds — is documented in `docs/27-INCIDENT-RESPONSE.md §11.3`.
+ *
+ * Emitted by `requireRole` (role mismatch) and `assertSameTenant`
+ * helper (cross-tenant attempt) in `middleware/rbac.ts`. The HTTP
+ * response stays opaque (403 / 404 with a generic body) — the
+ * structured log line below carries the truthful reason for an
+ * operator looking at the dashboard.
+ */
+const ACCESS_DENIED_EVENT = 'ACCESS_DENIED';
+
+export type AccessDenialReason =
+  | 'role_mismatch'        // requireRole(): caller's role not in the allowed set
+  | 'cross_tenant'         // assertSameTenant(): resource belongs to a different tenant
+  | 'cross_clinician_ppl'  // is_linked_to_patient gate failed (PPL link missing)
+  | 'suspended_user'       // valid token, but users.is_suspended = true
+  | 'mfa_required'         // admin role hit a gated endpoint without aal2 (L-09)
+  | 'unauthenticated';     // no/invalid token reached a route that required one
+
+export interface AccessDenialContext {
+  reason: AccessDenialReason;
+  /** Caller's user_id (UUID). Null for `unauthenticated`. */
+  actorUserId: string | null;
+  /** Caller's role (enum). Null for `unauthenticated`. */
+  actorRole: string | null;
+  /** Caller's tenant_id (UUID). Null for `unauthenticated` / cross-tenant attempts. */
+  actorTenantId: string | null;
+  /** Hashed IP from `withAuth`. Null when not derivable. */
+  ipHash: string | null;
+  /** HTTP method + canonical path the caller hit (no PHI in the path). */
+  route: string;
+  /** Resource id the caller asked about (UUID, never PHI). Null for blanket denials. */
+  targetResourceId?: string | null;
+  /** Resource tenant_id (when known) — exposed only to operators via the log, never to the caller. */
+  targetTenantId?: string | null;
+  /** For role_mismatch: the set of roles that would have passed. */
+  allowedRoles?: readonly string[];
+}
+
+/**
+ * Emit a structured `ACCESS_DENIED` log line. Same JSON-on-stderr
+ * shape as `emitAuditFailureLog` so the alerting stack can match
+ * both events with one filter (`event:(AUDIT_WRITE_FAILED OR ACCESS_DENIED)`).
+ *
+ * Privacy: the payload contains only UUIDs, enum values, and the
+ * route string — no PHI ever. The route MUST be the canonical path
+ * pattern (e.g. `GET /api/v1/patients/[id]`), not the literal URL
+ * (which would carry the patient id twice — once as path param,
+ * already covered by `targetResourceId`).
+ */
+export function emitAccessDenialLog(ctx: AccessDenialContext): void {
+  const payload: Record<string, unknown> = {
+    event: ACCESS_DENIED_EVENT,
+    reason: ctx.reason,
+    actorUserId: ctx.actorUserId,
+    actorRole: ctx.actorRole,
+    actorTenantId: ctx.actorTenantId,
+    ipHash: ctx.ipHash,
+    route: ctx.route.slice(0, 256),
+    targetResourceId: ctx.targetResourceId ?? null,
+    targetTenantId: ctx.targetTenantId ?? null,
+  };
+  if (ctx.allowedRoles && ctx.allowedRoles.length > 0) {
+    payload.allowedRoles = ctx.allowedRoles.slice(0, 16);
+  }
+  console.error(JSON.stringify(payload));
+}
+
+/**
  * Sanitize metadata to guarantee we never persist health data or PII payloads.
  * Allowed keys: scalar/boolean counts, ids, enum-like strings.
  */
@@ -226,16 +359,22 @@ export async function recordAudit(
     if (error) {
       // Some PostgREST error shapes surface the text under `.details` or
       // `.hint` rather than `.message`. Log all three so we can diagnose
-      // schema drift without ambiguity.
-      console.error('[audit] insert failed', {
+      // schema drift without ambiguity. Structured emit for L-04 dashboards.
+      emitAuditFailureLog('best_effort', {
         action: event.action,
-        resource: event.resourceType,
-        dbError: error.message ?? error.details ?? error.hint ?? 'unknown',
-        dbCode: (error as { code?: string }).code ?? 'unknown',
+        resourceType: event.resourceType,
+        resourceId: event.resourceId ?? null,
+        dbErrorMessage: error.message ?? error.details ?? error.hint ?? 'unknown',
+        dbErrorCode: (error as { code?: string }).code ?? 'unknown',
       });
     }
   } catch (err) {
-    console.error('[audit] unexpected error', err);
+    emitAuditFailureLog('best_effort', {
+      action: event.action,
+      resourceType: event.resourceType,
+      resourceId: event.resourceId ?? null,
+      rawError: err,
+    });
   }
 }
 
@@ -267,10 +406,14 @@ export async function recordAuditStrict(
   try {
     row = buildAuditRow(auth, event);
   } catch (err) {
-    console.error('[audit:strict] row build failed', {
+    // Row-build failure is rare (means a programmer error in the call site)
+    // but still emit the canonical AUDIT_WRITE_FAILED event so it lands in
+    // the same dashboard as DB-level failures.
+    emitAuditFailureLog('row_build', {
       action: event.action,
-      resource: event.resourceType,
-      err,
+      resourceType: event.resourceType,
+      resourceId: event.resourceId ?? null,
+      rawError: err,
     });
     throw new AuditWriteError(event.action, event.resourceType, err);
   }
@@ -285,12 +428,12 @@ export async function recordAuditStrict(
 
   if (dbError) {
     const e = dbError as { message?: string; details?: string; hint?: string; code?: string };
-    console.error('[audit:strict] insert failed', {
+    emitAuditFailureLog('strict', {
       action: event.action,
-      resource: event.resourceType,
+      resourceType: event.resourceType,
       resourceId: event.resourceId ?? null,
-      dbError: e.message ?? e.details ?? e.hint ?? 'unknown',
-      dbCode: e.code ?? 'unknown',
+      dbErrorMessage: e.message ?? e.details ?? e.hint ?? 'unknown',
+      dbErrorCode: e.code ?? 'unknown',
     });
     throw new AuditWriteError(event.action, event.resourceType, dbError);
   }

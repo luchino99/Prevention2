@@ -55,6 +55,7 @@
 | B-13 | CORS overly permissive | Critical | ✅ Resolved | Per-route CSP in `vercel.json`; `connect-src` restricted to self + Supabase (Task #53) |
 | B-14 | No DSR endpoint (Art.12/15/17/20 not actionable) | Critical | ✅ Resolved | `data_subject_requests` ledger + `api/v1/admin/dsr/*` endpoints with state machine: received → in_progress → fulfilled / rejected / cancelled (Tasks #60, #63) |
 | B-15 | Storage objects publicly accessible | Critical | ✅ Resolved | Migration 010 — bucket set to private; access exclusively via 5-minute signed URLs from service-role-mediated endpoint |
+| B-03-bis | `create_assessment_atomic` RPC bypassed every column DEFAULT (id, created_at, severity, status, audience, etc.) by mixing `INSERT … SELECT * FROM jsonb_populate_record()` with implicit NULL fields, causing every assessment write to fail in production with `null value in column "id" violates not-null constraint` | Critical | ✅ Resolved | Migration `013_fix_assessment_atomic_defaults.sql` — defaults are merged into the JSONB before populate (right-biased `\|\|`: defaults `\|\|` caller `\|\|` forced FKs) so every NOT NULL DEFAULT is honoured for all 8 child tables. Discovered post-deploy via production log; safety net (transactional rollback from B-03) prevented partial writes. |
 
 **Critical-blocker count remaining: 0.**
 
@@ -64,7 +65,7 @@
 
 | ID | Title | Status | Notes |
 |---|---|---|---|
-| H-01 | RLS regression undetected (no Postgres-side test) | 🟡 Partial | Hardened by migration 010 + code review; automated policy-level test on Phase 9 roadmap (`28-TESTING-STRATEGY.md §6`) |
+| H-01 | RLS regression undetected (no Postgres-side test) | ✅ Resolved | `tests/rls/cross_tenant_negative.sql` (Tier 1, Task #68) — 6 SQL assertions exercise the live policy set with `SET LOCAL ROLE authenticated` + JWT-claim impersonation. Runner `scripts/run-rls-tests.mjs` skips gracefully when DATABASE_URL or psql are absent (so CI Vercel is unblocked) and runs end-to-end against staging when configured. Wrapped in BEGIN…ROLLBACK so re-runnable. Wire: `npm run test:rls` |
 | H-02 | Cross-tenant read via misuse of service-role context | 🟢 Mitigated | All admin endpoints check `auth.tenantId` against requested resource; covered by `recordAuditStrict` so any anomaly is forensically visible |
 | H-03 | Atomic-create rollback under partial failure | 🟢 Mitigated | RPC pattern + error envelope; manual integration test passed; automated RPC integration test on Phase 9 roadmap |
 | H-04 | Audit write outage masks real activity | 🟢 Mitigated | Strict-audit endpoints fail-closed; alerts on `AUDIT_WRITE_FAILED` log lines on roadmap (`27-INCIDENT-RESPONSE.md §11`) |
@@ -85,18 +86,18 @@
 
 | ID | Title | Status | Notes |
 |---|---|---|---|
-| M-01 | Rate limiter is in-memory only (no horizontal coordination) | 🟡 Partial | Upstash integration ready behind env-var; deploy is single-region single-function so impact is bounded today |
-| M-02 | Tenant-admin UI for retention overrides incomplete | 🟡 Partial | Schema columns + cron honour them; UI partial (`21-PRIVACY-TECHNICAL.md §13`) |
-| M-03 | No SBOM export for SOUP inventory (IEC 62304 §5.1) | 🟡 Partial | `package.json` + lockfile present; formal SBOM `EXT-MDR` |
-| M-04 | No public security.txt / vulnerability-disclosure policy | 🟡 Partial | On the operator roadmap (`25-MDR-READINESS.md §8`) |
-| M-05 | Backup-restore drill not automated (Art.32(1)(d)) | 🟡 Partial | Supabase PITR is platform-managed; controller-side annual drill `EXT-LEGAL` |
+| M-01 | Rate limiter is in-memory only (no horizontal coordination) | ✅ Resolved | All 21 api/v1 endpoints migrated from sync `checkRateLimit` to async `checkRateLimitAsync` (Tier 2, Task #69 — 23 call sites updated by `scripts/migrate-rate-limit-to-async.mjs`). The async path uses Upstash Redis when `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` are set, with graceful fallback to in-memory if Upstash is unconfigured or transiently unavailable. Regression gate `scripts/check-rate-limit-async.mjs` blocks any future PR that re-introduces the sync variant. Operator must wire Upstash env vars before launch (gated in `31-LAUNCH-CHECKLIST §A.7`) and add Upstash to the per-tenant DPA sub-processor list |
+| M-02 | Tenant-admin UI for retention overrides incomplete | 🟢 Mitigated | Migration `014_tenant_retention_overrides.sql` adds 4 nullable INTEGER columns to `tenants` (audit, anonymize_grace, alerts_resolved, notifications) with sensible CHECK bounds. Endpoint `/api/v1/admin/tenant` GET+PATCH (Tier 3, Task #74) — tenant_admin scoped to own tenant, platform_admin via `?id=`. PATCH uses `recordAuditStrict` (B-09) so a privacy-significant change to retention windows can never escape the audit trail. UI: `frontend/pages/tenant-settings.html` + `tenant-settings.js`. **Caveat (Tier 4)**: `fn_retention_prune` cron is still platform-wide; the values are persisted + auditable but the cron does not yet read them. UI shows an explicit banner declaring this. The doc claim in `21-PRIVACY-TECHNICAL.md §13` is now true (schema columns DO exist, after lying about it for some time) |
+| M-03 | No SBOM export for SOUP inventory (IEC 62304 §5.1) | ✅ Resolved | `sbom.cyclonedx.json` (CycloneDX 1.5 application BOM) committed at repo root, regenerated via `npm run sbom:refresh` (Tier 3, Task #73). Canonical form (sorted components, volatile fields stripped) so git diffs show only meaningful supply-chain changes. Regression gate `npm run check:sbom` wired into `build:check` blocks any package.json change without a paired SBOM refresh. Loadable by Grype/Trivy for offline vulnerability scanning. The SBOM IS the SOUP inventory IEC 62304 §5.1 expects |
+| M-04 | No public security.txt / vulnerability-disclosure policy | ✅ Resolved | RFC 9116 `/.well-known/security.txt` + `/security.txt` mirror (Vercel rewrite) + full `SECURITY.md` policy (Tier 1, Task #65). Two `SECURITY.md` copies (repo root for GitHub Security tab, `frontend/` for public-site serving) diff-checked at build time. SLAs published: 24h ack, 5d assessment, 30d fix High/Critical, 90d disclosure. `security@uelfy.com` mailbox must be activated before launch (gated in `31-LAUNCH-CHECKLIST.md`) |
+| M-05 | Backup-restore drill not automated (Art.32(1)(d)) | 🟢 Mitigated | `docs/33-RESTORE-DRILL-SOP.md` (Tier 3, Task #75) — full annual SOP with 3 scenarios (PITR whole-DB, storage-only object, single-tenant export+re-import). Drill log template + sign-off block. RPO/RTO targets (≤5 min / ≤4 h) committed against Supabase platform-managed PITR. Drill is OPERATIONAL not automatable (controller-side execution); the SOP is the engineering deliverable |
 | M-06 | Per-tenant KMS envelope for `clinical_input_snapshot` | 🟡 Partial | Platform-managed AES-256 today; per-tenant KMS on roadmap |
 | M-07 | PDF visual-regression test absent | 🟡 Partial | Manual smoke test; no headless renderer in CI |
 | M-08 | Mutation testing not configured | 🔵 Roadmap | Stryker integration would harden the equivalence test surface |
-| M-09 | Audit query UI for tenant_admin partial | 🟡 Partial | Admin endpoint `/api/v1/admin/audit` exists; UI surface partial |
-| M-10 | DSR end-to-end automated test absent | 🟡 Partial | Manual test passed; full state-machine integration test on roadmap; per-transition strict-audit propagation already covered indirectly via `unit/audit-logger.test.ts` (Phase 9) |
+| M-09 | Audit query UI for tenant_admin partial | ✅ Resolved | Full query UI in `frontend/pages/audit.{html,js}` (Tier 2, Task #72): 6 filters (action, actor, resource type, outcome, from/to date range), pagination, CSV export. Backend `/api/v1/admin/audit` extended with `outcome` filter + `format=csv` support (5000-row cap on CSV pageSize). Active bug fixed: response-shape drift (backend was returning `{logs}`, frontend destructured `{events}` — table was silently empty in production). Now both sides aligned to `events`. |
+| M-10 | DSR end-to-end automated test absent | ✅ Resolved | `tests/integration/api-dsr-state-machine.test.ts` (Tier 2, Task #71) — 8 cases covering: 4 happy-path transitions (create, start, cancel, reject) with audit-strict, illegal transition (start on fulfilled → 409), cross-tenant opaque 404 (no info disclosure), missing rejectionReason → 422, clinician role → 403. Uses scriptable Supabase mock chain that allows per-test response sequencing. Note: full e2e against live Supabase remains a follow-up like the RLS test (skip when DATABASE_URL is unset) |
 | M-11 | Cron handler signing-secret automated test absent | ✅ Resolved | `tests/unit/cron-auth.test.ts` (Phase 9) — 14 cases covering secret hygiene, bearer compare, Vercel header gate, opaque deny |
-| M-12 | Multi-tenant cross-read negative test absent | 🟡 Partial | Mitigated by RLS + endpoint code review; explicit Postgres-side negative test on roadmap |
+| M-12 | Multi-tenant cross-read negative test absent | ✅ Resolved | Same delivery as H-01 (Tier 1, Task #68) — `tests/rls/cross_tenant_negative.sql` includes the dedicated cross-tenant-read assertion + cross-tenant-INSERT assertion + PPL-gate assertion + tenant_admin scope assertion |
 | M-13 | Composite-risk "silence is not safety" invariant unprotected by automated test | ✅ Resolved | `tests/unit/composite-risk.test.ts` (Phase 9) — locks in indeterminate-band semantics (C-02) and out-of-range truthful skip reasoning (H-05) |
 
 ---
@@ -108,13 +109,13 @@
 | L-01 | Per-tenant engine-version pinning (controller can defer a bump) | 🔵 Roadmap |
 | L-02 | Engine-version diff report | 🔵 Roadmap |
 | L-03 | Backfill recompute job (legacy assessments under new engine, retaining historical row) | 🔵 Roadmap |
-| L-04 | Automated alert on `AUDIT_WRITE_FAILED` log lines | 🔵 Roadmap |
-| L-05 | Automated alert on RLS-denial spikes | 🔵 Roadmap |
-| L-06 | Linter-enforced ban on `Math.random()` / `Date.now()` inside `backend/src/domain/clinical/` | 🔵 Roadmap |
+| L-04 | Automated alert on `AUDIT_WRITE_FAILED` log lines | 🟢 Mitigated | Structured-log emitter `emitAuditFailureLog()` in `audit-logger.ts` (Tier 1, Task #66): every failure path emits one canonical JSON line `{"event":"AUDIT_WRITE_FAILED", variant, action, resourceType, resourceId, dbErrorMessage, dbErrorCode}`. Contract frozen by 4 unit tests in `audit-logger.test.ts`. PHI-leak regression test included. Dashboard queries (Vercel grep, Datadog/Logflare, manual SQL) documented in `27-INCIDENT-RESPONSE.md §11.2` with severity thresholds (SEV-3/SEV-2/SEV-1). External alert destination wiring is tenant/operator choice — gated in launch checklist `§A.6` |
+| L-05 | Automated alert on RLS-denial spikes | 🟢 Mitigated | `emitAccessDenialLog()` in `audit-logger.ts` + wiring in `middleware/rbac.ts` (Tier 1, Task #67). Captures 3 reason classes today (`unauthenticated`, `role_mismatch`, `cross_tenant`) at the centralised middleware boundary — covers every endpoint without per-endpoint changes. PPL-gate failure (`cross_clinician_ppl`) emission is Tier 2 follow-up across patient endpoints. Field contract locked by `AccessDenialContext` type. Dashboard queries + SEV-3/2/1 thresholds in `27-INCIDENT-RESPONSE.md §11.3`. External alert wiring is operator config (same destination as L-04) |
+| L-06 | Linter-enforced ban on `Math.random()` / `Date.now()` inside `backend/src/domain/clinical/` | ✅ Resolved | `scripts/check-engine-determinism.mjs` (Tier 1, Task #64). 6 deterministic-locked sub-trees gated, 5 forbidden patterns; integrated into `npm run build` (Vercel deploy) AND `npm run build:check` (pre-PR). Regression-tested with injected violations: gate catches all 3 pattern families with file:line diagnostics |
 | L-07 | Per-score code-coverage report (informational, not gating) | 🔵 Roadmap |
 | L-08 | Frontend bundle-size budget enforcement | 🔵 Roadmap |
-| L-09 | MFA required for all clinician roles (currently MFA-supported, not MFA-mandatory) | 🔵 Roadmap (controller policy `EXT-LEGAL`) |
-| L-10 | Patient-subject-facing breach-notification channel (Art.34) | ⚪ EXT-LEGAL |
+| L-09 | MFA required for all clinician roles (currently MFA-supported, not MFA-mandatory) | 🟢 Mitigated for admin roles | Backend gate in `auth-middleware.validateAccessToken` (Tier 2, Task #70) — `tenant_admin` and `platform_admin` roles MUST present an `aal2` (MFA-verified) JWT or get `403 MFA_REQUIRED`. Default-off via `MFA_ENFORCEMENT_ENABLED` env so a fresh deploy doesn't lock anyone out — operator flips after every admin enrols at `/pages/mfa-enroll.html`. Frontend `api-client.js` auto-redirects on `MFA_REQUIRED`. `mfa_required` added to `AccessDenialReason` enum so the L-05 dashboard catches the signal. Clinician + assistant_staff MFA mandate left as Tier 4 (controller policy choice + EXT-LEGAL DPA term) |
+| L-10 | Patient-subject-facing breach-notification channel (Art.34) | 🔵 Architectural + ⚪ EXT-LEGAL | `docs/32-EXT-LEGAL-TEMPLATES.md §5` documents the architectural decision: Uelfy (processor) does NOT maintain a patient-facing comm channel; the controller uses its own existing patient registry. Uelfy supplies the breach evidence pack within the 24-hour processor SLA. Patient-letter template is counsel/controller-side |
 
 ---
 
@@ -140,21 +141,21 @@ These are not engineering risks — they are deliverables owned outside
 the codebase. Tracked here for completeness because they gate
 production-grade deployment posture.
 
-| ID | Item | Owner |
-|---|---|---|
-| E-01 | Per-tenant DPA template | Counsel + business |
-| E-02 | Sub-processor list per tenant | Controller |
-| E-03 | Lawful-basis assignment per data category | Controller DPO |
-| E-04 | DPIA template (Art.35) | Controller DPO |
-| E-05 | MDR qualification + classification (Rule 11) | Regulatory consultant + notified body |
-| E-06 | Intended-purpose statement (final) | Manufacturer + consultant |
-| E-07 | Risk management file (ISO 14971) | Consultant + engineering |
-| E-08 | Clinical evaluation report (CER) | Consultant |
-| E-09 | QMS (ISO 13485) | Business + consultant |
-| E-10 | Independent penetration test | Security vendor |
-| E-11 | Tenant-facing IFU | Consultant + product |
-| E-12 | Supervisory-authority breach-notification template | Counsel |
-| E-13 | Annual restore drill | Operator + controller |
+| ID | Item | Owner | Engineering-side draft |
+|---|---|---|---|
+| E-01 | Per-tenant DPA template | Counsel + business | ✅ Draft skeleton in `32-EXT-LEGAL-TEMPLATES.md §1` |
+| E-02 | Sub-processor list per tenant | Controller | ✅ Engineering-enumerable list in `§2` (Supabase + Vercel + optional Upstash + optional OpenAI) |
+| E-03 | Lawful-basis assignment per data category | Controller DPO | ✅ Default matrix in `§6` |
+| E-04 | DPIA template (Art.35) | Controller DPO | ✅ Section outline in `§3` with cross-refs to docs |
+| E-05 | MDR qualification + classification (Rule 11) | Regulatory consultant + notified body | EXT-MDR — engineering input documented in `25-MDR-READINESS.md §1-3` |
+| E-06 | Intended-purpose statement (final) | Manufacturer + consultant | ✅ Refined draft in `32-EXT-LEGAL-TEMPLATES.md §4` |
+| E-07 | Risk management file (ISO 14971) | Consultant + engineering | EXT-MDR |
+| E-08 | Clinical evaluation report (CER) | Consultant | EXT-MDR — citations in `24-FORMULA-REGISTRY.md` |
+| E-09 | QMS (ISO 13485) | Business + consultant | EXT-MDR |
+| E-10 | Independent penetration test | Security vendor | EXT-LEGAL |
+| E-11 | Tenant-facing IFU | Consultant + product | EXT-MDR |
+| E-12 | Supervisory-authority breach-notification template | Counsel | EXT-LEGAL — Uelfy supplies evidence pack per `27-INCIDENT-RESPONSE §5.2` |
+| E-13 | Annual restore drill | Operator + controller | ✅ SOP in `33-RESTORE-DRILL-SOP.md` ready to run |
 
 ---
 
@@ -162,7 +163,7 @@ production-grade deployment posture.
 
 | Tier | Open count | Status |
 |---|---|---|
-| Critical (B-series) | 0 | All 15 closed |
+| Critical (B-series) | 0 | All 16 closed (15 from initial audit + 1 post-deploy regression resolved by migration 013) |
 | High | 14 listed | 0 unresolved; all mitigated, partial, or architectural |
 | Medium | 12 listed | All have a documented mitigation or roadmap item |
 | Low | 10 listed | All on roadmap |

@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { withAuth } from '../../../../backend/src/middleware/auth-middleware.js';
 import { requireClinicalWrite } from '../../../../backend/src/middleware/rbac.js';
 import { applySecurityHeaders } from '../../../../backend/src/middleware/security-headers.js';
-import { checkRateLimit, RATE_LIMITS, applyRateLimitHeaders } from '../../../../backend/src/middleware/rate-limit.js';
+import { checkRateLimitAsync, RATE_LIMITS, applyRateLimitHeaders } from '../../../../backend/src/middleware/rate-limit.js';
 import { supabaseAdmin } from '../../../../backend/src/config/supabase.js';
 import { recordAuditStrict, AuditWriteError } from '../../../../backend/src/audit/audit-logger.js';
 import { replyDbError, replyValidationError, replyError } from '../../../../backend/src/middleware/http-errors.js';
@@ -53,7 +53,7 @@ export default withAuth(async (req, res: VercelResponse) => {
     return;
   }
 
-  const rl = checkRateLimit(req, { routeId: 'alerts.ack', ...RATE_LIMITS.write });
+  const rl = await checkRateLimitAsync(req, { routeId: 'alerts.ack', ...RATE_LIMITS.write });
   applyRateLimitHeaders(res, rl);
   if (!rl.allowed) {
     replyError(res, 429, 'RATE_LIMITED', { retryAfterSec: Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000)) });

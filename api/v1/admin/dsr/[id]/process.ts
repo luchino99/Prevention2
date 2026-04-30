@@ -65,7 +65,7 @@ import { withAuth, type AuthenticatedRequest } from '../../../../../backend/src/
 import { requireTenantAdmin } from '../../../../../backend/src/middleware/rbac.js';
 import { applySecurityHeaders } from '../../../../../backend/src/middleware/security-headers.js';
 import {
-  checkRateLimit,
+  checkRateLimitAsync,
   RATE_LIMITS,
   applyRateLimitHeaders,
 } from '../../../../../backend/src/middleware/rate-limit.js';
@@ -145,7 +145,7 @@ export default withAuth(async (req: AuthenticatedRequest, res: VercelResponse) =
     return;
   }
 
-  const rl = checkRateLimit(req, { routeId: 'admin.dsr.process', ...RATE_LIMITS.admin });
+  const rl = await checkRateLimitAsync(req, { routeId: 'admin.dsr.process', ...RATE_LIMITS.admin });
   applyRateLimitHeaders(res, rl);
   if (!rl.allowed) {
     replyError(res, 429, 'RATE_LIMITED', {

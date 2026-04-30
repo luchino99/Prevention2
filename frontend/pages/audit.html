@@ -23,6 +23,7 @@
         <a href="./patients.html">Patients</a>
         <a href="./alerts.html">Alerts</a>
         <a href="./audit.html" class="active">Audit log</a>
+        <a href="./tenant-settings.html">Tenant settings</a>
         <a href="#" id="signout-link">Sign out</a>
       </nav>
     </aside>
@@ -34,10 +35,53 @@
           <div class="muted" id="tenant-label">Loading…</div>
         </div>
         <div class="flex gap-8">
-          <input id="filter-action" type="search" placeholder="Action (e.g. patient.create)" autocomplete="off" />
-          <input id="filter-actor" type="search" placeholder="Actor user id (uuid)" autocomplete="off" />
+          <button class="btn secondary" id="export-csv-btn" title="Download the current filter set as CSV">Export CSV</button>
         </div>
       </div>
+
+      <section class="card mb-16">
+        <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px;">
+          <div>
+            <label class="muted" for="filter-action">Action</label>
+            <input id="filter-action" type="search" placeholder="patient.create" autocomplete="off" />
+          </div>
+          <div>
+            <label class="muted" for="filter-actor">Actor user id</label>
+            <input id="filter-actor" type="search" placeholder="UUID" autocomplete="off" />
+          </div>
+          <div>
+            <label class="muted" for="filter-resource-type">Resource type</label>
+            <select id="filter-resource-type">
+              <option value="">— any —</option>
+              <option value="patient">patient</option>
+              <option value="assessment">assessment</option>
+              <option value="consent">consent</option>
+              <option value="report_export">report_export</option>
+              <option value="alert">alert</option>
+              <option value="data_subject_request">data_subject_request</option>
+              <option value="due_item">due_item</option>
+              <option value="session">session</option>
+              <option value="system">system</option>
+            </select>
+          </div>
+          <div>
+            <label class="muted" for="filter-outcome">Outcome</label>
+            <select id="filter-outcome">
+              <option value="">— any —</option>
+              <option value="success">success</option>
+              <option value="failure">failure</option>
+            </select>
+          </div>
+          <div>
+            <label class="muted" for="filter-from">From (UTC)</label>
+            <input id="filter-from" type="datetime-local" />
+          </div>
+          <div>
+            <label class="muted" for="filter-to">To (UTC)</label>
+            <input id="filter-to" type="datetime-local" />
+          </div>
+        </div>
+      </section>
 
       <section class="card">
         <div id="audit-table-wrap"><p class="muted">Loading…</p></div>

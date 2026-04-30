@@ -231,6 +231,11 @@ supply-chain risk.
 
 ## 12. Open / EXT items
 
+> Engineering-side drafts are at `docs/32-EXT-LEGAL-TEMPLATES.md`. The
+> annual restore drill procedure is at `docs/33-RESTORE-DRILL-SOP.md`.
+> Both are signed by counsel / regulatory consultant before any tenant
+> goes live.
+
 - **EXT-LEGAL.** Per-tenant DPA template + sub-processor list.
 - **EXT-LEGAL.** Cross-border transfer assessment (TIA) when tenants
   outside EEA are onboarded.
@@ -247,11 +252,28 @@ supply-chain risk.
 
 ## 13. Reporting a vulnerability
 
-Security disclosures: **security@uelfy.example** (placeholder — replace
-with the actual mailbox before go-live). PGP key listed at
-`/.well-known/security.txt`. We commit to acknowledging within 72 hours
-and providing a fix timeline within 7 working days for CVSS ≥ 7.0
-findings.
+Public disclosure surface (M-04, RFC 9116):
+
+| Surface | URL | Purpose |
+|---|---|---|
+| Machine-readable | `/.well-known/security.txt` | RFC 9116 metadata — Contact, Expires, Policy, Canonical |
+| Mirror | `/security.txt` | Vercel rewrite to the canonical path — covers legacy scanners |
+| Human-readable | `/SECURITY.md` (public site) and `SECURITY.md` (repo root, GitHub Security tab) | Full disclosure policy: reporting channels, safe-harbour testing rules, SLAs, scope, acknowledgements |
+
+The two `SECURITY.md` copies (repo-root for GitHub, frontend mirror for
+the public site) are **diff-checked at build time** by
+`scripts/verify-build.mjs` to prevent silent drift.
+
+Operational SLAs (committed in `SECURITY.md §3`):
+
+- 24 h — receipt acknowledgement.
+- 5 business days — initial assessment (severity, in/out of scope).
+- 30 days — fix deployment for High and Critical.
+- 90 days — coordinated public disclosure (default; extensions
+  negotiated).
+
+Contact: `security@uelfy.com`. The mailbox must be live before
+production launch — tracked in `31-LAUNCH-CHECKLIST.md`.
 
 ---
 

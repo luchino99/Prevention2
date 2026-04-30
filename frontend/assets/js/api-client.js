@@ -100,6 +100,20 @@ async function apiFetch(path, { method = 'GET', body, query } = {}) {
       await forceReauth(err?.error?.code || 'unauthorized');
     }
 
+    // MFA mandate (L-09) — admin role hit any /api/v1/* without an
+    // aal2 (MFA-verified) session. The only path forward is enrolment,
+    // so redirect immediately. Doing this in the api-client (rather
+    // than per-page) means EVERY page picks up the redirect uniformly
+    // the first time it fires its first authenticated call.
+    if (res.status === 403 && err?.error?.code === 'MFA_REQUIRED') {
+      // Avoid an infinite loop if the enrolment page itself somehow
+      // ends up calling the API and getting MFA_REQUIRED back.
+      if (!window.location.pathname.endsWith('/pages/mfa-enroll.html')) {
+        window.location.href = '/pages/mfa-enroll.html?reason=mfa_mandate';
+        return new Promise(() => {}); // never resolve — page is unloading
+      }
+    }
+
     const e = new Error(err?.error?.message || 'API error');
     e.status = res.status;
     e.code = err?.error?.code;

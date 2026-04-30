@@ -22,7 +22,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { supabaseAdmin } from '../../backend/src/config/supabase.js';
 import { applySecurityHeaders } from '../../backend/src/middleware/security-headers.js';
-import { checkRateLimit, applyRateLimitHeaders } from '../../backend/src/middleware/rate-limit.js';
+import { checkRateLimitAsync, applyRateLimitHeaders } from '../../backend/src/middleware/rate-limit.js';
 import { isUpstashConfigured } from '../../backend/src/middleware/rate-limit-upstash.js';
 
 const APP_VERSION = process.env.APP_VERSION ?? '0.0.0-dev';
@@ -77,7 +77,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   }
 
   // Light rate-limit so this endpoint can't be weaponised.
-  const rl = checkRateLimit(req, { routeId: 'health', max: 60, windowMs: 60_000 });
+  const rl = await checkRateLimitAsync(req, { routeId: 'health', max: 60, windowMs: 60_000 });
   applyRateLimitHeaders(res, rl);
   if (!rl.allowed) {
     res.status(429).end();

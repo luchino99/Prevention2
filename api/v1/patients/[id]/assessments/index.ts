@@ -13,7 +13,7 @@ import { z } from 'zod';
 import { withAuth } from '../../../../../backend/src/middleware/auth-middleware.js';
 import { requireTenantMember, requireClinicalWrite } from '../../../../../backend/src/middleware/rbac.js';
 import { applySecurityHeaders } from '../../../../../backend/src/middleware/security-headers.js';
-import { checkRateLimit, RATE_LIMITS, applyRateLimitHeaders } from '../../../../../backend/src/middleware/rate-limit.js';
+import { checkRateLimitAsync, RATE_LIMITS, applyRateLimitHeaders } from '../../../../../backend/src/middleware/rate-limit.js';
 import { supabaseAdmin } from '../../../../../backend/src/config/supabase.js';
 import { recordAudit } from '../../../../../backend/src/audit/audit-logger.js';
 import { createAssessment } from '../../../../../backend/src/services/assessment-service.js';
@@ -186,7 +186,7 @@ export default withAuth(async (req, res: VercelResponse) => {
   }
 
   if (req.method === 'GET') {
-    const rl = checkRateLimit(req, { routeId: 'assessments.list', ...RATE_LIMITS.read });
+    const rl = await checkRateLimitAsync(req, { routeId: 'assessments.list', ...RATE_LIMITS.read });
     applyRateLimitHeaders(res, rl);
     if (!rl.allowed) {
       replyError(res, 429, 'RATE_LIMITED', {
@@ -199,7 +199,7 @@ export default withAuth(async (req, res: VercelResponse) => {
   }
 
   if (req.method === 'POST') {
-    const rl = checkRateLimit(req, { routeId: 'assessments.create', ...RATE_LIMITS.write });
+    const rl = await checkRateLimitAsync(req, { routeId: 'assessments.create', ...RATE_LIMITS.write });
     applyRateLimitHeaders(res, rl);
     if (!rl.allowed) {
       replyError(res, 429, 'RATE_LIMITED', {

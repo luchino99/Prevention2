@@ -53,6 +53,62 @@ function extractToken(req: VercelRequest): string | null {
   return token.length > 0 ? token : null;
 }
 
+/**
+ * Decode a JWT payload WITHOUT verifying the signature. We rely on
+ * Supabase Auth (`supabaseAdmin.auth.getUser(token)`) for the actual
+ * cryptographic validation; this helper is purely for reading
+ * non-security-critical claims like `aal` (Authentication Assurance
+ * Level — `aal1` = single-factor / password only, `aal2` = MFA
+ * verified second factor). Returns null on any parse failure.
+ */
+function decodeJwtPayloadUnsafe(token: string): Record<string, unknown> | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const payloadB64 = parts[1] ?? '';
+    if (!payloadB64) return null;
+    const buf = Buffer.from(
+      payloadB64.replace(/-/g, '+').replace(/_/g, '/'),
+      'base64',
+    );
+    return JSON.parse(buf.toString('utf8'));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Roles that MUST present a MFA-verified session (aal2) to access any
+ * authenticated endpoint when MFA enforcement is on. Patients and
+ * clinicians are out of scope for now — added incrementally per
+ * controller policy.
+ */
+const ROLES_REQUIRING_MFA: readonly UserRole[] = [
+  'platform_admin',
+  'tenant_admin',
+];
+
+/**
+ * Feature flag that gates the MFA mandate. Default OFF so a fresh
+ * deploy does not lock out admins who haven't enrolled yet. Operators
+ * flip `MFA_ENFORCEMENT_ENABLED=true` after every admin in the tenant
+ * has completed enrolment via /pages/mfa-enroll.html. Once flipped,
+ * any admin session at aal1 is rejected with `403 MFA_REQUIRED`, and
+ * the frontend redirects to the enrolment page.
+ *
+ * Why default-off
+ * ---------------
+ * If the flag was on by default, the first deploy after the upgrade
+ * would lock the tenant_admin out of their own platform — and the
+ * only path back in (the enrolment page) would itself be reachable
+ * since it does NOT call the backend. Default-off keeps the rollout
+ * voluntary: enrol first, then flip.
+ */
+function isMfaEnforced(): boolean {
+  const v = process.env.MFA_ENFORCEMENT_ENABLED?.trim().toLowerCase();
+  return v === 'true' || v === '1' || v === 'yes';
+}
+
 /** SHA-256 truncated hash of client IP — used for audit logs (never raw IP). */
 function hashIp(ip?: string): string | undefined {
   if (!ip) return undefined;
@@ -143,6 +199,28 @@ export async function validateAccessToken(
     throw new AuthError(500, 'INVALID_ROLE', 'Invalid user configuration');
   }
 
+  // ── MFA mandate (L-09) ──────────────────────────────────────────────
+  // When MFA_ENFORCEMENT_ENABLED is set and the role is in the gated
+  // list, require Supabase AAL2 (MFA-verified session). A pre-MFA
+  // session at aal1 is rejected with a 403 carrying a stable error
+  // code so the frontend can redirect the user to /pages/mfa-enroll.html.
+  //
+  // The enrolment page itself never reaches this middleware — it talks
+  // to Supabase Auth directly via supabase.auth.mfa.enroll/challenge/
+  // verify, so an admin who hasn't enrolled yet can still complete the
+  // setup even when the flag is on.
+  if (isMfaEnforced() && ROLES_REQUIRING_MFA.includes(role)) {
+    const claims = decodeJwtPayloadUnsafe(token);
+    const aal = typeof claims?.aal === 'string' ? claims.aal : null;
+    if (aal !== 'aal2') {
+      throw new AuthError(
+        403,
+        'MFA_REQUIRED',
+        'Multi-factor authentication is required for administrative roles. Complete enrolment at /pages/mfa-enroll.html.',
+      );
+    }
+  }
+
   return {
     userId,
     email,
@@ -173,6 +251,25 @@ export function withAuth<T extends VercelResponse = VercelResponse>(
       await handler(req as AuthenticatedRequest, res);
     } catch (err) {
       if (err instanceof AuthError) {
+        // MFA mandate (L-09) — emit a structured ACCESS_DENIED log
+        // line so the dashboard query catches admin-pre-MFA traffic
+        // alongside the other denial reasons. We import lazily to
+        // avoid a circular module load between middleware/audit.
+        if (err.code === 'MFA_REQUIRED') {
+          try {
+            const { emitAccessDenialLog } = await import('../audit/audit-logger.js');
+            emitAccessDenialLog({
+              reason: 'mfa_required',
+              actorUserId: null, // user was identified but session is pre-MFA
+              actorRole: null,
+              actorTenantId: null,
+              ipHash: hashIp(getClientIp(req)) ?? null,
+              route: `${(req.method ?? 'UNKNOWN').toUpperCase()} ${(req.url ?? '').split('?')[0]}`,
+            });
+          } catch {
+            // Best-effort log — never block on the emitter.
+          }
+        }
         res.status(err.status).json({ error: { code: err.code, message: err.message } });
         return;
       }

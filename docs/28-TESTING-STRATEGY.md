@@ -23,6 +23,9 @@ tests/
 ├── integration/    – API surface + DB round-trip tests
 ├── equivalence/    – per-score golden-vector tests against legacy
 │                     implementation (CWS heritage)
+├── rls/            – Postgres-side RLS regression tests (.sql files
+│                     run via psql, asserting policy behaviour against
+│                     real DB; see §6 — runs only when DATABASE_URL is set)
 ├── fixtures/       – shared test inputs (assessment payloads, etc.)
 └── vitest.config.ts
 ```
@@ -53,6 +56,7 @@ beyond Vitest's snapshot dir.
 | File | What it covers |
 |---|---|
 | `integration/api-patients.test.ts` | Patient CRUD round-trip with auth header injection; verifies audit-row emission, RLS context, soft-delete behaviour |
+| `integration/api-dsr-state-machine.test.ts` | **Tier 2 / M-10** — DSR endpoint integration: 4 happy-path transitions (create, start, cancel, reject) with audit-strict assertions; illegal transition (start on fulfilled → 409); cross-tenant opaque 404 with no info disclosure; missing rejectionReason → 422; clinician role denied with 403. Uses a scriptable Supabase mock chain (per-test response queue) to exercise the full state machine. |
 
 Integration tests run against a Supabase test schema (or a local
 Supabase via `supabase start`), with a tear-down after each test.
@@ -106,7 +110,7 @@ Honest list — these are the open items pursued in Phase 9 / `EXT-CLIN`
 
 | Gap | Plan |
 |---|---|
-| RLS-policy-level test (Postgres-side enforcement, not just app-side) | Roadmap — add a Postgres-side test fixture that runs as the anon role and confirms RLS denial. Mitigated for Phase 9 by migration 010 + code review. |
+| RLS-policy-level test (Postgres-side enforcement, not just app-side) | ✅ Done — `tests/rls/cross_tenant_negative.sql` (Tier 1, Task #68). Runs as `authenticated` role with JWT-claim impersonation, asserts 6 invariants (cross-tenant SELECT/INSERT denial, PPL gate, tenant_admin scope). Wrapped in BEGIN…ROLLBACK so re-runnable forever. Runner `scripts/run-rls-tests.mjs` skips gracefully when DATABASE_URL or psql are absent — no CI block; runs against staging when configured. Wire: `npm run test:rls`. |
 | Cron handler signing-secret unit test | ✅ Done — `unit/cron-auth.test.ts` (Phase 9) |
 | Audit guarantee unit test | ✅ Done — `unit/audit-logger.test.ts` (Phase 9) |
 | Composite-risk indeterminate-band invariant test | ✅ Done — `unit/composite-risk.test.ts` (Phase 9) |

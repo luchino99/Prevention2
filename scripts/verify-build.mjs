@@ -55,6 +55,12 @@ const REQUIRED_FILES = [
   'pages/assessment-new.html',
   'assets/js/public-config.js',
   'assets/vendor/supabase-js.esm.js',
+  // RFC 9116 (M-04) — security.txt + the human-readable policy must
+  // both ship to production. The two SECURITY.md copies (repo-root
+  // for the GitHub Security tab + frontend/ for live serving) are
+  // diff-checked further down to prevent silent drift.
+  '.well-known/security.txt',
+  'SECURITY.md',
 ];
 
 const FORBIDDEN_SUBSTRINGS = [
@@ -120,6 +126,26 @@ for (const rel of REQUIRED_FILES) {
     }
   }
   ok(`${rel} (${st.size} bytes)`);
+}
+
+// SECURITY.md drift check (M-04). The repo keeps two copies of
+// SECURITY.md by design:
+//   - repo-root  /SECURITY.md   → consumed by GitHub's "Security" tab
+//   - frontend/  /SECURITY.md   → mirrored to frontend-dist for serving
+//                                  via https://<host>/SECURITY.md
+// They MUST stay byte-identical; otherwise the public document and the
+// GitHub document tell different stories.
+const REPO_ROOT_SECURITY = join(ROOT, 'SECURITY.md');
+const DIST_SECURITY      = join(DIST, 'SECURITY.md');
+if (existsSync(REPO_ROOT_SECURITY) && existsSync(DIST_SECURITY)) {
+  const a = readFileSync(REPO_ROOT_SECURITY, 'utf8');
+  const b = readFileSync(DIST_SECURITY, 'utf8');
+  if (a !== b) {
+    fail('SECURITY.md drift: /SECURITY.md (repo root) and frontend-dist/SECURITY.md differ. Re-sync them: cp SECURITY.md frontend/SECURITY.md');
+    failed = true;
+  } else {
+    ok('SECURITY.md (repo root vs frontend-dist) — identical');
+  }
 }
 
 if (failed) {

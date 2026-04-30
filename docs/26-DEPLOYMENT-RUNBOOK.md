@@ -48,9 +48,10 @@ for migrations, on the operator's local machine.
 | Variable | Default | Purpose |
 |---|---|---|
 | `LOG_LEVEL` | `info` | `debug`/`info`/`warn`/`error` |
+| `MFA_ENFORCEMENT_ENABLED` | unset (off) | When `"true"`, all `tenant_admin` and `platform_admin` sessions MUST be aal2 (MFA-verified). Pre-MFA admin tokens are rejected with `403 MFA_REQUIRED`; the frontend auto-redirects to `/pages/mfa-enroll.html`. **Default-off rollout**: enable AFTER every admin has enrolled at the `/pages/mfa-enroll.html` page (otherwise admins lock themselves out). See `30-RISK-REGISTER` L-09 |
 | `ANONYMIZE_GRACE_DAYS` | 30 | Grace window before anonymising soft-deleted patients |
 | `ANONYMIZE_MAX_PER_RUN` | (engine default) | Cap on rows per cron tick to keep the function bounded |
-| `UPSTASH_REDIS_REST_URL` | unset | If set, rate limiter uses Upstash; else in-memory |
+| `UPSTASH_REDIS_REST_URL` | unset | If set, rate limiter uses Upstash distributed bucket; else falls back to in-memory (single-instance only). **Strongly recommended in production** — see §11b |
 | `UPSTASH_REDIS_REST_TOKEN` | unset | Paired with above |
 | `OPENAI_API_KEY` | unset | Required only if optional AI commentary is enabled. Off by default — see `21-PRIVACY-TECHNICAL.md §11` |
 | `VERCEL_ENV` | (Vercel-injected) | `production` / `preview` / `development` |
@@ -95,6 +96,8 @@ migration after it has been applied to production.
 | `010_security_hardening.sql` | B-01 / B-02 / B-15 — narrows clinician policies to PPL-linked patients, scopes consent + audit insert, locks down clinical-reports bucket |
 | `011_atomic_assessment.sql` | `create_assessment` RPC — B-03 atomicity |
 | `012_force_row_level_security.sql` | B-01 defence-in-depth — `FORCE ROW LEVEL SECURITY` on all 20 PHI / tenant / identity tables |
+| `013_fix_assessment_atomic_defaults.sql` | B-03-bis — re-defines `create_assessment_atomic` to inject column DEFAULTs into the JSONB before `populate_record`. Without this, every assessment write fails with NOT NULL on `id` |
+| `014_tenant_retention_overrides.sql` | M-02 — adds 4 nullable INTEGER columns to `tenants` (`retention_days_audit`, `retention_days_anonymize_grace`, `retention_days_alerts_resolved`, `retention_days_notifications`) with CHECK bounds. Read+edited by the new admin tenant-settings UI |
 
 ### Migration procedure
 
@@ -340,6 +343,49 @@ curl -X POST https://<host>/api/v1/internal/retention \
 ```
 
 ---
+
+## 11b. Distributed rate limiting (M-01)
+
+By default the rate limiter uses an in-memory token bucket scoped to a
+single Vercel function instance. Cold-start fan-out resets the counter,
+so a determined attacker can multiply the effective limit by N. **Wire
+Upstash before opening the platform to a paying tenant.**
+
+### Setup
+
+1. Create an Upstash Redis database in the **EU region** (matches the
+   rest of the stack — DPA / sub-processor parity).
+2. From the Upstash dashboard copy:
+   - REST URL  → set as `UPSTASH_REDIS_REST_URL` in Vercel project env
+   - REST token → set as `UPSTASH_REDIS_REST_TOKEN` (Production scope only)
+3. Trigger a redeploy (Vercel re-reads env at build time).
+4. Verify: hit any endpoint twice, then check `X-RateLimit-Remaining`
+   in response headers — the counter must persist across calls even
+   when Vercel routes to a different instance.
+
+### Behaviour with / without env vars
+
+| State | What happens |
+|---|---|
+| Both env vars set | Distributed counter via Upstash; safe across cold-starts |
+| Either unset | Per-instance in-memory bucket (development default) |
+| Upstash transiently down (timeout, network) | Fallback to in-memory for this request only — `[rate-limit-upstash] pipeline …` warning logged. Next request retries Upstash. |
+
+### Sub-processor implications
+
+Adding Upstash adds one runtime sub-processor. Update
+`docs/21-PRIVACY-TECHNICAL.md §11` and the per-tenant DPA before
+flipping the env vars in production. No PHI is ever written to Redis
+(keys are `ratelimit:<routeId>:<userIdOrIpHash>`); but the network
+endpoint itself counts as data flow that GDPR Art.30 expects to be
+recorded.
+
+### Regression gate
+
+`scripts/check-rate-limit-async.mjs` (wired into
+`npm run build:check` + standalone `npm run check:rate-limit`)
+fails the build if a future PR re-introduces the synchronous
+`checkRateLimit` in any `api/v1/**` endpoint.
 
 ## 12. Security headers
 

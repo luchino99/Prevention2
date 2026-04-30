@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Tenant settings — Uelfy Clinical</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/icons/favicon.svg" />
+  <link rel="alternate icon" type="image/png" sizes="32x32" href="../assets/icons/favicon-32.png" />
+  <link rel="alternate icon" type="image/png" sizes="16x16" href="../assets/icons/favicon-16.png" />
+  <link rel="shortcut icon" href="../assets/icons/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/icons/apple-touch-icon.png" />
+  <meta name="theme-color" content="#0E5C7B" />
+  <link rel="stylesheet" href="../assets/css/app.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="app-sidebar">
+      <div class="brand">Uelfy Clinical</div>
+      <nav>
+        <a href="./dashboard.html">Dashboard</a>
+        <a href="./patients.html">Patients</a>
+        <a href="./alerts.html">Alerts</a>
+        <a href="./audit.html">Audit log</a>
+        <a href="./tenant-settings.html" class="active">Tenant settings</a>
+        <a href="#" id="signout-link">Sign out</a>
+      </nav>
+    </aside>
+
+    <main class="app-main">
+      <div class="topbar">
+        <div>
+          <h1 style="margin-bottom:2px;">Tenant settings</h1>
+          <div class="muted" id="tenant-label">Loading…</div>
+        </div>
+      </div>
+
+      <div id="forbidden-banner" class="inline-alert danger" style="display:none;">
+        Tenant settings are accessible only to <code>tenant_admin</code> or
+        <code>platform_admin</code>.
+      </div>
+
+      <section class="card mb-16" id="general-card" style="display:none;">
+        <h2>General</h2>
+        <dl class="kv-list">
+          <dt>Name</dt>     <dd id="t-name">—</dd>
+          <dt>Slug</dt>     <dd id="t-slug" class="mono">—</dd>
+          <dt>Plan</dt>     <dd id="t-plan">—</dd>
+          <dt>Status</dt>   <dd id="t-status">—</dd>
+          <dt>Created</dt>  <dd id="t-created">—</dd>
+        </dl>
+      </section>
+
+      <section class="card mb-16" id="retention-card" style="display:none;">
+        <h2>Data retention overrides</h2>
+        <p class="muted">
+          Each window controls how long a class of records is kept before
+          the daily cron (<code>fn_retention_prune</code>, migration 003)
+          can prune it. <strong>Leave a field empty</strong> to inherit
+          the platform default — that is the recommended setting unless a
+          regulator or controller requires a tighter window.
+        </p>
+        <div class="inline-alert" style="background:#fff8e1; border-color:#f0c14b;">
+          <strong>Note (Tier 4 follow-up).</strong>
+          The values you save here are persisted and surfaced via the API,
+          but the platform-wide cron worker does not yet differentiate
+          per-tenant — every tenant is pruned by the platform default
+          today. The cron refactor that consumes these overrides ships
+          with M-02-Tier-4. Until then, this page is a forward declaration.
+        </div>
+
+        <form id="retention-form" class="grid mt-16" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+          <div>
+            <label for="rd-audit">Audit events (days, 30…3650)</label>
+            <input id="rd-audit" name="retentionDaysAudit" type="number" min="30" max="3650" placeholder="default ~3650" />
+          </div>
+          <div>
+            <label for="rd-grace">Anonymisation grace (days, 0…365)</label>
+            <input id="rd-grace" name="retentionDaysAnonymizeGrace" type="number" min="0" max="365" placeholder="default 30" />
+          </div>
+          <div>
+            <label for="rd-alerts">Resolved alerts (days, 7…1825)</label>
+            <input id="rd-alerts" name="retentionDaysAlertsResolved" type="number" min="7" max="1825" placeholder="default 365" />
+          </div>
+          <div>
+            <label for="rd-notif">Notification rows (days, 7…365)</label>
+            <input id="rd-notif" name="retentionDaysNotifications" type="number" min="7" max="365" placeholder="default 90" />
+          </div>
+          <div style="grid-column: 1 / -1; display:flex; gap:8px; align-items:center; margin-top:8px;">
+            <button class="btn primary" type="submit" id="save-btn">Save</button>
+            <span id="save-status" class="muted"></span>
+          </div>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <script src="../assets/js/public-config.js"></script>
+  <script type="module" src="./tenant-settings.js"></script>
+</body>
+</html>

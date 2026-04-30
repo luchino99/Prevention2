@@ -22,7 +22,7 @@
  *   The mock is mutated per-test via the exported handle.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 /**
  * Mutable handle the mock factory closes over. The mock chooses behaviour
@@ -108,6 +108,110 @@ describe('recordAudit (best-effort variant)', () => {
         resourceId: 'pat-1',
       }),
     ).resolves.toBeUndefined();
+  });
+});
+
+/**
+ * Lock the canonical AUDIT_WRITE_FAILED log shape (L-04). The
+ * detection dashboards in production parse these JSON fields by name —
+ * any change to the contract requires a paired update to
+ * `docs/27-INCIDENT-RESPONSE.md §11.1`.
+ */
+describe('AUDIT_WRITE_FAILED structured log contract', () => {
+  let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('strict-variant DB error emits one canonical AUDIT_WRITE_FAILED line', async () => {
+    insertHandle.mode = {
+      kind: 'rowError',
+      error: { message: 'permission denied', code: '42501' },
+    };
+    await expect(
+      recordAuditStrict(AUTH, {
+        action: 'consent.revoke',
+        resourceType: 'consent',
+        resourceId: 'consent-1',
+      }),
+    ).rejects.toBeInstanceOf(AuditWriteError);
+
+    expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
+    const raw = consoleErrorSpy.mock.calls[0]?.[0] as string;
+    expect(typeof raw).toBe('string');
+    const parsed = JSON.parse(raw);
+    expect(parsed).toMatchObject({
+      event: 'AUDIT_WRITE_FAILED',
+      variant: 'strict',
+      action: 'consent.revoke',
+      resourceType: 'consent',
+      resourceId: 'consent-1',
+      dbErrorMessage: 'permission denied',
+      dbErrorCode: '42501',
+    });
+  });
+
+  it('best-effort DB error emits the same canonical event tag (variant=best_effort)', async () => {
+    insertHandle.mode = {
+      kind: 'rowError',
+      error: { message: 'timeout', code: '57014' },
+    };
+    await recordAudit(AUTH, {
+      action: 'patient.read',
+      resourceType: 'patient',
+      resourceId: 'pat-1',
+    });
+
+    expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
+    const parsed = JSON.parse(consoleErrorSpy.mock.calls[0]?.[0] as string);
+    expect(parsed.event).toBe('AUDIT_WRITE_FAILED');
+    expect(parsed.variant).toBe('best_effort');
+    expect(parsed.dbErrorCode).toBe('57014');
+  });
+
+  it('driver throw also emits AUDIT_WRITE_FAILED with rawErrorTag', async () => {
+    insertHandle.mode = {
+      kind: 'driverThrow',
+      error: new Error('socket closed'),
+    };
+    await expect(
+      recordAuditStrict(AUTH, {
+        action: 'patient.delete',
+        resourceType: 'patient',
+        resourceId: 'pat-1',
+      }),
+    ).rejects.toBeInstanceOf(AuditWriteError);
+
+    expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
+    const parsed = JSON.parse(consoleErrorSpy.mock.calls[0]?.[0] as string);
+    expect(parsed.event).toBe('AUDIT_WRITE_FAILED');
+  });
+
+  it('payload never leaks the audit metadata (no PHI in alert pipeline)', async () => {
+    insertHandle.mode = {
+      kind: 'rowError',
+      error: { message: 'fk violation', code: '23503' },
+    };
+    await expect(
+      recordAuditStrict(AUTH, {
+        action: 'consent.revoke',
+        resourceType: 'consent',
+        resourceId: 'consent-1',
+        metadata: {
+          // intentionally a string that would be PHI-shaped if leaked
+          patientName: 'alice.cohen.diabetic.2026',
+        },
+      }),
+    ).rejects.toBeInstanceOf(AuditWriteError);
+
+    const raw = consoleErrorSpy.mock.calls[0]?.[0] as string;
+    expect(raw).not.toMatch(/alice\.cohen/);
+    expect(raw).not.toMatch(/patientName/);
   });
 });
 

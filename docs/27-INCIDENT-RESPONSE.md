@@ -347,16 +347,167 @@ requirements are `EXT-LEGAL` per DPA.
 
 ---
 
-## 11. Open items
+## 11. Detection contracts
+
+### 11.1 `AUDIT_WRITE_FAILED` log event (B-09 / L-04)
+
+Every audit-write failure path emits **one** `console.error` line that
+serialises a JSON object containing the canonical event tag
+`"event": "AUDIT_WRITE_FAILED"`. The contract is:
+
+| Field | Type | Always present | Meaning |
+|---|---|---|---|
+| `event` | string literal `"AUDIT_WRITE_FAILED"` | yes | Single source of truth for filters / alerts. |
+| `variant` | enum `"best_effort" \| "strict" \| "row_build"` | yes | Which code path emitted. `strict` = privacy-critical; `best_effort` = read-side; `row_build` = programmer error. |
+| `action` | `AuditAction` enum value | yes | The audit action that failed (e.g. `consent.revoke`). |
+| `resourceType` | `AuditResourceType` enum value | yes | Resource class. |
+| `resourceId` | UUID or `null` | yes | Resource id (UUID — never PHI). |
+| `dbErrorMessage` | string ≤ 256 chars or `null` | yes (for DB-level failures) | First non-empty of `error.message` / `details` / `hint`. |
+| `dbErrorCode` | PG SQLSTATE or `null` | yes (for DB-level failures) | e.g. `23505`, `42501`. |
+| `rawErrorTag` | string ≤ 256 chars | only when `rawError` is an Error/string | `"<name>: <message>"` — for driver throws. |
+
+The shape is **frozen** — locked by `tests/unit/audit-logger.test.ts`
+("AUDIT_WRITE_FAILED structured log contract"). Any change here
+requires a paired test update AND a refresh of the dashboard queries
+below.
+
+PHI guarantee: the event payload contains zero free-form caller
+metadata. The audit-event metadata that the application supplies is
+filtered out before serialisation. A regression test
+(`payload never leaks the audit metadata`) locks this in.
+
+### 11.2 Dashboard / alert queries
+
+Wire one of these to your alerting backend (Slack webhook, PagerDuty,
+e-mail, whatever):
+
+**Vercel function logs (any tier)** — grep filter (in the Vercel
+dashboard log search bar):
+
+```
+"event":"AUDIT_WRITE_FAILED"
+```
+
+Threshold suggestion:
+
+| Severity | Trigger |
+|---|---|
+| **SEV-3** | ≥ 1 event in 5 min |
+| **SEV-2** | ≥ 5 events in 5 min from the same `action` |
+| **SEV-1** | ≥ 5 events in 5 min where `variant="strict"` (privacy-critical) |
+
+**Datadog / Logflare / external SIEM** — equivalent JSON filter:
+
+```
+@event:AUDIT_WRITE_FAILED @variant:strict
+```
+
+**Manual forensic query** (Supabase SQL editor, after the fact):
+
+```sql
+-- The audit row that the app intended to write is by definition NOT
+-- in the table (the failure is precisely that it could not be inserted).
+-- Pair the logged AUDIT_WRITE_FAILED line with the BUSINESS write that
+-- did succeed, by joining on actor + timestamp window:
+SELECT *
+FROM audit_events
+WHERE actor_user_id = '<actor-uuid-from-log>'
+  AND created_at BETWEEN
+        '<failed-at minus 30s>'::timestamptz
+    AND '<failed-at plus  30s>'::timestamptz
+ORDER BY created_at;
+-- Look for the closest preceding/following row from the same actor
+-- to identify the business write that landed without an audit pair.
+```
+
+### 11.3 `ACCESS_DENIED` log event (B-01 / L-05)
+
+PostgreSQL does not natively log RLS denial as a row-level event — a
+denied query just returns 0 rows or `permission denied`. To produce a
+detection signal we emit a structured `ACCESS_DENIED` log line at
+**every centralised denial point** in the application stack:
+
+| Code path | Reason emitted |
+|---|---|
+| `requireRole(...)` rejecting an unauthenticated request | `unauthenticated` |
+| `requireRole(...)` rejecting an authenticated request with the wrong role | `role_mismatch` |
+| `assertSameTenant(req, resource)` returning `false` | `cross_tenant` |
+
+Endpoint-level PPL gate failures (clinician trying to access a patient
+without an active `professional_patient_links` row) emit
+`reason: "cross_clinician_ppl"` — not yet wired uniformly across all
+patient endpoints (Tier 2 follow-up — see L-05 in `30-RISK-REGISTER.md`).
+
+Field contract — locked by the type `AccessDenialContext` in
+`backend/src/audit/audit-logger.ts`:
+
+| Field | Type | Always present | Meaning |
+|---|---|---|---|
+| `event` | string literal `"ACCESS_DENIED"` | yes | Single source of truth for filters / alerts. |
+| `reason` | enum `"role_mismatch" \| "cross_tenant" \| "cross_clinician_ppl" \| "suspended_user" \| "unauthenticated"` | yes | The class of denial. |
+| `actorUserId` | UUID or `null` | yes | The caller (null for `unauthenticated`). |
+| `actorRole` | enum or `null` | yes | The caller's role. |
+| `actorTenantId` | UUID or `null` | yes | The caller's tenant. |
+| `ipHash` | SHA-256 hex or `null` | yes | For per-IP grouping. |
+| `route` | `"<METHOD> <canonicalised path with [id] placeholders>"` | yes | Path is canonicalised — UUIDs replaced by `[id]` so heatmaps aggregate cleanly. |
+| `targetResourceId` | UUID or `null` | when known | Resource the caller asked about. |
+| `targetTenantId` | UUID or `null` | when known | Resource's tenant. Operator-only — the HTTP response stays opaque. |
+| `allowedRoles` | array of role enums | for `role_mismatch` | Which roles WOULD have passed. |
+
+Privacy: the payload contains only UUIDs, enum values, and the
+canonicalised route. No PHI, no tenant names. The HTTP response that
+the caller receives stays a generic 401/403/404 — the structured log
+exposes the truthful reason only to the operator.
+
+#### Dashboard / alert queries (L-05)
+
+Same matching pattern as `AUDIT_WRITE_FAILED` — wire one filter to
+both events:
+
+**Vercel function logs (broad denial pulse)**:
+
+```
+"event":"ACCESS_DENIED"
+```
+
+**Cross-tenant attempts only (the most security-critical signal)**:
+
+```
+"event":"ACCESS_DENIED" "reason":"cross_tenant"
+```
+
+Threshold suggestion:
+
+| Severity | Trigger |
+|---|---|
+| **SEV-3** | ≥ 5 `ACCESS_DENIED` events in 5 min from the same `actorUserId` |
+| **SEV-2** | ≥ 3 `cross_tenant` events in 1 hour from the same `actorUserId` |
+| **SEV-1** | ANY `cross_tenant` event where `actorRole = "platform_admin"` (legitimate but rare; verify it was authorised) |
+| **SEV-1** | `unauthenticated` spike > 100 events/min (likely credential-stuffing) |
+
+**Forensic SQL** — correlate the denial with the actor's recent activity:
+
+```sql
+SELECT created_at, action, entity_type, entity_id, outcome
+FROM audit_events
+WHERE actor_user_id = '<actorUserId-from-log>'
+  AND created_at > '<denial-timestamp>'::timestamptz - interval '15 min'
+ORDER BY created_at;
+-- Look for what the actor was doing in the 15 min before they tripped
+-- the cross-tenant guard. Often gives the smoking gun (a stolen JWT
+-- being replayed with a different tenant in the URL path).
+```
+
+## 12. Open items
 
 | Item | Owner | Status |
 |---|---|---|
-| Automated alert on `AUDIT_WRITE_FAILED` log lines | Engineering | Roadmap |
-| Automated alert on RLS-denial spikes | Engineering | Roadmap |
+| Automated alert on `AUDIT_WRITE_FAILED` log lines | Engineering | ✅ Contract published in §11.1 (Tier 1, L-04). External alert wiring (Slack/PagerDuty/email) requires the operator to choose a destination — see launch checklist `31-LAUNCH-CHECKLIST.md §A.6` |
+| Automated alert on RLS-denial spikes | Engineering | ✅ Contract published in §11.3 (Tier 1, L-05). Centralised wiring in `requireRole` + `assertSameTenant` middleware. PPL-gate denial signal across patient endpoints is Tier 2 follow-up. |
 | Per-tenant breach-notification contact registry | Operator + EXT-LEGAL | Lives in the per-tenant DPA |
 | External counsel-reviewed Art.33/34 templates | EXT-LEGAL | Pending |
 | Pentest cadence and reports | EXT-LEGAL | See `25-MDR-READINESS.md §8` |
-| Public security.txt + responsible-disclosure policy | Engineering + business | Roadmap |
+| Public security.txt + responsible-disclosure policy | Engineering + business | ✅ Resolved (Tier 1, M-04) — see `20-SECURITY.md §13` |
 
 ---
 
@@ -367,3 +518,5 @@ requirements are `EXT-LEGAL` per DPA.
 - `22-GDPR-READINESS.md` — Article-by-article readiness (Art.33/34).
 - `26-DEPLOYMENT-RUNBOOK.md` — smoke tests, rotation, rollback.
 - `14-DELETION-POLICY.md` — retention windows for evidence preservation.
+- `32-EXT-LEGAL-TEMPLATES.md` — DPA / DPIA / sub-processor draft templates.
+- `33-RESTORE-DRILL-SOP.md` — annual backup/restore drill procedure.

@@ -11,7 +11,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { withAuth } from '../../../../backend/src/middleware/auth-middleware.js';
 import { requireTenantMember, requireClinicalWrite, requireTenantAdmin } from '../../../../backend/src/middleware/rbac.js';
 import { applySecurityHeaders } from '../../../../backend/src/middleware/security-headers.js';
-import { checkRateLimit, RATE_LIMITS, applyRateLimitHeaders } from '../../../../backend/src/middleware/rate-limit.js';
+import { checkRateLimitAsync, RATE_LIMITS, applyRateLimitHeaders } from '../../../../backend/src/middleware/rate-limit.js';
 import { supabaseAdmin } from '../../../../backend/src/config/supabase.js';
 import {
   recordAudit,
@@ -217,7 +217,7 @@ export default withAuth(async (req, res: VercelResponse) => {
   }
 
   if (req.method === 'GET') {
-    const rl = checkRateLimit(req, { routeId: 'patients.read', ...RATE_LIMITS.read });
+    const rl = await checkRateLimitAsync(req, { routeId: 'patients.read', ...RATE_LIMITS.read });
     applyRateLimitHeaders(res, rl);
     if (!rl.allowed) {
       replyError(res, 429, 'RATE_LIMITED', { retryAfterSec: Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000)) });
@@ -228,7 +228,7 @@ export default withAuth(async (req, res: VercelResponse) => {
   }
 
   if (req.method === 'PATCH') {
-    const rl = checkRateLimit(req, { routeId: 'patients.update', ...RATE_LIMITS.write });
+    const rl = await checkRateLimitAsync(req, { routeId: 'patients.update', ...RATE_LIMITS.write });
     applyRateLimitHeaders(res, rl);
     if (!rl.allowed) {
       replyError(res, 429, 'RATE_LIMITED', { retryAfterSec: Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000)) });
@@ -239,7 +239,7 @@ export default withAuth(async (req, res: VercelResponse) => {
   }
 
   if (req.method === 'DELETE') {
-    const rl = checkRateLimit(req, { routeId: 'patients.delete', ...RATE_LIMITS.write });
+    const rl = await checkRateLimitAsync(req, { routeId: 'patients.delete', ...RATE_LIMITS.write });
     applyRateLimitHeaders(res, rl);
     if (!rl.allowed) {
       replyError(res, 429, 'RATE_LIMITED', { retryAfterSec: Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000)) });

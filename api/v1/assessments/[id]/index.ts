@@ -19,7 +19,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { withAuth } from '../../../../backend/src/middleware/auth-middleware.js';
 import { requireTenantMember } from '../../../../backend/src/middleware/rbac.js';
 import { applySecurityHeaders } from '../../../../backend/src/middleware/security-headers.js';
-import { checkRateLimit, RATE_LIMITS, applyRateLimitHeaders } from '../../../../backend/src/middleware/rate-limit.js';
+import { checkRateLimitAsync, RATE_LIMITS, applyRateLimitHeaders } from '../../../../backend/src/middleware/rate-limit.js';
 import {
   loadAssessmentSnapshot,
   deleteAssessment,
@@ -55,7 +55,7 @@ export default withAuth(async (req, res: VercelResponse) => {
   const rlConfig = method === 'DELETE'
     ? { routeId: 'assessments.delete', ...RATE_LIMITS.write }
     : { routeId: 'assessments.read',   ...RATE_LIMITS.read };
-  const rl = checkRateLimit(req, rlConfig);
+  const rl = await checkRateLimitAsync(req, rlConfig);
   applyRateLimitHeaders(res, rl);
   if (!rl.allowed) {
     replyError(res, 429, 'RATE_LIMITED', { retryAfterSec: Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000)) });

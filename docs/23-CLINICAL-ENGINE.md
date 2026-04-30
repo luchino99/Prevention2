@@ -154,6 +154,22 @@ Implementation:
 | Locale | No `toLocaleString` in score code; presentation formatting is in `report-engine` / frontend, not in the calculator. |
 | Module side-effects | Score modules import only types + constants; the orchestrator wraps each in `try/catch` so a thrown module cannot poison sibling scores. |
 
+**Enforcement (CI gate, L-06).** `scripts/check-engine-determinism.mjs`
+greps every source file under the deterministic-locked sub-trees
+(`score-engine/`, `risk-aggregation/`, `nutrition-engine/`,
+`derivations/`, `completeness/`, `screening-engine/`) for forbidden
+patterns: `Math.random()`, `Date.now()`, `new Date()`,
+`performance.now()`, `crypto.{getRandomValues,randomUUID,randomBytes}`.
+A single match fails the script with exit 2 and lists every offender by
+file:line, blocking `npm run build` and `npm run build:check`. The
+`EXCLUSIONS` map at the top of the script documents the adjacent
+sub-trees that are NOT deterministic-locked (`report-engine`,
+`alert-engine`, `followup-engine`, `lifestyle-recommendation-engine`,
+`activity-engine`, `guideline-catalog`) with a one-line justification
+each. Adding a new sub-tree under `domain/clinical/` requires either
+listing it in `DETERMINISTIC_DIRS` or in `EXCLUSIONS` with a reason —
+no silent third option.
+
 ---
 
 ## 5. Snapshot persistence
