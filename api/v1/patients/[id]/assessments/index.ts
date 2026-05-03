@@ -15,7 +15,7 @@ import { requireTenantMember, requireClinicalWrite } from '../../../../../backen
 import { applySecurityHeaders } from '../../../../../backend/src/middleware/security-headers.js';
 import { checkRateLimitAsync, RATE_LIMITS, applyRateLimitHeaders } from '../../../../../backend/src/middleware/rate-limit.js';
 import { supabaseAdmin } from '../../../../../backend/src/config/supabase.js';
-import { recordAudit } from '../../../../../backend/src/audit/audit-logger.js';
+import { recordAudit, emitAccessDenialLog } from '../../../../../backend/src/audit/audit-logger.js';
 import { createAssessment } from '../../../../../backend/src/services/assessment-service.js';
 import { assessmentInputSchema } from '../../../../../shared/schemas/assessment-input.js';
 import { logStructured } from '../../../../../backend/src/observability/structured-log.js';
@@ -65,6 +65,16 @@ async function handleList(req: any, res: VercelResponse, patientId: string): Pro
     return;
   }
   if (req.auth.role !== 'platform_admin' && patient.tenant_id !== req.auth.tenantId) {
+    emitAccessDenialLog({
+      reason: 'cross_tenant',
+      actorUserId: req.auth.userId,
+      actorRole: req.auth.role,
+      actorTenantId: req.auth.tenantId,
+      ipHash: req.auth.ipHash ?? null,
+      route: `${req.method ?? 'UNKNOWN'} /api/v1/patients/[id]/assessments`,
+      targetResourceId: patientId,
+      targetTenantId: patient.tenant_id as string,
+    });
     replyError(res, 403, 'CROSS_TENANT_FORBIDDEN');
     return;
   }

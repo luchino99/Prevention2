@@ -32,7 +32,7 @@ import { requireTenantMember, requireClinicalWrite } from '../../../backend/src/
 import { applySecurityHeaders } from '../../../backend/src/middleware/security-headers.js';
 import { checkRateLimitAsync, RATE_LIMITS, applyRateLimitHeaders } from '../../../backend/src/middleware/rate-limit.js';
 import { supabaseAdmin } from '../../../backend/src/config/supabase.js';
-import { recordAuditStrict, AuditWriteError } from '../../../backend/src/audit/audit-logger.js';
+import { recordAuditStrict, AuditWriteError, emitAccessDenialLog } from '../../../backend/src/audit/audit-logger.js';
 import { replyDbError, replyValidationError, replyError } from '../../../backend/src/middleware/http-errors.js';
 import { logStructured } from '../../../backend/src/observability/structured-log.js';
 
@@ -130,6 +130,16 @@ async function handleList(req: any, res: VercelResponse): Promise<void> {
     return;
   }
   if (req.auth.role !== 'platform_admin' && patient.tenant_id !== req.auth.tenantId) {
+    emitAccessDenialLog({
+      reason: 'cross_tenant',
+      actorUserId: req.auth.userId,
+      actorRole: req.auth.role,
+      actorTenantId: req.auth.tenantId,
+      ipHash: req.auth.ipHash ?? null,
+      route: `${req.method ?? 'UNKNOWN'} /api/v1/consents`,
+      targetResourceId: patientId,
+      targetTenantId: patient.tenant_id as string,
+    });
     replyError(res, 403, 'CROSS_TENANT_FORBIDDEN');
     return;
   }
@@ -180,6 +190,16 @@ async function handleGrant(req: any, res: VercelResponse): Promise<void> {
     return;
   }
   if (req.auth.role !== 'platform_admin' && patient.tenant_id !== req.auth.tenantId) {
+    emitAccessDenialLog({
+      reason: 'cross_tenant',
+      actorUserId: req.auth.userId,
+      actorRole: req.auth.role,
+      actorTenantId: req.auth.tenantId,
+      ipHash: req.auth.ipHash ?? null,
+      route: `${req.method ?? 'UNKNOWN'} /api/v1/consents`,
+      targetResourceId: patientId,
+      targetTenantId: patient.tenant_id as string,
+    });
     replyError(res, 403, 'CROSS_TENANT_FORBIDDEN');
     return;
   }

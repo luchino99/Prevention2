@@ -52,7 +52,7 @@ import {
   applyRateLimitHeaders,
 } from '../../../../backend/src/middleware/rate-limit.js';
 import { supabaseAdmin } from '../../../../backend/src/config/supabase.js';
-import { recordAudit } from '../../../../backend/src/audit/audit-logger.js';
+import { recordAudit, emitAccessDenialLog } from '../../../../backend/src/audit/audit-logger.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -155,6 +155,16 @@ export default withAuth(async (req, res: VercelResponse) => {
       return;
     }
     if (r.auth.role !== 'platform_admin' && patient.tenant_id !== r.auth.tenantId) {
+      emitAccessDenialLog({
+        reason: 'cross_tenant',
+        actorUserId: r.auth.userId,
+        actorRole: r.auth.role,
+        actorTenantId: r.auth.tenantId,
+        ipHash: r.auth.ipHash ?? null,
+        route: 'GET /api/v1/patients/[id]/trends',
+        targetResourceId: patientId,
+        targetTenantId: patient.tenant_id as string,
+      });
       s.status(403).json({
         error: { code: 'CROSS_TENANT_FORBIDDEN', message: '' },
       });

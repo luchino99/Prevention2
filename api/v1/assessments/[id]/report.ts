@@ -22,7 +22,7 @@ import {
   loadAssessmentSnapshot,
   buildReportPayload,
 } from '../../../../backend/src/services/assessment-service.js';
-import { recordAuditStrict, AuditWriteError } from '../../../../backend/src/audit/audit-logger.js';
+import { recordAuditStrict, AuditWriteError, emitAccessDenialLog } from '../../../../backend/src/audit/audit-logger.js';
 import { renderAssessmentReportPdf } from '../../../../backend/src/services/pdf-report-service.js';
 import {
   replyDbError,
@@ -162,6 +162,16 @@ async function handleGetSignedUrl(req: any, res: VercelResponse, assessmentId: s
     return;
   }
   if (req.auth.role !== 'platform_admin' && data.tenant_id !== req.auth.tenantId) {
+    emitAccessDenialLog({
+      reason: 'cross_tenant',
+      actorUserId: req.auth.userId,
+      actorRole: req.auth.role,
+      actorTenantId: req.auth.tenantId,
+      ipHash: req.auth.ipHash ?? null,
+      route: 'GET /api/v1/assessments/[id]/report',
+      targetResourceId: assessmentId,
+      targetTenantId: data.tenant_id as string,
+    });
     replyError(res, 403, 'CROSS_TENANT_FORBIDDEN');
     return;
   }

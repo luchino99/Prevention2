@@ -39,7 +39,7 @@ import {
   applyRateLimitHeaders,
 } from '../../../../../backend/src/middleware/rate-limit.js';
 import { supabaseAdmin } from '../../../../../backend/src/config/supabase.js';
-import { recordAudit } from '../../../../../backend/src/audit/audit-logger.js';
+import { recordAudit, emitAccessDenialLog } from '../../../../../backend/src/audit/audit-logger.js';
 import {
   replyDbError,
   replyError,
@@ -110,6 +110,20 @@ export default withAuth(async (req: AuthenticatedRequest, res: VercelResponse) =
     }
 
     if (r.auth.role !== 'platform_admin' && row.tenant_id !== r.auth.tenantId) {
+      // Cross-tenant attempt: emit the structured signal BEFORE the
+      // opaque 404. The HTTP body never discloses the foreign tenant;
+      // the log line carries the truthful reason for the operator
+      // dashboard (Datadog: @event:ACCESS_DENIED @reason:cross_tenant).
+      emitAccessDenialLog({
+        reason: 'cross_tenant',
+        actorUserId: r.auth.userId,
+        actorRole: r.auth.role,
+        actorTenantId: r.auth.tenantId,
+        ipHash: r.auth.ipHash ?? null,
+        route: 'GET /api/v1/admin/dsr/[id]',
+        targetResourceId: dsrId,
+        targetTenantId: row.tenant_id as string,
+      });
       replyError(s, 404, 'NOT_FOUND');
       return;
     }

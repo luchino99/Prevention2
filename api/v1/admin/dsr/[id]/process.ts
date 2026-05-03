@@ -74,6 +74,7 @@ import { supabaseAdmin } from '../../../../../backend/src/config/supabase.js';
 import {
   recordAuditStrict,
   AuditWriteError,
+  emitAccessDenialLog,
 } from '../../../../../backend/src/audit/audit-logger.js';
 import {
   replyDbError,
@@ -209,8 +210,21 @@ export default withAuth(async (req: AuthenticatedRequest, res: VercelResponse) =
     }
     const dsr = row as DsrRow;
     if (r.auth.role !== 'platform_admin' && dsr.tenant_id !== r.auth.tenantId) {
-      // Cross-tenant attempt — opaque NOT_FOUND so we don't disclose
-      // existence of a foreign DSR id.
+      // Cross-tenant attempt — opaque NOT_FOUND to the client (no
+      // existence disclosure), but EMIT the structured ACCESS_DENIED
+      // signal first so the security dashboard catches the truthful
+      // reason. The endpoint does the tenant check inline (rather than
+      // calling assertSameTenant) so we must emit the log here too.
+      emitAccessDenialLog({
+        reason: 'cross_tenant',
+        actorUserId: r.auth.userId,
+        actorRole: r.auth.role,
+        actorTenantId: r.auth.tenantId,
+        ipHash: r.auth.ipHash ?? null,
+        route: 'POST /api/v1/admin/dsr/[id]/process',
+        targetResourceId: dsrId,
+        targetTenantId: dsr.tenant_id,
+      });
       replyError(s, 404, 'NOT_FOUND');
       return;
     }
