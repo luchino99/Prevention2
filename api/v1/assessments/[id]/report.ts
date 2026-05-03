@@ -17,6 +17,7 @@ import { requireTenantMember } from '../../../../backend/src/middleware/rbac.js'
 import { applySecurityHeaders } from '../../../../backend/src/middleware/security-headers.js';
 import { checkRateLimitAsync, RATE_LIMITS, applyRateLimitHeaders } from '../../../../backend/src/middleware/rate-limit.js';
 import { supabaseAdmin } from '../../../../backend/src/config/supabase.js';
+import { logStructured } from '../../../../backend/src/observability/structured-log.js';
 import {
   loadAssessmentSnapshot,
   buildReportPayload,
@@ -87,7 +88,7 @@ async function handleGenerate(req: any, res: VercelResponse, assessmentId: strin
       // was already written. Surface the failure server-side so ops can
       // reconcile, but keep the client flow alive (signed URL still works).
       // eslint-disable-next-line no-console
-      console.error('[report] export row insert failed', { exportErr });
+      logStructured('error', 'REPORT_EXPORT_INSERT_FAILED', { context: 'report export row insert failed', extra: { exportErr } });
     }
 
     const { data: signed, error: signErr } = await supabaseAdmin.storage
@@ -118,12 +119,12 @@ async function handleGenerate(req: any, res: VercelResponse, assessmentId: strin
       });
     } catch (auditErr) {
       // eslint-disable-next-line no-console
-      console.error('[report.generate] audit write failed', {
+      logStructured('warn', 'AUDIT_BEST_EFFORT_FAILED', { context: 'report.generate audit write failed', extra: {
         assessmentId,
         exportId: exportRow?.id ?? null,
         isAuditWriteError: auditErr instanceof AuditWriteError,
         auditErr,
-      });
+      } });
       replyError(res, 500, 'AUDIT_WRITE_FAILED');
       return;
     }
@@ -189,12 +190,12 @@ async function handleGetSignedUrl(req: any, res: VercelResponse, assessmentId: s
     });
   } catch (auditErr) {
     // eslint-disable-next-line no-console
-    console.error('[report.download] audit write failed', {
+    logStructured('warn', 'AUDIT_BEST_EFFORT_FAILED', { context: 'report.download audit write failed', extra: {
       assessmentId,
       reportId: data.id,
       isAuditWriteError: auditErr instanceof AuditWriteError,
       auditErr,
-    });
+    } });
     replyError(res, 500, 'AUDIT_WRITE_FAILED');
     return;
   }

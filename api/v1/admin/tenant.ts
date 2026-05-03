@@ -40,6 +40,7 @@ import { z } from 'zod';
 import { withAuth, type AuthenticatedRequest } from '../../../backend/src/middleware/auth-middleware.js';
 import { requireTenantAdmin } from '../../../backend/src/middleware/rbac.js';
 import { applySecurityHeaders } from '../../../backend/src/middleware/security-headers.js';
+import { logStructured } from '../../../backend/src/observability/structured-log.js';
 import {
   checkRateLimitAsync,
   RATE_LIMITS,
@@ -155,7 +156,7 @@ async function handleGet(req: AuthenticatedRequest, res: VercelResponse): Promis
     });
   } catch (auditErr) {
     // eslint-disable-next-line no-console
-    console.error('[admin.tenant.read] audit best-effort failed', { auditErr });
+    logStructured('warn', 'AUDIT_BEST_EFFORT_FAILED', { context: 'admin.tenant.read audit best-effort failed', extra: { auditErr } });
   }
 
   res.status(200).json({ tenant: data });
@@ -226,11 +227,10 @@ async function handlePatch(req: AuthenticatedRequest, res: VercelResponse): Prom
       },
     });
   } catch (auditErr) {
-    // eslint-disable-next-line no-console
-    console.error('[admin.tenant.patch] audit guarantee failed', {
-      isAuditWriteError: auditErr instanceof AuditWriteError,
-      auditErr,
-    });
+    // AUDIT_WRITE_FAILED already emitted by the canonical emitter inside
+    // recordAuditStrict — do not duplicate the log line. The HTTP 500
+    // envelope is the operator-facing signal.
+    void auditErr;
     replyError(res, 500, 'AUDIT_WRITE_FAILED');
     return;
   }

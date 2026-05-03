@@ -36,6 +36,7 @@ import { z } from 'zod';
 import { withAuth } from '../../../../backend/src/middleware/auth-middleware.js';
 import { requireTenantMember } from '../../../../backend/src/middleware/rbac.js';
 import { applySecurityHeaders } from '../../../../backend/src/middleware/security-headers.js';
+import { logStructured } from '../../../../backend/src/observability/structured-log.js';
 import {
   checkRateLimitAsync,
   RATE_LIMITS,
@@ -246,10 +247,10 @@ export default withAuth(async (req, res: VercelResponse) => {
       });
     } catch (auditErr) {
       // eslint-disable-next-line no-console
-      console.error('[patients.due-items] audit best-effort failed', {
+      logStructured('warn', 'AUDIT_BEST_EFFORT_FAILED', { context: 'patients.due-items audit best-effort failed', extra: {
         patientId,
         auditErr,
-      });
+      } });
     }
 
     const items = (data ?? []).map((row: any) => {

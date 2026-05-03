@@ -13,6 +13,7 @@ import { requireTenantMember, requireClinicalWrite, requireTenantAdmin } from '.
 import { applySecurityHeaders } from '../../../../backend/src/middleware/security-headers.js';
 import { checkRateLimitAsync, RATE_LIMITS, applyRateLimitHeaders } from '../../../../backend/src/middleware/rate-limit.js';
 import { supabaseAdmin } from '../../../../backend/src/config/supabase.js';
+import { logStructured } from '../../../../backend/src/observability/structured-log.js';
 import {
   recordAudit,
   recordAuditStrict,
@@ -195,11 +196,11 @@ async function handleDelete(req: any, res: VercelResponse, patientId: string): P
     });
   } catch (auditErr) {
     // eslint-disable-next-line no-console
-    console.error('[patients.delete] audit write failed', {
+    logStructured('warn', 'AUDIT_BEST_EFFORT_FAILED', { context: 'patients.delete audit write failed', extra: {
       patientId,
       isAuditWriteError: auditErr instanceof AuditWriteError,
       auditErr,
-    });
+    } });
     replyError(res, 500, 'AUDIT_WRITE_FAILED');
     return;
   }

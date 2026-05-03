@@ -42,6 +42,7 @@ import { z } from 'zod';
 import { withAuth, type AuthenticatedRequest } from '../../../../backend/src/middleware/auth-middleware.js';
 import { requireTenantAdmin } from '../../../../backend/src/middleware/rbac.js';
 import { applySecurityHeaders } from '../../../../backend/src/middleware/security-headers.js';
+import { logStructured } from '../../../../backend/src/observability/structured-log.js';
 import {
   checkRateLimitAsync,
   RATE_LIMITS,
@@ -202,7 +203,7 @@ async function handleList(req: AuthenticatedRequest, res: VercelResponse): Promi
     });
   } catch (auditErr) {
     // eslint-disable-next-line no-console
-    console.error('[admin.dsr.list] audit best-effort failed', { auditErr });
+    logStructured('warn', 'AUDIT_BEST_EFFORT_FAILED', { context: 'admin.dsr.list audit best-effort failed', extra: { auditErr } });
   }
 
   res.status(200).json({
@@ -332,11 +333,11 @@ async function handleCreate(req: AuthenticatedRequest, res: VercelResponse): Pro
       },
     });
   } catch (auditErr) {
-    // eslint-disable-next-line no-console
-    console.error('[admin.dsr.create] audit guarantee failed', {
-      isAuditWriteError: auditErr instanceof AuditWriteError,
-      auditErr,
-    });
+    // recordAuditStrict has already emitted AUDIT_WRITE_FAILED via the
+    // canonical emitter; we deliberately do NOT re-log here to avoid
+    // duplicate dashboard events. The HTTP envelope is the operator-
+    // facing signal that the strict-audit branch fired.
+    void auditErr;
     replyError(res, 500, 'AUDIT_WRITE_FAILED');
     return;
   }

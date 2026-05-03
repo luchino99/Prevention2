@@ -18,6 +18,7 @@ import { recordAudit, recordFailedLogin } from '../../../backend/src/audit/audit
 import { applySecurityHeaders } from '../../../backend/src/middleware/security-headers.js';
 import { checkRateLimitAsync, RATE_LIMITS, applyRateLimitHeaders } from '../../../backend/src/middleware/rate-limit.js';
 import { replyError, replyServiceError } from '../../../backend/src/middleware/http-errors.js';
+import { logStructured } from '../../../backend/src/observability/structured-log.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   applySecurityHeaders(res);
@@ -57,7 +58,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       await recordAudit(auth, { action: 'auth.login', resourceType: 'session' });
     } catch (auditErr) {
       // eslint-disable-next-line no-console
-      console.error('[auth.session] audit best-effort failed', { auditErr });
+      logStructured('warn', 'AUDIT_BEST_EFFORT_FAILED', { context: 'auth.session audit best-effort failed', extra: { auditErr } });
     }
 
     res.status(200).json({

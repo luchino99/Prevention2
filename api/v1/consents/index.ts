@@ -34,6 +34,7 @@ import { checkRateLimitAsync, RATE_LIMITS, applyRateLimitHeaders } from '../../.
 import { supabaseAdmin } from '../../../backend/src/config/supabase.js';
 import { recordAuditStrict, AuditWriteError } from '../../../backend/src/audit/audit-logger.js';
 import { replyDbError, replyValidationError, replyError } from '../../../backend/src/middleware/http-errors.js';
+import { logStructured } from '../../../backend/src/observability/structured-log.js';
 
 /**
  * B-08 — clinician → patient consent gate.
@@ -247,11 +248,11 @@ async function handleGrant(req: any, res: VercelResponse): Promise<void> {
     });
   } catch (auditErr) {
     // eslint-disable-next-line no-console
-    console.error('[consents.grant] audit write failed', {
+    logStructured('warn', 'AUDIT_BEST_EFFORT_FAILED', { context: 'consents.grant audit write failed', extra: {
       id: data.id,
       isAuditWriteError: auditErr instanceof AuditWriteError,
       auditErr,
-    });
+    } });
     replyError(res, 500, 'AUDIT_WRITE_FAILED');
     return;
   }

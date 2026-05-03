@@ -24,6 +24,7 @@ import { checkRateLimitAsync, RATE_LIMITS, applyRateLimitHeaders } from '../../.
 import { supabaseAdmin } from '../../../backend/src/config/supabase.js';
 import { recordAudit } from '../../../backend/src/audit/audit-logger.js';
 import { replyDbError, replyValidationError, replyError } from '../../../backend/src/middleware/http-errors.js';
+import { logStructured } from '../../../backend/src/observability/structured-log.js';
 
 const querySchema = z.object({
   status: z.enum(['open', 'acknowledged', 'resolved', 'dismissed']).default('open'),
@@ -89,7 +90,7 @@ async function handleList(req: any, res: VercelResponse): Promise<void> {
     });
   } catch (auditErr) {
     // eslint-disable-next-line no-console
-    console.error('[alerts.list] audit best-effort failed', { auditErr });
+    logStructured('warn', 'AUDIT_BEST_EFFORT_FAILED', { context: 'alerts.list audit best-effort failed', extra: { auditErr } });
   }
 
   res.status(200).json({

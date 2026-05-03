@@ -17,6 +17,7 @@ import { supabaseAdmin } from '../../../backend/src/config/supabase.js';
 import { recordAudit } from '../../../backend/src/audit/audit-logger.js';
 import { createPatientSchema, getPatientDisplayName } from '../../../shared/schemas/patient-input.js';
 import { replyDbError, replyValidationError, replyError } from '../../../backend/src/middleware/http-errors.js';
+import { logStructured } from '../../../backend/src/observability/structured-log.js';
 
 const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -154,11 +155,11 @@ async function handleCreate(req: any, res: VercelResponse): Promise<void> {
       });
     if (linkErr) {
       // eslint-disable-next-line no-console
-      console.error('[patients.create] auto-link PPL failed', {
+      logStructured('warn', 'PPL_AUTOLINK_FAILED', { context: 'patients.create auto-link PPL failed', extra: {
         patientId: data.id,
         userId: req.auth.userId,
         pg: { code: (linkErr as any).code, message: linkErr.message },
-      });
+      } });
     }
   }
 

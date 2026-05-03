@@ -54,6 +54,7 @@
 import type { VercelResponse } from '@vercel/node';
 import { randomUUID } from 'node:crypto';
 import type { ZodIssue } from 'zod';
+import { logStructured } from '../observability/structured-log.js';
 
 /* ----------------------------- public API ------------------------------- */
 
@@ -100,8 +101,19 @@ export function replyDbError(
   ctx: string,
 ): string {
   const requestId = randomUUID();
-  // eslint-disable-next-line no-console
-  console.error('[db-error]', { requestId, ctx, error: serializeError(error) });
+  const serialised = serializeError(error);
+  logStructured('error', 'HTTP_DB_ERROR', {
+    requestId,
+    ctx,
+    dbErrorMessage:
+      typeof serialised === 'object' && serialised && 'message' in serialised
+        ? (serialised as { message?: string }).message ?? null
+        : null,
+    dbErrorCode:
+      typeof serialised === 'object' && serialised && 'code' in serialised
+        ? (serialised as { code?: string }).code ?? null
+        : null,
+  });
   res.setHeader('X-Request-Id', requestId);
   res.status(500).json({ error: { code: 'DB_ERROR', requestId } });
   return requestId;
@@ -126,8 +138,15 @@ export function replyValidationError(
     code: i.code,
     message: i.message,
   }));
-  // eslint-disable-next-line no-console
-  console.warn('[validation]', { requestId, ctx, issues: safe });
+  logStructured('warn', 'HTTP_VALIDATION_REJECTED', {
+    requestId,
+    ctx,
+    issueCount: safe.length,
+    // First-issue summary keeps the log line bounded; full list is in the
+    // 422 response body for the client to render.
+    firstIssueCode: safe[0]?.code ?? null,
+    firstIssuePath: safe[0]?.path?.join('.') ?? null,
+  });
   res.setHeader('X-Request-Id', requestId);
   res.status(422).json({
     error: { code: 'VALIDATION_ERROR', requestId, issues: safe },
@@ -200,13 +219,16 @@ export function replyServiceError(
       : undefined;
 
   const requestId = randomUUID();
-  // eslint-disable-next-line no-console
-  console.error('[service-error]', {
+  const serialised = serializeError(err);
+  logStructured('error', 'HTTP_SERVICE_ERROR', {
     requestId,
     ctx,
     status,
     code,
-    error: serializeError(err),
+    errorTag:
+      typeof serialised === 'object' && serialised && 'message' in serialised
+        ? (serialised as { message?: string }).message ?? null
+        : null,
   });
 
   res.setHeader('X-Request-Id', requestId);

@@ -18,6 +18,7 @@ import { supabaseAdmin } from '../../../../../backend/src/config/supabase.js';
 import { recordAudit } from '../../../../../backend/src/audit/audit-logger.js';
 import { createAssessment } from '../../../../../backend/src/services/assessment-service.js';
 import { assessmentInputSchema } from '../../../../../shared/schemas/assessment-input.js';
+import { logStructured } from '../../../../../backend/src/observability/structured-log.js';
 import {
   replyDbError,
   replyValidationError,
@@ -118,10 +119,10 @@ async function handleList(req: any, res: VercelResponse, patientId: string): Pro
     });
   } catch (auditErr) {
     // eslint-disable-next-line no-console
-    console.error('[patients.assessments.list] audit best-effort failed', {
+    logStructured('warn', 'AUDIT_BEST_EFFORT_FAILED', { context: 'patients.assessments.list audit best-effort failed', extra: {
       patientId,
       auditErr,
-    });
+    } });
   }
 
   // Normalize Supabase nested-relation shape (array vs single) into a single

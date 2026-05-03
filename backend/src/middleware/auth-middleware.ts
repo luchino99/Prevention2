@@ -170,11 +170,11 @@ export async function validateAccessToken(
 
   if (userErr) {
     // PostgREST 42703 etc. — propagate the underlying code for diagnostics.
-    // eslint-disable-next-line no-console
-    console.error('[auth] users lookup failed', {
-      code: (userErr as any)?.code,
-      message: userErr.message,
+    const { logStructured } = await import('../observability/structured-log.js');
+    logStructured('error', 'AUTH_PROFILE_LOOKUP_FAILED', {
       userId,
+      dbErrorCode: (userErr as { code?: string })?.code ?? null,
+      dbErrorMessage: userErr.message ?? null,
     });
     throw new AuthError(500, 'DB_ERROR', 'Could not load user profile');
   }
@@ -273,8 +273,13 @@ export function withAuth<T extends VercelResponse = VercelResponse>(
         res.status(err.status).json({ error: { code: err.code, message: err.message } });
         return;
       }
-      // Never leak internals
-      console.error('[auth] unexpected error', err);
+      // Never leak internals — structured event for the operator dashboard.
+      try {
+        const { logStructured, tagFromError } = await import('../observability/structured-log.js');
+        logStructured('error', 'AUTH_UNEXPECTED_ERROR', {
+          errorTag: tagFromError(err) ?? 'unknown',
+        });
+      } catch { /* never block */ }
       res.status(500).json({ error: { code: 'AUTH_FAILURE', message: 'Authentication failed' } });
     }
   };

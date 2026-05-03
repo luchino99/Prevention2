@@ -20,6 +20,7 @@ import { withAuth } from '../../../../backend/src/middleware/auth-middleware.js'
 import { requireTenantMember } from '../../../../backend/src/middleware/rbac.js';
 import { applySecurityHeaders } from '../../../../backend/src/middleware/security-headers.js';
 import { checkRateLimitAsync, RATE_LIMITS, applyRateLimitHeaders } from '../../../../backend/src/middleware/rate-limit.js';
+import { logStructured } from '../../../../backend/src/observability/structured-log.js';
 import {
   loadAssessmentSnapshot,
   deleteAssessment,
@@ -78,7 +79,7 @@ export default withAuth(async (req, res: VercelResponse) => {
           });
         } catch (auditErr) {
           // eslint-disable-next-line no-console
-          console.error('[assessment.read] audit best-effort failed', { id, auditErr });
+          logStructured('warn', 'AUDIT_BEST_EFFORT_FAILED', { context: 'assessment.read audit best-effort failed', extra: { id, auditErr } });
         }
         s.status(200).json({ snapshot });
       } catch (err: any) {

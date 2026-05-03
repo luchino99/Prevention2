@@ -34,6 +34,7 @@ import { applySecurityHeaders } from '../../../../backend/src/middleware/securit
 import { checkRateLimitAsync, applyRateLimitHeaders } from '../../../../backend/src/middleware/rate-limit.js';
 import { supabaseAdmin } from '../../../../backend/src/config/supabase.js';
 import { recordAuditStrict, AuditWriteError } from '../../../../backend/src/audit/audit-logger.js';
+import { logStructured } from '../../../../backend/src/observability/structured-log.js';
 import {
   replyDbError,
   replyError,
@@ -193,11 +194,11 @@ async function handleExport(req: any, res: VercelResponse, patientId: string): P
     });
   } catch (auditErr) {
     // eslint-disable-next-line no-console
-    console.error('[patients.export] audit write failed', {
+    logStructured('warn', 'AUDIT_BEST_EFFORT_FAILED', { context: 'patients.export audit write failed', extra: {
       patientId,
       isAuditWriteError: auditErr instanceof AuditWriteError,
       auditErr,
-    });
+    } });
     replyError(res, 500, 'AUDIT_WRITE_FAILED');
     return;
   }

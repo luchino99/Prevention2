@@ -32,6 +32,7 @@ import { z } from 'zod';
 import { withAuth, type AuthenticatedRequest } from '../../../../../backend/src/middleware/auth-middleware.js';
 import { requireTenantAdmin } from '../../../../../backend/src/middleware/rbac.js';
 import { applySecurityHeaders } from '../../../../../backend/src/middleware/security-headers.js';
+import { logStructured } from '../../../../../backend/src/observability/structured-log.js';
 import {
   checkRateLimitAsync,
   RATE_LIMITS,
@@ -122,7 +123,7 @@ export default withAuth(async (req: AuthenticatedRequest, res: VercelResponse) =
         // Log but do not fail the read — admins can re-trigger fulfilment
         // from the UI if the artefact is missing.
         // eslint-disable-next-line no-console
-        console.error('[admin.dsr.read] signed-url failed', { signErr });
+        logStructured('warn', 'STORAGE_OPERATION_FAILED', { context: 'admin.dsr.read signed-url failed', extra: { signErr } });
       } else if (signed?.signedUrl) {
         signedUrl = signed.signedUrl;
       }
@@ -141,7 +142,7 @@ export default withAuth(async (req: AuthenticatedRequest, res: VercelResponse) =
       });
     } catch (auditErr) {
       // eslint-disable-next-line no-console
-      console.error('[admin.dsr.read] audit best-effort failed', { auditErr });
+      logStructured('warn', 'AUDIT_BEST_EFFORT_FAILED', { context: 'admin.dsr.read audit best-effort failed', extra: { auditErr } });
     }
 
     s.status(200).json({

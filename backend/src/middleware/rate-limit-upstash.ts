@@ -1,43 +1,165 @@
 /**
  * Distributed rate-limit adapter — Upstash Redis REST API.
  *
- * Why:
- *   Vercel serverless invocations run on ephemeral instances. The in-memory
- *   token-bucket in `rate-limit.ts` is per-instance and therefore cannot
- *   enforce a global limit. A single burst can spin up many instances and
- *   multiply the effective limit by N. For a clinical B2B platform this is
- *   an abuse and DoS risk.
+ * Why
+ * ---
+ * Vercel serverless invocations run on ephemeral instances. The
+ * in-memory token-bucket in `rate-limit.ts` is per-instance and cannot
+ * enforce a global limit; a cold-start fan-out multiplies the
+ * effective limit by N. Upstash provides a same-region atomic Redis
+ * pipeline (INCR + PEXPIRE NX + PTTL) reachable over HTTPS.
  *
- * How:
- *   - Atomic INCR on the bucket key
- *   - If INCR == 1 → set PEXPIRE (window)  [race-safe: only the first caller
- *     that creates the key triggers the expiry]
- *   - Allowed = count ≤ max
+ * Hardening (post-incident)
+ * -------------------------
+ * Production logs surfaced `Failed to parse URL from "https://"`
+ * because `process.env.UPSTASH_REDIS_REST_URL` came back as `"https://"`
+ * (a blank value, or a value wrapped in stray quotes — a common
+ * Vercel-paste mistake). Three changes:
  *
- * Upstash REST API executes command pipelines over HTTPS, which is the only
- * network egress available from edge/serverless workers. We use `fetch`
- * (Node 18+) and a small signed pipeline envelope.
+ *   1. Strict URL validation via `new URL(...)` plus a `protocol`
+ *      / `hostname` sanity check. A malformed value disables Upstash
+ *      cleanly instead of throwing on every request.
+ *   2. Sanitisation: trim whitespace, strip wrapping single/double
+ *      quotes the way Vercel sometimes preserves them.
+ *   3. One structured `RATE_LIMIT_BACKEND_FAILURE` event per
+ *      misconfiguration (deduped per process) and one per transient
+ *      runtime failure (capped at one per 60 s to avoid log spam).
  *
- * Fallback:
- *   If UPSTASH_REDIS_REST_URL is missing or a request fails, we degrade
- *   gracefully and return `null` — the caller MUST then apply the
- *   in-memory limiter. This means a misconfigured prod env still rate-limits
- *   per-instance instead of leaving endpoints unbounded.
+ * Fallback
+ * --------
+ * Any failure (config, network, non-2xx, JSON parse) returns `null`
+ * to the caller. The async wrapper in `rate-limit.ts` then falls
+ * back to the in-memory limiter — endpoints stay rate-limited (just
+ * per-instance) instead of unbounded.
  *
- * Security:
- *   - Tokens are read from env only (never from the client)
- *   - Keys are deterministic `ratelimit:${routeId}:${subject}` — bounded length
- *   - No user PII is written to Redis; the subject is already hashed/userId
+ * Security
+ * --------
+ *   - Tokens are read from env only (never from the client).
+ *   - Keys are deterministic `ratelimit:${routeId}:${subject}` —
+ *     bounded length, no PHI (subject is a hashed IP or a UUID).
+ *   - The Authorization header is set on every request — never logged.
  */
 
 import type { RateLimitConfig, RateLimitResult } from './rate-limit.js';
+import { logStructured } from '../observability/structured-log.js';
 
-const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL;
-const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+/* ────────────────────── env-var resolution + validation ───────────────── */
+
+/**
+ * Strip whitespace + accidental wrapping single/double quotes.
+ * Returns null if nothing useful remains.
+ */
+function cleanEnv(raw: string | undefined): string | null {
+  if (typeof raw !== 'string') return null;
+  let s = raw.trim();
+  // Vercel sometimes preserves quotes pasted by users; strip a single
+  // matched leading/trailing pair only (don't unwrap recursively).
+  if (
+    s.length >= 2 &&
+    ((s.startsWith('"') && s.endsWith('"')) ||
+      (s.startsWith("'") && s.endsWith("'")))
+  ) {
+    s = s.slice(1, -1).trim();
+  }
+  return s.length > 0 ? s : null;
+}
+
+/**
+ * Module-level memoisation. The env vars are immutable for the
+ * lifetime of a serverless instance, so we resolve + validate once
+ * and remember whether the misconfig event has already been logged.
+ */
+let cachedBaseUrl: string | null | undefined;        // undefined = unresolved
+let cachedToken: string | null = null;
+let configWarningEmitted = false;
+
+/**
+ * Returns the validated Upstash REST base URL (no trailing slash) or
+ * null if the env var is missing / malformed. The first time we hit
+ * a malformed value we emit one RATE_LIMIT_BACKEND_FAILURE event so
+ * an alert fires; subsequent requests stay silent until the process
+ * restarts (with potentially fixed env).
+ */
+function resolveBaseUrl(): string | null {
+  if (cachedBaseUrl !== undefined) return cachedBaseUrl;
+
+  const rawUrl = cleanEnv(process.env.UPSTASH_REDIS_REST_URL);
+  const rawToken = cleanEnv(process.env.UPSTASH_REDIS_REST_TOKEN);
+  cachedToken = rawToken;
+
+  if (!rawUrl) {
+    cachedBaseUrl = null;
+    return null;
+  }
+  if (!rawToken) {
+    if (!configWarningEmitted) {
+      configWarningEmitted = true;
+      logStructured('error', 'RATE_LIMIT_BACKEND_FAILURE', {
+        provider: 'upstash',
+        reason: 'missing_token_with_url_set',
+      });
+    }
+    cachedBaseUrl = null;
+    return null;
+  }
+
+  try {
+    const u = new URL(rawUrl);
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') {
+      throw new Error(`unsupported protocol ${u.protocol}`);
+    }
+    if (!u.hostname) {
+      throw new Error('empty hostname');
+    }
+    // Reconstruct as origin + (optional) path with no trailing slash so
+    // the call site can append `/pipeline` cleanly.
+    const path = u.pathname.replace(/\/$/, '');
+    cachedBaseUrl = `${u.origin}${path}`;
+    return cachedBaseUrl;
+  } catch (err) {
+    if (!configWarningEmitted) {
+      configWarningEmitted = true;
+      logStructured('error', 'RATE_LIMIT_BACKEND_FAILURE', {
+        provider: 'upstash',
+        reason: 'invalid_url_config',
+        urlLen: rawUrl.length,
+        // We deliberately do NOT log the value itself — a misconfigured
+        // URL might still be sensitive (e.g. credentials in path).
+        errorTag: err instanceof Error ? `${err.name}: ${err.message}`.slice(0, 200) : 'unknown',
+      });
+    }
+    cachedBaseUrl = null;
+    return null;
+  }
+}
 
 export function isUpstashConfigured(): boolean {
-  return typeof REDIS_URL === 'string' && REDIS_URL.length > 0 && !!REDIS_TOKEN;
+  return resolveBaseUrl() !== null;
 }
+
+/* ────────────────────── runtime-failure dedup ─────────────────────────── */
+
+/**
+ * Ratelimit the noisy `RATE_LIMIT_BACKEND_FAILURE` event itself: at
+ * most one log line per 60 s per process per failure shape. Without
+ * this, a Redis outage would fill Datadog with thousands of identical
+ * events and inflate the bill.
+ */
+const SPAM_WINDOW_MS = 60_000;
+const lastEmittedAt = new Map<string, number>();
+function emitRuntimeFailure(reason: string, errorTag: string | undefined): void {
+  const now = Date.now();
+  const last = lastEmittedAt.get(reason) ?? 0;
+  if (now - last < SPAM_WINDOW_MS) return;
+  lastEmittedAt.set(reason, now);
+  logStructured('error', 'RATE_LIMIT_BACKEND_FAILURE', {
+    provider: 'upstash',
+    reason,
+    ...(errorTag ? { errorTag } : {}),
+  });
+}
+
+/* ────────────────────────────── pipeline call ─────────────────────────── */
 
 interface UpstashResult<T> {
   result?: T;
@@ -47,38 +169,57 @@ interface UpstashResult<T> {
 async function upstashPipeline<T extends unknown[]>(
   commands: (string | number)[][],
 ): Promise<UpstashResult<T> | null> {
-  if (!isUpstashConfigured()) return null;
+  const baseUrl = resolveBaseUrl();
+  if (!baseUrl || !cachedToken) return null;
+
+  let res: Response;
   try {
-    const res = await fetch(`${REDIS_URL}/pipeline`, {
+    res = await fetch(`${baseUrl}/pipeline`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${REDIS_TOKEN}`,
+        Authorization: `Bearer ${cachedToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(commands),
-      // Small timeout to avoid holding the serverless invocation hostage.
+      // Bounded — we will not hold the serverless invocation hostage.
       signal: AbortSignal.timeout(750),
     });
-    if (!res.ok) {
-      // eslint-disable-next-line no-console
-      console.warn('[rate-limit-upstash] pipeline non-2xx', res.status);
-      return null;
-    }
-    const body = (await res.json()) as UpstashResult<T>[];
-    // Upstash pipeline returns an array aligned with commands
-    const results = body.map((r) => r.result);
-    return { result: results as unknown as T };
   } catch (err) {
-    // eslint-disable-next-line no-console
-    console.warn('[rate-limit-upstash] pipeline threw', (err as Error).message);
+    emitRuntimeFailure(
+      err instanceof DOMException && err.name === 'TimeoutError' ? 'request_timeout' : 'request_threw',
+      err instanceof Error ? `${err.name}: ${err.message}`.slice(0, 200) : 'unknown',
+    );
     return null;
   }
+
+  if (!res.ok) {
+    emitRuntimeFailure('non_2xx_response', `status=${res.status}`);
+    return null;
+  }
+
+  let body: UpstashResult<T>[];
+  try {
+    body = (await res.json()) as UpstashResult<T>[];
+  } catch (err) {
+    emitRuntimeFailure(
+      'invalid_json_response',
+      err instanceof Error ? `${err.name}: ${err.message}`.slice(0, 200) : 'unknown',
+    );
+    return null;
+  }
+
+  // Upstash pipeline returns an array aligned with commands.
+  const results = body.map((r) => r.result);
+  return { result: results as unknown as T };
 }
+
+/* ────────────────────────────── public API ────────────────────────────── */
 
 /**
  * Check and atomically increment the distributed bucket.
  *
- * Returns `null` if Upstash is unavailable — caller must fall back.
+ * Returns `null` if Upstash is unavailable — caller must fall back
+ * to the in-memory limiter.
  */
 export async function checkRateLimitUpstash(
   subject: string,
@@ -89,18 +230,17 @@ export async function checkRateLimitUpstash(
   const response = await upstashPipeline<[number, number | 'OK' | null, number]>(
     [
       ['INCR', key],
-      // PEXPIRE with NX only sets TTL when currently missing → idempotent
-      // across the window; first caller wins the TTL.
+      // PEXPIRE NX: only the first caller in the window gets the TTL,
+      // so the bucket reset time is stable across concurrent INCRs.
       ['PEXPIRE', key, config.windowMs, 'NX'],
-      // PTTL to report accurate reset time back to the client.
+      // PTTL — accurate reset time for the response header.
       ['PTTL', key],
     ],
   );
   if (!response?.result) return null;
   const [count, , pttl] = response.result as unknown as [number, unknown, number];
   const now = Date.now();
-  // PTTL returns -1 if no TTL, -2 if missing. Both should not happen here,
-  // but we defensively clamp to the window.
+  // PTTL returns -1 if no TTL, -2 if missing. Defensive clamp.
   const ttlMs = typeof pttl === 'number' && pttl > 0 ? pttl : config.windowMs;
   const allowed = count <= config.max;
   return {

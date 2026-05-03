@@ -12,6 +12,7 @@ import { checkRateLimitAsync, RATE_LIMITS, applyRateLimitHeaders } from '../../.
 import { supabaseAdmin } from '../../../../backend/src/config/supabase.js';
 import { recordAudit } from '../../../../backend/src/audit/audit-logger.js';
 import { replyDbError, replyValidationError, replyError } from '../../../../backend/src/middleware/http-errors.js';
+import { logStructured } from '../../../../backend/src/observability/structured-log.js';
 
 const querySchema = z.object({
   status: z.enum(['open', 'acknowledged', 'resolved', 'dismissed']).optional(),
@@ -92,7 +93,7 @@ export default withAuth(async (req, res: VercelResponse) => {
       });
     } catch (auditErr) {
       // eslint-disable-next-line no-console
-      console.error('[patients.alerts] audit best-effort failed', { patientId, auditErr });
+      logStructured('warn', 'AUDIT_BEST_EFFORT_FAILED', { context: 'patients.alerts audit best-effort failed', extra: { patientId, auditErr } });
     }
 
     s.status(200).json({

@@ -28,6 +28,7 @@
 import { supabaseAdmin } from '../config/supabase.js';
 import type { AuthContext } from '../middleware/auth-middleware.js';
 import { recordAudit } from '../audit/audit-logger.js';
+import { logStructured, tagFromError } from '../observability/structured-log.js';
 
 import { computeAllScores } from '../domain/clinical/score-engine/index.js';
 import { aggregateCompositeRisk } from '../domain/clinical/risk-aggregation/composite-risk.js';
@@ -292,8 +293,9 @@ async function loadPreviousCompositeRisk(
       frailty,
     };
   } catch (e) {
-    // eslint-disable-next-line no-console
-    console.error('[assessment-service] loadPreviousCompositeRisk failed', e);
+    logStructured('warn', 'ASSESSMENT_PREV_LOAD_FAILED', {
+      errorTag: tagFromError(e) ?? 'unknown',
+    });
     return null;
   }
 }
@@ -724,8 +726,11 @@ export async function createAssessment(
     // `replyServiceError`. We retain the targeted "MIGRATION_REQUIRED"
     // detection for the snapshot column path so a missing migration
     // 003 still surfaces a one-step actionable hint.
-    // eslint-disable-next-line no-console
-    console.error('[assessment-service] create_assessment_atomic failed', rpcErr);
+    const errObj = rpcErr as { code?: string; message?: string; details?: string; hint?: string };
+    logStructured('error', 'ASSESSMENT_RPC_FAILED', {
+      dbErrorCode: errObj?.code ?? null,
+      dbErrorMessage: errObj?.message ?? errObj?.details ?? errObj?.hint ?? null,
+    });
     throw classifyAssessmentInsertError(rpcErr as any);
   }
 
@@ -779,10 +784,10 @@ export async function createAssessment(
       },
     });
   } catch (auditErr) {
-    // eslint-disable-next-line no-console
-    console.error('[assessment-service] assessment.create audit best-effort failed', {
-      assessmentId,
-      auditErr,
+    logStructured('warn', 'AUDIT_BEST_EFFORT_FAILED', {
+      action: 'assessment.create',
+      resourceId: assessmentId,
+      errorTag: tagFromError(auditErr) ?? 'unknown',
     });
   }
 
@@ -1313,8 +1318,12 @@ export async function deleteAssessment(
     .select('id');
 
   if (delErr) {
-    // eslint-disable-next-line no-console
-    console.error('[deleteAssessment] assessments.delete failed', delErr);
+    const errObj = delErr as { code?: string; message?: string };
+    logStructured('error', 'ASSESSMENT_DELETE_FAILED', {
+      assessmentId,
+      dbErrorCode: errObj?.code ?? null,
+      dbErrorMessage: errObj?.message ?? null,
+    });
     throw new AssessmentServiceError(
       500,
       'DELETE_FAILED',

@@ -32,6 +32,7 @@
  */
 
 import { supabaseAdmin } from '../config/supabase.js';
+import { logStructured, tagFromError } from '../observability/structured-log.js';
 import type { AuthContext } from '../middleware/auth-middleware.js';
 
 /** Canonical set of audit actions. Keep in sync with monitoring dashboards. */
@@ -122,32 +123,23 @@ export interface AuditEvent {
 }
 
 /**
- * Canonical event tag emitted by every audit-failure log line. Detection
- * dashboards / log-based alerts (Vercel, Datadog, Logflare, …) match on
- * this string. Never reuse it for anything else.
+ * Audit-failure events go through the centralised structured-log
+ * helper (`backend/src/observability/structured-log.ts`). The helper
+ * guarantees:
+ *   - one console.error call per emit → one Datadog log record
+ *   - the JSON line begins with `"event":"AUDIT_WRITE_FAILED"` so the
+ *     `@event:AUDIT_WRITE_FAILED` filter matches
+ *   - string fields are length-capped at 256 chars (no log-line bloat)
  *
- * Contract (M-04 follow-up, L-04):
- *   - Every audit write failure (best-effort or strict) emits exactly
- *     one log line whose JSON body contains `"event": "AUDIT_WRITE_FAILED"`.
- *   - The line is `console.error(...)` so it lands at log-level=error.
- *   - The structured fields are documented in
- *     `docs/27-INCIDENT-RESPONSE.md §11.1` — DO NOT remove fields without
- *     also updating the dashboard query there.
- */
-const AUDIT_FAILURE_EVENT = 'AUDIT_WRITE_FAILED';
-
-/**
- * Emit a structured, machine-parseable audit-failure log line.
- *
- * Why structured (and not the previous prose `console.error` form):
- *   - Vercel function logs / Supabase logs / external SIEM all parse
- *     JSON-shaped lines into queryable fields.
- *   - A single canonical `event` tag means the alert query is one-line
- *     in any tool: `event = "AUDIT_WRITE_FAILED"`.
- *   - Rate / count alerts (`> 5 events/min`) become trivially trivial.
- *   - PHI never leaks into the log: every field below is either a
- *     scalar enum (action, resourceType), a UUID, or a sanitised DB
- *     diagnostic string — never the audit payload itself.
+ * Field contract — frozen, replicated in `docs/27-INCIDENT-RESPONSE.md §11.1`:
+ *   variant         : 'best_effort' | 'strict' | 'row_build'
+ *   action          : AuditAction enum value
+ *   resourceType    : AuditResourceType enum value
+ *   resourceId      : UUID string or null (never PHI)
+ *   dbErrorMessage  : sanitised DB error text (≤ 256 chars)
+ *   dbErrorCode     : PostgREST/PG SQLSTATE code
+ *   rawErrorTag     : '<Error.name>: <message>' tag (only when caller
+ *                     passes a JS Error / string)
  */
 function emitAuditFailureLog(
   variant: 'best_effort' | 'strict' | 'row_build',
@@ -160,43 +152,31 @@ function emitAuditFailureLog(
     rawError?: unknown;
   },
 ): void {
-  // Defensive serialisation of `rawError` — stringify Error / unknown
-  // without leaking giant stack traces or PHI-shaped payloads.
-  let rawErrorTag: string | undefined;
-  if (fields.rawError instanceof Error) {
-    rawErrorTag = `${fields.rawError.name}: ${fields.rawError.message}`.slice(0, 256);
-  } else if (typeof fields.rawError === 'string') {
-    rawErrorTag = fields.rawError.slice(0, 256);
-  }
-
-  const payload: Record<string, unknown> = {
-    event: AUDIT_FAILURE_EVENT,
-    variant, // best_effort | strict | row_build
+  const rawErrorTag = tagFromError(fields.rawError);
+  logStructured('error', 'AUDIT_WRITE_FAILED', {
+    variant,
     action: fields.action,
     resourceType: fields.resourceType,
     resourceId: fields.resourceId ?? null,
     dbErrorMessage: fields.dbErrorMessage ?? null,
     dbErrorCode: fields.dbErrorCode ?? null,
-  };
-  if (rawErrorTag) payload.rawErrorTag = rawErrorTag;
-
-  // Single console.error so log aggregators get one record per failure.
-  console.error(JSON.stringify(payload));
+    ...(rawErrorTag ? { rawErrorTag } : {}),
+  });
 }
 
 /**
  * Canonical event tag for unauthorised-access detection (L-05).
- * The detection contract — including dashboard queries and severity
- * thresholds — is documented in `docs/27-INCIDENT-RESPONSE.md §11.3`.
+ * Emitted at warn level (the request was correctly rejected — error
+ * level is reserved for operator-actionable incidents like
+ * AUDIT_WRITE_FAILED).
  *
- * Emitted by `requireRole` (role mismatch) and `assertSameTenant`
- * helper (cross-tenant attempt) in `middleware/rbac.ts`. The HTTP
+ * Documented in `docs/27-INCIDENT-RESPONSE.md §11.3`. Emitted by
+ * `requireRole` (role mismatch) and `assertSameTenant`
+ * (cross-tenant attempt) in `middleware/rbac.ts`. The HTTP
  * response stays opaque (403 / 404 with a generic body) — the
  * structured log line below carries the truthful reason for an
  * operator looking at the dashboard.
  */
-const ACCESS_DENIED_EVENT = 'ACCESS_DENIED';
-
 export type AccessDenialReason =
   | 'role_mismatch'        // requireRole(): caller's role not in the allowed set
   | 'cross_tenant'         // assertSameTenant(): resource belongs to a different tenant
@@ -237,21 +217,23 @@ export interface AccessDenialContext {
  * already covered by `targetResourceId`).
  */
 export function emitAccessDenialLog(ctx: AccessDenialContext): void {
-  const payload: Record<string, unknown> = {
-    event: ACCESS_DENIED_EVENT,
+  const fields: Record<string, unknown> = {
     reason: ctx.reason,
     actorUserId: ctx.actorUserId,
     actorRole: ctx.actorRole,
     actorTenantId: ctx.actorTenantId,
     ipHash: ctx.ipHash,
-    route: ctx.route.slice(0, 256),
+    route: ctx.route,
     targetResourceId: ctx.targetResourceId ?? null,
     targetTenantId: ctx.targetTenantId ?? null,
   };
   if (ctx.allowedRoles && ctx.allowedRoles.length > 0) {
-    payload.allowedRoles = ctx.allowedRoles.slice(0, 16);
+    // 16 cap stays — small enough to render in any dashboard cell.
+    fields.allowedRoles = ctx.allowedRoles.slice(0, 16);
   }
-  console.error(JSON.stringify(payload));
+  // warn level: the request was correctly rejected; this is signal for
+  // the security dashboard, not a paging event.
+  logStructured('warn', 'ACCESS_DENIED', fields);
 }
 
 /**

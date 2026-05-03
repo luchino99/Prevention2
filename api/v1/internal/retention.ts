@@ -24,6 +24,7 @@ import { supabaseAdmin } from '../../../backend/src/config/supabase.js';
 import { applySecurityHeaders } from '../../../backend/src/middleware/security-headers.js';
 import { isCronAuthorized, denyCron } from '../../../backend/src/middleware/cron-auth.js';
 import { replyError, replyDbError } from '../../../backend/src/middleware/http-errors.js';
+import { logStructured } from '../../../backend/src/observability/structured-log.js';
 
 const MAX_STORAGE_DELETIONS = 500; // per run — keep latency bounded
 
@@ -89,8 +90,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         .from(REPORT_BUCKET)
         .remove(paths);
       if (delErr) {
-        // eslint-disable-next-line no-console
-        console.warn('[retention] storage.remove failed', REPORT_BUCKET, delErr.message);
+        logStructured('warn', 'STORAGE_OPERATION_FAILED', {
+          context: 'retention.storage_remove',
+          bucket: REPORT_BUCKET,
+          errorTag: delErr.message?.slice(0, 200) ?? 'unknown',
+          objectCount: paths.length,
+        });
       } else {
         storageDeletions = paths.length;
         // Blank the storage_path on the DB rows so we don't re-delete

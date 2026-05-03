@@ -64,6 +64,7 @@ import { z } from 'zod';
 import { withAuth, type AuthenticatedRequest } from '../../../../../backend/src/middleware/auth-middleware.js';
 import { requireTenantAdmin } from '../../../../../backend/src/middleware/rbac.js';
 import { applySecurityHeaders } from '../../../../../backend/src/middleware/security-headers.js';
+import { logStructured } from '../../../../../backend/src/observability/structured-log.js';
 import {
   checkRateLimitAsync,
   RATE_LIMITS,
@@ -220,7 +221,7 @@ export default withAuth(async (req: AuthenticatedRequest, res: VercelResponse) =
       // dispatch throws only on truly unexpected paths — known errors
       // are returned via replyError before the throw.
       // eslint-disable-next-line no-console
-      console.error('[admin.dsr.process] unexpected error', { dsrId, err });
+      logStructured('error', 'ENDPOINT_UNEXPECTED_ERROR', { context: 'admin.dsr.process unexpected error', extra: { dsrId, err } });
       replyError(s, 500, 'INTERNAL_ERROR');
     }
   })(req, res);
@@ -408,7 +409,7 @@ async function handleFulfill(
     workerResult = await runWorker(dsr);
   } catch (err) {
     // eslint-disable-next-line no-console
-    console.error('[admin.dsr.process.fulfill] worker failed', { dsrId: dsr.id, err });
+    logStructured('error', 'DSR_WORKER_FAILED', { context: 'admin.dsr.process.fulfill worker failed', extra: { dsrId: dsr.id, err } });
     replyError(res, 500, 'WORKER_FAILED');
     return;
   }
@@ -442,11 +443,11 @@ async function handleFulfill(
     // The worker ran but we couldn't flip status — log loudly so ops
     // can reconcile (the artefact may already be in storage).
     // eslint-disable-next-line no-console
-    console.error('[admin.dsr.process.fulfill] post-worker update failed', {
+    logStructured('error', 'DSR_POSTWORKER_UPDATE_FAILED', { context: 'admin.dsr.process.fulfill post-worker update failed', extra: {
       dsrId: dsr.id,
       workerArtefact: workerResult.exportPath,
       pgError: update.error,
-    });
+    } });
     replyDbError(res, update.error ?? new Error('no row updated'), 'admin.dsr.process.fulfill.update');
     return;
   }
@@ -467,7 +468,7 @@ async function handleFulfill(
       .createSignedUrl(workerResult.exportPath, SIGNED_URL_TTL_SEC);
     if (signErr) {
       // eslint-disable-next-line no-console
-      console.error('[admin.dsr.process.fulfill] signed-url failed', { signErr });
+      logStructured('warn', 'STORAGE_OPERATION_FAILED', { context: 'admin.dsr.process.fulfill signed-url failed', extra: { signErr } });
     } else if (signed?.signedUrl) {
       signedUrl = signed.signedUrl;
     }

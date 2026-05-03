@@ -26,6 +26,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { supabaseAdmin } from '../../../backend/src/config/supabase.js';
 import { applySecurityHeaders } from '../../../backend/src/middleware/security-headers.js';
 import { isCronAuthorized, denyCron } from '../../../backend/src/middleware/cron-auth.js';
+import { logStructured } from '../../../backend/src/observability/structured-log.js';
 
 const GRACE_DAYS = Number(process.env.ANONYMIZE_GRACE_DAYS ?? '30');
 const MAX_PER_RUN = Number(process.env.ANONYMIZE_MAX_PER_RUN ?? '100');
@@ -55,8 +56,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     .limit(MAX_PER_RUN);
 
   if (error) {
-    // eslint-disable-next-line no-console
-    console.error('[anonymize] candidate query failed', error);
+    const errObj = error as { code?: string; message?: string };
+    logStructured('error', 'CRON_QUERY_FAILED', {
+      cron: 'anonymize',
+      stage: 'candidate_select',
+      dbErrorCode: errObj?.code ?? null,
+      dbErrorMessage: errObj?.message ?? null,
+    });
     // Opaque body — never echo PostgREST error.message to the caller.
     res.status(500).json({ error: { code: 'DB_ERROR' } });
     return;

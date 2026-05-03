@@ -13,6 +13,7 @@ import { checkRateLimitAsync, RATE_LIMITS, applyRateLimitHeaders } from '../../.
 import { supabaseAdmin } from '../../../../backend/src/config/supabase.js';
 import { recordAuditStrict, AuditWriteError } from '../../../../backend/src/audit/audit-logger.js';
 import { replyDbError, replyValidationError, replyError } from '../../../../backend/src/middleware/http-errors.js';
+import { logStructured } from '../../../../backend/src/observability/structured-log.js';
 
 const bodySchema = z.object({
   action: z.enum(['acknowledge', 'resolve', 'dismiss']),
@@ -153,11 +154,11 @@ export default withAuth(async (req, res: VercelResponse) => {
       });
     } catch (auditErr) {
       // eslint-disable-next-line no-console
-      console.error('[alerts.ack] audit write failed', {
+      logStructured('warn', 'AUDIT_BEST_EFFORT_FAILED', { context: 'alerts.ack audit write failed', extra: {
         id,
         isAuditWriteError: auditErr instanceof AuditWriteError,
         auditErr,
-      });
+      } });
       replyError(s, 500, 'AUDIT_WRITE_FAILED');
       return;
     }
