@@ -124,6 +124,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     ip_hash: null,
   });
 
+  // 4) Structured log — single JSON line per cron run.
+  // pruneResult now ships with tenant_count, platform_defaults, and a
+  // breakdown {audit_per_tenant, audit_null_tenant, ...} thanks to
+  // migration 015 (M-02 Tier 4). Operators can pivot in Datadog with
+  // `@event:RETENTION_RUN tenant_count:>0` to confirm per-tenant
+  // pruning is happening.
+  logStructured('info', 'RETENTION_RUN', {
+    runId,
+    startedAt,
+    storageDeletions,
+    pruneResult,
+  });
+
   res.status(200).json({
     runId,
     startedAt,

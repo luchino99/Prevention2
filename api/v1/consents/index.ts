@@ -147,7 +147,21 @@ async function handleList(req: any, res: VercelResponse): Promise<void> {
   // B-08 — also require PPL for clinicians on consent listing. Reading
   // historical consent decisions is itself sensitive (reveals AI/marketing
   // preferences) and must not bypass the per-clinician relationship gate.
+  // L-05 — emit ACCESS_DENIED reason='cross_clinician_ppl' so the
+  // security dashboard catches the pattern (same emitter as cross-tenant).
   if (!(await isPplGated(req.auth, patientId))) {
+    if (req.auth.role === 'clinician') {
+      emitAccessDenialLog({
+        reason: 'cross_clinician_ppl',
+        actorUserId: req.auth.userId,
+        actorRole: req.auth.role,
+        actorTenantId: req.auth.tenantId,
+        ipHash: req.auth.ipHash ?? null,
+        route: 'GET /api/v1/consents',
+        targetResourceId: patientId,
+        targetTenantId: patient.tenant_id as string,
+      });
+    }
     replyError(res, 403, 'NO_PATIENT_LINK');
     return;
   }
@@ -205,7 +219,21 @@ async function handleGrant(req: any, res: VercelResponse): Promise<void> {
   }
 
   // B-08 — clinician PPL gate. tenant_admin / platform_admin bypass.
+  // L-05 — emit ACCESS_DENIED reason='cross_clinician_ppl' for the
+  // clinician path; admin paths never reach here (they bypass).
   if (!(await isPplGated(req.auth, p.patientId))) {
+    if (req.auth.role === 'clinician') {
+      emitAccessDenialLog({
+        reason: 'cross_clinician_ppl',
+        actorUserId: req.auth.userId,
+        actorRole: req.auth.role,
+        actorTenantId: req.auth.tenantId,
+        ipHash: req.auth.ipHash ?? null,
+        route: `${req.method ?? 'UNKNOWN'} /api/v1/consents`,
+        targetResourceId: p.patientId,
+        targetTenantId: patient.tenant_id as string,
+      });
+    }
     replyError(res, 403, 'NO_PATIENT_LINK');
     return;
   }

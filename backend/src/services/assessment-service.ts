@@ -27,7 +27,7 @@
 
 import { supabaseAdmin } from '../config/supabase.js';
 import type { AuthContext } from '../middleware/auth-middleware.js';
-import { recordAudit } from '../audit/audit-logger.js';
+import { recordAudit, emitAccessDenialLog } from '../audit/audit-logger.js';
 import { logStructured, tagFromError } from '../observability/structured-log.js';
 
 import { computeAllScores } from '../domain/clinical/score-engine/index.js';
@@ -196,6 +196,20 @@ async function assertCanWritePatient(
     }
 
     if (!link) {
+      // L-05 — emit ACCESS_DENIED reason='cross_clinician_ppl' so the
+      // security dashboard catches "this clinician is poking at a
+      // patient they have no link to" patterns. The HTTP envelope
+      // (NO_PATIENT_LINK) stays opaque to the caller.
+      emitAccessDenialLog({
+        reason: 'cross_clinician_ppl',
+        actorUserId: auth.userId,
+        actorRole: auth.role,
+        actorTenantId: auth.tenantId,
+        ipHash: auth.ipHash ?? null,
+        route: 'assessment-service.assertPatientAccess',
+        targetResourceId: patientId,
+        targetTenantId: patient.tenant_id as string,
+      });
       throw new AssessmentServiceError(
         403,
         'NO_PATIENT_LINK',

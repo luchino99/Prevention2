@@ -83,17 +83,22 @@ Implemented as code, not policy:
 ## 5. Storage limitation (retention)
 
 The full retention matrix lives in `14-DELETION-POLICY.md`. Summary of the
-defaults (each is configurable per tenant `EXT-LEGAL`):
+defaults (each is configurable per-tenant via the
+`/pages/tenant-settings.html` admin UI; the cron worker honours the
+override via `COALESCE(tenant_value, platform_default)` since
+migration 015):
 
-| Data class | Default | Mechanism |
-|---|---|---|
-| Active patients | While clinically active | Soft-delete on revoke / discharge |
-| Soft-deleted patients | 30-day grace | `fn_anonymize_patient()` after grace |
-| Assessments | 10 years (medical record default) | Anonymisation, not deletion (clinical lineage retained) |
-| Audit events | 7 years (Art.30 record + EU healthcare ledger conventions) | `fn_retention_prune()` |
-| DSR records | 10 years (Art.12(3) record-keeping) | Manual archive |
-| Notification queue | 90 days | `fn_retention_prune()` |
-| Anonymised patients | Indefinite (no longer personal data) | Stripped of identifiers; clinical scalars retained |
+| Data class | Default | Tenant override column | Mechanism |
+|---|---|---|---|
+| Active patients | While clinically active | — | Soft-delete on revoke / discharge |
+| Soft-deleted patients | 30-day grace | `tenants.retention_days_anonymize_grace` | `fn_anonymize_patient()` after grace |
+| Assessments | 10 years (medical record default) | — | Anonymisation, not deletion (clinical lineage retained) |
+| Audit events | 10 years (Art.30 record + EU healthcare ledger conventions) | `tenants.retention_days_audit` | `fn_retention_prune()` (per-tenant cutoff) |
+| DSR records | 10 years (Art.12(3) record-keeping) | — | Manual archive |
+| Notification queue | 90 days | `tenants.retention_days_notifications` | `fn_retention_prune()` (per-tenant cutoff) |
+| Resolved alerts | 1 year | `tenants.retention_days_alerts_resolved` | `fn_retention_prune()` (per-tenant cutoff) |
+| Anonymised patients | Indefinite (no longer personal data) | — | Stripped of identifiers; clinical scalars retained |
+| Report exports (storage object) | 2 years | — (platform-wide for now) | `fn_retention_prune()` NULLs `storage_path`; backend cron deletes the object |
 
 Cron schedule:
 

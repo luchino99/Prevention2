@@ -49,6 +49,9 @@ for migrations, on the operator's local machine.
 |---|---|---|
 | `LOG_LEVEL` | `info` | `debug`/`info`/`warn`/`error` |
 | `MFA_ENFORCEMENT_ENABLED` | unset (off) | When `"true"`, all `tenant_admin` and `platform_admin` sessions MUST be aal2 (MFA-verified). Pre-MFA admin tokens are rejected with `403 MFA_REQUIRED`; the frontend auto-redirects to `/pages/mfa-enroll.html`. **Default-off rollout**: enable AFTER every admin has enrolled at the `/pages/mfa-enroll.html` page (otherwise admins lock themselves out). See `30-RISK-REGISTER` L-09 |
+| `MFA_ENFORCEMENT_CLINICIAN_ENABLED` | unset (off) | Tier 4 extension of L-09. When `"true"`, every `clinician` session must be aal2. Same dispatcher serves enrolment + challenge — flip ONLY after the clinician cohort has been onboarded to TOTP. The flag is independent of the admin one to allow phased rollout per controller policy |
+| `MFA_ENFORCEMENT_STAFF_ENABLED` | unset (off) | Tier 4 extension of L-09. When `"true"`, every `assistant_staff` session must be aal2. Independent flag for the same reason as above |
+| `SBOM_CVE_FAIL_ON_HIGH` | unset (warn-only) | When `"true"`, `npm run check:sbom-cves` fails the build for High severity CVEs (Critical always fails). Default is warn-only because GHSA cadence is bursty and a hard failure on every fresh advisory would block hot-fixes |
 | `ANONYMIZE_GRACE_DAYS` | 30 | Grace window before anonymising soft-deleted patients |
 | `ANONYMIZE_MAX_PER_RUN` | (engine default) | Cap on rows per cron tick to keep the function bounded |
 | `UPSTASH_REDIS_REST_URL` | unset | If set, rate limiter uses Upstash distributed bucket; else falls back to in-memory (single-instance only). **Strongly recommended in production** — see §11b |
@@ -400,6 +403,138 @@ curl -I https://<host>/pages/login.html
 
 For `/pages/*` and `/components/*` the CSP is restrictive
 (no inline scripts, only Supabase as a third-party connect-src).
+
+---
+
+## 12b. AUDIT_EVENTS partitioning cutover (SOP)
+
+> Triggered when a tenant's `audit_events` row count crosses **50 M** or
+> the daily DELETE under `fn_retention_prune` starts taking >30 s.
+> Until that point, the BRIN index added by migration 016 is sufficient.
+
+### Why partition
+
+`audit_events` is append-only and dominated by range scans
+(retention DELETE, audit-query UI date filter). Monthly range
+partitioning lets the retention cron call `DROP PARTITION` (O(1),
+no row-by-row WAL) instead of `DELETE FROM … WHERE created_at < …`
+(O(rows-deleted), heavy WAL).
+
+### Pre-flight
+
+```sql
+-- 1. Confirm the cron-side cutoff is older than the partitions you
+--    plan to drop. fn_audit_oldest_safe_cutoff() returns the
+--    timestamp before which EVERY tenant has already agreed to drop.
+SELECT fn_audit_oldest_safe_cutoff();
+
+-- 2. Snapshot the row count + size — for the post-flight diff.
+SELECT pg_size_pretty(pg_total_relation_size('audit_events'))
+     , (SELECT COUNT(*) FROM audit_events);
+```
+
+### Cutover (maintenance window required)
+
+```sql
+BEGIN;
+
+-- 1. Rename the existing table so we can swap in the partitioned one.
+ALTER TABLE audit_events RENAME TO audit_events_legacy;
+
+-- 2. Create the partitioned skeleton with the same column set.
+--    NOTE: the partition key MUST be part of every UNIQUE / PK
+--    constraint, so the PK becomes (id, created_at).
+CREATE TABLE audit_events (
+  -- columns identical to audit_events_legacy
+  LIKE audit_events_legacy INCLUDING ALL EXCLUDING CONSTRAINTS,
+  PRIMARY KEY (id, created_at)
+) PARTITION BY RANGE (created_at);
+
+-- 3. Pre-create the partitions you'll need (last 12 months + next).
+--    Run the helper:
+DO $$
+DECLARE
+  m DATE;
+BEGIN
+  FOR m IN SELECT generate_series(
+    date_trunc('month', NOW() - INTERVAL '12 months'),
+    date_trunc('month', NOW() + INTERVAL '1 month'),
+    INTERVAL '1 month'
+  )::DATE LOOP
+    EXECUTE format(
+      'CREATE TABLE audit_events_y%sm%s ' ||
+      'PARTITION OF audit_events FOR VALUES FROM (%L) TO (%L);',
+      to_char(m, 'YYYY'), to_char(m, 'MM'),
+      m,
+      (m + INTERVAL '1 month')::DATE
+    );
+  END LOOP;
+END $$;
+
+-- 4. Bulk copy in chunks (avoid long-running single TX on huge tables).
+INSERT INTO audit_events SELECT * FROM audit_events_legacy;
+
+-- 5. Sanity: row counts must match.
+SELECT (SELECT COUNT(*) FROM audit_events) AS new
+     , (SELECT COUNT(*) FROM audit_events_legacy) AS old;
+
+-- 6. Re-create indexes that didn't carry through LIKE.
+CREATE INDEX ON audit_events (tenant_id, created_at);
+CREATE INDEX ON audit_events USING BRIN (created_at);
+
+-- 7. Drop the legacy table (the rename keeps it as a fast-rollback
+--    safety net — keep it around until you're confident).
+-- DROP TABLE audit_events_legacy;  -- run AFTER 7 days of stable ops.
+
+COMMIT;
+```
+
+### Retention worker post-cutover
+
+After the cutover, replace the audit-event branch of
+`fn_retention_prune` with a `DROP PARTITION` form:
+
+```sql
+-- Pseudocode — implementation lives in the next migration that
+-- ships with the cutover, NOT in 015.
+FOR p IN
+  SELECT child.relname AS part_name,
+         pg_get_expr(child.relpartbound, child.oid) AS bounds
+    FROM pg_inherits i
+    JOIN pg_class child  ON child.oid  = i.inhrelid
+    JOIN pg_class parent ON parent.oid = i.inhparent
+   WHERE parent.relname = 'audit_events'
+LOOP
+  -- Parse upper bound from `bounds`; if upper_bound < safe_cutoff:
+  --   EXECUTE format('DROP TABLE %I', p.part_name);
+END LOOP;
+```
+
+### Monthly partition pre-creation
+
+Add a Vercel cron at month start:
+
+```
+POST /api/v1/internal/audit-partitions
+Authorization: Bearer ${CRON_SIGNING_SECRET}
+```
+
+The handler creates next-month's partition. Failure to pre-create is
+not catastrophic — Postgres rejects inserts past the highest defined
+range with an error, which the audit emitter surfaces as
+`AUDIT_WRITE_FAILED` (already monitored).
+
+### Rollback
+
+```sql
+BEGIN;
+ALTER TABLE audit_events RENAME TO audit_events_partitioned_failed;
+ALTER TABLE audit_events_legacy RENAME TO audit_events;
+COMMIT;
+```
+
+The legacy rename in step 1 is the rollback handle — keep it for at
+least 7 days post-cutover.
 
 ---
 

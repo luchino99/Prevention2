@@ -25,13 +25,14 @@
  *   - The HTTP body never echoes other tenants' data. Cross-tenant
  *     reads are rejected with opaque 404 to avoid id enumeration.
  *
- * Caveat (M-02 follow-up)
- * -----------------------
- *   The `fn_retention_prune` cron worker (migration 003) is currently
- *   platform-wide; it does not yet honour per-tenant overrides. The
- *   values are PERSISTED here and surfaced in the API, but the
- *   actual per-tenant behaviour ships with the cron refactor planned
- *   for Tier 4. The admin UI shows a banner that mirrors this status.
+ * Per-tenant retention is LIVE (M-02 closed in Tier 4)
+ * -----------------------------------------------------
+ *   Migration 015 rewrites `fn_retention_prune` to read
+ *   tenants.retention_days_* via COALESCE(tenant_value, platform_default)
+ *   for audit, alerts, and notifications. report_exports retention is
+ *   still platform-wide (no per-tenant column yet). The cron run report
+ *   in the `retention.run` structured-log line includes a per-tenant
+ *   breakdown so operators can see which tenants pruned what.
  * ---------------------------------------------------------------------------
  */
 

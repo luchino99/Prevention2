@@ -78,35 +78,71 @@ function decodeJwtPayloadUnsafe(token: string): Record<string, unknown> | null {
 }
 
 /**
- * Roles that MUST present a MFA-verified session (aal2) to access any
- * authenticated endpoint when MFA enforcement is on. Patients and
- * clinicians are out of scope for now — added incrementally per
- * controller policy.
+ * MFA mandate matrix (L-09 — Tier 4 extension).
+ *
+ * Per role we ship an independent feature flag. Default OFF for all
+ * roles so a fresh deploy never locks anyone out. Operators flip the
+ * relevant flag AFTER they've verified that every active user in the
+ * tenant for that role has completed enrolment at
+ * `/pages/mfa-enroll.html`.
+ *
+ *   platform_admin  →  MFA_ENFORCEMENT_ENABLED            (Tier 2 — already in prod)
+ *   tenant_admin    →  MFA_ENFORCEMENT_ENABLED            (Tier 2 — already in prod)
+ *   clinician       →  MFA_ENFORCEMENT_CLINICIAN_ENABLED  (Tier 4)
+ *   assistant_staff →  MFA_ENFORCEMENT_STAFF_ENABLED      (Tier 4)
+ *   patient         →  not gated (out of scope; controller decision)
+ *
+ * Why role-keyed flags rather than a single global one
+ * ----------------------------------------------------
+ * The DPA + change-management for "all our doctors must now MFA" is a
+ * different decision from "all our admins must now MFA". Different
+ * tenants will move at different paces. Splitting the flag lets the
+ * controller phase the rollout without coupling clinical operations
+ * to admin-side timing.
+ *
+ * Behaviour when ON
+ * -----------------
+ *   - JWT carries `aal: 'aal2'`  → request proceeds (membrane intact)
+ *   - JWT carries anything else  → `403 MFA_REQUIRED`, frontend
+ *                                  api-client.js auto-redirects to
+ *                                  /pages/mfa-enroll.html which serves
+ *                                  the dispatcher (Tier 3 fix). The
+ *                                  enrolment page itself never calls
+ *                                  the backend, so a non-enrolled user
+ *                                  can still complete setup.
+ *
+ * The L-05 ACCESS_DENIED structured event is emitted with reason
+ * `mfa_required` (already in the AccessDenialReason enum) so the
+ * existing dashboard catches the signal for every role uniformly.
  */
-const ROLES_REQUIRING_MFA: readonly UserRole[] = [
-  'platform_admin',
-  'tenant_admin',
-];
+function envFlagOn(name: string): boolean {
+  const v = process.env[name]?.trim().toLowerCase();
+  return v === 'true' || v === '1' || v === 'yes';
+}
 
 /**
- * Feature flag that gates the MFA mandate. Default OFF so a fresh
- * deploy does not lock out admins who haven't enrolled yet. Operators
- * flip `MFA_ENFORCEMENT_ENABLED=true` after every admin in the tenant
- * has completed enrolment via /pages/mfa-enroll.html. Once flipped,
- * any admin session at aal1 is rejected with `403 MFA_REQUIRED`, and
- * the frontend redirects to the enrolment page.
+ * Decide whether the current role must present an aal2 session.
  *
- * Why default-off
- * ---------------
- * If the flag was on by default, the first deploy after the upgrade
- * would lock the tenant_admin out of their own platform — and the
- * only path back in (the enrolment page) would itself be reachable
- * since it does NOT call the backend. Default-off keeps the rollout
- * voluntary: enrol first, then flip.
+ * Returns the env-flag NAME that gated the decision (for audit /
+ * ACCESS_DENIED metadata) when the answer is "yes", or null when MFA
+ * is not required for this role.
  */
-function isMfaEnforced(): boolean {
-  const v = process.env.MFA_ENFORCEMENT_ENABLED?.trim().toLowerCase();
-  return v === 'true' || v === '1' || v === 'yes';
+function requiredMfaFlagForRole(role: UserRole): string | null {
+  if (role === 'platform_admin' || role === 'tenant_admin') {
+    return envFlagOn('MFA_ENFORCEMENT_ENABLED') ? 'MFA_ENFORCEMENT_ENABLED' : null;
+  }
+  if (role === 'clinician') {
+    return envFlagOn('MFA_ENFORCEMENT_CLINICIAN_ENABLED')
+      ? 'MFA_ENFORCEMENT_CLINICIAN_ENABLED'
+      : null;
+  }
+  if (role === 'assistant_staff') {
+    return envFlagOn('MFA_ENFORCEMENT_STAFF_ENABLED')
+      ? 'MFA_ENFORCEMENT_STAFF_ENABLED'
+      : null;
+  }
+  // patient — explicitly not gated. Controller-side product decision.
+  return null;
 }
 
 /** SHA-256 truncated hash of client IP — used for audit logs (never raw IP). */
@@ -199,24 +235,24 @@ export async function validateAccessToken(
     throw new AuthError(500, 'INVALID_ROLE', 'Invalid user configuration');
   }
 
-  // ── MFA mandate (L-09) ──────────────────────────────────────────────
-  // When MFA_ENFORCEMENT_ENABLED is set and the role is in the gated
-  // list, require Supabase AAL2 (MFA-verified session). A pre-MFA
-  // session at aal1 is rejected with a 403 carrying a stable error
-  // code so the frontend can redirect the user to /pages/mfa-enroll.html.
-  //
-  // The enrolment page itself never reaches this middleware — it talks
-  // to Supabase Auth directly via supabase.auth.mfa.enroll/challenge/
-  // verify, so an admin who hasn't enrolled yet can still complete the
-  // setup even when the flag is on.
-  if (isMfaEnforced() && ROLES_REQUIRING_MFA.includes(role)) {
+  // ── MFA mandate (L-09 — Tier 2 admins, Tier 4 clinician/staff) ─────
+  // The role-keyed matrix is in `requiredMfaFlagForRole`. If the
+  // current role's flag is ON, require Supabase AAL2 (MFA-verified
+  // session). A pre-MFA session at aal1 is rejected with a 403 carrying
+  // a stable error code so the frontend can redirect the user to
+  // /pages/mfa-enroll.html. The enrolment page itself never reaches
+  // this middleware — it talks to Supabase Auth directly via
+  // supabase.auth.mfa.enroll/challenge/verify, so a non-enrolled user
+  // can still complete setup even when the flag is on.
+  const mfaFlag = requiredMfaFlagForRole(role);
+  if (mfaFlag) {
     const claims = decodeJwtPayloadUnsafe(token);
     const aal = typeof claims?.aal === 'string' ? claims.aal : null;
     if (aal !== 'aal2') {
       throw new AuthError(
         403,
         'MFA_REQUIRED',
-        'Multi-factor authentication is required for administrative roles. Complete enrolment at /pages/mfa-enroll.html.',
+        'Multi-factor authentication is required for this role. Complete enrolment at /pages/mfa-enroll.html.',
       );
     }
   }

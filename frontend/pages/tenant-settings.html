@@ -55,18 +55,19 @@
         <h2>Data retention overrides</h2>
         <p class="muted">
           Each window controls how long a class of records is kept before
-          the daily cron (<code>fn_retention_prune</code>, migration 003)
-          can prune it. <strong>Leave a field empty</strong> to inherit
-          the platform default — that is the recommended setting unless a
-          regulator or controller requires a tighter window.
+          the daily cron (<code>fn_retention_prune</code>, migrations
+          003+015) can prune it. <strong>Leave a field empty</strong> to
+          inherit the platform default — that is the recommended setting
+          unless a regulator or controller requires a tighter window.
         </p>
-        <div class="inline-alert" style="background:#fff8e1; border-color:#f0c14b;">
-          <strong>Note (Tier 4 follow-up).</strong>
-          The values you save here are persisted and surfaced via the API,
-          but the platform-wide cron worker does not yet differentiate
-          per-tenant — every tenant is pruned by the platform default
-          today. The cron refactor that consumes these overrides ships
-          with M-02-Tier-4. Until then, this page is a forward declaration.
+        <div class="inline-alert success" style="background:#e8f5e9; border-color:#66bb6a;">
+          <strong>Per-tenant retention is active.</strong>
+          The cron worker reads each value below and prunes that
+          tenant's audit / alerts / notification rows on the configured
+          window. Empty fields fall back to the platform defaults
+          (audit&nbsp;3650, alerts-resolved&nbsp;365, notifications&nbsp;90,
+          reports&nbsp;730). Cron run reports include a per-tenant
+          breakdown in the <code>retention.run</code> structured log.
         </div>
 
         <form id="retention-form" class="grid mt-16" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">

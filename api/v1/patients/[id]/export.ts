@@ -87,7 +87,10 @@ async function handleExport(req: any, res: VercelResponse, patientId: string): P
     return;
   }
 
-  // For clinicians, require an active professional-patient link
+  // For clinicians, require an active professional-patient link.
+  // L-05 — emit a structured ACCESS_DENIED line on PPL gate failure
+  // so the security dashboard catches "this clinician is poking at a
+  // patient they have no link to" patterns.
   if (req.auth.role === 'clinician') {
     const { data: link } = await supabaseAdmin
       .from('professional_patient_links')
@@ -97,6 +100,16 @@ async function handleExport(req: any, res: VercelResponse, patientId: string): P
       .eq('is_active', true)
       .maybeSingle();
     if (!link) {
+      emitAccessDenialLog({
+        reason: 'cross_clinician_ppl',
+        actorUserId: req.auth.userId,
+        actorRole: req.auth.role,
+        actorTenantId: req.auth.tenantId,
+        ipHash: req.auth.ipHash ?? null,
+        route: 'GET /api/v1/patients/[id]/export',
+        targetResourceId: patientId,
+        targetTenantId: patient.tenant_id as string,
+      });
       replyError(res, 403, 'NO_PATIENT_LINK');
       return;
     }

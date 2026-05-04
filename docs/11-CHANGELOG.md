@@ -7,6 +7,80 @@ executed per the project blueprint.
 
 ---
 
+## [Tier 4] — 2026-05-04 — **Per-tenant retention, MFA matrix, observability + supply-chain hardening**
+
+Closes the Tier 4 backlog. Six engineering items shipped, no clinical
+formula touched. All migrations idempotent and additive (014→016).
+
+### Added
+
+- **L-09 extension — role-keyed MFA mandate matrix** in
+  `backend/src/middleware/auth-middleware.ts`. Three independent flags:
+  `MFA_ENFORCEMENT_ENABLED` (admin), `MFA_ENFORCEMENT_CLINICIAN_ENABLED`
+  (clinician), `MFA_ENFORCEMENT_STAFF_ENABLED` (assistant_staff). All
+  default-off; controllers phase rollout per role. The Tier 3 mfa-enroll
+  dispatcher is role-agnostic so no frontend change was required.
+
+- **M-02 closed — per-tenant retention worker** via migration 015. The
+  `fn_retention_prune` cron now reads `tenants.retention_days_*` for
+  audit / alerts-resolved / notifications via `COALESCE(tenant_value,
+  platform_default)`. Run report carries a per-tenant breakdown,
+  surfaced as the `RETENTION_RUN` structured-log event from
+  `/api/v1/internal/retention`.
+
+- **L-05 follow-up — `cross_clinician_ppl` ACCESS_DENIED emission**
+  across `patients/[id]/export.ts`, `consents/index.ts` (list+grant), and
+  `assessment-service.assertPatientAccess`. The L-05 dashboard now
+  surfaces clinician-side patient access attempts where the PPL link
+  is absent.
+
+- **M-07 — PDF visual-regression test suite** in
+  `tests/unit/pdf-report-service.test.ts`. Determinism via injectable
+  `generatedAt: Date` knob (production callers continue to use
+  `new Date()`). Five-case suite: byte-deterministic output, length
+  tolerance band, `PDFDocument.load` round-trip with Info dict
+  assertions, payload identity markers in byte stream, payload-size
+  responsiveness sanity. Wired via `npm run test:pdf`.
+
+- **SBOM CVE scan gate** — `scripts/check-sbom-cves.mjs` runs
+  `npm audit --json --omit=dev`, persists `sbom-cve-report.json`,
+  fails build on Critical (always) and on High when
+  `SBOM_CVE_FAIL_ON_HIGH=true`. Wired into `npm run build:check`.
+
+- **Audit table retention scaling** via migration 016: BRIN index on
+  `audit_events.created_at` + helper function
+  `fn_audit_oldest_safe_cutoff()` for cross-tenant DROP PARTITION.
+  Partitioned-table cutover SOP documented in
+  `26-DEPLOYMENT-RUNBOOK.md §12b` (defer until tenant crosses 50M rows).
+
+### Changed
+
+- `frontend/pages/tenant-settings.html` — banner switched from
+  "Tier 4 follow-up" warning to "Per-tenant retention is active"
+  success state, mirroring the live cron behaviour.
+- `api/v1/admin/tenant.ts` — header docstring updated; M-02 caveat
+  removed.
+- `docs/30-RISK-REGISTER.md` — M-02 ✅ Resolved, M-07 🟢 Mitigated,
+  L-05 ✅ Resolved (4 reasons covered), L-09 🟢 Mitigated (role-keyed).
+- `docs/21-PRIVACY-TECHNICAL.md §5` — retention matrix expanded with
+  per-tenant override column references.
+- `docs/26-DEPLOYMENT-RUNBOOK.md` — three new env vars documented
+  (clinician/staff MFA flags, SBOM_CVE_FAIL_ON_HIGH).
+
+### Notes
+
+- Defer to roadmap (not in scope of Tier 4): L-01/L-02/L-03 engine
+  version pinning + diff + backfill, M-06 per-tenant KMS, M-08 Stryker
+  mutation testing, L-07 per-score coverage report, L-08 frontend
+  bundle-size budget. These are documented as 🔵 Roadmap in
+  `30-RISK-REGISTER.md`.
+
+- Validated clinical formulas were not modified.
+- All schema changes are additive and idempotent (CREATE INDEX IF NOT
+  EXISTS, CREATE OR REPLACE FUNCTION, ADD COLUMN IF NOT EXISTS).
+
+---
+
 ## [0.2.1-hotfix-assessment500] — 2026-04-22 — **Assessment 500 — diagnosis & prevention**
 
 Live-production hotfix for `POST /api/v1/patients/{id}/assessments`

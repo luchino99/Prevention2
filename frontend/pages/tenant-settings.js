@@ -14,9 +14,11 @@
  *     default (this is the documented contract).
  *
  * Why: M-02 lets a tenant_admin edit retention windows without filing
- * a ticket with Uelfy. The cron-side honouring of these overrides is
- * Tier 4 (the inline notice on the page tells the admin so) — but the
- * persistence + audit trail is live today.
+ * a ticket with Uelfy. As of Tier 4 (migration 015) the daily cron
+ * fn_retention_prune READS each tenant's overrides via COALESCE with
+ * the platform default, so the values on this page have direct
+ * operational effect (no longer a forward declaration). The page banner
+ * mirrors the live status.
  */
 
 import { api, requireAuth, supabase } from '../assets/js/api-client.js';

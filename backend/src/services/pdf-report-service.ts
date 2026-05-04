@@ -86,17 +86,30 @@ import {
 // Public API
 // ───────────────────────────────────────────────────────────────────────────
 
+/**
+ * Optional knobs surfaced for testability. Production callers never pass
+ * these — production always uses the wall clock. The visual-regression
+ * test (M-07) injects a fixed `generatedAt` so PDF byte output is
+ * deterministic across runs and snapshot comparisons stay stable.
+ */
+export interface RenderOptions {
+  /** Fixed timestamp used as Info dict CreationDate / ModDate. Default: new Date(). */
+  generatedAt?: Date;
+}
+
 export async function renderAssessmentReportPdf(
   payload: ReportPayload,
+  options: RenderOptions = {},
 ): Promise<Uint8Array> {
   const { snapshot, patient, tenant, clinician } = payload;
+  const stamp = options.generatedAt ?? new Date();
 
   const pdf = await PDFDocument.create();
   pdf.setTitle(`Clinical Assessment Report — ${snapshot.assessment.id}`);
   pdf.setCreator('Uelfy Clinical Platform');
   pdf.setProducer('Uelfy / pdf-lib');
-  pdf.setCreationDate(new Date());
-  pdf.setModificationDate(new Date());
+  pdf.setCreationDate(stamp);
+  pdf.setModificationDate(stamp);
 
   const fonts = await loadReportFonts(pdf);
 
