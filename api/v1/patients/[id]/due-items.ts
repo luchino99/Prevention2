@@ -36,7 +36,6 @@ import { z } from 'zod';
 import { withAuth } from '../../../../backend/src/middleware/auth-middleware.js';
 import { requireTenantMember } from '../../../../backend/src/middleware/rbac.js';
 import { applySecurityHeaders } from '../../../../backend/src/middleware/security-headers.js';
-import { logStructured } from '../../../../backend/src/observability/structured-log.js';
 import {
   checkRateLimitAsync,
   RATE_LIMITS,
@@ -225,33 +224,25 @@ export default withAuth(async (req, res: VercelResponse) => {
     }
 
     // B-10 — sensitive read audit. Listing due items reveals upcoming
-    // screenings / follow-ups for a specific patient. Best-effort: a
-    // failed audit row must not block the read because countdown
-    // refreshes are high-frequency.
-    try {
-      await recordAudit(r.auth, {
-        action: 'due_items.list',
-        resourceType: 'due_item',
-        resourceId: null,
-        metadata: {
-          patient_id: patientId,
-          status: statusFilter,
-          source: sourceFilter ?? null,
-          priority: priorityFilter ?? null,
-          due_within_days: dueWithinDays ?? null,
-          include_past: includePast,
-          result_count: data?.length ?? 0,
-          page,
-          page_size: pageSize,
-        },
-      });
-    } catch (auditErr) {
-      // eslint-disable-next-line no-console
-      logStructured('warn', 'AUDIT_BEST_EFFORT_FAILED', { context: 'patients.due-items audit best-effort failed', extra: {
-        patientId,
-        auditErr,
-      } });
-    }
+    // screenings / follow-ups for a specific patient. recordAudit is
+    // non-throwing by contract — internal failures emit
+    // AUDIT_WRITE_FAILED variant='best_effort' via the canonical emitter.
+    await recordAudit(r.auth, {
+      action: 'due_items.list',
+      resourceType: 'due_item',
+      resourceId: null,
+      metadata: {
+        patient_id: patientId,
+        status: statusFilter,
+        source: sourceFilter ?? null,
+        priority: priorityFilter ?? null,
+        due_within_days: dueWithinDays ?? null,
+        include_past: includePast,
+        result_count: data?.length ?? 0,
+        page,
+        page_size: pageSize,
+      },
+    });
 
     const items = (data ?? []).map((row: any) => {
       const dueIso: string = String(row.due_at);

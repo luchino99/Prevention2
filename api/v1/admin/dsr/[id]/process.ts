@@ -60,6 +60,7 @@
  */
 
 import type { VercelResponse } from '@vercel/node';
+import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { withAuth, type AuthenticatedRequest } from '../../../../../backend/src/middleware/auth-middleware.js';
 import { requireTenantAdmin } from '../../../../../backend/src/middleware/rbac.js';
@@ -73,7 +74,6 @@ import {
 import { supabaseAdmin } from '../../../../../backend/src/config/supabase.js';
 import {
   recordAuditStrict,
-  AuditWriteError,
   emitAccessDenialLog,
 } from '../../../../../backend/src/audit/audit-logger.js';
 import {
@@ -652,11 +652,17 @@ async function guaranteeAudit(
   action: 'dsr.start' | 'dsr.cancel' | 'dsr.reject' | 'dsr.fulfill',
   metadata: Record<string, unknown>,
 ): Promise<void> {
+  // requestId for cross-correlation between the failing HTTP transaction
+  // and the AUDIT_WRITE_FAILED log line. Generated here (one per call) so
+  // recordAuditStrict can stamp it on the structured log when the audit
+  // insert fails.
+  const requestId = randomUUID();
   try {
     await recordAuditStrict(req.auth, {
       action,
       resourceType: 'data_subject_request',
       resourceId: dsr.id,
+      requestId,
       metadata: {
         kind: dsr.kind,
         tenant_id: dsr.tenant_id,
@@ -667,12 +673,14 @@ async function guaranteeAudit(
       },
     });
   } catch (auditErr) {
-    // eslint-disable-next-line no-console
-    console.error(`[${action}] guaranteed audit failed`, {
-      dsrId: dsr.id,
-      isAuditWriteError: auditErr instanceof AuditWriteError,
-      auditErr,
-    });
+    // recordAuditStrict has already emitted the canonical
+    // AUDIT_WRITE_FAILED structured event (with requestId, dbErrorCode,
+    // dbErrorMessage). We deliberately do NOT log a second prose line
+    // here — that would dominate the Datadog view and re-leak the raw
+    // error object. The HTTP envelope below carries the same requestId
+    // so the client + Datadog log can be correlated.
+    void auditErr; // intentionally swallowed at this layer
+    res.setHeader('X-Request-Id', requestId);
     replyError(res, 500, 'AUDIT_WRITE_FAILED');
   }
 }

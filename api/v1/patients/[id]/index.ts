@@ -8,16 +8,15 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { randomUUID } from 'node:crypto';
 import { withAuth } from '../../../../backend/src/middleware/auth-middleware.js';
 import { requireTenantMember, requireClinicalWrite, requireTenantAdmin } from '../../../../backend/src/middleware/rbac.js';
 import { applySecurityHeaders } from '../../../../backend/src/middleware/security-headers.js';
 import { checkRateLimitAsync, RATE_LIMITS, applyRateLimitHeaders } from '../../../../backend/src/middleware/rate-limit.js';
 import { supabaseAdmin } from '../../../../backend/src/config/supabase.js';
-import { logStructured } from '../../../../backend/src/observability/structured-log.js';
 import {
   recordAudit,
   recordAuditStrict,
-  AuditWriteError,
 } from '../../../../backend/src/audit/audit-logger.js';
 import { updatePatientSchema } from '../../../../shared/schemas/patient-input.js';
 import { replyDbError, replyValidationError, replyError } from '../../../../backend/src/middleware/http-errors.js';
@@ -187,20 +186,21 @@ async function handleDelete(req: any, res: VercelResponse, patientId: string): P
   // (anonymisation cron runs T+30d) so this is the safe direction.
   // recordAuditStrict throws AuditWriteError on persistence failure (vs.
   // recordAudit which only logs), so this catch branch is reachable.
+  const auditRequestId = randomUUID();
   try {
     await recordAuditStrict(req.auth, {
       action: 'patient.delete',
       resourceType: 'patient',
       resourceId: patientId,
+      requestId: auditRequestId,
       metadata: { tenantId: patient.tenant_id },
     });
   } catch (auditErr) {
-    // eslint-disable-next-line no-console
-    logStructured('warn', 'AUDIT_BEST_EFFORT_FAILED', { context: 'patients.delete audit write failed', extra: {
-      patientId,
-      isAuditWriteError: auditErr instanceof AuditWriteError,
-      auditErr,
-    } });
+    // recordAuditStrict has already emitted AUDIT_WRITE_FAILED via the
+    // canonical emitter. Surface the requestId in the HTTP response for
+    // cross-correlation with the Datadog log line.
+    void auditErr;
+    res.setHeader('X-Request-Id', auditRequestId);
     replyError(res, 500, 'AUDIT_WRITE_FAILED');
     return;
   }

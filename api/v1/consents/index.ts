@@ -26,15 +26,15 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { withAuth } from '../../../backend/src/middleware/auth-middleware.js';
 import { requireTenantMember, requireClinicalWrite } from '../../../backend/src/middleware/rbac.js';
 import { applySecurityHeaders } from '../../../backend/src/middleware/security-headers.js';
 import { checkRateLimitAsync, RATE_LIMITS, applyRateLimitHeaders } from '../../../backend/src/middleware/rate-limit.js';
 import { supabaseAdmin } from '../../../backend/src/config/supabase.js';
-import { recordAuditStrict, AuditWriteError, emitAccessDenialLog } from '../../../backend/src/audit/audit-logger.js';
+import { recordAuditStrict, emitAccessDenialLog } from '../../../backend/src/audit/audit-logger.js';
 import { replyDbError, replyValidationError, replyError } from '../../../backend/src/middleware/http-errors.js';
-import { logStructured } from '../../../backend/src/observability/structured-log.js';
 
 /**
  * B-08 — clinician → patient consent gate.
@@ -197,7 +197,7 @@ async function handleGrant(req: any, res: VercelResponse): Promise<void> {
       actorTenantId: req.auth.tenantId,
       ipHash: req.auth.ipHash ?? null,
       route: `${req.method ?? 'UNKNOWN'} /api/v1/consents`,
-      targetResourceId: patientId,
+      targetResourceId: p.patientId,
       targetTenantId: patient.tenant_id as string,
     });
     replyError(res, 403, 'CROSS_TENANT_FORBIDDEN');
@@ -254,11 +254,13 @@ async function handleGrant(req: any, res: VercelResponse): Promise<void> {
   // write fails and log the original PG error server-side.
   // recordAuditStrict throws AuditWriteError on persistence failure (vs.
   // recordAudit which only logs), so this catch branch is reachable.
+  const auditRequestId = randomUUID();
   try {
     await recordAuditStrict(req.auth, {
       action: granted ? 'consent.grant' : 'consent.revoke',
       resourceType: 'consent',
       resourceId: data.id,
+      requestId: auditRequestId,
       metadata: {
         consent_type: p.consentType,
         policy_version: p.policyVersion,
@@ -267,12 +269,11 @@ async function handleGrant(req: any, res: VercelResponse): Promise<void> {
       },
     });
   } catch (auditErr) {
-    // eslint-disable-next-line no-console
-    logStructured('warn', 'AUDIT_BEST_EFFORT_FAILED', { context: 'consents.grant audit write failed', extra: {
-      id: data.id,
-      isAuditWriteError: auditErr instanceof AuditWriteError,
-      auditErr,
-    } });
+    // recordAuditStrict has already emitted AUDIT_WRITE_FAILED via the
+    // canonical emitter (with the same requestId). Surface requestId
+    // via header for cross-correlation with the Datadog log line.
+    void auditErr;
+    res.setHeader('X-Request-Id', auditRequestId);
     replyError(res, 500, 'AUDIT_WRITE_FAILED');
     return;
   }

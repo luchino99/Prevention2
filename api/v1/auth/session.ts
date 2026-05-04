@@ -18,7 +18,6 @@ import { recordAudit, recordFailedLogin } from '../../../backend/src/audit/audit
 import { applySecurityHeaders } from '../../../backend/src/middleware/security-headers.js';
 import { checkRateLimitAsync, RATE_LIMITS, applyRateLimitHeaders } from '../../../backend/src/middleware/rate-limit.js';
 import { replyError, replyServiceError } from '../../../backend/src/middleware/http-errors.js';
-import { logStructured } from '../../../backend/src/observability/structured-log.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   applySecurityHeaders(res);
@@ -54,12 +53,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     const auth = await validateAccessToken(token, req);
     // Best-effort audit on login: a missed audit row should not stop the user
     // logging in (auth itself is the security boundary; audit is observability).
-    try {
-      await recordAudit(auth, { action: 'auth.login', resourceType: 'session' });
-    } catch (auditErr) {
-      // eslint-disable-next-line no-console
-      logStructured('warn', 'AUDIT_BEST_EFFORT_FAILED', { context: 'auth.session audit best-effort failed', extra: { auditErr } });
-    }
+    // recordAudit is non-throwing by contract — it catches internally and
+    // emits the canonical AUDIT_WRITE_FAILED variant='best_effort' line, so we
+    // do not need a wrapping try/catch here (which would only re-leak the raw
+    // error object into Datadog and clash with the L-04 single-line contract).
+    await recordAudit(auth, { action: 'auth.login', resourceType: 'session' });
 
     res.status(200).json({
       user: {

@@ -28,13 +28,13 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { randomUUID } from 'node:crypto';
 import { withAuth } from '../../../../backend/src/middleware/auth-middleware.js';
 import { requireTenantMember } from '../../../../backend/src/middleware/rbac.js';
 import { applySecurityHeaders } from '../../../../backend/src/middleware/security-headers.js';
 import { checkRateLimitAsync, applyRateLimitHeaders } from '../../../../backend/src/middleware/rate-limit.js';
 import { supabaseAdmin } from '../../../../backend/src/config/supabase.js';
-import { recordAuditStrict, AuditWriteError, emitAccessDenialLog } from '../../../../backend/src/audit/audit-logger.js';
-import { logStructured } from '../../../../backend/src/observability/structured-log.js';
+import { recordAuditStrict, emitAccessDenialLog } from '../../../../backend/src/audit/audit-logger.js';
 import {
   replyDbError,
   replyError,
@@ -189,11 +189,13 @@ async function handleExport(req: any, res: VercelResponse, patientId: string): P
   // can't write it, refuse to ship the envelope to the caller.
   // recordAuditStrict throws AuditWriteError on persistence failure so this
   // catch branch is reachable in practice.
+  const auditRequestId = randomUUID();
   try {
     await recordAuditStrict(req.auth, {
       action: 'patient.export',
       resourceType: 'patient',
       resourceId: patientId,
+      requestId: auditRequestId,
       metadata: {
         dsr_id: dsrRow?.id ?? null,
         assessments_count: assessments.data?.length ?? 0,
@@ -203,12 +205,12 @@ async function handleExport(req: any, res: VercelResponse, patientId: string): P
       },
     });
   } catch (auditErr) {
-    // eslint-disable-next-line no-console
-    logStructured('warn', 'AUDIT_BEST_EFFORT_FAILED', { context: 'patients.export audit write failed', extra: {
-      patientId,
-      isAuditWriteError: auditErr instanceof AuditWriteError,
-      auditErr,
-    } });
+    // recordAuditStrict has already emitted the canonical
+    // AUDIT_WRITE_FAILED structured event (with requestId, dbErrorCode,
+    // dbErrorMessage). Do NOT re-log a prose line here — the HTTP
+    // envelope below carries the same requestId for cross-correlation.
+    void auditErr;
+    res.setHeader('X-Request-Id', auditRequestId);
     replyError(res, 500, 'AUDIT_WRITE_FAILED');
     return;
   }

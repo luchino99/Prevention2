@@ -38,11 +38,11 @@
  */
 
 import type { VercelResponse } from '@vercel/node';
+import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { withAuth, type AuthenticatedRequest } from '../../../../backend/src/middleware/auth-middleware.js';
 import { requireTenantAdmin } from '../../../../backend/src/middleware/rbac.js';
 import { applySecurityHeaders } from '../../../../backend/src/middleware/security-headers.js';
-import { logStructured } from '../../../../backend/src/observability/structured-log.js';
 import {
   checkRateLimitAsync,
   RATE_LIMITS,
@@ -52,7 +52,6 @@ import { supabaseAdmin } from '../../../../backend/src/config/supabase.js';
 import {
   recordAudit,
   recordAuditStrict,
-  AuditWriteError,
 } from '../../../../backend/src/audit/audit-logger.js';
 import {
   replyDbError,
@@ -187,24 +186,21 @@ async function handleList(req: AuthenticatedRequest, res: VercelResponse): Promi
 
   // Best-effort sensitive-read audit (B-10). DSR listings reveal pending
   // privacy obligations — log who looked, when, and the filter shape.
-  try {
-    await recordAudit(req.auth, {
-      action: 'dsr.list',
-      resourceType: 'data_subject_request',
-      metadata: {
-        status: q.status ?? null,
-        kind: q.kind ?? null,
-        from: q.from ?? null,
-        to: q.to ?? null,
-        page: q.page,
-        page_size: q.pageSize,
-        result_count: data?.length ?? 0,
-      },
-    });
-  } catch (auditErr) {
-    // eslint-disable-next-line no-console
-    logStructured('warn', 'AUDIT_BEST_EFFORT_FAILED', { context: 'admin.dsr.list audit best-effort failed', extra: { auditErr } });
-  }
+  // recordAudit is non-throwing; internal failures emit
+  // AUDIT_WRITE_FAILED variant='best_effort'.
+  await recordAudit(req.auth, {
+    action: 'dsr.list',
+    resourceType: 'data_subject_request',
+    metadata: {
+      status: q.status ?? null,
+      kind: q.kind ?? null,
+      from: q.from ?? null,
+      to: q.to ?? null,
+      page: q.page,
+      page_size: q.pageSize,
+      result_count: data?.length ?? 0,
+    },
+  });
 
   res.status(200).json({
     requests: data ?? [],
@@ -319,11 +315,15 @@ async function handleCreate(req: AuthenticatedRequest, res: VercelResponse): Pro
   // failure to the caller instead of silently dropping it.
   // recordAuditStrict throws AuditWriteError on persistence failure (vs.
   // recordAudit which only logs), so this catch branch is reachable.
+  // Per-request UUID surfaced via X-Request-Id for cross-correlation
+  // with the canonical AUDIT_WRITE_FAILED Datadog log line.
+  const auditRequestId = randomUUID();
   try {
     await recordAuditStrict(req.auth, {
       action: 'dsr.create',
       resourceType: 'data_subject_request',
       resourceId: inserted.id as string,
+      requestId: auditRequestId,
       metadata: {
         kind: v.kind,
         subject_patient_id: v.subjectPatientId ?? null,
@@ -335,9 +335,10 @@ async function handleCreate(req: AuthenticatedRequest, res: VercelResponse): Pro
   } catch (auditErr) {
     // recordAuditStrict has already emitted AUDIT_WRITE_FAILED via the
     // canonical emitter; we deliberately do NOT re-log here to avoid
-    // duplicate dashboard events. The HTTP envelope is the operator-
-    // facing signal that the strict-audit branch fired.
+    // duplicate dashboard events. The HTTP 500 + X-Request-Id header
+    // are the operator-facing signal that the strict-audit branch fired.
     void auditErr;
+    res.setHeader('X-Request-Id', auditRequestId);
     replyError(res, 500, 'AUDIT_WRITE_FAILED');
     return;
   }

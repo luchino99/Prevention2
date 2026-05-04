@@ -24,7 +24,6 @@ import { checkRateLimitAsync, RATE_LIMITS, applyRateLimitHeaders } from '../../.
 import { supabaseAdmin } from '../../../backend/src/config/supabase.js';
 import { recordAudit } from '../../../backend/src/audit/audit-logger.js';
 import { replyDbError, replyValidationError, replyError } from '../../../backend/src/middleware/http-errors.js';
-import { logStructured } from '../../../backend/src/observability/structured-log.js';
 
 const querySchema = z.object({
   status: z.enum(['open', 'acknowledged', 'resolved', 'dismissed']).default('open'),
@@ -73,25 +72,23 @@ async function handleList(req: any, res: VercelResponse): Promise<void> {
   // include patient-facing context). We log the read intent + filter set,
   // not the row IDs (volume control). Audit failure is logged only —
   // alert reads must not be blocked by an audit hiccup.
-  try {
-    await recordAudit(req.auth, {
-      action: 'alert.list',
-      resourceType: 'alert',
-      resourceId: null,
-      metadata: {
-        status: q.status,
-        severity: q.severity ?? null,
-        audience: q.audience ?? null,
-        patient_id: q.patientId ?? null,
-        result_count: data?.length ?? 0,
-        page: q.page,
-        page_size: q.pageSize,
-      },
-    });
-  } catch (auditErr) {
-    // eslint-disable-next-line no-console
-    logStructured('warn', 'AUDIT_BEST_EFFORT_FAILED', { context: 'alerts.list audit best-effort failed', extra: { auditErr } });
-  }
+  // recordAudit is non-throwing by contract — internal failures are emitted
+  // as AUDIT_WRITE_FAILED variant='best_effort' so we don't wrap in try/catch
+  // (a wrapper would re-leak the raw error object into Datadog).
+  await recordAudit(req.auth, {
+    action: 'alert.list',
+    resourceType: 'alert',
+    resourceId: null,
+    metadata: {
+      status: q.status,
+      severity: q.severity ?? null,
+      audience: q.audience ?? null,
+      patient_id: q.patientId ?? null,
+      result_count: data?.length ?? 0,
+      page: q.page,
+      page_size: q.pageSize,
+    },
+  });
 
   res.status(200).json({
     alerts: data ?? [],

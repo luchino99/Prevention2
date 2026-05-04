@@ -5,15 +5,15 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { withAuth } from '../../../../backend/src/middleware/auth-middleware.js';
 import { requireClinicalWrite } from '../../../../backend/src/middleware/rbac.js';
 import { applySecurityHeaders } from '../../../../backend/src/middleware/security-headers.js';
 import { checkRateLimitAsync, RATE_LIMITS, applyRateLimitHeaders } from '../../../../backend/src/middleware/rate-limit.js';
 import { supabaseAdmin } from '../../../../backend/src/config/supabase.js';
-import { recordAuditStrict, AuditWriteError, emitAccessDenialLog } from '../../../../backend/src/audit/audit-logger.js';
+import { recordAuditStrict, emitAccessDenialLog } from '../../../../backend/src/audit/audit-logger.js';
 import { replyDbError, replyValidationError, replyError } from '../../../../backend/src/middleware/http-errors.js';
-import { logStructured } from '../../../../backend/src/observability/structured-log.js';
 
 const bodySchema = z.object({
   action: z.enum(['acknowledge', 'resolve', 'dismiss']),
@@ -154,21 +154,22 @@ export default withAuth(async (req, res: VercelResponse) => {
     // alert state has changed and the reviewer needs assurance this is
     // recorded. recordAuditStrict throws AuditWriteError if the row cannot
     // be persisted (vs. recordAudit which only logs), so the catch branch
-    // here is reachable in practice.
+    // here is reachable in practice. The canonical AUDIT_WRITE_FAILED
+    // structured event is emitted by recordAuditStrict itself; we only
+    // need to fail-closed and surface the requestId via X-Request-Id for
+    // operator cross-correlation with the Datadog log line.
+    const auditRequestId = randomUUID();
     try {
       await recordAuditStrict(r.auth, {
         action: ACTION_TO_AUDIT[action],
         resourceType: 'alert',
         resourceId: id,
+        requestId: auditRequestId,
         metadata: { previous_status: alert.status, new_status: newStatus },
       });
     } catch (auditErr) {
-      // eslint-disable-next-line no-console
-      logStructured('warn', 'AUDIT_BEST_EFFORT_FAILED', { context: 'alerts.ack audit write failed', extra: {
-        id,
-        isAuditWriteError: auditErr instanceof AuditWriteError,
-        auditErr,
-      } });
+      void auditErr;
+      s.setHeader('X-Request-Id', auditRequestId);
       replyError(s, 500, 'AUDIT_WRITE_FAILED');
       return;
     }

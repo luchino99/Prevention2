@@ -12,6 +12,7 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { randomUUID } from 'node:crypto';
 import { withAuth } from '../../../../backend/src/middleware/auth-middleware.js';
 import { requireTenantMember } from '../../../../backend/src/middleware/rbac.js';
 import { applySecurityHeaders } from '../../../../backend/src/middleware/security-headers.js';
@@ -22,7 +23,7 @@ import {
   loadAssessmentSnapshot,
   buildReportPayload,
 } from '../../../../backend/src/services/assessment-service.js';
-import { recordAuditStrict, AuditWriteError, emitAccessDenialLog } from '../../../../backend/src/audit/audit-logger.js';
+import { recordAuditStrict, emitAccessDenialLog } from '../../../../backend/src/audit/audit-logger.js';
 import { renderAssessmentReportPdf } from '../../../../backend/src/services/pdf-report-service.js';
 import {
   replyDbError,
@@ -106,11 +107,13 @@ async function handleGenerate(req: any, res: VercelResponse, assessmentId: strin
     // and rely on the existing storage object being reconciled out-of-band.
     // recordAuditStrict throws AuditWriteError on persistence failure so
     // this catch branch is reachable in practice.
+    const auditRequestId = randomUUID();
     try {
       await recordAuditStrict(req.auth, {
         action: 'report.generate',
         resourceType: 'report_export',
         resourceId: exportRow?.id ?? null,
+        requestId: auditRequestId,
         metadata: {
           assessment_id: assessmentId,
           size_bytes: pdfBuffer.byteLength,
@@ -118,13 +121,12 @@ async function handleGenerate(req: any, res: VercelResponse, assessmentId: strin
         },
       });
     } catch (auditErr) {
-      // eslint-disable-next-line no-console
-      logStructured('warn', 'AUDIT_BEST_EFFORT_FAILED', { context: 'report.generate audit write failed', extra: {
-        assessmentId,
-        exportId: exportRow?.id ?? null,
-        isAuditWriteError: auditErr instanceof AuditWriteError,
-        auditErr,
-      } });
+      // recordAuditStrict has already emitted AUDIT_WRITE_FAILED via
+      // the canonical emitter (with the same requestId). Do NOT re-log
+      // a prose line — the HTTP X-Request-Id header is the cross-
+      // correlation channel for the operator.
+      void auditErr;
+      res.setHeader('X-Request-Id', auditRequestId);
       replyError(res, 500, 'AUDIT_WRITE_FAILED');
       return;
     }
@@ -191,21 +193,22 @@ async function handleGetSignedUrl(req: any, res: VercelResponse, assessmentId: s
   // 500 so the URL doesn't reach the client without a corresponding
   // audit row. recordAuditStrict throws AuditWriteError on failure so the
   // catch branch is reachable.
+  const auditRequestId = randomUUID();
   try {
     await recordAuditStrict(req.auth, {
       action: 'report.download',
       resourceType: 'report_export',
       resourceId: data.id,
+      requestId: auditRequestId,
       metadata: { assessment_id: assessmentId },
     });
   } catch (auditErr) {
-    // eslint-disable-next-line no-console
-    logStructured('warn', 'AUDIT_BEST_EFFORT_FAILED', { context: 'report.download audit write failed', extra: {
-      assessmentId,
-      reportId: data.id,
-      isAuditWriteError: auditErr instanceof AuditWriteError,
-      auditErr,
-    } });
+    // recordAuditStrict has already emitted AUDIT_WRITE_FAILED via the
+    // canonical emitter (with the same requestId). Do NOT re-log a
+    // prose line — the X-Request-Id header is the cross-correlation
+    // channel for the operator.
+    void auditErr;
+    res.setHeader('X-Request-Id', auditRequestId);
     replyError(res, 500, 'AUDIT_WRITE_FAILED');
     return;
   }

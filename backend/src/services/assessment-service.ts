@@ -764,32 +764,26 @@ export async function createAssessment(
   // ─── 5. Audit log (best-effort, separate observability concern) ───
   // Audit lives outside the atomic transaction on purpose: a missed
   // audit row should never block a clinical save, and the assessment is
-  // already durably persisted by this point. We swallow audit failure
-  // and console.error it so ops can correlate via X-Request-Id.
-  try {
-    await recordAudit(auth, {
-      action: 'assessment.create',
-      resourceType: 'assessment',
-      resourceId: assessmentId,
-      metadata: {
-        patient_id: patientId,
-        composite_risk_level: compositeRisk.level,
-        alert_count: alerts.length,
-        score_count: scoreResults.length,
-        // Stable, machine-readable completeness signal. Sourced from the
-        // canonical `checkAssessmentCompleteness` projection so the audit
-        // trail and the UI share a single source of truth. Codes only —
-        // no free-text, no PHI.
-        completeness_warning_codes: completenessWarnings.map((w) => w.code),
-      },
-    });
-  } catch (auditErr) {
-    logStructured('warn', 'AUDIT_BEST_EFFORT_FAILED', {
-      action: 'assessment.create',
-      resourceId: assessmentId,
-      errorTag: tagFromError(auditErr) ?? 'unknown',
-    });
-  }
+  // already durably persisted by this point. recordAudit is non-throwing
+  // by contract — internal failures emit AUDIT_WRITE_FAILED
+  // variant='best_effort' via the canonical structured-log emitter, so
+  // we do not wrap in try/catch.
+  await recordAudit(auth, {
+    action: 'assessment.create',
+    resourceType: 'assessment',
+    resourceId: assessmentId,
+    metadata: {
+      patient_id: patientId,
+      composite_risk_level: compositeRisk.level,
+      alert_count: alerts.length,
+      score_count: scoreResults.length,
+      // Stable, machine-readable completeness signal. Sourced from the
+      // canonical `checkAssessmentCompleteness` projection so the audit
+      // trail and the UI share a single source of truth. Codes only —
+      // no free-text, no PHI.
+      completeness_warning_codes: completenessWarnings.map((w) => w.code),
+    },
+  });
 
   // ─── 6. Return AssessmentSnapshot from in-memory engine outputs ───
   // The snapshot is built from the engine outputs we already have in

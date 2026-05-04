@@ -143,21 +143,18 @@ export default withAuth(async (req: AuthenticatedRequest, res: VercelResponse) =
       }
     }
 
-    try {
-      await recordAudit(r.auth, {
-        action: 'dsr.read',
-        resourceType: 'data_subject_request',
-        resourceId: dsrId,
-        metadata: {
-          kind: row.kind,
-          status: row.status,
-          has_export: !!row.export_storage_path,
-        },
-      });
-    } catch (auditErr) {
-      // eslint-disable-next-line no-console
-      logStructured('warn', 'AUDIT_BEST_EFFORT_FAILED', { context: 'admin.dsr.read audit best-effort failed', extra: { auditErr } });
-    }
+    // recordAudit is non-throwing by contract — internal failures emit
+    // AUDIT_WRITE_FAILED variant='best_effort'. No wrapper try/catch.
+    await recordAudit(r.auth, {
+      action: 'dsr.read',
+      resourceType: 'data_subject_request',
+      resourceId: dsrId,
+      metadata: {
+        kind: row.kind,
+        status: row.status,
+        has_export: !!row.export_storage_path,
+      },
+    });
 
     s.status(200).json({
       request: row,

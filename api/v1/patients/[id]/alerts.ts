@@ -12,7 +12,6 @@ import { checkRateLimitAsync, RATE_LIMITS, applyRateLimitHeaders } from '../../.
 import { supabaseAdmin } from '../../../../backend/src/config/supabase.js';
 import { recordAudit } from '../../../../backend/src/audit/audit-logger.js';
 import { replyDbError, replyValidationError, replyError } from '../../../../backend/src/middleware/http-errors.js';
-import { logStructured } from '../../../../backend/src/observability/structured-log.js';
 
 const querySchema = z.object({
   status: z.enum(['open', 'acknowledged', 'resolved', 'dismissed']).optional(),
@@ -79,22 +78,18 @@ export default withAuth(async (req, res: VercelResponse) => {
     }
 
     // B-10 — sensitive read audit (per-patient alert listing).
-    try {
-      await recordAudit(r.auth, {
-        action: 'alert.list',
-        resourceType: 'alert',
-        resourceId: null,
-        metadata: {
-          patient_id: patientId,
-          status: status ?? null,
-          severity: severity ?? null,
-          result_count: data?.length ?? 0,
-        },
-      });
-    } catch (auditErr) {
-      // eslint-disable-next-line no-console
-      logStructured('warn', 'AUDIT_BEST_EFFORT_FAILED', { context: 'patients.alerts audit best-effort failed', extra: { patientId, auditErr } });
-    }
+    // recordAudit is non-throwing by contract.
+    await recordAudit(r.auth, {
+      action: 'alert.list',
+      resourceType: 'alert',
+      resourceId: null,
+      metadata: {
+        patient_id: patientId,
+        status: status ?? null,
+        severity: severity ?? null,
+        result_count: data?.length ?? 0,
+      },
+    });
 
     s.status(200).json({
       alerts: data ?? [],

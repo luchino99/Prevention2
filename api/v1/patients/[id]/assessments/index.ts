@@ -18,7 +18,6 @@ import { supabaseAdmin } from '../../../../../backend/src/config/supabase.js';
 import { recordAudit, emitAccessDenialLog } from '../../../../../backend/src/audit/audit-logger.js';
 import { createAssessment } from '../../../../../backend/src/services/assessment-service.js';
 import { assessmentInputSchema } from '../../../../../shared/schemas/assessment-input.js';
-import { logStructured } from '../../../../../backend/src/observability/structured-log.js';
 import {
   replyDbError,
   replyValidationError,
@@ -115,25 +114,19 @@ async function handleList(req: any, res: VercelResponse, patientId: string): Pro
   }
 
   // B-10 — sensitive read audit. Listing a patient's assessment history
-  // is PHI access; record best-effort so audit hiccups can't block reads.
-  try {
-    await recordAudit(req.auth, {
-      action: 'assessment.read',
-      resourceType: 'patient',
-      resourceId: patientId,
-      metadata: {
-        list_size: data?.length ?? 0,
-        page,
-        page_size: pageSize,
-      },
-    });
-  } catch (auditErr) {
-    // eslint-disable-next-line no-console
-    logStructured('warn', 'AUDIT_BEST_EFFORT_FAILED', { context: 'patients.assessments.list audit best-effort failed', extra: {
-      patientId,
-      auditErr,
-    } });
-  }
+  // is PHI access. recordAudit is non-throwing by contract — internal
+  // failures emit AUDIT_WRITE_FAILED variant='best_effort' via the
+  // canonical emitter, so we do not wrap in try/catch.
+  await recordAudit(req.auth, {
+    action: 'assessment.read',
+    resourceType: 'patient',
+    resourceId: patientId,
+    metadata: {
+      list_size: data?.length ?? 0,
+      page,
+      page_size: pageSize,
+    },
+  });
 
   // Normalize Supabase nested-relation shape (array vs single) into a single
   // `riskProfile` field for the UI. Supabase returns the join as an array even

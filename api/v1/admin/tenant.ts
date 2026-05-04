@@ -36,11 +36,11 @@
  */
 
 import type { VercelResponse } from '@vercel/node';
+import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { withAuth, type AuthenticatedRequest } from '../../../backend/src/middleware/auth-middleware.js';
 import { requireTenantAdmin } from '../../../backend/src/middleware/rbac.js';
 import { applySecurityHeaders } from '../../../backend/src/middleware/security-headers.js';
-import { logStructured } from '../../../backend/src/observability/structured-log.js';
 import {
   checkRateLimitAsync,
   RATE_LIMITS,
@@ -50,7 +50,6 @@ import { supabaseAdmin } from '../../../backend/src/config/supabase.js';
 import {
   recordAudit,
   recordAuditStrict,
-  AuditWriteError,
 } from '../../../backend/src/audit/audit-logger.js';
 import {
   replyDbError,
@@ -146,18 +145,15 @@ async function handleGet(req: AuthenticatedRequest, res: VercelResponse): Promis
     return;
   }
 
-  // Best-effort sensitive-read audit.
-  try {
-    await recordAudit(req.auth, {
-      action: 'admin.tenant_update', // closest existing enum action for read+update; reused intentionally
-      resourceType: 'tenant',
-      resourceId: tenantId,
-      metadata: { kind: 'read' },
-    });
-  } catch (auditErr) {
-    // eslint-disable-next-line no-console
-    logStructured('warn', 'AUDIT_BEST_EFFORT_FAILED', { context: 'admin.tenant.read audit best-effort failed', extra: { auditErr } });
-  }
+  // Best-effort sensitive-read audit. recordAudit is non-throwing by
+  // contract — internal failures are emitted as
+  // AUDIT_WRITE_FAILED variant='best_effort'. No wrapper try/catch.
+  await recordAudit(req.auth, {
+    action: 'admin.tenant_update', // closest existing enum action for read+update; reused intentionally
+    resourceType: 'tenant',
+    resourceId: tenantId,
+    metadata: { kind: 'read' },
+  });
 
   res.status(200).json({ tenant: data });
 }
@@ -211,11 +207,15 @@ async function handlePatch(req: AuthenticatedRequest, res: VercelResponse): Prom
 
   // Strict audit (B-09): a privacy-significant change must land in the
   // immutable trail. Failure aborts the request with AUDIT_WRITE_FAILED.
+  // Per-request UUID surfaced via X-Request-Id for cross-correlation with
+  // the canonical AUDIT_WRITE_FAILED Datadog log line.
+  const auditRequestId = randomUUID();
   try {
     await recordAuditStrict(req.auth, {
       action: 'admin.tenant_update',
       resourceType: 'tenant',
       resourceId: tenantId,
+      requestId: auditRequestId,
       metadata: {
         kind: 'patch_retention',
         // Echo the new effective values so the audit trail tells the
@@ -229,8 +229,9 @@ async function handlePatch(req: AuthenticatedRequest, res: VercelResponse): Prom
   } catch (auditErr) {
     // AUDIT_WRITE_FAILED already emitted by the canonical emitter inside
     // recordAuditStrict — do not duplicate the log line. The HTTP 500
-    // envelope is the operator-facing signal.
+    // envelope + X-Request-Id header are the operator-facing signal.
     void auditErr;
+    res.setHeader('X-Request-Id', auditRequestId);
     replyError(res, 500, 'AUDIT_WRITE_FAILED');
     return;
   }
