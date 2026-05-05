@@ -1,0 +1,50 @@
+{
+  "name": "uelfy-clinical",
+  "version": "0.2.1",
+  "private": true,
+  "description": "Uelfy — B2B cardio-nephro-metabolic clinical risk assessment and longitudinal patient monitoring platform.",
+  "type": "module",
+  "engines": {
+    "node": "20.x"
+  },
+  "scripts": {
+    "dev": "vercel dev",
+    "typecheck": "tsc --noEmit --project tsconfig.json",
+    "typecheck:prod": "tsc --noEmit --project tsconfig.prod.check.json",
+    "inject:public-config": "node scripts/inject-public-config.mjs",
+    "fetch:fonts": "node scripts/fetch-noto-fonts.mjs",
+    "fetch:supabase-sdk": "node scripts/fetch-supabase-sdk.mjs",
+    "check:determinism": "node scripts/check-engine-determinism.mjs",
+    "check:rate-limit": "node scripts/check-rate-limit-async.mjs",
+    "sbom:refresh": "node scripts/refresh-sbom.mjs",
+    "check:sbom": "node scripts/check-sbom.mjs",
+    "check:sbom-cves": "node scripts/check-sbom-cves.mjs",
+    "build": "node scripts/fetch-noto-fonts.mjs && node scripts/fetch-supabase-sdk.mjs && node scripts/inject-public-config.mjs && node scripts/check-engine-determinism.mjs && node scripts/verify-build.mjs",
+    "build:check": "node scripts/fetch-noto-fonts.mjs && node scripts/fetch-supabase-sdk.mjs && node scripts/inject-public-config.mjs && node scripts/verify-build.mjs && node scripts/check-engine-determinism.mjs && node scripts/check-rate-limit-async.mjs && node scripts/check-sbom.mjs && node scripts/check-sbom-cves.mjs && tsc --noEmit --project tsconfig.json",
+    "verify:build": "node scripts/verify-build.mjs",
+    "test": "vitest run",
+    "test:rls": "node scripts/run-rls-tests.mjs",
+    "test:pdf": "vitest run tests/unit/pdf-report-service.test.ts"
+  },
+  "dependencies": {
+    "@pdf-lib/fontkit": "^1.1.1",
+    "@supabase/supabase-js": "^2.45.0",
+    "esbuild": "^0.21.5",
+    "pdf-lib": "^1.17.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@vercel/node": "^3.2.0",
+    "typescript": "5.5.4",
+    "vitest": "^1.6.0"
+  },
+  "keywords": [
+    "clinical",
+    "cardiometabolic",
+    "risk-assessment",
+    "supabase",
+    "b2b"
+  ],
+  "license": "UNLICENSED"
+}

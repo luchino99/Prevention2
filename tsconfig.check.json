@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": [],
+    "ignoreDeprecations": "6.0",
+    "skipLibCheck": true
+  },
+  "include": [
+    "types/**/*.d.ts",
+    "backend/**/*.ts",
+    "shared/**/*.ts",
+    "api/**/*.ts",
+    "tests/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".build",
+    "_archive_legacy",
+    "engine/**/*.js"
+  ]
+}

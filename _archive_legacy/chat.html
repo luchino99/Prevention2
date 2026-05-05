@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HealthAI Chat</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="chatbot-logic.js" type="module"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/chat-style.css">
+</head>
+<body>
+  <div class="chat-container">
+
+    <!-- Header -->
+    <header class="shadow-sm mb-4 sticky top-0 z-10 chat-header" style="background-color: var(--card-color); color: var(--text-color); border-bottom: 1px solid var(--border-color);">
+      <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+        <div class="flex items-center">
+          <svg class="h-6 w-6 text-blue-500 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+          </svg>
+          <h1 class="text-xl font-bold">Chat</h1>
+        </div>
+        <div class="flex items-center space-x-4">
+          <button style="visibility: hidden" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-full flex items-center text-sm">
+            <i class="fas fa-file-pdf mr-2"></i>
+            Esporta report
+          </button>
+          <button style="visibility: hidden" class="text-blue-500 hover:text-blue-700">
+            <i class="fas fa-sync-alt"></i>
+          </button>
+        </div>
+        <div class="flex items-center space-x-4">
+          <button id="theme-toggle" class="text-blue-500 text-xl hover:text-blue-700">🌙</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="welcome-container">
+      <div class="welcome-content">
+        <div class="welcome-title">
+          <h2>Ciao! Come posso aiutarti oggi?</h2>
+          <p>Seleziona una delle opzioni per iniziare la conversazione</p>
+        </div>
+
+        <div class="option-grid">
+          <div class="option-card" data-mode="sintomi">
+            <div class="option-icon">
+              <i class="fas fa-thermometer-half"></i>
+            </div>
+            <div class="option-title">Descrivere i miei sintomi</div>
+            <div class="option-desc">Ottieni consigli su sintomi o situazioni mediche attuali</div>
+          </div>
+
+          <div class="option-card" data-mode="prevenzione">
+            <div class="option-icon">
+              <i class="fas fa-shield-virus"></i>
+            </div>
+            <div class="option-title">Fare prevenzione</div>
+            <div class="option-desc">Consigli per la prevenzione e uno stile di vita sano</div>
+          </div>
+
+          <div class="option-card" data-mode="dieta">
+            <div class="option-icon">
+              <i class="fas fa-utensils"></i>
+            </div>
+            <div class="option-title">Piano alimentare</div>
+            <div class="option-desc">Ottieni un piano alimentare personalizzato</div>
+          </div>
+
+          <div class="option-card" data-mode="allenamento">
+            <div class="option-icon">
+              <i class="fas fa-dumbbell"></i>
+            </div>
+            <div class="option-title">Piano di allenamento</div>
+            <div class="option-desc">Ottieni un programma di allenamento su misura</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chat-interface" id="chat-interface">
+    <div class="chat-area" id="chat-messages">
+      <!-- I messaggi della chat saranno inseriti qui dinamicamente -->
+    </div>
+    <form id="input-form" class="input-area">
+      <input type="text" class="message-input" id="message-input" placeholder="Digita qui la tua risposta..." />
+      <button type="submit" class="send-button" id="send-button">
+        <i>➤</i>
+      </button>
+    </form>
+  </div>
+</div>
+<div style="visibility: hidden" class="option-buttons">
+  <button type="button" class="option-button" data-mode="sintomi">🤒 Descrivere i miei sintomi</button>
+  <button type="button" class="option-button" data-mode="prevenzione">🍎 Fare prevenzione</button>
+  <button type="button" class="option-button" data-mode="dieta">🍽️ Piano alimentare su misura</button>
+  <button type="button" class="option-button" data-mode="allenamento">🏋️ Piano di allenamento su misura</button>
+
+</div>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  // Collegamento pulsanti alle modalità dinamiche
+  document.querySelectorAll(".option-button").forEach(button => {
+    button.setAttribute("type", "button");
+    button.addEventListener("click", () => {
+      const mode = button.getAttribute("data-mode");
+      if (typeof selezionaModalita === "function") {
+        // Nasconde il banner iniziale e mostra l'interfaccia chat
+        document.getElementById("welcome-banner")?.classList.add("hidden");
+        document.getElementById("chat-interface")?.classList.add("active");
+        selezionaModalita(mode);
+      } else {
+        console.error("❌ Funzione selezionaModalita non disponibile.");
+      }
+    });
+  });
+
+  const optionCards = document.querySelectorAll('.option-card');
+
+  optionCards.forEach(card => {
+    card.addEventListener('click', function() {
+      const mode = this.dataset.mode;
+      console.log(`Avvio chat in modalità: ${mode}`);
+
+      // Simulazione del click sui pulsanti originali
+      // Questi ID devono corrispondere ai pulsanti nel file HTML originale
+      const originalButtons = document.querySelectorAll('.option-button');
+      originalButtons.forEach(button => {
+        if(button.dataset.mode === mode) {
+          button.click();
+        }
+      });
+    });
+  });
+});
+
+// Gestione temi (da mantenere in tutte le pagine)
+document.addEventListener('DOMContentLoaded', function () {
+  const themeToggle = document.getElementById('theme-toggle');
+
+  function applyTheme(theme) {
+    const html = document.documentElement;
+    html.setAttribute('data-theme', theme);
+
+    if (themeToggle) {
+      themeToggle.textContent = (theme === 'dark') ? '☀️' : '🌙';
+    }
+  }
+
+  // Listener per il toggle manuale
+  if (themeToggle) {
+    themeToggle.addEventListener('click', function () {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+      applyTheme(newTheme);
+
+      // Comunica al parent il nuovo tema
+      window.parent.postMessage({ type: 'theme', theme: newTheme }, '*');
+    });
+  }
+
+  // Listener per ricevere tema dal parent
+  window.addEventListener('message', function (event) {
+    if (event.data && event.data.type === 'theme') {
+      applyTheme(event.data.theme);
+    }
+  });
+});
+</script>
+</body>
+</html>

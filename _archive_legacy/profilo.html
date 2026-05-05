@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profilo Utente</title>
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Marked for Markdown rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- HTML2PDF for PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+  <link rel="stylesheet" href="css/profile-style.css">
+</head>
+<body>
+  <!-- Header -->
+  <header class="shadow-sm mb-4 sticky top-0 z-10 chat-header" style="background-color: var(--card-color); color: var(--text-color); border-bottom: 1px solid var(--border-color);">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+      <div class="flex items-center">
+        <svg class="h-6 w-6 text-blue-500 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+        </svg>
+        <h1 class="text-xl font-bold">Profilo utente</h1>
+      </div>
+      <div class="flex items-center space-x-4">
+        <button id="btn-salva-profilo" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-full flex items-center text-sm">
+          <i class="fas fa-save mr-2"></i>
+          Salva modifiche
+        </button>
+        <button id="refresh-btn" class="text-blue-500 hover:text-blue-700">
+          <i class="fas fa-sync-alt"></i>
+        </button>
+      </div>
+      <div class="flex items-center space-x-4">
+        <button id="theme-toggle" class="text-blue-500 text-xl hover:text-blue-700">🌙</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container mx-auto px-4 pb-24">
+    <div id="user-data">Caricamento profilo...</div>
+  </main>
+
+
+
+  <!-- Footer -->
+  <footer class="py-4 mt-8" style="border-top: 1px solid var(--border-color); background-color: var(--card-color); color: var(--text-color); transition: border-color var(--animation-speed);">
+    <div class="container mx-auto px-4 text-center text-sm">
+      <p>&copy; 2025 HealthAI - Sistema di monitoraggio della salute</p>
+      <div class="mt-2">
+        <a href="#" class="mx-2" style="color: var(--text-light); hover:color: var(--text-color);">Privacy</a>
+        <a href="#" class="mx-2" style="color: var(--text-light); hover:color: var(--text-color);">Termini di servizio</a>
+        <a href="#" class="mx-2" style="color: var(--text-light); hover:color: var(--text-color);">Contatti</a>
+      </div>
+    </div>
+  </footer>
+
+<script>
+  // Configuration constants from chatbot-logic.js
+  const supabaseUrl = 'https://nkkaxbmzacaxkwgtfmds.supabase.co';
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ra2F4Ym16YWNheGt3Z3RmbWRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM4Nzc3NzQsImV4cCI6MjA2OTQ1Mzc3NH0.k36sBT3jILmLXc9jcLz843uLDCHrnuvhuMmMvBNzEPo';
+  const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+  // Load user profile data on page load
+  document.addEventListener("DOMContentLoaded", async () => {
+    try {
+      // Check if user is logged in
+      const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
+
+      if (sessionError || !sessionData.session) {
+        document.getElementById("user-data").innerHTML =
+        "<p>Errore: Utente non autenticato. <a href='login.html'>Accedi</a> per visualizzare il profilo.</p>";
+        return;
+      }
+
+      const emailUtente = sessionData.session.user.email;
+
+      // Retrieve user data
+      const { data, error } = await supabaseClient
+      .from('anagrafica_utenti')
+      .select('*')
+      .eq('email', emailUtente)
+      .single();
+
+      if (error) {
+        document.getElementById("user-data").innerHTML =
+        `<p>Errore nel caricamento dei dati: ${error.message}</p>`;
+        return;
+      }
+
+      if (!data) {
+        document.getElementById("user-data").innerHTML =
+        "<p>Nessun dato trovato per questo utente.</p>";
+        return;
+      }
+
+      // Display user data
+      displayUserProfile(data);
+      // Gestione upload immagine
+      const uploadInput = document.getElementById("upload-immagine");
+      uploadInput.addEventListener("change", async function () {
+        const file = this.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64String = reader.result;
+
+          // Aggiorna preview
+          const avatarDiv = document.getElementById("avatar-preview");
+          avatarDiv.innerHTML = `<img src="${base64String}" alt="Avatar" class="w-full h-full object-cover rounded-full" />
+          <label class="avatar-upload" for="upload-immagine">
+          <i class="fas fa-camera"></i>
+          </label>
+          <input type="file" id="upload-immagine" accept="image/*" style="display: none;" />`;
+
+          // Memorizza l’immagine temporaneamente per il salvataggio
+          window.__immagine_base64 = base64String;
+        };
+        reader.readAsDataURL(file);
+      });
+
+
+    } catch (error) {
+      document.getElementById("user-data").innerHTML =
+      `<p>Errore imprevisto: ${error.message}</p>`;
+    }
+  });
+
+  function displayUserProfile(userData) {
+    const container = document.getElementById("user-data");
+
+
+
+    // Basic user info section
+    let html = `
+    <div class="flex flex-col max-w-4xl mx-auto">
+    <!-- Avatar e informazioni principali -->
+    <div class="form-box mb-6">
+    <div class="avatar-section">
+    <div class="avatar" id="avatar-preview">
+    ${
+      userData.immagine
+      ? `<img src="${userData.immagine}" alt="Avatar" class="w-full h-full object-cover rounded-full" />`
+      : `<span class="avatar-initials">${(userData.nome?.charAt(0) || '') + (userData.cognome?.charAt(0) || '')}</span>`
+    }
+    <label class="avatar-upload" for="upload-immagine">
+    <i class="fas fa-camera"></i>
+    </label>
+    <input type="file" id="upload-immagine" accept="image/*" style="display: none;" />
+    </div>
+    <h2 class="text-xl font-semibold">${userData.nome || ''} ${userData.cognome || ''}</h2>
+    <p class="text-sm text-gray-500">ID: ${userData.id || ''}</p>
+    </div>
+
+    <h3 class="text-lg font-semibold mb-4">Informazioni personali</h3>
+
+    <div class="form-grid">
+    <div class="form-group">
+    <label class="form-label">Email</label>
+    <input type="email" id="profilo-email" disabled value=${userData.email || ''}>
+    </div>
+    <div class="form-group">
+    <label class="form-label">Età</label>
+    <input type="number" id="profilo-eta" value=${userData.eta || ''} />
+    </div>
+    <div class="form-group">
+    <label class="form-label">Sesso</label>
+    <input type="text" id="profilo-sesso" value=${userData.sesso || ''} />
+    </div>
+    <div class="form-group">
+  <label class="form-label">Livello di attività fisica</label>
+  <select id="profilo-tipo_lavoro">
+    <option value="">-- Seleziona --</option>
+    <option value="sedentario" ${userData.tipo_lavoro === 'sedentario' ? 'selected' : ''}>Sedentario</option>
+    <option value="leggermente attivo" ${userData.tipo_lavoro === 'leggermente attivo' ? 'selected' : ''}>Leggermente attivo</option>
+    <option value="moderatamente attivo" ${userData.tipo_lavoro === 'moderatamente attivo' ? 'selected' : ''}>Moderatamente attivo</option>
+    <option value="molto attivo" ${userData.tipo_lavoro === 'molto attivo' ? 'selected' : ''}>Molto attivo</option>
+    <option value="estremamente attivo" ${userData.tipo_lavoro === 'estremamente attivo' ? 'selected' : ''}>Estremamente attivo</option>
+  </select>
+</div>
+
+<!-- Inserisci qui anche l'obiettivo -->
+<div class="form-group">
+  <label class="form-label">Obiettivo nutrizionale</label>
+  <select id="profilo-obiettivo">
+    <option value="">-- Seleziona --</option>
+    <option value="mantenimento" ${userData.obiettivo === 'mantenimento' ? 'selected' : ''}>Mantenimento</option>
+    <option value="dimagrimento" ${userData.obiettivo === 'dimagrimento' ? 'selected' : ''}>Dimagrimento</option>
+    <option value="massa muscolare" ${userData.obiettivo === 'massa muscolare' ? 'selected' : ''}>Massa muscolare</option>
+  </select>
+</div>
+
+    <div class="form-group">
+    <label class="form-label">Altezza (cm)</label>
+    <input type="number" id="profilo-altezza" value=${userData.altezza ? userData.altezza + ' cm' : ''} />
+    </div>
+    <div class="form-group">
+    <label class="form-label">Peso (kg)</label>
+    <input type="number" id="profilo-peso" value=${userData.peso ? userData.peso + ' kg' : ''} />
+    </div>
+    <div class="form-group">
+    <label class="form-label">Circonferenza vita (cm)</label>
+    <input type="number" id="profilo-circonferenza_vita" value="${userData.circonferenza_vita || ''}" />
+    </div>
+
+
+    </div>
+    </div>
+
+    <!-- Storia clinica -->
+    <div class="form-box mb-6">
+    <h3 class="text-lg font-semibold mb-4">Storia clinica</h3>
+
+    <div class="form-group mb-4">
+    <label class="form-label">Patologie esistenti</label>
+    <textarea id="profilo-patologie" rows="2" placeholder="Inserisci le patologie esistenti">${userData.patologie || ''}</textarea>
+    </div>
+
+    <div class="form-group mb-4">
+    <label class="form-label">Farmaci assunti</label>
+    <textarea id="profilo-farmaci_dettaglio" rows="2" placeholder="Inserisci i farmaci che stai assumendo">${userData.farmaci_dettaglio || ''}</textarea>
+    </div>
+
+    <div class="form-group mb-4">
+    <label class="form-label">Intolleranze</label>
+    <textarea id="profilo-intolleranze" rows="2" placeholder="Inserisci le tue intolleranze">${userData.intolleranze || ''}</textarea>
+    </div>
+
+    <!-- Età diagnosi diabete -->
+<div class="form-group">
+  <label class="form-label">Età alla diagnosi di diabete (se nota)</label>
+  <input type="number" id="profilo-eta_diagnosi_diabete" value="${userData.eta_diagnosi_diabete || ''}" placeholder="Età diagnosi">
+</div>
+
+<!-- Regione rischio cardiovascolare -->
+<div class="form-group">
+  <label class="form-label">Regione di rischio cardiovascolare</label>
+  <select id="profilo-regione_rischio_cv">
+    <option value="">-- Seleziona --</option>
+    <option value="low" ${userData.regione_rischio_cv === 'low' ? 'selected' : ''}>Basso</option>
+    <option value="moderate" ${userData.regione_rischio_cv === 'moderate' ? 'selected' : ''}>Moderato</option>
+    <option value="high" ${userData.regione_rischio_cv === 'high' ? 'selected' : ''}>Alto</option>
+    <option value="very_high" ${userData.regione_rischio_cv === 'very_high' ? 'selected' : ''}>Molto alto</option>
+  </select>
+</div>
+
+
+    <div class="form-group">
+    <label class="form-label">Alimenti esclusi</label>
+    <textarea id="profilo-alimenti_esclusi" rows="2" placeholder="Inserisci gli alimenti che non consumi">${userData.alimenti_esclusi || ''}</textarea>
+    </div>
+    <div class="form-group">
+    <label class="form-label">Trigliceridi (mg/dL)</label>
+    <input type="number" id="profilo-trigliceridi" value="${userData.trigliceridi || ''}" />
+    </div>
+
+    <div class="form-group">
+    <label class="form-label">Il tuo giro vita è maggiore di 102 cm (uomo) o 88 cm (donna)?</label>
+    <select id="profilo-vita">
+    <option value="">-- Seleziona --</option>
+    <option value="sì">Sì</option>
+    <option value="no">No</option>
+    </select>
+    </div>
+    </div>
+
+    <!-- Nuova sezione per esami di laboratorio -->
+    <div class="form-box mb-6">
+    <h3 class="text-lg font-semibold mb-4">Esami di laboratorio</h3>
+
+    <div class="form-grid">
+    <div class="form-group">
+    <label class="form-label">AST/GOT (U/L)</label>
+    <input type="number" id="profilo-ast" value="${userData.ast || ''}" placeholder="Transaminasi AST" />
+    </div>
+    <div class="form-group">
+    <label class="form-label">ALT/GPT (U/L)</label>
+    <input type="number" id="profilo-alt" value="${userData.alt || ''}" placeholder="Transaminasi ALT" />
+    </div>
+    <div class="form-group">
+    <label class="form-label">Piastrine (x10^9/L)</label>
+    <input type="number" id="profilo-piastrine" value="${userData.piastrine || ''}" placeholder="Conta piastrinica" />
+    </div>
+    <div class="form-group">
+    <label class="form-label">Albumina (g/dL)</label>
+    <input type="number" step="0.1" id="profilo-albumina" value="${userData.albumina || ''}" placeholder="Albumina sierica" />
+    </div>
+    <!-- Gamma-GT (per FLI) -->
+<div class="form-group">
+  <label class="form-label">Gamma‑GT (U/L)</label>
+  <input type="number" step="0.1" id="profilo-ggt" value="${userData.ggt || ''}" placeholder="Gamma‑GT">
+</div>
+
+<!-- eGFR (per SCORE2‑Diabete) -->
+<div class="form-group">
+  <label class="form-label">eGFR (mL/min/1.73 m²)</label>
+  <input type="number" id="profilo-egfr" value="${userData.egfr || ''}" placeholder="eGFR">
+</div>
+
+    <div class="form-group">
+    <label class="form-label">Linfociti (per mm³)</label>
+    <input type="number" id="profilo-linfociti" value="${userData.linfociti || ''}" placeholder="Conta linfocitaria" />
+    </div>
+    <div class="form-group">
+    <label class="form-label">HbA1c (%)</label>
+    <input type="number" step="0.1" id="profilo-hba1c" value="${userData.hba1c || ''}" placeholder="Emoglobina glicata" />
+    </div>
+    </div>
+    </div>
+
+    <!-- Preferenze -->
+    <div class="form-box mb-6">
+    <h3 class="text-lg font-semibold mb-4">Preferenze e obiettivi</h3>
+
+    <div class="form-group">
+    <label class="form-label">Preferenze salute</label>
+    <textarea id="profilo-preferenze" rows="3" placeholder="Inserisci i tuoi obiettivi di salute e preferenze">${userData.preferenze || ''}</textarea>
+    </div>
+    </div>
+
+    <!-- Alimentazione - PREDIMED -->
+<div class="accordion-section mb-4">
+  <div class="accordion-header">
+    <div class="flex items-center">
+      <span class="mr-2">🥗</span>
+      <span>Alimentazione – PREDIMED</span>
+    </div>
+    <i class="fas fa-chevron-down accordion-icon"></i>
+  </div>
+  <div class="accordion-body">
+    <div class="accordion-content grid gap-4">
+      <div class="form-group">
+        <label class="form-label">Usi olio extravergine di oliva come condimento principale?</label>
+        <select id="profilo-predimed_1">
+          <option value="">-- Seleziona --</option>
+          <option value="sì">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Ne usi più di 4 cucchiai al giorno?</label>
+        <select id="profilo-predimed_2">
+          <option value="">-- Seleziona --</option>
+          <option value="sì">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Mangi almeno 2 porzioni di verdura al giorno?</label>
+        <select id="profilo-predimed_3">
+          <option value="">-- Seleziona --</option>
+          <option value="sì">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Mangi almeno 3 porzioni di frutta al giorno?</label>
+        <select id="profilo-predimed_4">
+          <option value="">-- Seleziona --</option>
+          <option value="sì">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Mangi meno di 1 porzione al giorno di carne rossa o salumi?</label>
+        <select id="profilo-predimed_5">
+          <option value="">-- Seleziona --</option>
+          <option value="sì">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Bevi meno di 1 bevanda zuccherata al giorno?</label>
+        <select id="profilo-predimed_6">
+          <option value="">-- Seleziona --</option>
+          <option value="sì">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Bevi vino in quantità moderate?</label>
+        <select id="profilo-predimed_7">
+          <option value="">-- Seleziona --</option>
+          <option value="sì">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Mangi almeno 3 porzioni di legumi alla settimana?</label>
+        <select id="profilo-predimed_8">
+          <option value="">-- Seleziona --</option>
+          <option value="sì">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Mangi almeno 3 porzioni di pesce o frutti di mare alla settimana?</label>
+        <select id="profilo-predimed_9">
+          <option value="">-- Seleziona --</option>
+          <option value="sì">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Consumai dolci industriali meno di 3 volte a settimana?</label>
+        <select id="profilo-predimed_10">
+          <option value="">-- Seleziona --</option>
+          <option value="sì">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Preferisci carni bianche rispetto a carni rosse?</label>
+        <select id="profilo-predimed_11">
+          <option value="">-- Seleziona --</option>
+          <option value="sì">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Mangi frutta secca almeno 3 volte a settimana?</label>
+        <select id="profilo-predimed_12">
+          <option value="">-- Seleziona --</option>
+          <option value="sì">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Usi soffritti con pomodoro, cipolla, aglio e olio d'oliva almeno 2 volte a settimana?</label>
+        <select id="profilo-predimed_13">
+          <option value="">-- Seleziona --</option>
+          <option value="sì">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Pensi che la tua alimentazione sia vicina alla dieta mediterranea?</label>
+        <select id="profilo-predimed_14">
+          <option value="">-- Seleziona --</option>
+          <option value="sì">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Attività Fisica -->
+<div class="accordion-section mb-4">
+  <div class="accordion-header">
+    <div class="flex items-center">
+      <span class="mr-2">🏋️</span>
+      <span>Attività Fisica Personalizzata</span>
+    </div>
+    <i class="fas fa-chevron-down accordion-icon"></i>
+  </div>
+  <div class="accordion-body">
+    <div class="accordion-content grid gap-4">
+    <div class="form-group">
+      <label class="form-label">Obiettivo di allenamento</label>
+      <select id="profilo-obiettivo_fisico">
+        <option value="">-- Seleziona --</option>
+        <option value="dimagrimento" ${userData.obiettivo_fisico === 'dimagrimento' ? 'selected' : ''}>Dimagrimento</option>
+        <option value="aumento massa" ${userData.obiettivo_fisico === 'aumento massa' ? 'selected' : ''}>Aumento massa</option>
+        <option value="definizione" ${userData.obiettivo_fisico === 'definizione' ? 'selected' : ''}>Definizione</option>
+        <option value="resistenza" ${userData.obiettivo_fisico === 'resistenza' ? 'selected' : ''}>Resistenza</option>
+        <option value="postura" ${userData.obiettivo_fisico === 'postura' ? 'selected' : ''}>Postura</option>
+        <option value="preparazione atletica" ${userData.obiettivo_fisico === 'preparazione atletica' ? 'selected' : ''}>Preparazione atleticae</option>
+      </select>
+    </div>
+      <div class="form-group">
+        <label class="form-label">Livello di esperienza</label>
+        <input type="text" id="profilo-esperienza" placeholder="Principiante, intermedio, avanzato" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Frequenza allenamenti (a settimana)</label>
+        <input type="text" id="profilo-frequenza" placeholder="Es. 3-4" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Durata sessione (minuti)</label>
+        <input type="text" id="profilo-durata" placeholder="Es. 30-45 min" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Luogo allenamento</label>
+        <input type="text" id="profilo-luogo" placeholder="Palestra, casa, all'aperto" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Attrezzatura disponibile</label>
+        <input type="text" id="profilo-attrezzatura" placeholder="Manubri, elastici, nessuna..." />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Vuoi inserire esercizi cardio?</label>
+        <select id="profilo-cardio">
+          <option value="">-- Seleziona --</option>
+          <option value="sì">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Focus principale</label>
+        <input type="text" id="profilo-focus" placeholder="Forza, resistenza, entrambi" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Hai infortuni o limitazioni?</label>
+        <input type="text" id="profilo-infortuni" placeholder="Schiena, ginocchia..." />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Piegamenti consecutivi</label>
+        <input type="number" id="profilo-pushups" placeholder="Es. 10" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Squat a corpo libero</label>
+        <input type="number" id="profilo-squats" placeholder="Es. 20" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tempo plank (sec)</label>
+        <input type="text" id="profilo-plank" placeholder="Es. 60 sec" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Battito dopo 3 min step</label>
+        <input type="text" id="profilo-step_test" placeholder="opzionale" />
+      </div>
+    </div>
+  </div>
+</div>
+
+
+    <!-- Sezioni di Valutazione -->
+    <div class="accordion-section mb-4">
+    <div class="accordion-header">
+    <div class="flex items-center">
+    <span class="mr-2">❤️</span>
+    <span>SCORE2 – Rischio Cardiovascolare</span>
+    </div>
+    <i class="fas fa-chevron-down accordion-icon"></i>
+    </div>
+    <div class="accordion-body">
+    <div class="accordion-content">
+    <div class="form-grid">
+    <div class="form-group">
+    <label class="form-label">Pressione sistolica (mmHg)</label>
+    <input type="number" id="profilo-pressione_sistolica" value=${userData.pressione_sistolica ? userData.pressione_sistolica + ' mmHg' : ''}/>
+    </div>
+    <div class="form-group">
+    <label class="form-label">Pressione diastolica (mmHg)</label>
+    <input type="number" id="profilo-pressione_diastolica" value=${userData.pressione_diastolica ? userData.pressione_diastolica + ' mmHg' : ''} />
+    </div>
+    <div class="form-group">
+    <label class="form-label">Colesterolo totale (mg/dL)</label>
+    <input type="number" id="profilo-colesterolo_totale" value=${userData.colesterolo_totale ? userData.colesterolo_totale + ' mg/dL' : ''}/>
+    </div>
+    <div class="form-group">
+    <label class="form-label">Colesterolo HDL (mg/dL)</label>
+    <input type="number" id="profilo-colesterolo_hdl_valore" value=${userData.colesterolo_hdl_valore ? userData.colesterolo_hdl_valore + ' mg/dL' : ''}/>
+    </div>
+    <div class="form-group">
+    <label class="form-label">Colesterolo LDL (mg/dL)</label>
+    <input type="number" id="profilo-colesterolo_ldl_valore" value=${userData.colesterolo_ldl_valore ? userData.colesterolo_ldl_valore + ' mg/dL' : ''}/>
+    </div>
+    <div class="form-group">
+    <label class="form-label">Fumatore</label>
+    <input type="text" id="profilo-fumatore" value=${userData.fumatore || ''}>
+    </div>
+    <div class="form-group">
+    <label class="form-label">Diabete di tipo 2 diagnosticato</label>
+    <select id="profilo-diabete">
+  <option value="">-- Seleziona --</option>
+  <option value="sì" ${userData.diabete === "sì" ? "selected" : ""}>Sì</option>
+  <option value="no" ${userData.diabete === "no" ? "selected" : ""}>No</option>
+</select>
+    </div>
+    </div>
+    </div>
+    </div>
+    </div>
+
+    <div class="accordion-section mb-4">
+    <div class="accordion-header">
+    <div class="flex items-center">
+    <span class="mr-2">🍬</span>
+    <span>ADA – Rischio Diabete</span>
+    </div>
+    <i class="fas fa-chevron-down accordion-icon"></i>
+    </div>
+    <div class="accordion-body">
+    <div class="accordion-content">
+    <div class="form-grid">
+    <div class="form-group">
+    <label class="form-label">Glicemia a digiuno (mg/dL)</label>
+    <input type="number" id="profilo-glicemia_valore" value=${userData.glicemia_valore ? userData.glicemia_valore + ' mg/dL' : ''}/>
+    </div>
+    <div class="form-group">
+    <label class="form-label">Quanti minuti di attività fisica pratichi a settimana?</label>
+    <input type="number" id="profilo-durata_attivita" value=${userData.durata_attivita || ''}>
+    </div>
+    <div class="form-group">
+    <label class="form-label">Hai la pressione alta?</label>
+    <input type="text" id="profilo-pressione_alta" value=${userData.pressione_alta || ''}>
+    </div>
+    <div class="form-group">
+    <label class="form-label">Hai familiari con diabete di tipo 2?</label>
+    <input type="text" id="profilo-familiari_diabete" value=${userData.familiari_diabete || ''}>
+    </div>
+    </div>
+    </div>
+    </div>
+    </div>
+
+<div class="accordion-section mb-4" id="sezione-femminile" style="display: none;">
+  <div class="accordion-header">
+    <div class="flex items-center">
+      <span class="mr-2">♀️</span>
+      <span>Domande femminili</span>
+    </div>
+    <i class="fas fa-chevron-down accordion-icon"></i>
+  </div>
+  <div class="accordion-body">
+    <div class="accordion-content grid gap-4">
+      <div class="form-group">
+        <label class="form-label">A che età hai avuto il primo ciclo mestruale?</label>
+        <input type="number" id="profilo-eta_menarca" placeholder="Età in anni">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Hai mai usato contraccettivi ormonali?</label>
+        <select id="profilo-contraccettivi">
+          <option value="">-- Seleziona --</option>
+          <option value="sì">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Hai avuto una o più gravidanze?</label>
+        <select id="profilo-gravidanza">
+          <option value="">-- Seleziona --</option>
+          <option value="sì">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">A che età sei andata in menopausa? (facoltativo)</label>
+        <input type="number" id="profilo-eta_menopausa" placeholder="Età in anni">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Hai mai sofferto di diabete gestazionale?</label>
+        <select id="profilo-diabete_gestazionale">
+          <option value="">-- Seleziona --</option>
+          <option value="sì">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Tua madre o tua nonna hanno avuto un tumore al seno?</label>
+        <select id="profilo-familiarita_seno">
+          <option value="">-- Seleziona --</option>
+          <option value="sì">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Hai mai svolto una mammografia o un'ecografia mammaria?</label>
+        <select id="profilo-screening_seno">
+          <option value="">-- Seleziona --</option>
+          <option value="sì">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Svolgi regolarmente il Pap test?</label>
+        <select id="profilo-papsmear">
+          <option value="">-- Seleziona --</option>
+          <option value="sì">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+    <div class="accordion-section mb-4">
+    <div class="accordion-header">
+    <div class="flex items-center">
+    <span class="mr-2">🦴</span>
+    <span>FRAX – Osteoporosi / Fratture</span>
+    </div>
+    <i class="fas fa-chevron-down accordion-icon"></i>
+    </div>
+    <div class="accordion-body">
+    <div class="accordion-content">
+    <div class="form-grid">
+    <div class="form-group">
+    <label class="form-label">Hai avuto fratture da fragilità?</label>
+    <input type="text" id="profilo-frattura" value=${userData.frattura || ''}>
+    </div>
+    <div class="form-group">
+    <label class="form-label">Genitore con frattura dell'anca?</label>
+    <input type="text" id="profilo-famiglia_frattura_anca" value=${userData.famiglia_frattura_anca || ''}>
+    </div>
+    <div class="form-group">
+    <label class="form-label">Assumi corticosteroidi da > 3 mesi?</label>
+    <input type="text" id="profilo-corticosteroidi" value=${userData.corticosteroidi || ''}>
+    </div>
+    <div class="form-group">
+    <label class="form-label">Quante unità alcoliche consumi al giorno?</label>
+    <input type="text" id="profilo-alcol_eccessivo" value=${userData.alcol_eccessivo || ''}>
+    </div>
+    <div class="form-group">
+    <label class="form-label">Artrite reumatoide diagnosticata?</label>
+    <input type="text" id="profilo-artrite" value=${userData.artrite || ''}>
+    </div>
+    </div>
+    </div>
+    </div>
+    </div>
+
+    <div class="accordion-section mb-4">
+    <div class="accordion-header">
+    <div class="flex items-center">
+    <span class="mr-2">👵</span>
+    <span>FRAIL scale</span>
+    </div>
+    <i class="fas fa-chevron-down accordion-icon"></i>
+    </div>
+    <div class="accordion-body">
+    <div class="accordion-content">
+    <div class="form-grid">
+    <div class="form-group">
+    <label class="form-label">Ti senti stanco/a spesso?</label>
+    <input type="text" id="profilo-stanchezza" value=${userData.stanchezza || ''}>
+    </div>
+    <div class="form-group">
+    <label class="form-label">Riesci a camminare 100 metri?</label>
+    <input type="text" id="profilo-camminata" value=${userData.camminata || ''}>
+    </div>
+    <div class="form-group">
+    <label class="form-label">Hai perso più di 5 kg involontariamente nell'ultimo anno?</label>
+    <input type="text" id="profilo-perdita_peso" value=${userData.perdita_peso || ''}>
+    </div>
+    <div class="form-group">
+    <label class="form-label">Difficoltà ad alzarti da una sedia?</label>
+    <input type="text" id="profilo-sedia" value=${userData.sedia || ''}>
+    </div>
+    <div class="form-group">
+    <label class="form-label">Hai più di 5 malattie croniche diagnosticate?</label>
+    <input type="text" id="profilo-malattie_croniche" value=${userData.malattie_croniche || ''}>
+    </div>
+    </div>
+    </div>
+    </div>
+    </div>
+    <!--
+    <input type="text" id="profilo-origine_etnica" value=${userData.origine_etnica || ''}>
+    <input type="text" id="profilo-interventi_dettaglio" value=${userData.interventi_dettaglio || ''}>
+    <input type="text" id="profilo-unita_alcoliche" value=${userData.unita_alcoliche || ''}>
+    <input type="text" id="profilo-over_camminata" value=${userData.over_camminata || ''}>
+    <input type="text" id="profilo-over_cadute" value=${userData.over_cadute || ''}>
+    <input type="text" id="profilo-over_sollevamento" value=${userData.over_sollevamento || ''}>
+    <input type="text" id="profilo-over_sedia" value=${userData.over_sedia || ''}>
+    <input type="text" id="profilo-over_stanchezza" value=${userData.over_stanchezza || ''}>
+    <input type="text" id="profilo-interventi" value=${userData.interventi || ''}>
+    <input type="text" id="profilo-farmaci" value=${userData.farmaci || ''}>
+    <input type="text" id="profilo-depressione" value=${userData.depressione || ''}>
+    <input type="text" id="profilo-vita" value=${userData.vita || ''}>
+    <input type="text" id="profilo-glicemia" value=${userData.glicemia || ''}>
+    <input type="text" id="profilo-pressione_valore" value=${userData.pressione_valore || ''}>
+    <input type="text" id="profilo-sede_tumore" value=${userData.sede_tumore || ''}>
+    <input type="text" id="profilo-tipo_insonnia" value=${userData.tipo_insonnia || ''}>
+    <input type="text" id="profilo-familiarita_tumori" value=${userData.familiarita_tumori || ''}>
+    -->
+    `;
+
+    container.innerHTML = html;
+
+    const dg = document.getElementById("profilo-diabete_gestazionale");
+if (dg && userData.sesso?.toLowerCase() === "femmina") {
+  const sezioneFemminile = document.getElementById("sezione-femminile");
+  if (sezioneFemminile) sezioneFemminile.style.display = "block";
+
+  const val = userData.diabete_gestazionale?.toString().trim().toLowerCase();
+  if (["sì", "si"].includes(val)) dg.value = "sì";
+  else if (val === "no") dg.value = "no";
+}
+    // Mostra sezione femminile e carica tutti i nuovi campi se sesso = femmina
+const sezioneFemminile = document.getElementById("sezione-femminile");
+if (userData.sesso?.toLowerCase() === "femmina" && sezioneFemminile) {
+  sezioneFemminile.style.display = "block";
+
+  const normalizza = v => v?.toString().trim().toLowerCase();
+
+  const seleziona = (id, val) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const risposta = normalizza(val);
+    if (["sì", "si"].includes(risposta)) el.value = "sì";
+    else if (risposta === "no") el.value = "no";
+    else el.value = risposta || "";
+  };
+
+  const assegna = (id, val) => {
+    const el = document.getElementById(id);
+    if (el && val != null) el.value = val;
+  };
+
+  assegna("profilo-eta_menarca", userData.eta_menarca);
+  seleziona("profilo-contraccettivi", userData.contraccettivi);
+  seleziona("profilo-gravidanza", userData.gravidanza);
+  assegna("profilo-eta_menopausa", userData.eta_menopausa);
+  seleziona("profilo-diabete_gestazionale", userData.diabete_gestazionale);
+  seleziona("profilo-familiarita_seno", userData.familiarita_seno);
+  seleziona("profilo-screening_seno", userData.screening_seno);
+  seleziona("profilo-papsmear", userData.papsmear);
+}
+
+
+    // Carica i valori PREDIMED
+for (let i = 1; i <= 14; i++) {
+  const el = document.getElementById(`profilo-predimed_${i}`);
+if (el && userData[`predimed_${i}`] !== undefined && userData[`predimed_${i}`] !== null) {
+  const risposta = userData[`predimed_${i}`].toString().trim().toLowerCase();
+  if (["sì", "si"].includes(risposta)) el.value = "sì";
+  else if (risposta === "no") el.value = "no";
+}
+
+}
+
+// Carica i valori Attività Fisica Personalizzata
+const customFields = [
+  "obiettivo", "esperienza", "frequenza", "durata", "luogo", "attrezzatura",
+  "cardio", "focus", "infortuni", "pushups", "squats", "plank", "step_test"
+];
+
+customFields.forEach(field => {
+  const el = document.getElementById(`profilo-${field}`);
+  const val = userData[field];
+
+  if (el && val !== undefined && val !== null) {
+    // Normalizza "sì", "si", "Si" ecc. per i campi booleani
+    const risposta = val.toString().trim().toLowerCase();
+    if (["sì", "si"].includes(risposta)) {
+      el.value = "sì";
+    } else if (risposta === "no") {
+      el.value = "no";
+    } else {
+      el.value = val;
+    }
+  }
+});
+
+    const vitaSelect = document.getElementById("profilo-vita");
+    if (vitaSelect && userData.vita) {
+      vitaSelect.value = userData.vita.toLowerCase();
+    }
+    // 🔄 Inizializza gli accordion DOPO aver inserito l'HTML
+    initializeAccordions();
+
+  }
+
+      const inputCirconferenzaVita = document.getElementById("profilo-circonferenza_vita");
+if (inputCirconferenzaVita && userData.circonferenza_vita !== undefined && userData.circonferenza_vita !== null) {
+  inputCirconferenzaVita.value = userData.circonferenza_vita;
+}
+
+
+</script>
+
+<script>
+  // Gestione temi (da mantenere in tutte le pagine)
+  document.addEventListener('DOMContentLoaded', function () {
+    const themeToggle = document.getElementById('theme-toggle');
+
+    function applyTheme(theme) {
+      const html = document.documentElement;
+      html.setAttribute('data-theme', theme);
+
+      if (themeToggle) {
+        themeToggle.textContent = (theme === 'dark') ? '☀️' : '🌙';
+      }
+    }
+
+    // Listener per il toggle manuale
+    if (themeToggle) {
+      themeToggle.addEventListener('click', function () {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+        applyTheme(newTheme);
+
+        // Comunica al parent il nuovo tema
+        window.parent.postMessage({ type: 'theme', theme: newTheme }, '*');
+      });
+    }
+
+    // Listener per ricevere tema dal parent
+    window.addEventListener('message', function (event) {
+      if (event.data && event.data.type === 'theme') {
+        applyTheme(event.data.theme);
+      }
+    });
+  });
+
+  function initializeAccordions() {
+    const accordionHeaders = document.querySelectorAll('.accordion-header');
+
+    accordionHeaders.forEach(header => {
+      header.addEventListener('click', function () {
+        const section = this.parentElement;
+        section.classList.toggle('active');
+      });
+    });
+  }
+
+</script>
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+  const supabase = createClient(
+    'https://nkkaxbmzacaxkwgtfmds.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ra2F4Ym16YWNheGt3Z3RmbWRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM4Nzc3NzQsImV4cCI6MjA2OTQ1Mzc3NH0.k36sBT3jILmLXc9jcLz843uLDCHrnuvhuMmMvBNzEPo'
+  );
+
+
+  async function saveAnagrafica() {
+    const saveButton = document.querySelector('button:has(i.fas.fa-save)');
+    const originalButtonText = saveButton.innerHTML;
+
+    saveButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Salvataggio...';
+    saveButton.disabled = true;
+
+    try {
+      const session = await supabase.auth.getSession();
+      if (!session.data?.session?.user?.email) {
+        saveButton.innerHTML = originalButtonText;
+        saveButton.disabled = false;
+        showNotification('❌ Utente non autenticato.', 'error');
+        return;
+      }
+
+      const email = session.data.session.user.email;
+
+      // 🔎 Raccoglie TUTTI i valori dal DOM inclusi i NUOVI CAMPI
+      const updatedData = {
+        email,
+        immagine: (typeof window.__immagine_base64 !== "undefined")
+        ? window.__immagine_base64
+        : document.querySelector("#avatar-preview img")?.src || null,
+        // Dati anagrafici base
+        eta: document.getElementById("profilo-eta")?.value,
+        sesso: document.getElementById("profilo-sesso")?.value,
+        tipo_lavoro: document.getElementById("profilo-tipo_lavoro")?.value,
+        altezza: parseFloat(document.getElementById("profilo-altezza")?.value),
+        peso: parseFloat(document.getElementById("profilo-peso")?.value),
+
+        // Storia clinica
+        patologie: document.getElementById("profilo-patologie")?.value,
+        farmaci_dettaglio: document.getElementById("profilo-farmaci_dettaglio")?.value,
+        intolleranze: document.getElementById("profilo-intolleranze")?.value,
+        alimenti_esclusi: document.getElementById("profilo-alimenti_esclusi")?.value,
+        preferenze: document.getElementById("profilo-preferenze")?.value,
+
+        // Parametri ematici standard
+        colesterolo_totale: parseFloat(document.getElementById("profilo-colesterolo_totale")?.value),
+        colesterolo_hdl_valore: parseFloat(document.getElementById("profilo-colesterolo_hdl_valore")?.value),
+        colesterolo_ldl_valore: parseFloat(document.getElementById("profilo-colesterolo_ldl_valore")?.value),
+        trigliceridi: parseFloat(document.getElementById("profilo-trigliceridi")?.value),
+
+        // Parametri cardiovascolari
+        pressione_sistolica: parseFloat(document.getElementById("profilo-pressione_sistolica")?.value),
+        pressione_diastolica: parseFloat(document.getElementById("profilo-pressione_diastolica")?.value),
+        pressione_alta: document.getElementById("profilo-pressione_alta")?.value,
+
+        // Parametri glicemici
+        glicemia_valore: parseFloat(document.getElementById("profilo-glicemia_valore")?.value),
+        diabete: document.getElementById("profilo-diabete")?.value,
+        familiari_diabete: document.getElementById("profilo-familiari_diabete")?.value,
+
+        // Predimed 1-14
+predimed_1: document.getElementById("profilo-predimed_1")?.value,
+predimed_2: document.getElementById("profilo-predimed_2")?.value,
+predimed_3: document.getElementById("profilo-predimed_3")?.value,
+predimed_4: document.getElementById("profilo-predimed_4")?.value,
+predimed_5: document.getElementById("profilo-predimed_5")?.value,
+predimed_6: document.getElementById("profilo-predimed_6")?.value,
+predimed_7: document.getElementById("profilo-predimed_7")?.value,
+predimed_8: document.getElementById("profilo-predimed_8")?.value,
+predimed_9: document.getElementById("profilo-predimed_9")?.value,
+predimed_10: document.getElementById("profilo-predimed_10")?.value,
+predimed_11: document.getElementById("profilo-predimed_11")?.value,
+predimed_12: document.getElementById("profilo-predimed_12")?.value,
+predimed_13: document.getElementById("profilo-predimed_13")?.value,
+predimed_14: document.getElementById("profilo-predimed_14")?.value,
+
+// Attività fisica personalizzata
+obiettivo: document.getElementById("profilo-obiettivo")?.value,
+obiettivo_fisico: document.getElementById("profilo-obiettivo_fisico")?.value,
+esperienza: document.getElementById("profilo-esperienza")?.value,
+frequenza: document.getElementById("profilo-frequenza")?.value,
+durata: document.getElementById("profilo-durata")?.value,
+luogo: document.getElementById("profilo-luogo")?.value,
+attrezzatura: document.getElementById("profilo-attrezzatura")?.value,
+cardio: document.getElementById("profilo-cardio")?.value,
+focus: document.getElementById("profilo-focus")?.value,
+infortuni: document.getElementById("profilo-infortuni")?.value,
+pushups: parseInt(document.getElementById("profilo-pushups")?.value),
+squats: parseInt(document.getElementById("profilo-squats")?.value),
+plank: document.getElementById("profilo-plank")?.value,
+step_test: document.getElementById("profilo-step_test")?.value,
+
+        // Domande femminili
+eta_menarca: parseInt(document.getElementById("profilo-eta_menarca")?.value) || null,
+contraccettivi: document.getElementById("profilo-contraccettivi")?.value,
+gravidanza: document.getElementById("profilo-gravidanza")?.value,
+eta_menopausa: parseInt(document.getElementById("profilo-eta_menopausa")?.value) || null,
+diabete_gestazionale: document.getElementById("profilo-diabete_gestazionale")?.value,
+familiarita_seno: document.getElementById("profilo-familiarita_seno")?.value,
+screening_seno: document.getElementById("profilo-screening_seno")?.value,
+papsmear: document.getElementById("profilo-papsmear")?.value,
+
+        // 🆕 NUOVI PARAMETRI PER GLI SCORE
+        // HbA1c per SCORE2-Diabete
+        hba1c: parseFloat(document.getElementById("profilo-hba1c")?.value),
+
+        // Transaminasi e piastrine per FIB4
+        ast: parseInt(document.getElementById("profilo-ast")?.value),
+        alt: parseInt(document.getElementById("profilo-alt")?.value),
+        piastrine: parseInt(document.getElementById("profilo-piastrine")?.value),
+
+        // Albumina e linfociti per FNI
+        albumina: parseFloat(document.getElementById("profilo-albumina")?.value),
+        linfociti: parseInt(document.getElementById("profilo-linfociti")?.value),
+
+        // Altri parametri esistenti
+        durata_attivita: parseInt(document.getElementById("profilo-durata_attivita")?.value),
+        fumatore: document.getElementById("profilo-fumatore")?.value,
+        frattura: document.getElementById("profilo-frattura")?.value,
+        famiglia_frattura_anca: document.getElementById("profilo-famiglia_frattura_anca")?.value,
+        corticosteroidi: document.getElementById("profilo-corticosteroidi")?.value,
+        alcol_eccessivo: document.getElementById("profilo-alcol_eccessivo")?.value,
+        artrite: document.getElementById("profilo-artrite")?.value,
+        vita: document.getElementById("profilo-vita")?.value,
+        stanchezza: document.getElementById("profilo-stanchezza")?.value,
+                circonferenza_vita: parseFloat(document.getElementById("profilo-circonferenza_vita")?.value),
+
+        camminata: document.getElementById("profilo-camminata")?.value,
+        sollevamento: document.getElementById("profilo-sollevamento")?.value,
+        sedia: document.getElementById("profilo-sedia")?.value,
+        perdita_peso: document.getElementById("profilo-perdita_peso")?.value,
+malattie_croniche: document.getElementById("profilo-malattie_croniche")?.value,
+
+        cadute: document.getElementById("profilo-cadute")?.value,
+        ggt: parseFloat(document.getElementById('profilo-ggt').value) || null,
+egfr: parseFloat(document.getElementById('profilo-egfr').value) || null,
+eta_diagnosi_diabete: parseInt(document.getElementById('profilo-eta_diagnosi_diabete').value) || null,
+regione_rischio_cv: document.getElementById('profilo-regione_rischio_cv').value || null,
+
+      };
+
+      // 🧹 Pulisci i valori NaN sostituendoli con null
+      Object.keys(updatedData).forEach(key => {
+        if (typeof updatedData[key] === 'number' && isNaN(updatedData[key])) {
+          updatedData[key] = null;
+        }
+      });
+
+      // ✅ Salvataggio con Supabase (upsert: aggiorna se esiste, inserisce se no)
+      const { error } = await supabase
+        .from("anagrafica_utenti")
+        .upsert([updatedData], { onConflict: ['email'] });
+
+      if (error) {
+        console.error("❌ Errore durante il salvataggio:", error);
+        saveButton.innerHTML = originalButtonText;
+        saveButton.disabled = false;
+        showNotification('Errore durante il salvataggio: ' + error.message, 'error');
+      } else {
+        console.log("✅ Profilo salvato con successo, inclusi nuovi parametri clinici!");
+        saveButton.innerHTML = originalButtonText;
+        saveButton.disabled = false;
+        showNotification('Dati salvati con successo!', 'success');
+      }
+
+    } catch (err) {
+      console.error("❌ Errore imprevisto:", err);
+      saveButton.innerHTML = originalButtonText;
+      saveButton.disabled = false;
+      showNotification('Errore imprevisto durante il salvataggio', 'error');
+    }
+  }
+
+  // Funzione per mostrare notifiche (identica a quella di esportazione)
+  function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 px-6 py-3 rounded-md shadow-lg z-50 ${
+      type === 'success' ? 'bg-green-500' : 'bg-red-500'
+    } text-white`;
+    notification.innerHTML = `
+    <div class="flex items-center">
+    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} mr-2"></i>
+    <span>${message}</span>
+    </div>
+    `;
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+      notification.style.opacity = '0';
+      notification.style.transition = 'opacity 0.5s ease';
+      setTimeout(() => {
+        document.body.removeChild(notification);
+      }, 500);
+    }, 3000);
+  }
+
+  document.getElementById('refresh-btn').addEventListener('click', function() {
+    window.location.reload();
+  });
+
+  document.getElementById('btn-salva-profilo').addEventListener('click', function() {
+    saveAnagrafica();
+  });
+
+
+
+</script>
+</body>
+</html>
