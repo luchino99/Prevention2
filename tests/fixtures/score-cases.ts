@@ -242,7 +242,14 @@ export const SCORE_CASES: ScoreCase[] = [
       // ADA suppressed — diabetic patient → GLYCEMIC_CONTROL instead.
       metSyndrome: { criteriaCount: 5, present: true },
       // SCORE2-Diabetes — Pennells 2023 canonical formula (cll recalibration).
-      score2DiabetesRegressionRiskPercent: 9.06,
+      // Reference value re-derived after the fixture switched to an explicit
+      // eGFR=69 (the engine no longer derives it at this layer). Probe:
+      // LP=0.6177 → uncal=6.72% → recal(F-moderate)=9.16%. With eGFR=70 the
+      // probe yielded 9.06%; the 0.10-percentage-point shift reflects the
+      // 1-unit eGFR change applied through coefficient `egfr=-0.1375` (and
+      // its age interaction). See `tests/unit/score2-golden.test.ts`
+      // reference implementation for the deterministic probe path.
+      score2DiabetesRegressionRiskPercent: 9.16,
     },
   },
 

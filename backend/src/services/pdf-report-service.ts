@@ -105,9 +105,32 @@ export async function renderAssessmentReportPdf(
   const stamp = options.generatedAt ?? new Date();
 
   const pdf = await PDFDocument.create();
+
+  // PDF Info dictionary — ASCII metadata always parseable via pdf-lib's
+  // `getTitle / getCreator / getSubject / getKeywords / getAuthor`.
+  // We deliberately push payload identity markers through these fields
+  // because the body content is CID-encoded (NotoSans subset) and is
+  // NOT searchable as plain ASCII in the raw byte stream.
+  //
+  // NOTE on Producer: pdf-lib unconditionally rewrites the `/Producer`
+  // entry to its own boilerplate during serialisation, so calling
+  // `setProducer(...)` here does not propagate. The audit-driven
+  // identity / regression tests therefore use Creator + Title +
+  // Subject + Keywords + Author, all of which ARE controllable.
   pdf.setTitle(`Clinical Assessment Report — ${snapshot.assessment.id}`);
   pdf.setCreator('Uelfy Clinical Platform');
-  pdf.setProducer('Uelfy / pdf-lib');
+  pdf.setAuthor(tenant.name || 'Uelfy Clinical Tenant');
+  pdf.setSubject(
+    `Cardio-Nephro-Metabolic risk assessment · tenant=${tenant.name || 'unknown'} · `
+    + `patient=${resolvePatientReference(patient)} · assessment=${snapshot.assessment.id}`,
+  );
+  pdf.setKeywords([
+    'uelfy-clinical',
+    'cardio-nephro-metabolic',
+    `assessment-id:${snapshot.assessment.id}`,
+    `patient-id:${snapshot.assessment.patientId}`,
+    `tenant-id:${snapshot.assessment.tenantId}`,
+  ]);
   pdf.setCreationDate(stamp);
   pdf.setModificationDate(stamp);
 

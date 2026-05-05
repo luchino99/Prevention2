@@ -243,17 +243,43 @@ describe('renderAssessmentReportPdf', () => {
     expect(buf.length).toBeGreaterThan(800);
   });
 
-  it('preserves the assessment ID and tenant name in the PDF Info dictionary', async () => {
+  it('preserves payload identity in the PDF Info dictionary (Title/Creator/Author/Subject/Keywords)', async () => {
     const payload = makePayload();
     const buf = await renderAssessmentReportPdf(payload);
-    // Robust path: parse the PDF Info dictionary instead of grepping the
-    // raw bytes. With NotoSans the body content is CID-encoded and a
-    // plain substring search misses every glyph; the Info dict is
-    // always plain ASCII regardless of the font path.
+    // We assert against the parsed Info dictionary — always plain ASCII
+    // — never via raw-byte grep. NotoSans CID encoding makes a body
+    // grep unreliable.
+    //
+    // pdf-lib unconditionally rewrites the `/Producer` field during
+    // serialisation to its own boilerplate, so Producer is intentionally
+    // NOT used as an identity assertion. Creator + Title + Author +
+    // Subject + Keywords are all controllable and ARE asserted.
     const reparsed = await PDFDocument.load(buf);
+
+    // Title contains the canonical assessment id.
     expect(reparsed.getTitle()).toContain(payload.snapshot.assessment.id);
+
+    // Creator is the platform name set by the renderer.
     expect(reparsed.getCreator()).toBe('Uelfy Clinical Platform');
-    expect(reparsed.getProducer() ?? '').toMatch(/uelfy/i);
+
+    // Author is the tenant display name.
+    expect(reparsed.getAuthor()).toBe(payload.tenant.name);
+
+    // Subject is a free-form line that includes both tenant + patient
+    // reference + assessment id — useful for desktop-search indexing
+    // by hospital IT (Spotlight, Windows Search, Recoll).
+    const subject = reparsed.getSubject() ?? '';
+    expect(subject).toContain(payload.snapshot.assessment.id);
+    expect(subject).toContain(payload.tenant.name);
+
+    // Keywords carry machine-parseable id triplets so a downstream
+    // pipeline (e-fax / EHR ingestion) can extract them without
+    // re-parsing the body.
+    const keywords = reparsed.getKeywords() ?? '';
+    expect(keywords).toContain(`assessment-id:${payload.snapshot.assessment.id}`);
+    expect(keywords).toContain(`patient-id:${payload.snapshot.assessment.patientId}`);
+    expect(keywords).toContain(`tenant-id:${payload.snapshot.assessment.tenantId}`);
+    expect(keywords).toContain('uelfy-clinical');
   });
 });
 
@@ -336,30 +362,38 @@ describe('renderAssessmentReportPdf — visual regression (M-07)', () => {
   it('emits payload identity markers via the parsed Info dictionary', async () => {
     // Body content is CID-encoded under NotoSans (the production font
     // path) and is NOT searchable as plain ASCII in the raw byte
-    // stream. Earlier versions of this test grep'd `buf` directly,
-    // which gave false confidence on the Helvetica fallback path and
-    // false failures on the production CID path. We now assert against
-    // pdf-lib's parsed Info dictionary, which is always plain ASCII
-    // and is the most reliable structural fingerprint.
+    // stream. We assert against pdf-lib's parsed Info dictionary,
+    // which is always plain ASCII and is the most reliable
+    // structural fingerprint.
+    //
+    // pdf-lib overrides /Producer at serialisation time, so we do not
+    // use Producer as an identity claim — Creator / Title / Author /
+    // Subject / Keywords are all writable and ARE asserted.
     const payload = makePayload();
     const buf = await renderAssessmentReportPdf(payload, { generatedAt: FIXED_TS });
     const reparsed = await PDFDocument.load(buf);
 
-    // Identity fingerprint — assessment id is concatenated into the
-    // PDF Title (`pdf.setTitle` in `pdf-report-service.ts`).
-    const title = reparsed.getTitle() ?? '';
-    expect(title).toContain(payload.snapshot.assessment.id);
+    // Identity fingerprint via Title.
+    expect(reparsed.getTitle()).toContain(payload.snapshot.assessment.id);
 
-    // Producer / creator are constants set by the renderer.
+    // Renderer constant.
     expect(reparsed.getCreator()).toBe('Uelfy Clinical Platform');
-    expect(reparsed.getProducer() ?? '').toMatch(/uelfy/i);
 
-    // CreationDate / ModificationDate must be the pinned timestamp.
+    // Tenant carries through Author.
+    expect(reparsed.getAuthor()).toBe(payload.tenant.name);
+
+    // Keywords contain machine-parseable id triplets — see comment in
+    // the renderer header for the canonical token format.
+    const keywords = reparsed.getKeywords() ?? '';
+    expect(keywords).toContain(`assessment-id:${payload.snapshot.assessment.id}`);
+    expect(keywords).toContain(`patient-id:${payload.snapshot.assessment.patientId}`);
+    expect(keywords).toContain(`tenant-id:${payload.snapshot.assessment.tenantId}`);
+
+    // CreationDate / ModificationDate pinned for visual-regression.
     expect(reparsed.getCreationDate()?.toISOString()).toBe(FIXED_TS.toISOString());
     expect(reparsed.getModificationDate()?.toISOString()).toBe(FIXED_TS.toISOString());
 
-    // Page count must be ≥ 1 — the renderer must always emit at
-    // least the cover page.
+    // Page count ≥ 1.
     expect(reparsed.getPageCount()).toBeGreaterThanOrEqual(1);
   });
 
