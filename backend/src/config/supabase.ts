@@ -24,6 +24,26 @@
  *
  * NEVER expose the service-role client to a browser — `supabaseAdmin`
  * bypasses RLS by design.
+ *
+ * Realtime opt-out
+ * ----------------
+ * `@supabase/supabase-js` versions ≥ 2.50 perform an eager check for a
+ * native WebSocket implementation at `createClient()`. On Node 20
+ * (Vercel serverless runtime) and on Node 22 without `globalThis.WebSocket`,
+ * that check throws:
+ *
+ *     "Node.js 20 detected without native WebSocket support"
+ *
+ * which crashes every authenticated endpoint at boot. The platform
+ * uses ZERO Realtime channels — only `auth.getUser`, `from(...)`,
+ * `storage.from(...)`. We:
+ *
+ *   1. Pin `@supabase/supabase-js` to `2.45.6` in `package.json` (last
+ *      stable version before the eager WebSocket regression).
+ *   2. Pass `realtime: { params: { eventsPerSecond: 0 } }` as a
+ *      defence-in-depth so future versions that re-introduce the same
+ *      issue still don't bring down the API. The Realtime module is
+ *      lazily constructed but the option is honoured if it ever runs.
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
@@ -42,6 +62,9 @@ function getOrCreateAdminClient(): SupabaseClient {
           autoRefreshToken: false,
           persistSession: false,
         },
+        // Defence-in-depth against the WebSocket-eager-check regression
+        // in supabase-js ≥ 2.50. We never use Realtime on the server.
+        realtime: { params: { eventsPerSecond: 0 } },
       },
     );
   }
@@ -92,6 +115,8 @@ export function createUserClient(accessToken: string): SupabaseClient {
           Authorization: `Bearer ${accessToken}`,
         },
       },
+      // Same Realtime opt-out rationale as supabaseAdmin above.
+      realtime: { params: { eventsPerSecond: 0 } },
     },
   );
 }
