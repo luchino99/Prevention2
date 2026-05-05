@@ -121,14 +121,32 @@ describe('computeAllScores', () => {
     expect(score2!.valueNumeric!).toBeGreaterThanOrEqual(0);
   });
 
-  it('does not emit SCORE2 when required inputs are missing', () => {
+  it('emits SCORE2 as a structured skip entry (NOT a fake numeric value) when required inputs are missing', () => {
+    // Architectural decision (audit C-02 + composite-risk invariant):
+    // a missing-input case must NOT silently disappear from the output —
+    // the UI / PDF / audit trail need an explicit "not computable" entry
+    // with a structured skipReason so the clinician sees WHY the score
+    // is absent. The composite-risk aggregator treats this entry as
+    // `indeterminate` (silence is not safety).
     const input = makeBaseInput();
-    // Strip the lipid panel — SCORE2 must refuse to run.
     input.labs.totalCholMgDl = undefined;
     input.labs.hdlMgDl = undefined;
 
     const out = computeAllScores(input);
-    expect(findScore(out, 'SCORE2')).toBeUndefined();
+    const score2 = findScore(out, 'SCORE2');
+
+    // Entry MUST be present — otherwise downstream layers cannot tell
+    // "missing data" from "not assessed".
+    expect(score2).toBeDefined();
+    // Numeric value MUST be null — never a misleading 0 or stale value.
+    expect(score2!.valueNumeric).toBeNull();
+    // Category MUST mark the entry as non-stratifiable.
+    expect(['not_computable', 'skipped']).toContain(score2!.category);
+    // rawPayload MUST carry the structured skipReason so the UI can
+    // render truthful messaging and the audit can log the cause.
+    const raw = score2!.rawPayload as { skipped?: boolean; skipReason?: string };
+    expect(raw.skipped).toBe(true);
+    expect(raw.skipReason).toBe('SCORE2_MISSING_INPUT');
   });
 
   it('does not throw when optional labs are entirely missing', () => {

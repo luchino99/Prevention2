@@ -97,6 +97,31 @@ function findScoreByCode(
   return results.find((r) => r.scoreCode.toLowerCase() === needle);
 }
 
+/**
+ * "Stratified" lookup: returns the entry only if it carries a real
+ * computed value (NOT a skip / not_computable / null sentinel). The
+ * domain derivers below MUST use this when treating an entry as a
+ * positive signal — the presence of a skip-shaped entry in the array
+ * is not data, it is the absence of data, and treating it as "0" /
+ * "not present" silently downgrades unstratified domains to `low`.
+ *
+ * This is the gate for the project-rule "silence is not safety"
+ * (composite-risk invariant, audit C-02 + this Tier-5 fix).
+ */
+function findStratifiedScore(
+  results: ScoreResultEntry[],
+  code: string,
+): ScoreResultEntry | undefined {
+  const entry = findScoreByCode(results, code);
+  if (!entry) return undefined;
+  if (entry.valueNumeric === null || entry.valueNumeric === undefined) return undefined;
+  const cat = (entry.category ?? '').toLowerCase();
+  if (cat === 'skipped' || cat === 'not_computable' || cat === 'invalid_input') {
+    return undefined;
+  }
+  return entry;
+}
+
 // ============================================================================
 // Domain derivations
 // ============================================================================
@@ -265,9 +290,17 @@ function deriveCardiovascularRisk(
  * diabetes flag).
  */
 function deriveMetabolicRisk(results: ScoreResultEntry[]): DomainRiskEntry {
-  const metsResult = findScoreByCode(results, 'METABOLIC_SYNDROME');
-  const adaResult = findScoreByCode(results, 'ADA');
-  const bmiResult = findScoreByCode(results, 'BMI');
+  // Use `findStratifiedScore` for every metabolic signal: a skipped /
+  // not_computable entry must not be treated as "no metabolic syndrome"
+  // or "ADA = 0" — that would silently classify an unstratified patient
+  // as `low`, violating the silence-is-not-safety invariant.
+  const metsResult = findStratifiedScore(results, 'METABOLIC_SYNDROME');
+  const adaResult = findStratifiedScore(results, 'ADA');
+  const bmiResult = findStratifiedScore(results, 'BMI');
+  // The diabetology-finding entries (UNDIAGNOSED_DIABETES_SUSPECTED,
+  // GLYCEMIC_CONTROL) are emitted with valueNumeric=null by design but
+  // carry a strong category signal in `rawPayload`. We accept them via
+  // `findScoreByCode` and check the category explicitly below.
   const undiagnosedDm = findScoreByCode(results, 'UNDIAGNOSED_DIABETES_SUSPECTED');
   const glycemicControl = findScoreByCode(results, 'GLYCEMIC_CONTROL');
 
@@ -364,8 +397,10 @@ function deriveMetabolicRisk(results: ScoreResultEntry[]): DomainRiskEntry {
  * Returns 'indeterminate' when neither FLI nor FIB4 is available.
  */
 function deriveHepaticRisk(results: ScoreResultEntry[]): DomainRiskEntry {
-  const fliResult = findScoreByCode(results, 'FLI');
-  const fib4Result = findScoreByCode(results, 'FIB4');
+  // Stratified-only lookups: skipped FLI / FIB-4 entries must not be
+  // treated as "value 0" — they collapse the domain to false-low.
+  const fliResult = findStratifiedScore(results, 'FLI');
+  const fib4Result = findStratifiedScore(results, 'FIB4');
 
   if (!fliResult && !fib4Result) {
     return {
@@ -420,7 +455,10 @@ function deriveRenalRisk(
   results: ScoreResultEntry[],
   input?: AssessmentInput,
 ): DomainRiskEntry {
-  const egfrResult = findScoreByCode(results, 'EGFR');
+  // Stratified-only: a skipped EGFR entry must not be treated as a
+  // valid stage signal — it would silently classify the patient as
+  // low-renal-risk with stage='' falling through to the default branch.
+  const egfrResult = findStratifiedScore(results, 'EGFR');
 
   const acrValue =
     input?.labs.albuminCreatinineRatio !== undefined
@@ -499,7 +537,8 @@ function deriveRenalRisk(
 function deriveFrailtyRisk(
   results: ScoreResultEntry[],
 ): DomainRiskEntry | null {
-  const frailResult = findScoreByCode(results, 'FRAIL');
+  // Stratified-only: a skipped FRAIL entry returns null (not assessed).
+  const frailResult = findStratifiedScore(results, 'FRAIL');
   if (!frailResult) return null;
 
   const category = frailResult.category?.toLowerCase() || '';

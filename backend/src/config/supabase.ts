@@ -1,27 +1,72 @@
 /**
- * Supabase client configuration
- * Exports both admin client (bypasses RLS) and user client factory (RLS-aware)
+ * Supabase client configuration.
+ *
+ * Lazy initialisation
+ * -------------------
+ * The exported `supabaseAdmin` is a `Proxy` that defers env-var lookup
+ * + client construction until the FIRST property access (e.g.
+ * `supabaseAdmin.from('patients')`). This matters because:
+ *
+ *   - Importing `auth-middleware.ts` from a unit test pulls in this
+ *     module, but unit tests rarely touch a Supabase chain — they
+ *     stub or simply test pure logic. Eager construction would force
+ *     every test runner to set fake `SUPABASE_URL` / `*_KEY` env
+ *     vars, which is a footgun (real keys leak into CI envs, fake
+ *     keys hide configuration drift in production).
+ *
+ *   - Production code paths always hit a method (`.from`, `.auth`,
+ *     `.storage`, …) on the first request, so the lazy hop is a
+ *     one-time micro-cost amortised across the function lifetime.
+ *
+ * `createUserClient(...)` and `getUserFromToken(...)` continue to
+ * construct the client on call (each invocation produces a fresh
+ * RLS-aware client), so they are unaffected.
+ *
+ * NEVER expose the service-role client to a browser — `supabaseAdmin`
+ * bypasses RLS by design.
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { getEnvConfig } from './env.js';
 
-const config = getEnvConfig();
+let _adminInstance: SupabaseClient | undefined;
+
+function getOrCreateAdminClient(): SupabaseClient {
+  if (!_adminInstance) {
+    const config = getEnvConfig();
+    _adminInstance = createClient(
+      config.supabaseUrl,
+      config.supabaseServiceRoleKey,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      },
+    );
+  }
+  return _adminInstance;
+}
 
 /**
- * Admin client - uses SERVICE_ROLE_KEY to bypass RLS
- * Used for server-side operations that need to operate outside of RLS policies
- * IMPORTANT: Only use on the server, never expose to client
+ * Service-role admin client (bypasses RLS). Lazily constructed on
+ * first property access — the underlying object is the real
+ * SupabaseClient instance.
+ *
+ * Tests that don't exercise a Supabase chain can import this module
+ * without setting any env vars; the proxy simply never resolves.
  */
-export const supabaseAdmin: SupabaseClient = createClient(
-  config.supabaseUrl,
-  config.supabaseServiceRoleKey,
+export const supabaseAdmin: SupabaseClient = new Proxy(
+  {} as SupabaseClient,
   {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
+    get(_target, prop, receiver) {
+      const client = getOrCreateAdminClient();
+      // Bind methods so `this` resolves correctly when downstream
+      // code does `const { from } = supabaseAdmin` style destructuring.
+      const value = Reflect.get(client, prop, receiver);
+      return typeof value === 'function' ? value.bind(client) : value;
     },
-  }
+  },
 );
 
 /**
@@ -33,6 +78,7 @@ export const supabaseAdmin: SupabaseClient = createClient(
  * @returns SupabaseClient configured with the user's token
  */
 export function createUserClient(accessToken: string): SupabaseClient {
+  const config = getEnvConfig();
   return createClient(
     config.supabaseUrl,
     config.supabaseAnonKey,
@@ -46,35 +92,24 @@ export function createUserClient(accessToken: string): SupabaseClient {
           Authorization: `Bearer ${accessToken}`,
         },
       },
-    }
+    },
   );
 }
 
 /**
- * Helper to set auth session on user client after creation
- * @param client The user client to set session on
- * @param accessToken The JWT access token
- * @param refreshToken Optional refresh token
+ * Helper to set auth session on user client after creation.
  */
 export function setClientSession(
   client: SupabaseClient,
   accessToken: string,
-  refreshToken?: string
+  refreshToken?: string,
 ): void {
-  // supabase-js v2 `setSession()` accepts only `{ access_token, refresh_token }`.
-  // All other fields (token_type, expires_in/at, user) are derived server-side
-  // by GoTrue from the JWT itself — passing them here is rejected by the
-  // compiler in recent @supabase/supabase-js releases.
   client.auth
     .setSession({
       access_token: accessToken,
       refresh_token: refreshToken ?? '',
     })
     .catch(async (error: unknown) => {
-      // C-02: structured emit so the auth-bootstrap failure is greppable
-      // alongside other observability events. We import lazily to avoid
-      // a top-level import cycle (supabase.ts is also imported by the
-      // logger's own dependency chain at boot).
       const { logStructured, tagFromError } = await import('../observability/structured-log.js');
       logStructured('error', 'SUPABASE_SET_SESSION_FAILED', {
         errorTag: tagFromError(error) ?? 'unknown',

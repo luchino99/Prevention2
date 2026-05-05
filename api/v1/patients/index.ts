@@ -21,16 +21,24 @@ import { logStructured } from '../../../backend/src/observability/structured-log
 
 /**
  * Search input is interpolated into a PostgREST `or(...)` filter via
- * the supabase-js client. Audit S-02 (Tier-5) flagged a predicate
- * injection risk: a value containing `,`, `)`, `(`, `*` or `:` could
- * compose extra filters within the same OR. We restrict to a Unicode-
- * aware whitelist of human-name characters: letters (incl. accented),
- * digits, spaces, hyphen, apostrophe, dot, underscore. This rejects
- * any character that has special meaning in PostgREST filter syntax
- * while still accepting the names tenants will realistically search
- * for (Italian, Spanish, German, Polish, ASCII).
+ * the supabase-js client. Audit S-02 flagged predicate-injection risk:
+ * a value containing `,`, `)`, `(`, `*`, `:`, newline, tab, etc.
+ * could compose extra filters within the same OR group.
+ *
+ * The whitelist below admits only:
+ *   - Unicode letters (\p{L})
+ *   - Unicode combining marks (\p{M}, e.g. accents on N)
+ *   - Unicode digits (\p{N})
+ *   - the single ASCII space U+0020 (NOT \s — \s also includes
+ *     tab/newline/carriage return/form feed/vertical tab, which
+ *     could break the OR group or smuggle log-injection sequences)
+ *   - hyphen, apostrophe, dot, middle-dot
+ *
+ * Anything else (newline, tab, comma, parenthesis, asterisk, colon,
+ * full-width unicode comma, etc.) is rejected at validation time so
+ * the supabase-js client never sees it.
  */
-const SEARCH_WHITELIST_RE = /^[\p{L}\p{M}\p{N}\s\-'.·]{1,100}$/u;
+const SEARCH_WHITELIST_RE = /^[\p{L}\p{M}\p{N} \-'.·]{1,100}$/u;
 
 const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),

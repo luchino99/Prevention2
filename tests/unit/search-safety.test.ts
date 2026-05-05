@@ -15,7 +15,9 @@
 
 import { describe, it, expect } from 'vitest';
 
-const SEARCH_WHITELIST_RE = /^[\p{L}\p{M}\p{N}\s\-'.·]{1,100}$/u;
+// Mirror of the regex in api/v1/patients/index.ts. Uses a literal U+0020
+// space (NOT `\s`) so newline / tab / CR are rejected.
+const SEARCH_WHITELIST_RE = /^[\p{L}\p{M}\p{N} \-'.·]{1,100}$/u;
 
 describe('search-safety — patients.list whitelist regex', () => {
   describe('accepts realistic names', () => {

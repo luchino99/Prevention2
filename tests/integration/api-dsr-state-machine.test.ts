@@ -40,6 +40,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
+/* ───────────────────────────── canonical test UUIDs ───────────────────── */
+// The DSR endpoints validate every id parameter as a UUID (z.string().uuid()
+// in the body schema, /^[0-9a-fA-F-]{36}$/ on path params). Synthetic
+// "dsr-1" / "patient-1" strings used by earlier versions of this suite
+// trip the validator before the handler logic runs, masking the state
+// machine's real behaviour. Centralising the UUIDs here keeps the
+// fixtures readable while satisfying the schema.
+const DSR_ID       = '11111111-1111-1111-1111-111111111111';
+const PATIENT_ID   = '22222222-2222-2222-2222-222222222222';
+const USER_ID      = '33333333-3333-3333-3333-333333333333';
+const TENANT_A     = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+const TENANT_B     = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+const ADMIN_ID     = '44444444-4444-4444-4444-444444444444';
+const ADMIN_OTHER  = '55555555-5555-5555-5555-555555555555';
+const CLIN_ID      = '66666666-6666-6666-6666-666666666666';
+
 /* ───────────────────────────── scriptable Supabase mock ───────────────── */
 
 /**
@@ -102,7 +118,7 @@ vi.mock('../../backend/src/config/supabase', () => {
     rpc: vi.fn(async () => ({ data: null, error: null })),
     auth: {
       getUser: vi.fn().mockResolvedValue({
-        data: { user: { id: 'admin-1', email: 'a@example.com' } },
+        data: { user: { id: ADMIN_ID, email: 'a@example.com' } },
         error: null,
       }),
     },
@@ -125,13 +141,13 @@ vi.mock('../../backend/src/middleware/auth-middleware.js', async () => {
     ...actual,
     withAuth: (handler: (req: any, res: any) => Promise<void> | void) => {
       return async (req: any, res: any) => {
-        // Default to a tenant_admin in tenant 'tenant-A' unless the test
+        // Default to a tenant_admin in tenant TENANT_A unless the test
         // already set req.auth (allowing per-test customisation).
         if (!req.auth) {
           req.auth = {
-            userId: 'admin-1',
+            userId: ADMIN_ID,
             email: 'a@example.com',
-            tenantId: 'tenant-A',
+            tenantId: TENANT_A,
             role: 'tenant_admin',
             ipHash: 'sha256-test',
             userAgent: 'vitest',
@@ -182,11 +198,11 @@ beforeEach(() => {
 describe('DSR state-machine — happy paths', () => {
   it('POST /api/v1/admin/dsr creates a request and returns the new row', async () => {
     // Patient lookup (for tenant scoping) → existing patient in tenant-A
-    pushMaybeSingle({ id: 'patient-1', tenant_id: 'tenant-A' });
+    pushMaybeSingle({ id: PATIENT_ID, tenant_id: TENANT_A });
     // Insert returns the new DSR row
     pushSingle({
-      id: 'dsr-1',
-      tenant_id: 'tenant-A',
+      id: DSR_ID,
+      tenant_id: TENANT_A,
       kind: 'access',
       status: 'received',
       requested_at: new Date().toISOString(),
@@ -198,23 +214,23 @@ describe('DSR state-machine — happy paths', () => {
     const handler = (await import('../../api/v1/admin/dsr/index')).default;
     const req = makeReq({
       method: 'POST',
-      body: { kind: 'access', subjectPatientId: 'patient-1' },
+      body: { kind: 'access', subjectPatientId: PATIENT_ID },
     });
     const res = makeRes();
     await handler(req as any, res);
 
     expect(res.statusCode).toBe(201);
-    expect(res.jsonBody?.request?.id).toBe('dsr-1');
+    expect(res.jsonBody?.request?.id).toBe(DSR_ID);
     expect(res.jsonBody?.request?.status).toBe('received');
   });
 
   it('process start: received → in_progress', async () => {
     // Initial DSR row load
     pushMaybeSingle({
-      id: 'dsr-1', tenant_id: 'tenant-A',
-      subject_patient_id: 'patient-1', subject_user_id: null,
+      id: DSR_ID, tenant_id: TENANT_A,
+      subject_patient_id: PATIENT_ID, subject_user_id: null,
       kind: 'access', status: 'received',
-      requested_by_user_id: 'admin-1', fulfilled_by_user_id: null,
+      requested_by_user_id: ADMIN_ID, fulfilled_by_user_id: null,
       export_storage_path: null, rejection_reason: null, notes: null,
       requested_at: new Date().toISOString(),
       fulfilled_at: null,
@@ -222,8 +238,8 @@ describe('DSR state-machine — happy paths', () => {
     });
     // Update returns the patched row
     pushSingle({
-      id: 'dsr-1', status: 'in_progress',
-      fulfilled_by_user_id: 'admin-1', notes: null,
+      id: DSR_ID, status: 'in_progress',
+      fulfilled_by_user_id: ADMIN_ID, notes: null,
     });
     // Audit-strict
     pushSingle({}, null);
@@ -231,8 +247,8 @@ describe('DSR state-machine — happy paths', () => {
     const handler = (await import('../../api/v1/admin/dsr/[id]/process')).default;
     const req = makeReq({
       method: 'POST',
-      url: '/api/v1/admin/dsr/dsr-1/process',
-      query: { id: 'dsr-1' },
+      url: `/api/v1/admin/dsr/${DSR_ID}/process`,
+      query: { id: DSR_ID },
       body: { action: 'start' },
     });
     const res = makeRes();
@@ -244,23 +260,23 @@ describe('DSR state-machine — happy paths', () => {
 
   it('process cancel: received → cancelled (only from received)', async () => {
     pushMaybeSingle({
-      id: 'dsr-1', tenant_id: 'tenant-A',
-      subject_patient_id: null, subject_user_id: 'user-1',
+      id: DSR_ID, tenant_id: TENANT_A,
+      subject_patient_id: null, subject_user_id: USER_ID,
       kind: 'erasure', status: 'received',
-      requested_by_user_id: 'admin-1', fulfilled_by_user_id: null,
+      requested_by_user_id: ADMIN_ID, fulfilled_by_user_id: null,
       export_storage_path: null, rejection_reason: null, notes: null,
       requested_at: new Date().toISOString(),
       fulfilled_at: null,
       sla_deadline: new Date().toISOString(),
     });
-    pushSingle({ id: 'dsr-1', status: 'cancelled', notes: null });
+    pushSingle({ id: DSR_ID, status: 'cancelled', notes: null });
     pushSingle({}, null);
 
     const handler = (await import('../../api/v1/admin/dsr/[id]/process')).default;
     const req = makeReq({
       method: 'POST',
-      url: '/api/v1/admin/dsr/dsr-1/process',
-      query: { id: 'dsr-1' },
+      url: `/api/v1/admin/dsr/${DSR_ID}/process`,
+      query: { id: DSR_ID },
       body: { action: 'cancel' },
     });
     const res = makeRes();
@@ -272,17 +288,17 @@ describe('DSR state-machine — happy paths', () => {
 
   it('process reject requires a rejectionReason and stores it verbatim', async () => {
     pushMaybeSingle({
-      id: 'dsr-1', tenant_id: 'tenant-A',
-      subject_patient_id: 'patient-1', subject_user_id: null,
+      id: DSR_ID, tenant_id: TENANT_A,
+      subject_patient_id: PATIENT_ID, subject_user_id: null,
       kind: 'erasure', status: 'in_progress',
-      requested_by_user_id: 'admin-1', fulfilled_by_user_id: 'admin-1',
+      requested_by_user_id: ADMIN_ID, fulfilled_by_user_id: ADMIN_ID,
       export_storage_path: null, rejection_reason: null, notes: null,
       requested_at: new Date().toISOString(),
       fulfilled_at: null,
       sla_deadline: new Date().toISOString(),
     });
     pushSingle({
-      id: 'dsr-1', status: 'rejected',
+      id: DSR_ID, status: 'rejected',
       rejection_reason: 'Art.17(3)(c) defence of legal claims',
       notes: null,
     });
@@ -291,8 +307,8 @@ describe('DSR state-machine — happy paths', () => {
     const handler = (await import('../../api/v1/admin/dsr/[id]/process')).default;
     const req = makeReq({
       method: 'POST',
-      url: '/api/v1/admin/dsr/dsr-1/process',
-      query: { id: 'dsr-1' },
+      url: `/api/v1/admin/dsr/${DSR_ID}/process`,
+      query: { id: DSR_ID },
       body: {
         action: 'reject',
         rejectionReason: 'Art.17(3)(c) defence of legal claims',
@@ -310,11 +326,11 @@ describe('DSR state-machine — happy paths', () => {
 describe('DSR state-machine — illegal transitions and cross-tenant', () => {
   it('start on an already-fulfilled DSR returns 409 CONFLICT', async () => {
     pushMaybeSingle({
-      id: 'dsr-1', tenant_id: 'tenant-A',
-      subject_patient_id: 'patient-1', subject_user_id: null,
+      id: DSR_ID, tenant_id: TENANT_A,
+      subject_patient_id: PATIENT_ID, subject_user_id: null,
       kind: 'access', status: 'fulfilled',
-      requested_by_user_id: 'admin-1', fulfilled_by_user_id: 'admin-1',
-      export_storage_path: 'dsr/dsr-1/export.json',
+      requested_by_user_id: ADMIN_ID, fulfilled_by_user_id: ADMIN_ID,
+      export_storage_path: `dsr/${DSR_ID}/export.json`,
       rejection_reason: null, notes: null,
       requested_at: new Date().toISOString(),
       fulfilled_at: new Date().toISOString(),
@@ -324,8 +340,8 @@ describe('DSR state-machine — illegal transitions and cross-tenant', () => {
     const handler = (await import('../../api/v1/admin/dsr/[id]/process')).default;
     const req = makeReq({
       method: 'POST',
-      url: '/api/v1/admin/dsr/dsr-1/process',
-      query: { id: 'dsr-1' },
+      url: `/api/v1/admin/dsr/${DSR_ID}/process`,
+      query: { id: DSR_ID },
       body: { action: 'start' },
     });
     const res = makeRes();
@@ -338,10 +354,10 @@ describe('DSR state-machine — illegal transitions and cross-tenant', () => {
   it('cross-tenant access returns opaque 404 (no info disclosure)', async () => {
     // Tenant_admin in tenant-A asks for a DSR that lives in tenant-B
     pushMaybeSingle({
-      id: 'dsr-1', tenant_id: 'tenant-B', // ← different tenant
-      subject_patient_id: 'patient-1', subject_user_id: null,
+      id: DSR_ID, tenant_id: TENANT_B, // ← different tenant
+      subject_patient_id: PATIENT_ID, subject_user_id: null,
       kind: 'access', status: 'received',
-      requested_by_user_id: 'admin-OTHER', fulfilled_by_user_id: null,
+      requested_by_user_id: ADMIN_OTHER, fulfilled_by_user_id: null,
       export_storage_path: null, rejection_reason: null, notes: null,
       requested_at: new Date().toISOString(),
       fulfilled_at: null,
@@ -351,8 +367,8 @@ describe('DSR state-machine — illegal transitions and cross-tenant', () => {
     const handler = (await import('../../api/v1/admin/dsr/[id]/process')).default;
     const req = makeReq({
       method: 'POST',
-      url: '/api/v1/admin/dsr/dsr-1/process',
-      query: { id: 'dsr-1' },
+      url: `/api/v1/admin/dsr/${DSR_ID}/process`,
+      query: { id: DSR_ID },
       body: { action: 'start' },
     });
     const res = makeRes();
@@ -363,16 +379,17 @@ describe('DSR state-machine — illegal transitions and cross-tenant', () => {
     // Crucially: the response MUST NOT contain any tenant or DSR
     // metadata that would let the caller probe cross-tenant existence.
     const body = JSON.stringify(res.jsonBody ?? {});
-    expect(body).not.toMatch(/tenant-B/);
-    expect(body).not.toMatch(/dsr-1/); // no echo of the requested id
+    expect(body).not.toMatch(new RegExp(TENANT_B));
+    // No echo of the requested DSR id either — opaque 404 shape.
+    expect(body).not.toMatch(new RegExp(DSR_ID));
   });
 
   it('reject without rejectionReason returns 422 VALIDATION_ERROR', async () => {
     const handler = (await import('../../api/v1/admin/dsr/[id]/process')).default;
     const req = makeReq({
       method: 'POST',
-      url: '/api/v1/admin/dsr/dsr-1/process',
-      query: { id: 'dsr-1' },
+      url: `/api/v1/admin/dsr/${DSR_ID}/process`,
+      query: { id: DSR_ID },
       body: { action: 'reject' /* no rejectionReason */ },
     });
     const res = makeRes();
@@ -388,13 +405,13 @@ describe('DSR state-machine — RBAC', () => {
     const handler = (await import('../../api/v1/admin/dsr/[id]/process')).default;
     const req = makeReq({
       method: 'POST',
-      url: '/api/v1/admin/dsr/dsr-1/process',
-      query: { id: 'dsr-1' },
+      url: `/api/v1/admin/dsr/${DSR_ID}/process`,
+      query: { id: DSR_ID },
       body: { action: 'start' },
       // Override the default tenant_admin auth context with a clinician one
       auth: {
-        userId: 'clin-1', email: 'c@example.com',
-        tenantId: 'tenant-A', role: 'clinician',
+        userId: CLIN_ID, email: 'c@example.com',
+        tenantId: TENANT_A, role: 'clinician',
         ipHash: 'sha256-test', userAgent: 'vitest', accessToken: 'fake',
       },
     });

@@ -209,6 +209,12 @@ export const SCORE_CASES: ScoreCase[] = [
         glucoseMgDl: 156,
         hba1cPct: 7.2,
         creatinineMgDl: 0.95,
+        // SCORE2-Diabetes eligibility requires an explicit eGFR (not
+        // derived from creatinine at this layer — the assessment service
+        // would derive it upstream, but `computeAllScores` consumes the
+        // already-resolved labs payload). Engine independently computes
+        // 69 from creat=0.95 / age=58 / female via CKD-EPI 2021.
+        eGFR: 69,
         ggtUL: 45,
         astUL: 30,
         altUL: 36,
@@ -293,8 +299,11 @@ export const SCORE_CASES: ScoreCase[] = [
     },
     expected: {
       bmi:   { value: 21.1, category: 'normal' },
-      // age=80 → 0.9938^80; 1.6/0.9 = 1.778, ^-1.2 → engine ≈ 43
-      egfr:  { value: 43,   stage: 'G3a', category: 'mildly_to_moderately_decreased' },
+      // age=80, creat=1.6, M → engine ≈ 43 → KDIGO G3b (30-44).
+      // Source: KDIGO 2012 Clinical Practice Guideline §1 — G3a is 45-59
+      // ('mildly to moderately decreased'); G3b is 30-44 ('moderately to
+      // severely decreased'). 43 falls in G3b.
+      egfr:  { value: 43,   stage: 'G3b', category: 'moderately_to_severely_decreased' },
       fib4:  { value: 2.65, category: 'intermediate' },
       frail: { score: 3,    category: 'Frail' },
       ada:   { score: 6,    category: 'High Risk' },
