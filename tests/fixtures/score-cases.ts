@@ -15,12 +15,13 @@
  *   - MetS:     Grundy AHA/NHLBI 2005 + Harmonization 2009
  *   - PREDIMED: Estruch NEJM 2018 (MEDAS 14-item)
  *
- * SCORE2 / SCORE2-Diabetes self-consistency baselines are pinned from
- * the current engine output ("regression baseline"). They detect drift
- * but do NOT validate the formula against the ESC reference calculator.
- * Clinical golden-vector validation lives in
- * `tests/unit/score2-golden.test.ts` and is `it.todo` until a clinical
- * lead supplies validated values from heartscore.escardio.org.
+ * SCORE2 / SCORE2-Diabetes baselines are pinned from the production
+ * engine which now matches the Hageman 2021 Box S5 canonical formula
+ * (cll recalibration). The independent reference implementation +
+ * golden vector cross-check live in
+ * `tests/unit/score2-golden.test.ts`. External confirmation against
+ * the ESC HeartScore web calculator is recommended for clinical
+ * sign-off but no longer a technical blocker.
  *
  * If a fixture's lab subset is incomplete for a score (e.g. missing GGT
  * blocks FLI), the `expected` entry for that score is omitted — tests
@@ -47,12 +48,15 @@ export interface ScoreCase {
     metSyndrome?: { criteriaCount: number; present: boolean };
     predimed?: { score: number; adherenceBand: 'low' | 'medium' | 'high' };
     /**
-     * SCORE2 self-consistency baseline. Detects engine drift; does NOT
-     * certify the formula against the ESC reference calculator. Use the
-     * golden suite for that. Tolerance is `0.01` (4-digit precision).
+     * SCORE2 baseline derived from the production engine running the
+     * Hageman 2021 Box S5 canonical formula. The clinical golden suite
+     * in `tests/unit/score2-golden.test.ts` asserts the production
+     * engine matches an independent paper-derived reference within
+     * ±0.1%; this fixture entry only catches engine drift.
+     * Tolerance is `0.01` (4-digit precision).
      */
     score2RegressionRiskPercent?: number;
-    /** Same semantics as score2RegressionRiskPercent for SCORE2-Diabetes. */
+    /** Same semantics for SCORE2-Diabetes (Pennells 2023). */
     score2DiabetesRegressionRiskPercent?: number;
   };
 }
@@ -110,8 +114,8 @@ export const SCORE_CASES: ScoreCase[] = [
       fli:         { value: 17.7, category: 'Excluded' },
       ada:         { score: 2,    category: 'Low Risk' },
       metSyndrome: { criteriaCount: 0, present: false },
-      // SCORE2 self-consistency — see header note.
-      score2RegressionRiskPercent: 0.81,
+      // SCORE2 — Hageman 2021 canonical formula (cll recalibration).
+      score2RegressionRiskPercent: 1.54,
     },
   },
 
@@ -171,8 +175,8 @@ export const SCORE_CASES: ScoreCase[] = [
       fli:         { value: 92.25, category: 'Probable NAFLD' },
       ada:         { score: 8,     category: 'High Risk' },
       metSyndrome: { criteriaCount: 5, present: true },
-      // Pinned from current engine output.
-      score2RegressionRiskPercent: 11.68,
+      // SCORE2 — Hageman 2021 canonical formula (cll recalibration).
+      score2RegressionRiskPercent: 21.02,
     },
   },
 
@@ -231,8 +235,8 @@ export const SCORE_CASES: ScoreCase[] = [
       fli:         { value: 72.92, category: 'Probable NAFLD' },
       // ADA suppressed — diabetic patient → GLYCEMIC_CONTROL instead.
       metSyndrome: { criteriaCount: 5, present: true },
-      // SCORE2-Diabetes self-consistency baseline (engine-pinned).
-      score2DiabetesRegressionRiskPercent: 4.24,
+      // SCORE2-Diabetes — Pennells 2023 canonical formula (cll recalibration).
+      score2DiabetesRegressionRiskPercent: 9.06,
     },
   },
 

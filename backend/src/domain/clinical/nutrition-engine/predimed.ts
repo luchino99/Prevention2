@@ -1,11 +1,44 @@
 /**
- * Nutrition Assessment Engine - PREDIMED & Metabolic Rate
- * Computes PREDIMED diet quality score and generates comprehensive nutrition summary
- * including Basal Metabolic Rate (Mifflin-St Jeor) and Total Daily Energy Expenditure
+ * Nutrition Assessment Engine — PREDIMED MEDAS + Metabolic Rate
  *
- * Reference: Estruch et al., PREDIMED Study; Mifflin & St Jeor (1990) for BMR
+ * Two independent computations:
+ *   1. PREDIMED MEDAS adherence score (14-item Mediterranean Diet
+ *      Adherence Screener)
+ *   2. Basal Metabolic Rate (Mifflin-St Jeor) and Total Daily Energy
+ *      Expenditure (BMR × activity factor)
  *
- * Zero side effects - pure calculation only
+ * Sources (primary):
+ *   - Schroder H, et al. A Short Screener Is Valid for Assessing
+ *     Mediterranean Diet Adherence among Older Spanish Men and Women.
+ *     J Nutr. 2011;141(6):1140-5. doi:10.3945/jn.110.135566
+ *     (Original 14-item MEDAS validation; introduces the ≤7 / 8-9 / ≥10
+ *     stratification used by all subsequent PREDIMED analyses.)
+ *   - Estruch R, et al. Primary Prevention of Cardiovascular Disease
+ *     with a Mediterranean Diet Supplemented with Extra-Virgin Olive Oil
+ *     or Nuts. N Engl J Med. 2018;378(25):e34. doi:10.1056/NEJMoa1800389
+ *     (Trial used MEDAS ≥10 as the high-adherence intervention target.)
+ *   - Mifflin MD, St Jeor ST, Hill LA, Scott BJ, Daugherty SA, Koh YO.
+ *     A new predictive equation for resting energy expenditure in healthy
+ *     individuals. Am J Clin Nutr. 1990;51(2):241-7. doi:10.1093/ajcn/51.2.241
+ *
+ * MEDAS adherence bands (Schroder 2011 — canonical):
+ *   0..7   = low      (control / pre-intervention)
+ *   8..9   = medium   (intermediate)
+ *  10..14  = high     (PREDIMED intervention target)
+ *
+ * Audit AUD-2026-05-04 follow-up (PREDIMED): the previous code used
+ * 0-4 / 5-9 / 10-14, which is not the published MEDAS stratification.
+ * Bands aligned to Schroder 2011 in Tier-5 fix; the formula
+ * (count of "yes" answers) is unchanged.
+ *
+ * Mifflin-St Jeor formulas:
+ *   Male:    BMR = 10·W + 6.25·H − 5·age + 5     (W=kg, H=cm)
+ *   Female:  BMR = 10·W + 6.25·H − 5·age − 161
+ *   TDEE  = BMR × activityFactor
+ *   Activity factors (WHO/FAO 2001 Harris-Benedict reference set):
+ *     sedentary 1.2 · light 1.375 · moderate 1.55 · vigorous 1.725 · extreme 1.9
+ *
+ * Zero side effects — pure calculation only.
  */
 
 import type { PredimedResult } from '../../../../../shared/types/clinical.js';
@@ -83,12 +116,13 @@ export function computePredimedScore(answers: boolean[] | undefined | null): num
 }
 
 /**
- * Categorize PREDIMED adherence according to the canonical cut-offs
- * from the validation literature: low (0–4), medium (5–9), high (10–14).
+ * Categorize MEDAS adherence per Schroder 2011 / Estruch 2018:
+ *   0..7  = low      (control or pre-intervention)
+ *   8..9  = medium   (intermediate)
+ *  10..14 = high     (PREDIMED intervention target)
  *
- * Exported for the score-engine orchestrator; returns `null` on
- * out-of-range input rather than throwing, which matches the permissive
- * semantics of the rest of the clinical engine.
+ * Returns `null` on out-of-range / non-finite input rather than throwing,
+ * matching the permissive semantics of the rest of the clinical engine.
  */
 export function categorizePredimedAdherence(
   score: number,
@@ -96,7 +130,7 @@ export function categorizePredimedAdherence(
   if (!Number.isFinite(score) || score < 0 || score > PREDIMED_MAX_SCORE) {
     return null;
   }
-  if (score <= 4) return 'low';
+  if (score <= 7) return 'low';
   if (score <= 9) return 'medium';
   return 'high';
 }

@@ -1,18 +1,49 @@
 /**
  * SCORE2 Cardiovascular Risk Engine
- * Pure function for 10-year ASCVD risk calculation
  *
- * Source: score2.html legacy codebase
- * Reference: SCORE2 ESC 2021 Guidelines
+ * Reference (primary source):
+ *   Hageman SHJ, Pennells L, Ojeda F, et al. SCORE2 risk prediction
+ *   algorithms: new models to estimate 10-year risk of cardiovascular
+ *   disease in Europe. Eur Heart J. 2021;42(25):2439-2454.
+ *   doi:10.1093/eurheartj/ehab309
  *
- * Mathematical formula:
- * 1. Transform variables: cage=(age-60)/5, csbp=(sbp-120)/20, ctchol=(tchol_mmol-6), chdl=(hdl_mmol-1.3)/0.5
- * 2. Calculate logit using gender-specific coefficients
- * 3. Compute uncalibrated risk from logit and baseline survival
- * 4. Apply region-specific calibration
- * 5. Categorize risk level
+ * The model (paper Supplementary Material §4 + Box S5):
  *
- * Zero side effects - pure calculation only
+ *   Linear predictor:
+ *     LP = β_age·cage + β_smoking·smoking + β_sbp·csbp + β_chol·ctchol + β_hdl·chdl
+ *        + β_smoke·age·smoking·cage + β_sbp·age·csbp·cage + β_chol·age·ctchol·cage + β_hdl·age·chdl·cage
+ *
+ *   Variable centering:
+ *     cage   = (age - 60) / 5
+ *     csbp   = (sbp - 120) / 20
+ *     ctchol = tchol_mmol - 6
+ *     chdl   = (hdl_mmol - 1.3) / 0.5
+ *
+ *   Uncalibrated 10-year risk (with sex-specific baseline survival):
+ *     Uncal_risk = 1 - S0_sex^exp(LP)
+ *
+ *   Recalibration (paper Box S5 — canonical complementary log-log form):
+ *     Recal_risk = 1 - exp(-exp(scale1 + scale2 · ln(-ln(1 - Uncal_risk))))
+ *
+ * Audit AUD-2026-05-04 finding C-01 (CLOSED in Tier-5):
+ *   The previous implementation used a shortcut form
+ *   `1 - S0_male^exp(scale1 + scale2·LP)` with male baseline survival
+ *   hard-coded for both sexes. Algebraically that form is NOT
+ *   equivalent to the paper's complementary log-log recalibration
+ *   for any (scale2, S0_sex) combination, and produced clinically
+ *   significant under-estimates (e.g. M, 62y, smoker, SBP 168, TC
+ *   251 mg/dL: shortcut = 11.68%, canonical = 21.04% → "high" vs
+ *   "very high" misclassification). This file now implements the
+ *   canonical formula directly.
+ *
+ *   See also `tests/unit/score2-golden.test.ts` for the offline
+ *   reference-implementation cross-check against this file's output,
+ *   covering 9 cases across sex × region × age band. The
+ *   reference-implementation lives in the test file (intentionally
+ *   independent from production code) and is itself derived from
+ *   the paper's published formula.
+ *
+ * Zero side effects — pure calculation only.
  */
 
 import type { Score2Input, Score2Result } from '../../../../../shared/types/clinical.js';
@@ -176,31 +207,46 @@ function calculateLogit(
 }
 
 /**
- * Calculate uncalibrated 10-year risk
- * risk = 1 - S0 ^ exp(logit)
+ * Calculate uncalibrated 10-year risk (sex-specific baseline survival).
+ * Returns the risk as a fraction in [0,1] (NOT percent) — easier to
+ * compose with the recalibration step that consumes the fraction
+ * directly via the complementary log-log transformation.
+ *
+ * Formula: risk_uncal = 1 - S0_sex^exp(LP)
  */
-function calculateUncalibratedRisk(
-  logit: number,
-  s0: number,
-): number {
+function calculateUncalibratedRiskFraction(logit: number, s0: number): number {
   const exponent = Math.exp(logit);
-  const risk = 1 - Math.pow(s0, exponent);
-  return risk * 100; // Convert to percentage
+  return 1 - Math.pow(s0, exponent);
 }
 
 /**
- * Apply region-specific calibration
- * calibrated = scale1 + scale2 * logit
- * This is the log-odds form; then convert back
+ * Apply region-specific recalibration per Hageman 2021 Box S5
+ * (canonical complementary log-log form).
+ *
+ *   cll_uncal = ln(-ln(1 - uncalibratedRisk))
+ *   cll_cal   = scale1 + scale2 · cll_uncal
+ *   risk_cal  = 1 - exp(-exp(cll_cal))
+ *
+ * The published `scale1, scale2` parameters are calibrated for THIS
+ * formula. Using them with any "shortcut" expression
+ * (e.g. `1 - S0^exp(scale1 + scale2·LP)`) is mathematically distinct
+ * and produces different numbers — see the file header for the
+ * derivation and the audit reference.
+ *
+ * Returns the recalibrated risk in PERCENT (0..100).
  */
 function applyCalibratedRisk(
-  logit: number,
+  uncalibratedRiskFraction: number,
   calibration: CalibrationParameters,
 ): number {
-  const calibratedLogit = calibration.scale1 + calibration.scale2 * logit;
-  const s0 = BASELINE_SURVIVAL.male; // Use male as reference for the formula
-  const risk = 1 - Math.pow(s0, Math.exp(calibratedLogit));
-  return risk * 100;
+  // Mathematical guards on the cll transform domain.
+  if (uncalibratedRiskFraction <= 0) return 0;
+  if (uncalibratedRiskFraction >= 1) return 100;
+
+  const cllUncal = Math.log(-Math.log(1 - uncalibratedRiskFraction));
+  const cllCal = calibration.scale1 + calibration.scale2 * cllUncal;
+  const calibratedRiskFraction = 1 - Math.exp(-Math.exp(cllCal));
+  return calibratedRiskFraction * 100;
 }
 
 /**
@@ -276,13 +322,14 @@ export function computeScore2(input: Score2Input): Score2Result {
   // Step 3: Calculate logit
   const logit = calculateLogit(coeffs, cage, csbp, ctchol, chdl, smoking);
 
-  // Step 4: Calculate uncalibrated 10-year risk
+  // Step 4: Uncalibrated 10-year risk (sex-specific baseline survival).
   const s0 = BASELINE_SURVIVAL[sex];
-  const uncalibratedRisk = calculateUncalibratedRisk(logit, s0);
+  const uncalibratedFraction = calculateUncalibratedRiskFraction(logit, s0);
+  const uncalibratedRisk = uncalibratedFraction * 100;
 
-  // Step 5: Apply region-specific calibration
+  // Step 5: Region-specific recalibration (paper Box S5 — cll form).
   const calibration = CALIBRATION[sex][riskRegion];
-  const calibratedRisk = applyCalibratedRisk(logit, calibration);
+  const calibratedRisk = applyCalibratedRisk(uncalibratedFraction, calibration);
 
   // Step 6: Categorize
   const category = categorizeRisk(calibratedRisk);

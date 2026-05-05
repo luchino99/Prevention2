@@ -12,12 +12,13 @@
  *      published equations and pinned in the fixture. A failure here
  *      means the engine has drifted from the published formula.
  *
- *   2. SCORE2 / SCORE2-Diabetes "regression baseline" — values are
- *      pinned from the current engine output. This catches drift but
- *      does NOT certify that the engine matches the ESC reference
- *      calculator (heartscore.escardio.org). Clinical validation lives
- *      in `tests/unit/score2-golden.test.ts` and is `it.todo` until a
- *      clinical lead supplies validated golden vectors.
+ *   2. SCORE2 / SCORE2-Diabetes regression values — pinned from the
+ *      production engine which now matches the canonical Hageman 2021
+ *      Box S5 cll-recalibration formula. The clinical-grade golden
+ *      vectors live in `tests/unit/score2-golden.test.ts`, which uses
+ *      an INDEPENDENT reference implementation derived directly from
+ *      the paper and asserts that production output matches reference
+ *      output to within ±0.1 % across 9 sex × region × age cases.
  *
  * The legacy engine import (`../../engine/index.js`) was removed —
  * legacy code lives in `_archive_legacy/` and is no longer loadable.
