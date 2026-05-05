@@ -15,11 +15,12 @@
   <link rel="stylesheet" href="../assets/css/app.css" />
 </head>
 <body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
   <div class="app-shell">
-    <aside class="app-sidebar">
+    <aside class="app-sidebar" aria-label="Primary navigation">
       <div class="brand">Uelfy Clinical</div>
       <nav>
-        <a href="./dashboard.html" class="active">Dashboard</a>
+        <a href="./dashboard.html" class="active" aria-current="page">Dashboard</a>
         <a href="./patients.html">Patients</a>
         <a href="./alerts.html">Alerts</a>
         <a href="./audit.html" id="nav-audit" class="hidden">Audit log</a>
@@ -28,7 +29,7 @@
       </nav>
     </aside>
 
-    <main class="app-main">
+    <main class="app-main" id="main-content" tabindex="-1">
       <div class="topbar">
         <div>
           <h1>Dashboard</h1>

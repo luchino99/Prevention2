@@ -70,8 +70,15 @@ export function setClientSession(
       access_token: accessToken,
       refresh_token: refreshToken ?? '',
     })
-    .catch((error: unknown) => {
-      console.error('Failed to set client session:', error);
+    .catch(async (error: unknown) => {
+      // C-02: structured emit so the auth-bootstrap failure is greppable
+      // alongside other observability events. We import lazily to avoid
+      // a top-level import cycle (supabase.ts is also imported by the
+      // logger's own dependency chain at boot).
+      const { logStructured, tagFromError } = await import('../observability/structured-log.js');
+      logStructured('error', 'SUPABASE_SET_SESSION_FAILED', {
+        errorTag: tagFromError(error) ?? 'unknown',
+      });
     });
 }
 

@@ -153,21 +153,32 @@ async function startEnrollFlow(existingUnverified) {
     const totpSecret = enrollData.totp?.secret;
     const qrData = enrollData.totp?.qr_code;
 
+    // Audit S-01 (Tier-5 fix): we ONLY use the inline data-URI returned
+    // by Supabase Auth. The previous fallback to api.qrserver.com sent
+    // the TOTP secret + email to a third-party CDN AND was CSP-blocked
+    // anyway by `img-src 'self' data:`. If Supabase fails to ship a
+    // qr_code we surface the TOTP URI as plain text — the user can paste
+    // it into their authenticator app's "manual entry" flow. No external
+    // request is ever issued from this page.
     if (qrData) {
       $('qr-image').src = qrData;
       $('qr-image').style.display = 'block';
       $('qr-loading').style.display = 'none';
-    } else if (totpUri) {
-      // Supabase usually returns qr_code as an inline SVG data-URI; the
-      // CDN fallback is only used if the SDK omits it. The TOTP URI
-      // contains issuer + label + secret — no extra PII.
-      const svgUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(totpUri)}&size=220x220`;
-      $('qr-image').src = svgUrl;
-      $('qr-image').style.display = 'block';
-      $('qr-loading').style.display = 'none';
+    } else {
+      $('qr-loading').textContent =
+        'QR code unavailable. Use the manual setup below.';
+      // Reveal the manual-entry block by default in this fallback path.
+      const manualBlock = $('qr-manual');
+      if (manualBlock) manualBlock.removeAttribute('hidden');
     }
     if (totpSecret) {
       $('qr-secret').textContent = totpSecret;
+    }
+    // Always populate the URI field — useful for users who prefer to
+    // copy/paste rather than scan the QR.
+    if (totpUri) {
+      const uriField = $('qr-uri');
+      if (uriField) uriField.textContent = totpUri;
     }
   } catch (e) {
     showError(e?.message ?? 'Failed to start MFA enrolment');

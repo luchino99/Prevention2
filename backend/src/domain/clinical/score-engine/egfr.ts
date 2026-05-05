@@ -2,8 +2,12 @@
  * eGFR (Estimated Glomerular Filtration Rate)
  * CKD-EPI 2021 Race-Free Equation
  *
- * Source: Inker LA, et al. New creatinine-and cystatin C-based predictive equations
- * for GFR: a systematic review. Am J Kidney Dis. 2023;92(1):40-53.
+ * Source: Inker LA, Eneanya ND, Coresh J, et al. New Creatinine- and
+ * Cystatin C-Based Equations to Estimate GFR without Race.
+ * N Engl J Med. 2021;385(19):1737-1749. doi:10.1056/NEJMoa2102953
+ *
+ * (Audit AUD-2026-05-04 finding C-03: previous header cited a non-existent
+ *  Am J Kidney Dis paper. Corrected to the canonical NEJM 2021 publication.)
  *
  * CKD-EPI 2021 Formula (Race-Free):
  * eGFR = 142 × min(Scr/κ, 1)^α × max(Scr/κ, 1)^(-1.200) × 0.9938^age × (1.012 if female)

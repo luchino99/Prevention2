@@ -15,20 +15,21 @@
   <link rel="stylesheet" href="../assets/css/app.css" />
 </head>
 <body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
   <div class="app-shell">
-    <aside class="app-sidebar">
+    <aside class="app-sidebar" aria-label="Primary navigation">
       <div class="brand">Uelfy Clinical</div>
       <nav>
         <a href="./dashboard.html">Dashboard</a>
         <a href="./patients.html">Patients</a>
-        <a href="./alerts.html" class="active">Alerts</a>
+        <a href="./alerts.html" class="active" aria-current="page">Alerts</a>
         <a href="./audit.html" id="nav-audit" class="hidden">Audit log</a>
         <a href="./tenant-settings.html">Tenant settings</a>
         <a href="#" id="signout-link">Sign out</a>
       </nav>
     </aside>
 
-    <main class="app-main">
+    <main class="app-main" id="main-content" tabindex="-1">
       <div id="nav-header-mount"></div>
 
       <div class="topbar">

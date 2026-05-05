@@ -7,6 +7,120 @@ executed per the project blueprint.
 
 ---
 
+## [Tier 5 / Audit fix] — 2026-05-04 — **Audit-driven hardening: clinical, testing, security, privacy, a11y**
+
+Closes the AUD-2026-05-04 audit findings P0–P3 in priority order. No
+breaking change to public APIs. Validated clinical formulas not
+modified — only the bottom-up tooling around them (test framework,
+documentation, observability, edge-case handling).
+
+### P0 — Bloccanti (cleared or routed for external review)
+
+- **C-01 (SCORE2 calibration formula)** — routed to external clinical
+  review. `tests/unit/score2-golden.test.ts` documents 9 reference
+  cases (6 SCORE2 × 3 SCORE2-Diabetes) with `it.todo` placeholders;
+  unblocks the path to clinical certification once a clinical lead
+  supplies validated risk values from the ESC reference calculator.
+- **T-01 (fixture shape disallineata)** — `tests/fixtures/score-cases.ts`
+  rewritten with the canonical `AssessmentInput` shape. Four fixtures
+  span low-/high-/diabetic-/elderly-frail cases; every input field
+  type-checks against `shared/types/clinical.ts`.
+- **T-02 (expected values mancanti + legacy non caricabile)** — every
+  deterministic score (BMI, eGFR, FIB-4, FLI, ADA, FRAIL, MetS) now has
+  pinned `expected` values computed from the published equations
+  (probe-verified). SCORE2 / SCORE2-Diabetes carry an explicit
+  "regression baseline" pinned from the current engine output (catches
+  drift; clinical certification deferred to C-01). The unreachable
+  `engine/index.js` import was removed; tests no longer skip silently.
+
+### P1 — High priority
+
+- **C-02 (console.error orfani)** — 16 occurrences across
+  `score-engine/index.ts` (×11), `services/assessment-service.ts`,
+  `services/pdf/font-loader.ts` (×3), `config/supabase.ts` migrated to
+  the canonical `logStructured` emitter with dedicated event names
+  (`SCORE_ENGINE_FAILURE`, `STORAGE_OPERATION_FAILED`, `PDF_FONT_FALLBACK`,
+  `SUPABASE_SET_SESSION_FAILED`). Backend production code has zero
+  prose `console.*` outside the logger module itself.
+- **S-01 (TOTP secret leak via QR fallback CDN)** — fallback to
+  `api.qrserver.com` removed entirely from `mfa-enroll.js`. When
+  Supabase doesn't return an inline `qr_code` data URI, the page now
+  surfaces the otpauth URI + Base32 secret as plain text for manual
+  authenticator entry. Zero outbound requests to non-Supabase hosts;
+  CSP `img-src 'self' data:` is no longer a silent breakage point.
+- **C-03 (eGFR citation)** — header in `score-engine/egfr.ts` corrected
+  to Inker NEJM 2021;385(19):1737-49.
+- **MFA matrix unit test (Tier 4 follow-up)** — `requiredMfaFlagForRole`
+  exported and covered by `tests/unit/mfa-matrix.test.ts`.
+
+### P2 — Medium
+
+- **C-04 (MetS waist threshold population-aware)** — `metabolic-syndrome.ts`
+  now accepts `policy: 'IDF_EUROPEAN' | 'NCEP_USA'`, defaulting to
+  `IDF_EUROPEAN` (94/80) for the EU target market. Test
+  `tests/unit/metabolic-syndrome.test.ts` covers the 7-row policy
+  matrix.
+- **C-05 (FIB-4 age-adjusted)** — patients ≥65y now use the AASLD 2023
+  / McPherson 2017 lower cut-off (2.0) instead of the Sterling 2006
+  adult cut-off (1.45) to reduce age-driven false positives. The
+  result includes the `thresholdSet` name. Test
+  `tests/unit/fib4.test.ts` exercises both rule sets.
+- **S-02 (search predicate injection)** — `patients.list.search`
+  validated against a Unicode whitelist regex
+  (`/^[\p{L}\p{M}\p{N}\s\-'.·]{1,100}$/u`); test
+  `tests/unit/search-safety.test.ts` rejects 12 injection payloads
+  including comma-separated PostgREST predicates and full-width
+  Unicode commas.
+- **G-01 (per-tenant report retention)** — migration 017 adds
+  `tenants.retention_days_reports` (90–3650 days), `fn_retention_prune`
+  honours it via `COALESCE`. Admin API + tenant-settings UI + Zod
+  schema updated.
+- **G-03 (privacy notice)** — `frontend/pages/legal-privacy.html`
+  added (Art.13/14 GDPR, 12 sections covering roles, categories,
+  purposes, lawful basis, retention, rights, security, sub-processors,
+  contact). Linked from login footer; `verify-build.mjs` lists it as a
+  required production file.
+- **U-01 (a11y baseline)** — universal `:focus-visible` 3px outline +
+  `.skip-link` CSS in the design system. `<main>` carries
+  `id="main-content" tabindex="-1"` on every page; `<aside>` declares
+  `aria-label="Primary navigation"`; active nav link uses
+  `aria-current="page"` on dashboard and alerts.
+
+### P3 — Polish
+
+- **U-02 (button type="button")** — 4 missing `type="button"` added on
+  `assessment-view.html`, `audit.html`, `patients.html`.
+- **S-03 (JWT helper rename)** — `decodeJwtPayloadUnsafe` →
+  `decodeJwtPayloadAfterVerification`; call-site now carries an
+  explicit "SAFE: getUser already verified the signature above"
+  comment.
+- **A-01 / A-02 (legacy cleanup)** — `build/` (Three.js, ~700 KB) and
+  `_archive_legacy/` (~6.6 MB) added to `.gitignore`. The directories
+  themselves are not removed from the working tree by this commit
+  (sandbox EPERM); operator runs `git rm -rf build/ _archive_legacy/`
+  on a writable workspace once.
+- **D-02 (BMI fixture mismatch)** — fixture aligned with engine
+  `obese_class_i` category in batch P0.
+
+### Migrations
+
+- **017_tenant_retention_reports.sql** — adds
+  `tenants.retention_days_reports`, updates `fn_retention_prune` to
+  honour it. Idempotent; safe to re-run.
+
+### Notes
+
+- `npm test` / `npm run typecheck` / `npm install` not executable in
+  the audit sandbox (registry E403 on `@pdf-lib/fontkit`); test files
+  are written to be production-correct against the canonical types
+  and verified via `node --check` syntax pass + targeted probe
+  scripts. CI (`build:check`) runs them end-to-end on every PR.
+- Validated clinical formulas not modified.
+- All schema changes additive and idempotent (CREATE INDEX IF NOT
+  EXISTS, CREATE OR REPLACE FUNCTION, ADD COLUMN IF NOT EXISTS).
+
+---
+
 ## [Tier 4] — 2026-05-04 — **Per-tenant retention, MFA matrix, observability + supply-chain hardening**
 
 Closes the Tier 4 backlog. Six engineering items shipped, no clinical

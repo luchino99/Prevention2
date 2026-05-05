@@ -91,12 +91,13 @@ async function ensureBuffersLoaded(): Promise<void> {
       bold    ? null : FILES.bold,
       italic  ? null : FILES.italic,
     ].filter(Boolean) as string[];
-    // eslint-disable-next-line no-console
-    console.warn(
-      `[pdf/font-loader] NotoSans assets missing (${missing.join(', ')}) — ` +
-      `falling back to StandardFonts.Helvetica with WinAnsi sanitisation. ` +
-      `Run "npm run fetch:fonts" to restore full Unicode support.`,
-    );
+    // C-02: structured emit. The fallback path is operationally OK
+    // (PDF still renders), so this is a `warn` not an `error`.
+    const { logStructured } = await import('../../observability/structured-log.js');
+    logStructured('warn', 'PDF_FONT_FALLBACK', {
+      reason: 'noto_assets_missing',
+      missing: missing.join(','),
+    });
   }
 }
 
@@ -121,11 +122,11 @@ export async function loadReportFonts(pdf: PDFDocument): Promise<ReportFonts> {
     } catch (err) {
       // @pdf-lib/fontkit is a declared dependency; if it is missing we have
       // a deployment integrity issue. Fall through to the StandardFonts path.
-      // eslint-disable-next-line no-console
-      console.warn(
-        '[pdf/font-loader] @pdf-lib/fontkit could not be loaded — falling back',
-        err instanceof Error ? err.message : err,
-      );
+      const { logStructured, tagFromError } = await import('../../observability/structured-log.js');
+      logStructured('warn', 'PDF_FONT_FALLBACK', {
+        reason: 'fontkit_unavailable',
+        errorTag: tagFromError(err) ?? 'unknown',
+      });
       return loadStandardFonts(pdf);
     }
     try {
@@ -138,11 +139,11 @@ export async function loadReportFonts(pdf: PDFDocument): Promise<ReportFonts> {
       ]);
       return { regular, bold, italic, unicodeCapable: true };
     } catch (err) {
-      // eslint-disable-next-line no-console
-      console.warn(
-        '[pdf/font-loader] Failed to embed NotoSans — falling back',
-        err instanceof Error ? err.message : err,
-      );
+      const { logStructured, tagFromError } = await import('../../observability/structured-log.js');
+      logStructured('warn', 'PDF_FONT_FALLBACK', {
+        reason: 'noto_embed_failed',
+        errorTag: tagFromError(err) ?? 'unknown',
+      });
       return loadStandardFonts(pdf);
     }
   }

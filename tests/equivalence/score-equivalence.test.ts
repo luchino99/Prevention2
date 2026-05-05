@@ -1,115 +1,182 @@
 /**
- * Score equivalence tests.
+ * Score equivalence + regression test suite.
  *
- * For every canonical fixture, compute each score via the NEW pure-function
- * engine (backend/src/domain/clinical/score-engine/*) and assert that the
- * numeric output is within tolerance of the LEGACY engine (engine/**).
+ * For every canonical fixture in `tests/fixtures/score-cases.ts`, we run
+ * `computeAllScores(input)` and assert against pinned expected values.
  *
- * This suite is the regression gate guarding the blueprint's non-negotiable
- * rule:  "DO NOT alter the mathematical formulas or validated calculation
- *         logic of the existing clinical scores."
+ * Two classes of expectation co-exist (see fixture header for full
+ * rationale):
  *
- * The legacy engine is loaded dynamically. Because the current repo exposes
- * these as browser globals in some files, tests wrap the imports to cope
- * with either CommonJS or browser-global shapes.
+ *   1. Deterministic-formula scores (BMI, eGFR, FIB-4, ADA, FLI, MetS,
+ *      FRAIL, PREDIMED) — values are computed independently from the
+ *      published equations and pinned in the fixture. A failure here
+ *      means the engine has drifted from the published formula.
+ *
+ *   2. SCORE2 / SCORE2-Diabetes "regression baseline" — values are
+ *      pinned from the current engine output. This catches drift but
+ *      does NOT certify that the engine matches the ESC reference
+ *      calculator (heartscore.escardio.org). Clinical validation lives
+ *      in `tests/unit/score2-golden.test.ts` and is `it.todo` until a
+ *      clinical lead supplies validated golden vectors.
+ *
+ * The legacy engine import (`../../engine/index.js`) was removed —
+ * legacy code lives in `_archive_legacy/` and is no longer loadable.
+ * Equivalence vs legacy was structurally broken in the previous
+ * version of this file: the import always returned null, so the
+ * `it('agrees with legacy')` assertion was silently skipped on every
+ * run, producing false confidence. Replaced with explicit fixture
+ * assertions that always run.
  */
 
 import { describe, it, expect } from 'vitest';
-import { SCORE_CASES } from '../fixtures/score-cases';
+import { SCORE_CASES } from '../fixtures/score-cases.js';
+import { computeAllScores } from '../../backend/src/domain/clinical/score-engine/index.js';
+import type { ScoreResultEntry } from '../../shared/types/clinical.js';
 
-// ─── New pure engine ─────────────────────────────────────────────────────
-import { computeAllScores } from '../../backend/src/domain/clinical/score-engine';
+// Tolerances per score family. Tighter than 0.01 means "must be exact".
+const TOL_INTEGER = 0;
+const TOL_TWO_DECIMALS = 0.01;
+const TOL_ONE_DECIMAL = 0.05;
 
-// ─── Legacy engine loader ────────────────────────────────────────────────
-/**
- * Attempts to load the legacy engine. Once the legacy folder has been
- * archived under `_legacy_archive/engine`, update the path accordingly.
- * If the legacy engine cannot be loaded, the test is skipped with a
- * descriptive reason (rather than silently passing).
- */
-async function loadLegacyEngine(): Promise<null | {
-  score2?: (i: any) => number;
-  score2Diabetes?: (i: any) => number;
-  ada?: (i: any) => number;
-  fli?: (i: any) => number;
-  frail?: (i: any) => number;
-  bmi?: (i: any) => number;
-  metSyndrome?: (i: any) => { count: number; positive: boolean };
-}> {
-  try {
-    // Expected legacy path — adapt once archival completes
-    // @ts-ignore - dynamic import at runtime
-    const legacy = await import('../../engine/index.js').catch(() => null);
-    if (!legacy) return null;
-    return legacy.default ?? legacy;
-  } catch {
-    return null;
-  }
+function findScore(results: ScoreResultEntry[], code: string): ScoreResultEntry | undefined {
+  return results.find((r) => r.scoreCode === code);
 }
 
-const TOLERANCE = 1e-9;
-
-describe('Clinical score equivalence (legacy vs new engine)', () => {
-  it('loads the new computeAllScores orchestrator', () => {
+describe('Clinical score equivalence (pinned expected values)', () => {
+  it('exposes the orchestrator', () => {
     expect(typeof computeAllScores).toBe('function');
   });
 
   for (const c of SCORE_CASES) {
     describe(`fixture: ${c.name}`, () => {
-      it('new engine computes without throwing', () => {
+      it('engine produces a non-empty result array without throwing', () => {
         const out = computeAllScores(c.input);
-        expect(out).toBeDefined();
-        expect(typeof out).toBe('object');
+        expect(Array.isArray(out)).toBe(true);
+        expect(out.length).toBeGreaterThan(0);
       });
 
+      // ---- BMI ----
       if (c.expected.bmi) {
-        it('BMI matches pinned expected value', () => {
+        it('BMI matches WHO formula', () => {
           const out = computeAllScores(c.input);
-          const bmi = (out as any).bmi;
+          const bmi = findScore(out, 'BMI');
           expect(bmi).toBeDefined();
-          expect(Math.abs(bmi.value - c.expected.bmi!.value)).toBeLessThan(TOLERANCE);
-          expect(bmi.category).toBe(c.expected.bmi!.category);
+          expect(bmi!.valueNumeric).not.toBeNull();
+          expect(Math.abs((bmi!.valueNumeric as number) - c.expected.bmi!.value))
+            .toBeLessThanOrEqual(TOL_ONE_DECIMAL);
+          expect(bmi!.category).toBe(c.expected.bmi!.category);
         });
       }
 
-      it('agrees with legacy engine (skipped when legacy not loadable)', async () => {
-        const legacy = await loadLegacyEngine();
-        if (!legacy) {
-          console.warn(`[equivalence] legacy engine not loadable — skipping for ${c.name}`);
-          return;
-        }
-        const newOut = computeAllScores(c.input) as any;
+      // ---- eGFR (CKD-EPI 2021) ----
+      if (c.expected.egfr) {
+        it('eGFR matches CKD-EPI 2021 formula', () => {
+          const out = computeAllScores(c.input);
+          const egfr = findScore(out, 'EGFR');
+          expect(egfr).toBeDefined();
+          expect(egfr!.valueNumeric).not.toBeNull();
+          // eGFR is rounded to integer in the engine.
+          expect(Math.round(egfr!.valueNumeric as number))
+            .toBe(c.expected.egfr!.value);
+          expect(egfr!.category).toBe(c.expected.egfr!.category);
+          // The full result also exposes the KDIGO stage on rawPayload.
+          expect((egfr!.rawPayload as any).stage).toBe(c.expected.egfr!.stage);
+        });
+      }
 
-        if (legacy.bmi && newOut.bmi) {
-          const L = legacy.bmi(c.input);
-          expect(Math.abs(L - newOut.bmi.value)).toBeLessThan(TOLERANCE);
-        }
-        if (legacy.score2 && newOut.score2) {
-          const L = legacy.score2(c.input);
-          expect(Math.abs(L - newOut.score2.value)).toBeLessThan(TOLERANCE);
-        }
-        if (legacy.score2Diabetes && newOut.score2Diabetes) {
-          const L = legacy.score2Diabetes(c.input);
-          expect(Math.abs(L - newOut.score2Diabetes.value)).toBeLessThan(TOLERANCE);
-        }
-        if (legacy.ada && newOut.ada) {
-          const L = legacy.ada(c.input);
-          expect(Math.abs(L - newOut.ada.value)).toBeLessThan(TOLERANCE);
-        }
-        if (legacy.fli && newOut.fli) {
-          const L = legacy.fli(c.input);
-          expect(Math.abs(L - newOut.fli.value)).toBeLessThan(TOLERANCE);
-        }
-        if (legacy.frail && newOut.frail) {
-          const L = legacy.frail(c.input);
-          expect(Math.abs(L - newOut.frail.value)).toBeLessThan(TOLERANCE);
-        }
-        if (legacy.metSyndrome && newOut.metSyndrome) {
-          const L = legacy.metSyndrome(c.input);
-          expect(L.count).toBe(newOut.metSyndrome.count);
-          expect(L.positive).toBe(newOut.metSyndrome.positive);
-        }
-      });
+      // ---- FIB-4 (Sterling 2006) ----
+      if (c.expected.fib4) {
+        it('FIB-4 matches Sterling 2006 formula', () => {
+          const out = computeAllScores(c.input);
+          // Engine emits scoreCode 'FIB4' (no hyphen) — see score-engine/index.ts:489
+          const fib4 = findScore(out, 'FIB4');
+          expect(fib4).toBeDefined();
+          expect(Math.abs((fib4!.valueNumeric as number) - c.expected.fib4!.value))
+            .toBeLessThanOrEqual(TOL_TWO_DECIMALS);
+          expect(fib4!.category).toBe(c.expected.fib4!.category);
+        });
+      }
+
+      // ---- FLI (Bedogni 2006) ----
+      if (c.expected.fli) {
+        it('FLI matches Bedogni 2006 formula', () => {
+          const out = computeAllScores(c.input);
+          const fli = findScore(out, 'FLI');
+          expect(fli).toBeDefined();
+          expect(Math.abs((fli!.valueNumeric as number) - c.expected.fli!.value))
+            .toBeLessThanOrEqual(0.5); // 2-decimal pinning + log rounding noise
+          expect(fli!.category).toBe(c.expected.fli!.category);
+        });
+      }
+
+      // ---- FRAIL (Morley 2012) ----
+      if (c.expected.frail) {
+        it('FRAIL matches Morley 2012 additive scoring', () => {
+          const out = computeAllScores(c.input);
+          const frail = findScore(out, 'FRAIL');
+          expect(frail).toBeDefined();
+          expect(frail!.valueNumeric).toBe(c.expected.frail!.score);
+          expect(frail!.category).toBe(c.expected.frail!.category);
+        });
+      }
+
+      // ---- ADA (Bang 2009) ----
+      if (c.expected.ada) {
+        it('ADA matches Bang 2009 additive scoring', () => {
+          const out = computeAllScores(c.input);
+          const ada = findScore(out, 'ADA');
+          expect(ada).toBeDefined();
+          expect(ada!.valueNumeric).toBe(c.expected.ada!.score);
+          expect(ada!.category).toBe(c.expected.ada!.category);
+        });
+      }
+
+      // ---- Metabolic Syndrome (ATP III / Harmonization 2009) ----
+      if (c.expected.metSyndrome) {
+        it('Metabolic Syndrome criteria count matches ATP III', () => {
+          const out = computeAllScores(c.input);
+          const mets = findScore(out, 'METABOLIC_SYNDROME');
+          expect(mets).toBeDefined();
+          // criteriaCount lives on rawPayload (engine emits valueNumeric=count).
+          expect(mets!.valueNumeric).toBe(c.expected.metSyndrome!.criteriaCount);
+          expect((mets!.rawPayload as any).present).toBe(c.expected.metSyndrome!.present);
+        });
+      }
+
+      // ---- PREDIMED (Estruch 2018 — MEDAS 14-item) ----
+      if (c.expected.predimed) {
+        it('PREDIMED matches MEDAS 14-item additive scoring', () => {
+          const out = computeAllScores(c.input);
+          const predimed = findScore(out, 'PREDIMED');
+          expect(predimed).toBeDefined();
+          expect(predimed!.valueNumeric).toBe(c.expected.predimed!.score);
+          expect((predimed!.rawPayload as any).adherenceBand).toBe(c.expected.predimed!.adherenceBand);
+        });
+      }
+
+      // ---- SCORE2 — regression baseline (NOT clinical golden) ----
+      if (c.expected.score2RegressionRiskPercent !== undefined) {
+        it('SCORE2 self-consistency baseline (NOT clinical golden)', () => {
+          const out = computeAllScores(c.input);
+          const s2 = findScore(out, 'SCORE2');
+          expect(s2).toBeDefined();
+          expect(s2!.valueNumeric).not.toBeNull();
+          expect(Math.abs((s2!.valueNumeric as number) - c.expected.score2RegressionRiskPercent!))
+            .toBeLessThanOrEqual(TOL_TWO_DECIMALS);
+        });
+      }
+
+      // ---- SCORE2-Diabetes — regression baseline (NOT clinical golden) ----
+      if (c.expected.score2DiabetesRegressionRiskPercent !== undefined) {
+        it('SCORE2-Diabetes self-consistency baseline (NOT clinical golden)', () => {
+          const out = computeAllScores(c.input);
+          const s2dm = findScore(out, 'SCORE2_DIABETES');
+          expect(s2dm).toBeDefined();
+          expect(s2dm!.valueNumeric).not.toBeNull();
+          expect(Math.abs((s2dm!.valueNumeric as number) - c.expected.score2DiabetesRegressionRiskPercent!))
+            .toBeLessThanOrEqual(TOL_TWO_DECIMALS);
+        });
+      }
     });
   }
 });

@@ -271,8 +271,8 @@ needs a "home tenant" — by convention we use a synthetic one with
 `status='active'` and `slug='_platform'`.
 
 ```sql
-INSERT INTO tenants (name, slug, plan, status, country)
-VALUES ('Uelfy Platform', '_platform', 'enterprise', 'active', 'IT')
+INSERT INTO tenants (name, slug, plan, status)
+VALUES ('Uelfy Platform', '_platform', 'enterprise', 'active')
 ON CONFLICT (slug) DO NOTHING
 RETURNING id;
 ```
@@ -350,16 +350,25 @@ Talk to the customer. Capture: legal name, slug (URL-safe), plan
 tier, country. Then in Supabase SQL Editor:
 
 ```sql
-INSERT INTO tenants (name, slug, plan, status, country)
+INSERT INTO tenants (name, slug, plan, status)
 VALUES (
   'Studio Medico Esempio S.r.l.',
   'studio-medico-esempio',
   'professional',                    -- starter | professional | clinic | enterprise
-  'trial',                           -- promote to 'active' after billing setup
-  'IT'
+  'trial'                            -- promote to 'active' after billing setup
 )
 RETURNING id;
 ```
+
+> **Note on schema.** The current `tenants` schema (migration 001 +
+> 014) has these columns: `id`, `name`, `slug`, `plan`, `status`,
+> `logo_url`, `settings`, `max_professionals`, `max_patients`,
+> `created_at`, `updated_at`, plus the four `retention_days_*`
+> overrides added by 014. There is NO `country` column today —
+> jurisdiction is implicit from the EU-only deployment. If a
+> controller insists on a country tag for billing, store it under
+> `settings->>'country'` (JSONB) rather than adding a new column,
+> until a real product reason justifies a schema change.
 
 Capture the returned `id` as `:tenant_id`.
 

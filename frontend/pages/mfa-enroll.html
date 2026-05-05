@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="../assets/css/app.css" />
 </head>
 <body style="display:flex; align-items:center; justify-content:center; min-height:100vh;">
-  <main class="card" style="max-width:520px; width:100%;">
+  <main class="card" id="main-content" tabindex="-1" style="max-width:520px; width:100%;">
     <h1 id="page-title" style="margin-bottom:4px;">Two-factor authentication</h1>
     <p id="page-subtitle" class="muted" style="margin-top:0; margin-bottom:18px; font-size:13px;">
       Loading…
@@ -44,9 +44,12 @@
         <div id="qr-loading" class="muted">Generating enrolment QR…</div>
         <img id="qr-image" alt="TOTP QR code" style="max-width:220px; display:none;" />
       </div>
-      <details style="margin-bottom:12px;">
+      <details id="qr-manual" style="margin-bottom:12px;">
         <summary class="muted" style="cursor:pointer; font-size:13px;">Cannot scan? Enter the secret manually</summary>
+        <p class="muted" style="font-size:12px; margin:8px 0 4px;">Secret (Base32):</p>
         <pre id="qr-secret" style="background:#f4f4f4; padding:10px; border-radius:6px; font-size:12px; overflow-x:auto;"></pre>
+        <p class="muted" style="font-size:12px; margin:8px 0 4px;">Or paste this URI into your authenticator app's "manual" / "key URI" field:</p>
+        <pre id="qr-uri" style="background:#f4f4f4; padding:10px; border-radius:6px; font-size:11px; overflow-x:auto; word-break:break-all;"></pre>
       </details>
 
       <h2 style="font-size:16px; margin-bottom:10px;">Step 2 — Enter the 6-digit code</h2>

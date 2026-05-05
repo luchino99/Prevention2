@@ -15,6 +15,22 @@ import {
   ScoreResultEntry,
 } from '../../../../../shared/types/clinical.js';
 import { GUIDELINES } from '../guideline-catalog/index.js';
+import { logStructured, tagFromError } from '../../../observability/structured-log.js';
+
+/**
+ * Single emitter for all score-engine failures. Produces the canonical
+ * `SCORE_ENGINE_FAILURE` structured event consumed by Datadog / Vercel
+ * log drains. The event carries the score code (so a Datadog facet
+ * filter can pivot per-score) and an `errorTag` summary derived from
+ * the JS Error — never the raw error object (PHI / stack trace leak
+ * risk). See `30-RISK-REGISTER` C-02.
+ */
+function emitScoreFailure(scoreCode: string, error: unknown): void {
+  logStructured('error', 'SCORE_ENGINE_FAILURE', {
+    scoreCode,
+    errorTag: tagFromError(error) ?? 'unknown',
+  });
+}
 
 import { computeScore2 } from './score2.js';
 import { computeScore2Diabetes } from './score2-diabetes.js';
@@ -89,7 +105,7 @@ export function computeAllScores(input: AssessmentInput): ScoreResultEntry[] {
       rawPayload: bmiResult as unknown as Record<string, unknown>,
     });
   } catch (error) {
-    console.error('Error computing BMI:', error);
+    emitScoreFailure('BMI', error);
   }
 
   // =========================================================================
@@ -142,7 +158,7 @@ export function computeAllScores(input: AssessmentInput): ScoreResultEntry[] {
         // Defensive: eligibility passed but formula still threw (schema
         // drift, coefficient bug). Emit structured skip so the UI never
         // silently loses CV stratification.
-        console.error('Unexpected SCORE2 failure post-eligibility:', error);
+        emitScoreFailure('SCORE2', error);
         results.push(
           buildScore2SkipEntry(
             { eligible: false, skipReason: 'SCORE2_UNEXPECTED_ERROR', missingFields: [] },
@@ -202,7 +218,7 @@ export function computeAllScores(input: AssessmentInput): ScoreResultEntry[] {
           rawPayload: score2DmResult as unknown as Record<string, unknown>,
         });
       } catch (error) {
-        console.error('Unexpected SCORE2-Diabetes failure post-eligibility:', error);
+        emitScoreFailure('SCORE2_DIABETES', error);
         results.push(
           buildScore2DiabetesSkipEntry(
             {
@@ -336,7 +352,7 @@ export function computeAllScores(input: AssessmentInput): ScoreResultEntry[] {
           rawPayload: adaResult as unknown as Record<string, unknown>,
         });
       } catch (error) {
-        console.error('Error computing ADA:', error);
+        emitScoreFailure('ADA', error);
       }
     } else {
       // Known diabetic — emit glycemic-control entry if HbA1c / glucose
@@ -409,7 +425,7 @@ export function computeAllScores(input: AssessmentInput): ScoreResultEntry[] {
         rawPayload: fliResult as unknown as Record<string, unknown>,
       });
     } catch (error) {
-      console.error('Error computing FLI:', error);
+      emitScoreFailure('FLI', error);
     }
   }
 
@@ -429,7 +445,7 @@ export function computeAllScores(input: AssessmentInput): ScoreResultEntry[] {
         rawPayload: frailResult as unknown as Record<string, unknown>,
       });
     } catch (error) {
-      console.error('Error computing FRAIL:', error);
+      emitScoreFailure('FRAIL', error);
     }
   }
 
@@ -469,7 +485,7 @@ export function computeAllScores(input: AssessmentInput): ScoreResultEntry[] {
         rawPayload: metsResult as unknown as Record<string, unknown>,
       });
     } catch (error) {
-      console.error('Error computing Metabolic Syndrome:', error);
+      emitScoreFailure('METABOLIC_SYNDROME', error);
     }
   }
 
@@ -499,7 +515,7 @@ export function computeAllScores(input: AssessmentInput): ScoreResultEntry[] {
         rawPayload: fib4Result as unknown as Record<string, unknown>,
       });
     } catch (error) {
-      console.error('Error computing FIB-4:', error);
+      emitScoreFailure('FIB4', error);
     }
   }
 
@@ -531,7 +547,7 @@ export function computeAllScores(input: AssessmentInput): ScoreResultEntry[] {
         rawPayload: egfrResult as unknown as Record<string, unknown>,
       });
     } catch (error) {
-      console.error('Error computing eGFR:', error);
+      emitScoreFailure('EGFR', error);
     }
   } else if (input.labs.eGFR != null) {
     // Pass-through path: clinician supplied a direct eGFR value without
@@ -576,7 +592,7 @@ export function computeAllScores(input: AssessmentInput): ScoreResultEntry[] {
         rawPayload: { egfr, stage, category },
       });
     } catch (error) {
-      console.error('Error staging clinician-supplied eGFR:', error);
+      emitScoreFailure('EGFR_STAGE', error);
     }
   }
 
@@ -621,7 +637,7 @@ export function computeAllScores(input: AssessmentInput): ScoreResultEntry[] {
         },
       });
     } catch (error) {
-      console.error('Error computing PREDIMED:', error);
+      emitScoreFailure('PREDIMED', error);
     }
   }
 

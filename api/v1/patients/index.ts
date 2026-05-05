@@ -19,10 +19,24 @@ import { createPatientSchema, getPatientDisplayName } from '../../../shared/sche
 import { replyDbError, replyValidationError, replyError } from '../../../backend/src/middleware/http-errors.js';
 import { logStructured } from '../../../backend/src/observability/structured-log.js';
 
+/**
+ * Search input is interpolated into a PostgREST `or(...)` filter via
+ * the supabase-js client. Audit S-02 (Tier-5) flagged a predicate
+ * injection risk: a value containing `,`, `)`, `(`, `*` or `:` could
+ * compose extra filters within the same OR. We restrict to a Unicode-
+ * aware whitelist of human-name characters: letters (incl. accented),
+ * digits, spaces, hyphen, apostrophe, dot, underscore. This rejects
+ * any character that has special meaning in PostgREST filter syntax
+ * while still accepting the names tenants will realistically search
+ * for (Italian, Spanish, German, Polish, ASCII).
+ */
+const SEARCH_WHITELIST_RE = /^[\p{L}\p{M}\p{N}\s\-'.·]{1,100}$/u;
+
 const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
-  search: z.string().max(100).optional(),
+  search: z.string().max(100).regex(SEARCH_WHITELIST_RE,
+    'Search may contain only letters, digits, spaces and basic punctuation').optional(),
 });
 
 async function handleList(req: any, res: VercelResponse): Promise<void> {

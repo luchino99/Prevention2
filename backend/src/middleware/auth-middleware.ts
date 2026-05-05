@@ -54,14 +54,19 @@ function extractToken(req: VercelRequest): string | null {
 }
 
 /**
- * Decode a JWT payload WITHOUT verifying the signature. We rely on
- * Supabase Auth (`supabaseAdmin.auth.getUser(token)`) for the actual
- * cryptographic validation; this helper is purely for reading
- * non-security-critical claims like `aal` (Authentication Assurance
- * Level — `aal1` = single-factor / password only, `aal2` = MFA
- * verified second factor). Returns null on any parse failure.
+ * Decode a JWT payload AFTER signature verification has already been
+ * performed by the upstream `getUser(token)` call (which is GoTrue's
+ * cryptographic boundary). This helper exists only to read claims
+ * that the supabase-js SDK does not surface as first-class fields on
+ * the User object — at the moment that is `aal` (Authentication
+ * Assurance Level: `aal1` = password-only, `aal2` = MFA-verified).
+ *
+ * Audit S-03 (Tier-5): renamed from `decodeJwtPayloadUnsafe` because
+ * the previous name suggested every decode was risky. The danger is
+ * decoding BEFORE verification — which we never do. Calling this
+ * helper without a paired `getUser` is a violation of the contract.
  */
-function decodeJwtPayloadUnsafe(token: string): Record<string, unknown> | null {
+function decodeJwtPayloadAfterVerification(token: string): Record<string, unknown> | null {
   try {
     const parts = token.split('.');
     if (parts.length !== 3) return null;
@@ -126,8 +131,13 @@ function envFlagOn(name: string): boolean {
  * Returns the env-flag NAME that gated the decision (for audit /
  * ACCESS_DENIED metadata) when the answer is "yes", or null when MFA
  * is not required for this role.
+ *
+ * Exported for direct unit testing (`tests/unit/mfa-matrix.test.ts`).
+ * Production callers should not invoke this directly — they go through
+ * `validateAccessToken` which composes role lookup + flag decision +
+ * AAL claim verification atomically.
  */
-function requiredMfaFlagForRole(role: UserRole): string | null {
+export function requiredMfaFlagForRole(role: UserRole): string | null {
   if (role === 'platform_admin' || role === 'tenant_admin') {
     return envFlagOn('MFA_ENFORCEMENT_ENABLED') ? 'MFA_ENFORCEMENT_ENABLED' : null;
   }
@@ -246,7 +256,8 @@ export async function validateAccessToken(
   // can still complete setup even when the flag is on.
   const mfaFlag = requiredMfaFlagForRole(role);
   if (mfaFlag) {
-    const claims = decodeJwtPayloadUnsafe(token);
+    // SAFE: getUser(token) at line 161 already verified the signature.
+    const claims = decodeJwtPayloadAfterVerification(token);
     const aal = typeof claims?.aal === 'string' ? claims.aal : null;
     if (aal !== 'aal2') {
       throw new AuthError(

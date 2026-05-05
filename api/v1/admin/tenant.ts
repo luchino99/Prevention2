@@ -67,6 +67,8 @@ const patchBodySchema = z.object({
   retentionDaysAnonymizeGrace:  z.number().int().min(0).max(365).nullable().optional(),
   retentionDaysAlertsResolved:  z.number().int().min(7).max(1825).nullable().optional(),
   retentionDaysNotifications:   z.number().int().min(7).max(365).nullable().optional(),
+  // G-01 (Tier 5 — migration 017): per-tenant report_exports retention.
+  retentionDaysReports:         z.number().int().min(90).max(3650).nullable().optional(),
 }).refine((v) => Object.values(v).some((x) => x !== undefined), {
   message: 'PATCH body must include at least one retention field',
 });
@@ -120,7 +122,7 @@ function resolveTargetTenantId(req: AuthenticatedRequest): { tenantId: string | 
 }
 
 const TENANT_SELECT =
-  'id, name, slug, plan, status, retention_days_audit, retention_days_anonymize_grace, retention_days_alerts_resolved, retention_days_notifications, created_at, updated_at';
+  'id, name, slug, plan, status, retention_days_audit, retention_days_anonymize_grace, retention_days_alerts_resolved, retention_days_notifications, retention_days_reports, created_at, updated_at';
 
 /* ----------------------------------------------------------------------- GET */
 
@@ -192,6 +194,7 @@ async function handlePatch(req: AuthenticatedRequest, res: VercelResponse): Prom
   if (v.retentionDaysAnonymizeGrace !== undefined) update.retention_days_anonymize_grace  = v.retentionDaysAnonymizeGrace;
   if (v.retentionDaysAlertsResolved !== undefined) update.retention_days_alerts_resolved  = v.retentionDaysAlertsResolved;
   if (v.retentionDaysNotifications !== undefined)  update.retention_days_notifications    = v.retentionDaysNotifications;
+  if (v.retentionDaysReports !== undefined)        update.retention_days_reports          = v.retentionDaysReports;
   update.updated_at = new Date().toISOString();
 
   const { data, error } = await supabaseAdmin
@@ -225,6 +228,7 @@ async function handlePatch(req: AuthenticatedRequest, res: VercelResponse): Prom
         retention_days_anonymize_grace:  data.retention_days_anonymize_grace,
         retention_days_alerts_resolved:  data.retention_days_alerts_resolved,
         retention_days_notifications:    data.retention_days_notifications,
+        retention_days_reports:          data.retention_days_reports,
       },
     });
   } catch (auditErr) {

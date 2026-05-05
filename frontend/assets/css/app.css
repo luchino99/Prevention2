@@ -1566,6 +1566,37 @@ code, pre, .mono {
   border: 0;
 }
 
+/* Skip-link — first focusable element on every page. WCAG 2.1 SC 2.4.1.
+   Off-screen until focused, then visible at top-left with strong
+   contrast so keyboard users can jump past nav into the main region. */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--c-primary, #0E5C7B);
+  color: #fff;
+  padding: 8px 16px;
+  z-index: 9999;
+  text-decoration: none;
+  font-weight: 600;
+  border-radius: 0 0 4px 0;
+}
+.skip-link:focus,
+.skip-link:focus-visible {
+  top: 0;
+  outline: 3px solid #ffd54f;
+  outline-offset: 2px;
+}
+
+/* Universal :focus-visible enhancement — every interactive element gets
+   a visible 3px ring with WCAG ≥3:1 contrast. Browsers default focus
+   outlines are inconsistent and often invisible against our palette. */
+:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
 /* Respect user motion preferences. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

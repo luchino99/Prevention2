@@ -53,6 +53,8 @@ const REQUIRED_FILES = [
   'pages/dashboard.html',
   'pages/patient-detail.html',
   'pages/assessment-new.html',
+  // G-03 (Tier 5) — public privacy notice required by login footer.
+  'pages/legal-privacy.html',
   'assets/js/public-config.js',
   'assets/vendor/supabase-js.esm.js',
   // RFC 9116 (M-04) — security.txt + the human-readable policy must

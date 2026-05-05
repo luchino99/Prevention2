@@ -1285,12 +1285,12 @@ export async function deleteAssessment(
       .remove(storagePaths);
     if (removeErr) {
       // Don't rollback — DB is source of truth. Surface the orphans so
-      // ops can sweep them from a cron.
-      // eslint-disable-next-line no-console
-      console.error(
-        '[deleteAssessment] storage.remove failed — DB delete will still proceed',
-        removeErr,
-      );
+      // ops can sweep them from a cron. C-02: structured emit.
+      logStructured('error', 'STORAGE_OPERATION_FAILED', {
+        op: 'delete_assessment_storage_remove',
+        path_count: storagePaths.length,
+        errorTag: tagFromError(removeErr) ?? 'unknown',
+      });
       orphaned.push(...storagePaths);
     } else {
       removed = Array.isArray(removedData) ? removedData.length : storagePaths.length;
