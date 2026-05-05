@@ -1,0 +1,615 @@
+/**
+ * assessment-view.js — page logic for assessment-view.html
+ *
+ * Extracted from the inline <script type="module"> block by
+ * scripts/extract-inline-scripts.mjs to satisfy the strict CSP
+ * (script-src 'self') declared in vercel.json. Loaded by the page
+ * via <script type="module" src="./assessment-view.js"></script>.
+ *
+ * Depends on window.__UELFY_CONFIG__ being populated by
+ * assets/js/public-config.js, which the page MUST include with a
+ * non-module <script> tag BEFORE this module.
+ */
+
+import { api, requireAuth } from '../assets/js/api-client.js';
+import {
+  mountNavHeader,
+  resolveAssessmentNeighbours,
+  computeAgeFromBirthDate,
+} from '../components/nav-header.js';
+
+await requireAuth();
+
+const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+})[c]);
+
+const params = new URLSearchParams(window.location.search);
+const assessmentId = params.get('id');
+if (!assessmentId || !/^[0-9a-fA-F-]{36}$/.test(assessmentId)) {
+  document.body.innerHTML = '<main class="app-main"><div class="inline-alert danger">Invalid assessment id.</div></main>';
+  throw new Error('invalid id');
+}
+
+/**
+ * Shared state for the nav-header renderer. Populated progressively
+ * as `load()` completes (assessment snapshot first, patient + sibling
+ * list second) so the breadcrumb appears immediately and the patient
+ * chip + prev/next chips fill in without a flash.
+ */
+const navState = {
+  patient: null,              // resolved patient row
+  assessment: null,           // { id, createdAt }
+  prevAssessmentId: null,
+  nextAssessmentId: null,
+  compositeRiskLevel: null,   // this assessment's composite risk
+};
+function renderNavHeader() {
+  const mount = document.getElementById('nav-header-mount');
+  if (!mount) return;
+  const p = navState.patient;
+  const pid = p?.id || null;
+  const chipRef = p?.external_code || (pid ? pid.slice(0, 8) : '—');
+  const crumbs = [
+    { label: 'Dashboard', href: './dashboard.html' },
+    { label: 'Patients',  href: './patients.html' },
+  ];
+  if (pid) {
+    crumbs.push({
+      label: chipRef,
+      href: `./patient-detail.html?id=${encodeURIComponent(pid)}`,
+    });
+  }
+  const dateLabel = navState.assessment?.createdAt
+    ? new Date(navState.assessment.createdAt).toLocaleDateString(undefined, {
+        year: 'numeric', month: 'short', day: '2-digit',
+      })
+    : 'Assessment';
+  crumbs.push({ label: dateLabel });
+
+  const backHref = pid
+    ? `./patient-detail.html?id=${encodeURIComponent(pid)}`
+    : './patients.html';
+
+  mountNavHeader({
+    container: mount,
+    crumbs,
+    backHref,
+    backLabel: 'Back to patient',
+    assessment: navState.assessment,
+    prevAssessmentId: navState.prevAssessmentId,
+    nextAssessmentId: navState.nextAssessmentId,
+    patient: pid ? {
+      id: pid,
+      displayName:
+        p?.display_name ||
+        [p?.first_name, p?.last_name].filter(Boolean).join(' ') ||
+        '—',
+      externalCode: p?.external_code || null,
+      riskLevel: navState.compositeRiskLevel,
+      sex: p?.sex || null,
+      age: computeAgeFromBirthDate(p?.birth_date ?? p?.birth_year),
+    } : null,
+  });
+}
+// Paint an empty skeleton nav immediately so layout doesn't shift.
+renderNavHeader();
+
+const errorBanner = document.getElementById('error-banner');
+const reportBanner = document.getElementById('report-banner');
+
+function showError(msg) {
+  errorBanner.textContent = msg;
+  errorBanner.classList.remove('hidden');
+}
+function showReportInfo(msg, kind = 'success') {
+  reportBanner.className = `inline-alert ${kind}`;
+  reportBanner.innerHTML = msg;
+}
+
+// Captured for client-side role gating (see delete-btn visibility).
+// Server-side authorization is the source of truth; this only hides
+// affordances from users who would be rejected anyway.
+let currentUser = null;
+try {
+  const { user } = await api.me();
+  currentUser = user;
+  if (user.role === 'tenant_admin' || user.role === 'platform_admin') {
+    document.getElementById('nav-audit').classList.remove('hidden');
+  }
+} catch (e) { console.error(e); }
+
+function riskBadge(level) {
+  if (!level) return '<span class="muted">—</span>';
+  return `<span class="badge ${escapeHtml(level)}">${escapeHtml(level)}</span>`;
+}
+
+// ────────────────────────────────────────────────────────────────────
+// Guideline rendering (WS6)
+//
+// The server now projects each followup item / screening / lifestyle
+// recommendation through the shared catalog (see
+// `backend/src/domain/clinical/guideline-catalog/`) and attaches an
+// optional structured `guideline: PublicGuidelineRef` next to the
+// legacy `guidelineSource` string. The UI shows the raw string
+// verbatim (so nothing regresses for off-catalog legacy rows) and —
+// when the structured payload is present — augments it with an
+// evidence-level chip and an external link.
+//
+// This helper never throws and never produces an unescaped URL.
+// ────────────────────────────────────────────────────────────────────
+function formatEvidenceLabel(level) {
+  if (!level) return '';
+  if (level === 'A' || level === 'B' || level === 'C') return `Evidence ${level}`;
+  if (level === 'consensus') return 'Consensus';
+  if (level === 'policy') return 'Internal policy';
+  return String(level);
+}
+
+function guidelineCellHtml(item) {
+  const g = item?.guideline;
+  const raw = item?.guidelineSource ?? '';
+  const baseLabel = raw ? escapeHtml(String(raw)) : '';
+  if (g && typeof g === 'object') {
+    const ev = formatEvidenceLabel(g.evidenceLevel);
+    const titleAttr = g.title ? ` title="${escapeHtml(g.title)}"` : '';
+    const evChip = ev
+      ? `<span class="badge muted" style="margin-left:6px;"${titleAttr}>${escapeHtml(ev)}</span>`
+      : '';
+    const link = g.url
+      ? ` <a href="${escapeHtml(g.url)}" target="_blank" rel="noopener" style="font-size:0.85em;">link ↗</a>`
+      : '';
+    return `${baseLabel}${evChip}${link}`;
+  }
+  return baseLabel;
+}
+
+function guidelineSourceLineHtml(item) {
+  const inner = guidelineCellHtml(item);
+  if (!inner) return '';
+  return `<div class="muted mt-4" style="font-size:0.8em;">Source: ${inner}</div>`;
+}
+
+function renderComposite(c) {
+  const cells = [
+    ['Overall',         c.level,                  c.numeric != null ? `score ${c.numeric.toFixed(2)}` : ''],
+    ['Cardiovascular',  c.cardiovascular?.level,  c.cardiovascular?.reasoning],
+    ['Metabolic',       c.metabolic?.level,       c.metabolic?.reasoning],
+    ['Hepatic',         c.hepatic?.level,         c.hepatic?.reasoning],
+    ['Renal',           c.renal?.level,           c.renal?.reasoning],
+    ['Frailty',         c.frailty?.level ?? null, c.frailty?.reasoning ?? '—'],
+  ];
+  document.getElementById('composite-grid').innerHTML = cells.map(([label, level, reason]) => `
+    <div>
+      <div class="kpi-label">${escapeHtml(label)}</div>
+      <div style="margin:4px 0;">${riskBadge(level)}</div>
+      <div class="muted" style="font-size:12px;">${escapeHtml(reason ?? '')}</div>
+    </div>
+  `).join('');
+}
+
+function renderScores(scores) {
+  const wrap = document.getElementById('scores-wrap');
+  if (!scores?.length) { wrap.innerHTML = `<p class="muted">No score results.</p>`; return; }
+  wrap.innerHTML = `
+    <table class="table">
+      <thead><tr><th>Score</th><th>Value</th><th>Category</th><th>Label</th></tr></thead>
+      <tbody>
+        ${scores.map((s) => `
+          <tr>
+            <td class="mono">${escapeHtml(s.scoreCode)}</td>
+            <td>${s.valueNumeric != null ? escapeHtml(String(s.valueNumeric)) : '<span class="muted">—</span>'}</td>
+            <td>${escapeHtml(s.category ?? '—')}</td>
+            <td>${escapeHtml(s.label ?? '—')}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function renderFollowup(p) {
+  if (!p) { document.getElementById('followup-wrap').innerHTML = `<p class="muted">No follow-up plan.</p>`; return; }
+  const items = Array.isArray(p.items) ? p.items : [];
+  const itemsHtml = items.length ? `
+    <div class="mt-16">
+      <div class="kpi-label">Structured follow-up items</div>
+      <table class="table">
+        <thead><tr><th>Item</th><th>Priority</th><th>Due (months)</th><th>Rationale</th><th>Guideline</th></tr></thead>
+        <tbody>
+          ${items.map((it) => `
+            <tr>
+              <td>${escapeHtml(it.title ?? it.code ?? '—')}</td>
+              <td>${riskBadge(it.priority)}</td>
+              <td>${escapeHtml(String(it.dueInMonths))}</td>
+              <td class="muted">${escapeHtml(it.rationale ?? '')}</td>
+              <td class="muted">${guidelineCellHtml(it)}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>` : '';
+  document.getElementById('followup-wrap').innerHTML = `
+    <div class="grid three">
+      <div><div class="kpi-label">Priority</div>${riskBadge(p.priorityLevel)}</div>
+      <div><div class="kpi-label">Interval</div><div>${escapeHtml(String(p.intervalMonths))} months</div></div>
+      <div><div class="kpi-label">Next review</div><div>${escapeHtml(p.nextReviewDate ?? '—')}</div></div>
+    </div>
+    <div class="mt-16">
+      <div class="kpi-label">Actions</div>
+      <ul class="list-plain">${(p.actions ?? []).map((a) => `<li>${escapeHtml(a)}</li>`).join('') || '<li class="muted">—</li>'}</ul>
+    </div>
+    <div class="mt-16">
+      <div class="kpi-label">Domain monitoring</div>
+      <div>${(p.domainMonitoring ?? []).map((d) => `<span class="badge muted" style="margin-right:6px;">${escapeHtml(d)}</span>`).join('') || '<span class="muted">—</span>'}</div>
+    </div>
+    ${itemsHtml}`;
+}
+
+function renderScreenings(items) {
+  const wrap = document.getElementById('screenings-wrap');
+  if (!items?.length) { wrap.innerHTML = `<p class="muted">No specific screenings recommended.</p>`; return; }
+  wrap.innerHTML = `
+    <table class="table">
+      <thead><tr><th>Screening</th><th>Priority</th><th>Interval</th><th>Reason</th><th>Guideline</th></tr></thead>
+      <tbody>
+        ${items.map((s) => `
+          <tr>
+            <td>${escapeHtml(s.screening)}</td>
+            <td>${riskBadge(s.priority)}</td>
+            <td>${escapeHtml(String(s.intervalMonths))} months</td>
+            <td class="muted">${escapeHtml(s.reason ?? '—')}</td>
+            <td class="muted">${guidelineCellHtml(s)}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function renderLifestyle(nutri, act) {
+  // Activity block surfaces the full WS5 MET projection (moderate +
+  // vigorous split, MET-min/week against the WHO ≥600 target, and
+  // sedentary hours/day with the ESC 2021 ≥8 h/day cutoff). The
+  // legacy aggregate `minutesPerWeek` is still rendered so clinicians
+  // used to the previous UI have a continuous reference point.
+  const fmt = (v) => (typeof v === 'number' && Number.isFinite(v) ? String(Math.round(v)) : null);
+  const fmtOne = (v) => (typeof v === 'number' && Number.isFinite(v) ? v.toFixed(1) : null);
+  const WHO_MET_TARGET = 600;
+
+  const mod = fmt(act?.moderateMinutesPerWeek);
+  const vig = fmt(act?.vigorousMinutesPerWeek);
+  const totalMin = fmt(act?.minutesPerWeek);
+  const metMin = fmt(act?.metMinutesPerWeek);
+  const sedHours = fmtOne(act?.sedentaryHoursPerDay);
+
+  const metPctOfTarget =
+    typeof act?.metMinutesPerWeek === 'number' && Number.isFinite(act.metMinutesPerWeek)
+      ? Math.round((act.metMinutesPerWeek / WHO_MET_TARGET) * 100)
+      : null;
+  const metBadge = metPctOfTarget === null
+    ? '<span class="muted">—</span>'
+    : `<span class="badge ${metPctOfTarget >= 100 ? 'ok' : metPctOfTarget >= 50 ? 'warning' : 'danger'}">${metPctOfTarget}% of WHO target</span>`;
+
+  document.getElementById('lifestyle-wrap').innerHTML = `
+    <div>
+      <h4 style="margin:0 0 8px;">Nutrition</h4>
+      <div><span class="kpi-label">PREDIMED:</span> ${nutri?.predimedScore != null ? escapeHtml(String(nutri.predimedScore)) + ' / 14' : '<span class="muted">—</span>'}</div>
+      <div><span class="kpi-label">Adherence:</span> ${escapeHtml(nutri?.adherenceBand ?? '—')}</div>
+      <div><span class="kpi-label">BMR:</span> ${escapeHtml(String(Math.round(nutri?.bmrKcal ?? 0)))} kcal</div>
+      <div><span class="kpi-label">TDEE:</span> ${escapeHtml(String(Math.round(nutri?.tdeeKcal ?? 0)))} kcal</div>
+    </div>
+    <div>
+      <h4 style="margin:0 0 8px;">Activity (WHO / GPAQ)</h4>
+      <div><span class="kpi-label">Moderate:</span> ${mod !== null ? escapeHtml(mod) + ' min/week' : '<span class="muted">—</span>'}</div>
+      <div><span class="kpi-label">Vigorous:</span> ${vig !== null ? escapeHtml(vig) + ' min/week' : '<span class="muted">—</span>'}</div>
+      <div><span class="kpi-label">Total:</span> ${totalMin !== null ? escapeHtml(totalMin) + ' min/week' : '<span class="muted">—</span>'}</div>
+      <div><span class="kpi-label">MET-min/week:</span> ${metMin !== null ? escapeHtml(metMin) : '<span class="muted">—</span>'} ${metBadge}</div>
+      <div><span class="kpi-label">Qualitative band:</span> ${escapeHtml(act?.qualitativeBand ?? '—')}</div>
+      <div><span class="kpi-label">Meets WHO (≥600 MET-min):</span> ${act?.meetsWhoGuidelines ? '<span class="badge ok">yes</span>' : '<span class="badge muted">no</span>'}</div>
+      <div><span class="kpi-label">Sedentary:</span> ${sedHours !== null ? escapeHtml(sedHours) + ' h/day' : '<span class="muted">—</span>'} ${riskBadge(act?.sedentaryRiskLevel)}</div>
+    </div>`;
+}
+
+/**
+ * Lifestyle recommendations (WS6). Supportive-only — rendered as a
+ * dedicated section so clinicians can triage them independently of
+ * the deterministic follow-up/screening items. Every entry carries
+ * `authority: 'supportive'`; the UI labels this explicitly so the
+ * reader never confuses these with prescriptions.
+ */
+function recPriorityBadge(priority) {
+  const label = priority ?? 'routine';
+  const cls = label === 'urgent' ? 'danger'
+    : label === 'moderate' ? 'warning'
+    : 'ok';
+  return `<span class="badge ${cls}">${escapeHtml(label)}</span>`;
+}
+
+function renderLifestyleRecommendations(recs) {
+  const card = document.getElementById('lifestyle-recs-card');
+  const wrap = document.getElementById('lifestyle-recs-wrap');
+  if (!Array.isArray(recs) || recs.length === 0) {
+    card.style.display = 'none';
+    wrap.innerHTML = '';
+    return;
+  }
+  card.style.display = '';
+  // Order: urgent → moderate → routine. Stable within the same
+  // priority so the persisted, deterministic emission order is
+  // preserved.
+  const rank = (p) => (p === 'urgent' ? 0 : p === 'moderate' ? 1 : 2);
+  const ordered = [...recs].sort((a, b) => rank(a.priority) - rank(b.priority));
+  wrap.innerHTML = `
+    <ul class="list-plain">
+      ${ordered.map((r) => `
+        <li class="mt-8" style="padding:10px 12px;border:1px solid #e5e7eb;border-radius:6px;background:#fff;">
+          <div class="flex between" style="align-items:flex-start;gap:8px;">
+            <div>
+              <strong>${escapeHtml(r.title ?? r.code ?? 'Recommendation')}</strong>
+              <span class="badge muted" style="margin-left:6px;">${escapeHtml(r.domain ?? '—')}</span>
+              <span class="badge muted" style="margin-left:6px;" title="Non-prescriptive counselling nudge">supportive</span>
+              <div class="muted mt-4" style="font-size:0.92em;">${escapeHtml(r.rationale ?? '')}</div>
+              ${guidelineSourceLineHtml(r)}
+            </div>
+            <div style="white-space:nowrap;">${recPriorityBadge(r.priority)}</div>
+          </div>
+        </li>`).join('')}
+    </ul>`;
+}
+
+function renderCompleteness(warnings) {
+  const card = document.getElementById('completeness-card');
+  const wrap = document.getElementById('completeness-wrap');
+  if (!warnings?.length) {
+    card.style.display = 'none';
+    wrap.innerHTML = '';
+    return;
+  }
+  card.style.display = '';
+  wrap.innerHTML = warnings.map((w) => `
+    <li class="${escapeHtml(w.severity ?? 'info')}">
+      <span class="cw-title">${escapeHtml(w.title)}</span>
+      <span class="muted" style="font-size:12px;"> · ${escapeHtml(w.code)}</span>
+      <div class="muted" style="font-size:13px; margin-top:2px;">${escapeHtml(w.detail ?? '')}</div>
+      <span class="cw-action"><strong>Suggested action:</strong> ${escapeHtml(w.suggestedAction ?? '—')}</span>
+      ${Array.isArray(w.missingFields) && w.missingFields.length
+        ? `<span class="cw-fields">Missing: ${w.missingFields.map((f) => `<code>${escapeHtml(f)}</code>`).join(', ')}</span>`
+        : ''}
+    </li>
+  `).join('');
+}
+
+function renderAlerts(alerts) {
+  const wrap = document.getElementById('alerts-wrap');
+  if (!alerts?.length) { wrap.innerHTML = `<p class="muted">No alerts triggered by this assessment.</p>`; return; }
+  wrap.innerHTML = `
+    <ul class="list-plain">
+      ${alerts.map((a) => `
+        <li>
+          <span class="badge ${escapeHtml(a.severity)}">${escapeHtml(a.severity)}</span>
+          <strong>${escapeHtml(a.title)}</strong>
+          <span class="muted"> · ${escapeHtml(a.message)}</span>
+          <div class="muted mt-8">${escapeHtml(new Date(a.timestamp).toLocaleString())}</div>
+        </li>
+      `).join('')}
+    </ul>`;
+}
+
+let cachedPatientId = null;
+
+async function load() {
+  try {
+    const { snapshot } = await api.getAssessment(assessmentId);
+    cachedPatientId = snapshot?.assessment?.patientId ?? null;
+
+    // Feed the nav-header with everything we can derive from the
+    // snapshot synchronously — createdAt for the breadcrumb date and
+    // the composite risk level for the chip's dot.
+    navState.assessment = {
+      id: snapshot.assessment.id,
+      createdAt: snapshot.assessment.createdAt,
+    };
+    navState.compositeRiskLevel = snapshot?.compositeRisk?.level ?? null;
+    renderNavHeader();
+
+    document.getElementById('page-title').textContent =
+      `Assessment · ${new Date(snapshot.assessment.createdAt).toLocaleDateString()}`;
+    document.getElementById('page-subline').textContent =
+      `${snapshot.assessment.status ?? '—'} · id ${snapshot.assessment.id.substring(0, 8)}…`;
+
+    renderComposite(snapshot.compositeRisk);
+    renderCompleteness(snapshot.completenessWarnings || []);
+    renderScores(snapshot.scoreResults);
+    renderFollowup(snapshot.followupPlan);
+    renderScreenings(snapshot.screenings);
+    renderLifestyle(snapshot.nutritionSummary, snapshot.activitySummary);
+    renderLifestyleRecommendations(snapshot.lifestyleRecommendations || []);
+    renderAlerts(snapshot.alerts);
+
+    // Non-fatal enrichment: fetch patient + sibling assessments in
+    // parallel so the chip and the prev/next chips appear as soon
+    // as available. Any failure here must not break the snapshot
+    // render above.
+    //
+    // ISSUE 1 fix — prev/next navigation binding
+    // ------------------------------------------
+    // The sibling-list response envelope has varied over time:
+    // legacy pages returned `{ assessments: [...] }`, newer paginated
+    // endpoints return `{ items: [...] }`, and callers that wrap
+    // deeper may ship a bare array. We normalise all three shapes
+    // here so the chips render correctly regardless of which route
+    // is eventually bound. We also always call `renderNavHeader`
+    // once the promises settle, even if both fetches rejected — so
+    // the skeleton chips never stay stuck in their initial state.
+    if (cachedPatientId) {
+      Promise.allSettled([
+        api.getPatient(cachedPatientId),
+        api.listAssessments(cachedPatientId, { page: 1, pageSize: 100 }),
+      ]).then(([patientResult, listResult]) => {
+        if (patientResult.status === 'fulfilled') {
+          navState.patient = patientResult.value?.patient ?? null;
+        }
+        if (listResult.status === 'fulfilled') {
+          const v = listResult.value;
+          const list = Array.isArray(v)
+            ? v
+            : Array.isArray(v?.assessments)
+              ? v.assessments
+              : Array.isArray(v?.items)
+                ? v.items
+                : [];
+          const neighbours = resolveAssessmentNeighbours(
+            list
+              .filter((a) => a && a.id)
+              .map((a) => ({
+                id: a.id,
+                createdAt:
+                  a.assessmentDate || a.createdAt || a.created_at || a.completedAt,
+              })),
+            assessmentId,
+          );
+          navState.prevAssessmentId = neighbours.prev;
+          navState.nextAssessmentId = neighbours.next;
+        }
+        // Always re-render after settlement so the chips reflect the
+        // resolved (or empty) neighbour state. Idempotent call.
+        renderNavHeader();
+      }).catch(() => {
+        // Re-render defensively even on catch — mountNavHeader is
+        // idempotent and returns quickly.
+        renderNavHeader();
+      });
+    }
+
+    // If a report already exists, fetch its signed URL non-fatally.
+    try {
+      const existing = await api.getReportUrl(assessmentId);
+      if (existing?.signedUrl) {
+        showReportInfo(
+          `A report has already been generated. <a href="${existing.signedUrl}" target="_blank" rel="noopener">Open PDF</a>.`,
+          'success',
+        );
+      }
+    } catch (_) { /* no existing report yet */ }
+  } catch (e) {
+    showError(`Assessment load failed: ${e.message}`);
+  }
+}
+
+document.getElementById('report-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('report-btn');
+  btn.disabled = true;
+  btn.textContent = 'Generating…';
+  try {
+    const resp = await api.generateReport(assessmentId);
+    const url = resp?.signedUrl || resp?.url;
+    if (url) {
+      showReportInfo(
+        `Report generated. <a href="${url}" target="_blank" rel="noopener">Open PDF</a>.`,
+        'success',
+      );
+    } else {
+      showReportInfo('Report generated. Refresh to retrieve the signed URL.', 'success');
+    }
+  } catch (e) {
+    showError(`Report generation failed: ${e.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Generate PDF report';
+  }
+});
+
+document.getElementById('signout-link').addEventListener('click', async (e) => {
+  e.preventDefault();
+  await api.signOut();
+  window.location.href = './login.html';
+});
+
+// ────────────────────────────────────────────────────────────────────
+// Delete assessment (REFINE-4)
+//
+// Standard one-click + confirm modal. No typed short-id; the previous
+// typed gate was deemed friction without commensurate safety value
+// because:
+//   - Server-side authorization (deleteAssessment in
+//     backend/src/services/assessment-service.ts) restricts the
+//     operation to: platform_admin, the tenant_admin owning the
+//     row, OR the authoring clinician.
+//   - The action is fully audited (`assessment.delete` event) with
+//     actor, tenant, patient, assessment id, IP, user-agent.
+//   - Recovery via DB backups is operationally available.
+// We bias the modal toward the safe action by focusing Cancel by
+// default and treating Escape / backdrop click as cancel.
+// ────────────────────────────────────────────────────────────────────
+const deleteBtn = document.getElementById('delete-btn');
+const deleteModal = document.getElementById('delete-modal');
+const deleteCancel = document.getElementById('delete-cancel-btn');
+const deleteConfirm = document.getElementById('delete-confirm-btn');
+
+function openDeleteModal() {
+  deleteConfirm.disabled = false;
+  deleteCancel.disabled = false;
+  deleteConfirm.textContent = 'Confirm Delete';
+  deleteModal.classList.remove('hidden');
+  // Default focus to the SAFE button (Cancel) — pressing Enter does
+  // not destroy data. The clinician must take a deliberate action
+  // (Tab → Enter, or click) to confirm.
+  setTimeout(() => deleteCancel.focus(), 0);
+}
+function closeDeleteModal() {
+  deleteModal.classList.add('hidden');
+}
+deleteCancel.addEventListener('click', (e) => {
+  e.preventDefault();
+  closeDeleteModal();
+});
+// Backdrop click cancels — only when the click actually lands on the
+// backdrop itself, not the card it contains.
+deleteModal.addEventListener('click', (e) => {
+  if (e.target === deleteModal) closeDeleteModal();
+});
+// Escape cancels.
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !deleteModal.classList.contains('hidden')) {
+    closeDeleteModal();
+  }
+});
+
+deleteBtn.addEventListener('click', (e) => {
+  e.preventDefault();
+  openDeleteModal();
+});
+
+deleteConfirm.addEventListener('click', async (e) => {
+  e.preventDefault();
+  if (deleteConfirm.disabled) return;
+  // Lock the entire interaction surface while the network request is
+  // in flight, so a double-click does not fire two DELETE requests
+  // (the second would 404 because the row is already gone, but it
+  // would still pollute the audit trail with a noisy error event).
+  deleteConfirm.disabled = true;
+  deleteCancel.disabled = true;
+  deleteBtn.disabled = true;
+  deleteConfirm.textContent = 'Deleting…';
+  try {
+    await api.deleteAssessment(assessmentId);
+    // Navigate back to the patient page — all data on that page is
+    // server-driven (charts, due items, alerts, latest-snapshot),
+    // so the removed assessment disappears on the next render.
+    // The `?deleted=1` flag lets patient-detail.html surface a
+    // brief confirmation toast and then strip the param.
+    const dest = cachedPatientId
+      ? `./patient-detail.html?id=${encodeURIComponent(cachedPatientId)}&deleted=1`
+      : './patients.html';
+    window.location.href = dest;
+  } catch (err) {
+    // Restore the interaction surface and surface the error verbatim
+    // so the clinician can decide whether to retry. We close the
+    // modal so the inline-alert is visible — keeping the modal
+    // open would obscure it.
+    deleteConfirm.textContent = 'Confirm Delete';
+    deleteConfirm.disabled = false;
+    deleteCancel.disabled = false;
+    deleteBtn.disabled = false;
+    showError(`Delete failed: ${err.message}`);
+    closeDeleteModal();
+  }
+});
+
+load();
