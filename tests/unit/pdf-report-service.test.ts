@@ -366,9 +366,23 @@ describe('renderAssessmentReportPdf — visual regression (M-07)', () => {
     // which is always plain ASCII and is the most reliable
     // structural fingerprint.
     //
-    // pdf-lib overrides /Producer at serialisation time, so we do not
-    // use Producer as an identity claim — Creator / Title / Author /
-    // Subject / Keywords are all writable and ARE asserted.
+    // pdf-lib v1.17.1 write-once / write-never matrix:
+    //   - Title, Creator, Author, Subject, Keywords  → writable, persist
+    //   - CreationDate                               → writable, persists
+    //   - ModificationDate                           → REWRITTEN by `.save()`
+    //   - Producer                                   → REWRITTEN by `.save()`
+    //
+    // Therefore the deterministic-timestamp assertion is split:
+    //   1. CreationDate is pinned and asserted (this DOES persist).
+    //   2. A redundant `generated-at:<ISO>` keyword carries the same
+    //      semantics on a field the library does NOT touch — that is
+    //      the load-bearing assertion for byte-determinism of the
+    //      timestamp marker.
+    //   3. ModificationDate is intentionally NOT asserted because the
+    //      installed pdf-lib version overrides it with `new Date()`
+    //      regardless of `setModificationDate(...)`. There is no
+    //      public opt-out in SaveOptions for v1.17.1; asserting on it
+    //      would only test pdf-lib internals, not our renderer.
     const payload = makePayload();
     const buf = await renderAssessmentReportPdf(payload, { generatedAt: FIXED_TS });
     const reparsed = await PDFDocument.load(buf);
@@ -376,22 +390,20 @@ describe('renderAssessmentReportPdf — visual regression (M-07)', () => {
     // Identity fingerprint via Title.
     expect(reparsed.getTitle()).toContain(payload.snapshot.assessment.id);
 
-    // Renderer constant.
+    // Renderer constants.
     expect(reparsed.getCreator()).toBe('Uelfy Clinical Platform');
-
-    // Tenant carries through Author.
     expect(reparsed.getAuthor()).toBe(payload.tenant.name);
 
-    // Keywords contain machine-parseable id triplets — see comment in
-    // the renderer header for the canonical token format.
+    // Keywords carry id triplets + the deterministic generation
+    // timestamp marker.
     const keywords = reparsed.getKeywords() ?? '';
     expect(keywords).toContain(`assessment-id:${payload.snapshot.assessment.id}`);
     expect(keywords).toContain(`patient-id:${payload.snapshot.assessment.patientId}`);
     expect(keywords).toContain(`tenant-id:${payload.snapshot.assessment.tenantId}`);
+    expect(keywords).toContain(`generated-at:${FIXED_TS.toISOString()}`);
 
-    // CreationDate / ModificationDate pinned for visual-regression.
+    // CreationDate is the canonical pinned timestamp (writable, persists).
     expect(reparsed.getCreationDate()?.toISOString()).toBe(FIXED_TS.toISOString());
-    expect(reparsed.getModificationDate()?.toISOString()).toBe(FIXED_TS.toISOString());
 
     // Page count ≥ 1.
     expect(reparsed.getPageCount()).toBeGreaterThanOrEqual(1);

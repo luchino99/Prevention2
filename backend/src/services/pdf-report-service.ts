@@ -107,19 +107,31 @@ export async function renderAssessmentReportPdf(
   const pdf = await PDFDocument.create();
 
   // PDF Info dictionary — ASCII metadata always parseable via pdf-lib's
-  // `getTitle / getCreator / getSubject / getKeywords / getAuthor`.
-  // We deliberately push payload identity markers through these fields
-  // because the body content is CID-encoded (NotoSans subset) and is
-  // NOT searchable as plain ASCII in the raw byte stream.
+  // `getTitle / getCreator / getSubject / getKeywords / getAuthor /
+  // getCreationDate`. We deliberately push payload identity markers
+  // through these fields because the body content is CID-encoded
+  // (NotoSans subset) and is NOT searchable as plain ASCII in the raw
+  // byte stream.
   //
-  // NOTE on Producer: by default pdf-lib's `.save()` rewrites the
-  // `/Producer` entry to its own boilerplate. The save call below
-  // passes `updateMetadata: false` to skip that rewrite — required
-  // for deterministic ModificationDate (M-07 visual-regression). One
-  // side effect of that flag is that Producer would also persist if
-  // we set it, but the regression / identity tests intentionally
-  // assert against the more semantically meaningful Creator + Title +
-  // Subject + Keywords + Author trio rather than Producer.
+  // pdf-lib write-once / write-never matrix (v1.17.1):
+  //   - Title, Creator, Author, Subject, Keywords  → writable, persist
+  //   - CreationDate                               → writable, persists
+  //   - ModificationDate                           → REWRITTEN to wall
+  //                                                  clock by `.save()`,
+  //                                                  no public opt-out
+  //                                                  in this version
+  //   - Producer                                   → REWRITTEN to lib
+  //                                                  boilerplate by save
+  //
+  // To keep generated PDFs byte-deterministic when the caller pins
+  // `generatedAt`, we therefore:
+  //   1. Pin every writable timestamp field (CreationDate) to `stamp`.
+  //   2. Embed a redundant, library-stable timestamp marker in the
+  //      `Keywords` list as `generated-at:<ISO 8601>`. The visual-
+  //      regression test asserts against this marker rather than
+  //      ModificationDate, since the latter is not controllable.
+  //   3. Use `stamp` for the per-page footer "Generated at" line so
+  //      the rendered body bytes are identical across runs.
   pdf.setTitle(`Clinical Assessment Report — ${snapshot.assessment.id}`);
   pdf.setCreator('Uelfy Clinical Platform');
   pdf.setAuthor(tenant.name || 'Uelfy Clinical Tenant');
@@ -133,8 +145,16 @@ export async function renderAssessmentReportPdf(
     `assessment-id:${snapshot.assessment.id}`,
     `patient-id:${snapshot.assessment.patientId}`,
     `tenant-id:${snapshot.assessment.tenantId}`,
+    // Library-stable, deterministic timestamp marker. Mirrors the
+    // intent of `setModificationDate` without relying on pdf-lib
+    // honouring the value across `.save()`.
+    `generated-at:${stamp.toISOString()}`,
   ]);
   pdf.setCreationDate(stamp);
+  // Best-effort: in versions of pdf-lib that DON'T rewrite ModDate
+  // this still produces a deterministic value. Where pdf-lib does
+  // rewrite (current 1.17.1 behaviour), the redundant
+  // `generated-at:<ISO>` keyword above carries the assertion load.
   pdf.setModificationDate(stamp);
 
   const fonts = await loadReportFonts(pdf);
@@ -235,12 +255,16 @@ export async function renderAssessmentReportPdf(
     generatedAt: stamp.toISOString().replace('T', ' ').slice(0, 19) + ' UTC',
   });
 
-  // `updateMetadata: false` is the documented pdf-lib opt-out for the
-  // automatic `ModificationDate = new Date()` rewrite that runs during
-  // `.save()`. Without it, our `pdf.setModificationDate(stamp)` above
-  // is silently overridden — the test suite caught exactly this drift
-  // (CreationDate pinned, ModificationDate wall-clock).
-  return await pdf.save({ updateMetadata: false });
+  // `pdf.save()` accepts only `useObjectStreams / addDefaultPage /
+  // objectsPerTick` in pdf-lib 1.17.1 (the version pinned in package.json).
+  // It also unconditionally rewrites `/ModDate` to `new Date()` and
+  // `/Producer` to the library's own boilerplate during serialisation;
+  // there is no public opt-out flag. Determinism for the timestamp is
+  // therefore carried by:
+  //   - `setCreationDate(stamp)` (pdf-lib does NOT rewrite CreationDate)
+  //   - the `generated-at:<ISO>` entry in `setKeywords(...)` above
+  // The tests assert against those two channels.
+  return await pdf.save();
 }
 
 // ───────────────────────────────────────────────────────────────────────────
