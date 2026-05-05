@@ -1,0 +1,4 @@
+# Vendored bundle, regenerated at build time by
+# scripts/fetch-supabase-sdk.mjs. Do not commit.
+supabase-js.esm.js
+LICENSE-MIT.txt

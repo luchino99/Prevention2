@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Alerts — Uelfy Clinical</title>
+  <!-- Favicon set (clinical-context) — see frontend/assets/icons/favicon.svg -->
+  <link rel="icon" type="image/svg+xml" href="../assets/icons/favicon.svg" />
+  <link rel="alternate icon" type="image/png" sizes="32x32" href="../assets/icons/favicon-32.png" />
+  <link rel="alternate icon" type="image/png" sizes="16x16" href="../assets/icons/favicon-16.png" />
+  <link rel="shortcut icon" href="../assets/icons/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/icons/apple-touch-icon.png" />
+  <meta name="theme-color" content="#0E5C7B" />
+  <link rel="stylesheet" href="../assets/css/app.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <div class="app-shell">
+    <aside class="app-sidebar" aria-label="Primary navigation">
+      <div class="brand">Uelfy Clinical</div>
+      <nav>
+        <a href="./dashboard.html">Dashboard</a>
+        <a href="./patients.html">Patients</a>
+        <a href="./alerts.html" class="active" aria-current="page">Alerts</a>
+        <a href="./audit.html" id="nav-audit" class="hidden">Audit log</a>
+        <a href="./tenant-settings.html">Tenant settings</a>
+        <a href="#" id="signout-link">Sign out</a>
+      </nav>
+    </aside>
+
+    <main class="app-main" id="main-content" tabindex="-1">
+      <div id="nav-header-mount"></div>
+
+      <div class="topbar">
+        <div>
+          <h1 style="margin-bottom:2px;">Clinical alerts</h1>
+          <div class="muted" id="tenant-label">Loading…</div>
+        </div>
+        <div class="flex gap-8">
+          <select id="filter-status">
+            <option value="open" selected>Open</option>
+            <option value="acknowledged">Acknowledged</option>
+            <option value="resolved">Resolved</option>
+            <option value="dismissed">Dismissed</option>
+          </select>
+          <select id="filter-severity">
+            <option value="">All severities</option>
+            <option value="critical">Critical</option>
+            <option value="warning">Warning</option>
+            <option value="info">Info</option>
+          </select>
+        </div>
+      </div>
+
+      <section class="card">
+        <div id="alerts-table-wrap"><p class="muted">Loading…</p></div>
+        <div class="flex between mt-16" id="pagination-wrap"></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Action dialog -->
+  <dialog id="action-dialog" class="dialog">
+    <form id="action-form" method="dialog" class="dialog-body">
+      <h3 id="action-title">Acknowledge alert</h3>
+      <div id="action-error" class="inline-alert danger hidden"></div>
+      <div class="field">
+        <label>Optional note (logged in metadata)</label>
+        <textarea name="note" rows="3" maxlength="1000" placeholder="Rationale, actions taken, follow-up…"></textarea>
+      </div>
+      <div class="flex gap-8" style="justify-content:flex-end;">
+        <button type="button" class="btn secondary" id="action-cancel">Cancel</button>
+        <button type="submit" class="btn" id="action-submit">Confirm</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="../assets/js/public-config.js"></script>
+  <script type="module" src="./alerts.js"></script>
+</body>
+</html>
