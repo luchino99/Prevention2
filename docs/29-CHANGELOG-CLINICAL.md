@@ -38,6 +38,113 @@
 
 ---
 
+## [2026-05-04.02] — PREDIMED adherence bands aligned to Schroder 2011
+
+**Class.** formula (band thresholds — score formula unchanged).
+**Scope.** PREDIMED MEDAS adherence categorization in
+`backend/src/domain/clinical/nutrition-engine/predimed.ts`
+(`categorizePredimedAdherence`).
+
+**User authorisation.** The Tier-5 audit (AUD-2026-05-04) instructed:
+"if the code diverges from the published formula, correct it; do not
+leave score thresholds at non-canonical values when a published
+canonical exists." The PREDIMED bands fall under that directive.
+
+**Change.**
+| Score | 0..7 | 8..9 | 10..14 |
+|---|---|---|---|
+| Before | low (0..4) | medium (5..9) | high (10..14) |
+| After  | low (0..7) | medium (8..9) | high (10..14) |
+
+**Sources.**
+- Schroder H, et al. *J Nutr* 2011;141(6):1140-5. (Original 14-item
+  MEDAS validation; introduces the ≤7 / 8-9 / ≥10 stratification.)
+- Estruch R, et al. *N Engl J Med* 2018;378:e34. (Trial used MEDAS
+  ≥10 as the high-adherence intervention target.)
+
+**Recompute legacy?** Yes — historical `nutrition_snapshots` rows
+carry their old `adherenceBand` derived from the previous bands. New
+assessments use the new bands; old assessments retain theirs (and
+their `engine_version` stamp records which set applied). A backfill
+recompute is not required for safety but is on the L-03 roadmap if a
+controller asks for cohort-uniform classification.
+
+**Tests added.** `tests/unit/predimed-mifflin.test.ts` — full band
+matrix (0/3/7/8/9/10/12/14) + invalid-input + array-length guards +
+integration with Mifflin BMR/TDEE.
+
+---
+
+## [2026-05-04.01] — SCORE2 / SCORE2-Diabetes canonical recalibration
+
+**Class.** formula (recalibration step corrected to canonical paper form).
+**Scope.** `score2.ts` + `score2-diabetes.ts` — `applyCalibratedRisk`,
+`calculateUncalibratedRisk(Fraction)`, end-to-end orchestration.
+
+**User authorisation.** Tier-5 audit (AUD-2026-05-04 finding C-01)
+instructed: "if the code attuale diverge dalla formula pubblicata,
+correggilo." The previous shortcut form was algebraically distinct
+from the Hageman 2021 Box S5 canonical formula and produced clinically
+significant under-estimates (e.g. M, 62y, smoker, SBP 168, TC 251
+went from 11.7 % → 21.0 %).
+
+**Change.**
+
+Previous (shortcut, NOT equivalent to paper):
+```
+risk_recal = 1 − S0_male^exp(scale1 + scale2 × LP)
+                      ^-- male baseline survival hard-coded for both sexes
+```
+
+New (canonical, paper Box S5):
+```
+risk_uncal  = 1 − S0_sex^exp(LP)                  (sex-specific S0)
+cll_uncal   = ln(−ln(1 − risk_uncal))
+cll_cal     = scale1 + scale2 × cll_uncal
+risk_recal  = 1 − exp(−exp(cll_cal))
+```
+
+Algebraic non-equivalence: `(−ln(S0_male))^1 ≠ (−ln(S0_sex))^scale2`
+for any combination of `(sex, region)` published in the paper, so the
+two forms produce different numbers — see file header in `score2.ts`
+for the derivation.
+
+**Sources.**
+- Hageman SHJ, Pennells L, Ojeda F, et al. SCORE2 risk prediction
+  algorithms: new models to estimate 10-year risk of cardiovascular
+  disease in Europe. *Eur Heart J* 2021;42(25):2439-54. Suppl Box S5
+  (canonical recalibration form), Table S2 (coefficients), Table S5
+  (regional calibration parameters).
+- Pennells L, et al. SCORE2-Diabetes: 10-year cardiovascular risk
+  estimation in type 2 diabetes in Europe. *Eur Heart J*
+  2023;44(28):2544-56. (Same recalibration shape; diabetes-specific
+  coefficients and baseline survival.)
+
+**Recompute legacy?** Yes — historical SCORE2 / SCORE2-Diabetes
+risk values were systematically under-estimated. Existing
+`score_results` rows retain their original `engine_version` stamp;
+new assessments use the corrected engine. Clinical lead should
+review whether a re-stratification of historical patients is
+indicated; for the pilot tenant this is moot (no historical cohort
+yet).
+
+**Tests added.**
+- `tests/unit/score2-golden.test.ts` — independent reference
+  implementation (paper-derived, structurally distinct from
+  production code) + 9 golden cases (sex × region × age) + 5
+  regression assertions (sex-specific baseline, cll transform,
+  band ordering, determinism, no-NaN) + 3 SCORE2-Diabetes cases.
+- `tests/equivalence/score-equivalence.test.ts` regression
+  baselines updated to canonical-formula values.
+
+**External confirmation recommended.** Operator may compare the same
+9 cases against https://heartscore.escardio.org and record any
+divergences in `24-FORMULA-REGISTRY.md`. A spread of ±0.1-0.5 % is
+expected (tool rounding); larger divergences indicate either a
+paper-vs-tool difference or a regression.
+
+---
+
 ## [2026-04-26.01] — Documentation pack baseline
 
 **Class.** cosmetic.

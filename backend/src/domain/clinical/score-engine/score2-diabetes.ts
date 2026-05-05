@@ -238,27 +238,41 @@ function calculateLogit(
 }
 
 /**
- * Calculate uncalibrated 10-year risk
- * risk = 1 - S0 ^ exp(logit)
+ * Calculate uncalibrated 10-year risk (sex-specific baseline survival).
+ * Returns the risk as a fraction in [0,1].
+ *
+ *   risk_uncal = 1 - S0_sex^exp(LP)
  */
-function calculateUncalibratedRisk(logit: number, s0: number): number {
+function calculateUncalibratedRiskFraction(logit: number, s0: number): number {
   const exponent = Math.exp(logit);
-  const risk = 1 - Math.pow(s0, exponent);
-  return risk * 100; // Convert to percentage
+  return 1 - Math.pow(s0, exponent);
 }
 
 /**
- * Apply region-specific calibration
- * calibrated = scale1 + scale2 * logit
+ * Apply region-specific recalibration per the canonical complementary
+ * log-log form (Hageman 2021 Box S5; SCORE2-Diabetes — Pennells 2023
+ * uses the same recalibration shape).
+ *
+ *   cll_uncal = ln(-ln(1 - uncalibratedRisk))
+ *   cll_cal   = scale1 + scale2 · cll_uncal
+ *   risk_cal  = 1 - exp(-exp(cll_cal))
+ *
+ * Returns the recalibrated risk in PERCENT (0..100).
+ *
+ * Audit AUD-2026-05-04 finding C-01: previous "shortcut" form
+ * `1 - S0^exp(scale1 + scale2·LP)` is NOT equivalent to the canonical
+ * formula and produced clinically significant under-estimates. This
+ * file now matches the published expression.
  */
 function applyCalibratedRisk(
-  logit: number,
+  uncalibratedRiskFraction: number,
   calibration: CalibrationParameters,
-  s0: number,
 ): number {
-  const calibratedLogit = calibration.scale1 + calibration.scale2 * logit;
-  const risk = 1 - Math.pow(s0, Math.exp(calibratedLogit));
-  return risk * 100;
+  if (uncalibratedRiskFraction <= 0) return 0;
+  if (uncalibratedRiskFraction >= 1) return 100;
+  const cllUncal = Math.log(-Math.log(1 - uncalibratedRiskFraction));
+  const cllCal = calibration.scale1 + calibration.scale2 * cllUncal;
+  return (1 - Math.exp(-Math.exp(cllCal))) * 100;
 }
 
 /**
@@ -367,13 +381,14 @@ export function computeScore2Diabetes(input: Score2DiabetesInput): Score2Diabete
     smoking,
   );
 
-  // Step 5: Calculate uncalibrated 10-year risk
+  // Step 5: Uncalibrated 10-year risk (sex-specific baseline survival).
   const s0 = BASELINE_SURVIVAL[sex];
-  const uncalibratedRisk = calculateUncalibratedRisk(logit, s0);
+  const uncalibratedFraction = calculateUncalibratedRiskFraction(logit, s0);
+  const uncalibratedRisk = uncalibratedFraction * 100;
 
-  // Step 6: Apply region-specific calibration
+  // Step 6: Region-specific recalibration (canonical cll form).
   const calibration = CALIBRATION[sex][riskRegion];
-  const calibratedRisk = applyCalibratedRisk(logit, calibration, s0);
+  const calibratedRisk = applyCalibratedRisk(uncalibratedFraction, calibration);
 
   // Step 7: Categorize
   const category = categorizeRisk(calibratedRisk);

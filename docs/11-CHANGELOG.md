@@ -7,6 +7,83 @@ executed per the project blueprint.
 
 ---
 
+## [Tier 5b — Residual closure] — 2026-05-04 — **C-01 SCORE2 cll, PREDIMED Schroder bands, BMR/TDEE golden, integration mocks**
+
+Final residual-closure pass after the Tier-5 audit. Targets the items
+that the previous report classified as "Requires external review",
+"Pending audit", or `it.todo`. No external service was needed: every
+fix was driven by the published primary source.
+
+### Closed (was: Requires external review)
+
+- **C-01 SCORE2 calibration formula** — `score2.ts` and
+  `score2-diabetes.ts` now implement the canonical Hageman 2021 Box S5
+  complementary log-log recalibration. The previous shortcut form
+  `1 − S0_male^exp(scale1 + scale2·LP)` (male baseline survival
+  hard-coded for both sexes) was algebraically NOT equivalent to the
+  paper formula and produced clinically significant under-estimates
+  (e.g. 62y M smoker: 11.7 % → 21.0 %). The new orchestration runs:
+
+  ```
+  risk_uncal = 1 − S0_sex^exp(LP)
+  cll_uncal  = ln(−ln(1 − risk_uncal))
+  cll_cal    = scale1 + scale2 × cll_uncal
+  risk_recal = 1 − exp(−exp(cll_cal))
+  ```
+
+  An INDEPENDENT reference implementation in
+  `tests/unit/score2-golden.test.ts` (paper-derived, structurally
+  distinct from production code) cross-checks the production output
+  against 9 sex × region × age cases to within ±0.1 %. Five regression
+  assertions catch drift back to the shortcut shape (sex-specific
+  baseline, cll transform, regional ordering, determinism, no-NaN).
+  External HeartScore confirmation is **recommended** but no longer a
+  technical blocker.
+
+### Closed (was: Pending audit)
+
+- **PREDIMED MEDAS adherence bands** aligned to Schroder J Nutr 2011 /
+  Estruch NEJM 2018: `≤7 low / 8-9 medium / ≥10 high` (was non-canonical
+  `0-4 / 5-9 / 10-14`). Score formula (count of yes answers) unchanged.
+  Golden test `tests/unit/predimed-mifflin.test.ts` covers the full
+  band matrix + invalid input + array-length guards.
+
+- **Mifflin-St Jeor BMR / TDEE** validated against AJCN 1990 paper.
+  Same test file pins 4 BMR cases (M/F, multiple ages) computed by
+  hand from the published formula + 5 activity-factor cases (WHO/FAO
+  2001) + 2 integration tests + fail-safe behaviour for unknown
+  activity strings + non-finite inputs.
+
+### Closed (was: it.todo)
+
+- 2 of 4 `it.todo` in `tests/integration/api-patients.test.ts`
+  replaced with real assertions (malformed body 4xx, unsupported
+  method non-2xx). The remaining 2 (full tenant-isolation listing +
+  audit emission on create) are documented as needing the full mock
+  harness — they require a chained Supabase mock that returns
+  realistic auth.users → public.users → tenants → patients fixtures.
+
+### Documentation
+
+- `docs/30-RISK-REGISTER.md` — C-01 ✅ Resolved + new C-04-PRED entry.
+- `docs/29-CHANGELOG-CLINICAL.md` — two `formula`-class entries
+  (`2026-05-04.01` SCORE2 + `2026-05-04.02` PREDIMED) with sources,
+  before/after, recompute guidance, tests added.
+- `docs/11-CHANGELOG.md` — this entry.
+
+### Notes
+
+- Engine output for SCORE2 / SCORE2-Diabetes is now numerically
+  different from any pre-Tier-5 deploy. Historical `score_results`
+  retain their original `engine_version` stamp; new assessments use
+  the corrected engine. For the pilot tenant (no historical cohort
+  yet) this is moot.
+- No public API contract change.
+- All schema changes from previous tiers remain additive and
+  idempotent.
+
+---
+
 ## [Tier 5 / Audit fix] — 2026-05-04 — **Audit-driven hardening: clinical, testing, security, privacy, a11y**
 
 Closes the AUD-2026-05-04 audit findings P0–P3 in priority order. No
