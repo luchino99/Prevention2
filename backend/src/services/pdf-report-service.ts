@@ -112,11 +112,14 @@ export async function renderAssessmentReportPdf(
   // because the body content is CID-encoded (NotoSans subset) and is
   // NOT searchable as plain ASCII in the raw byte stream.
   //
-  // NOTE on Producer: pdf-lib unconditionally rewrites the `/Producer`
-  // entry to its own boilerplate during serialisation, so calling
-  // `setProducer(...)` here does not propagate. The audit-driven
-  // identity / regression tests therefore use Creator + Title +
-  // Subject + Keywords + Author, all of which ARE controllable.
+  // NOTE on Producer: by default pdf-lib's `.save()` rewrites the
+  // `/Producer` entry to its own boilerplate. The save call below
+  // passes `updateMetadata: false` to skip that rewrite — required
+  // for deterministic ModificationDate (M-07 visual-regression). One
+  // side effect of that flag is that Producer would also persist if
+  // we set it, but the regression / identity tests intentionally
+  // assert against the more semantically meaningful Creator + Title +
+  // Subject + Keywords + Author trio rather than Producer.
   pdf.setTitle(`Clinical Assessment Report — ${snapshot.assessment.id}`);
   pdf.setCreator('Uelfy Clinical Platform');
   pdf.setAuthor(tenant.name || 'Uelfy Clinical Tenant');
@@ -221,13 +224,23 @@ export async function renderAssessmentReportPdf(
   renderReferenceFramework(ctx, snapshot);
 
   // ─── Footer on every page ───
+  // Use the same `stamp` as the Info dictionary so the rendered PDF
+  // (footer text included) is fully deterministic when the caller pins
+  // `generatedAt`. Without this, the wall-clock `new Date()` would
+  // drift the byte stream by 19 characters every render and break the
+  // visual-regression suite (M-07).
   drawAllFooters(pdf, fonts, {
     tenantName: tenant.name || 'Uelfy Clinical',
     reportId: snapshot.assessment.id,
-    generatedAt: new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC',
+    generatedAt: stamp.toISOString().replace('T', ' ').slice(0, 19) + ' UTC',
   });
 
-  return await pdf.save();
+  // `updateMetadata: false` is the documented pdf-lib opt-out for the
+  // automatic `ModificationDate = new Date()` rewrite that runs during
+  // `.save()`. Without it, our `pdf.setModificationDate(stamp)` above
+  // is silently overridden — the test suite caught exactly this drift
+  // (CreationDate pinned, ModificationDate wall-clock).
+  return await pdf.save({ updateMetadata: false });
 }
 
 // ───────────────────────────────────────────────────────────────────────────
