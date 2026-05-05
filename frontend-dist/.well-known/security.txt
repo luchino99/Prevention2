@@ -1,0 +1,24 @@
+# Uelfy Clinical — security.txt (RFC 9116)
+#
+# Machine-readable companion to the human-readable security policy at
+# /SECURITY.md (also available on this repository's GitHub Security tab).
+#
+# Maintained at: frontend/.well-known/security.txt in the Uelfy repo.
+# Served at:     /.well-known/security.txt and /security.txt (mirror).
+
+Contact: mailto:security@uelfy.com
+Expires: 2027-04-26T21:39:33Z
+Preferred-Languages: en, it
+Policy: https://uelfy.com/SECURITY.md
+Canonical: https://uelfy.com/.well-known/security.txt
+
+# Bug bounty: not currently a paid programme. Discretionary awards
+# possible for material findings — see /SECURITY.md §7.
+
+# Acknowledgements: published after the embargo lifts; researchers
+# may opt out — see /SECURITY.md §7.
+
+# Encryption: PGP key not yet published. Until then, transport-encrypted
+# email (TLS) is acceptable for the initial contact and we will move
+# to end-to-end encryption on the second exchange if the report is
+# sensitive — see /SECURITY.md §6.
