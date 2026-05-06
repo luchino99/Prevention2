@@ -8,6 +8,12 @@
 # -------------
 #   * pull_request -> main : required check (once branch protection is on)
 #   * push -> main         : sanity gate on direct merges
+#   * release  (published) : Sprint 1 task 1.6 — generate fresh SBOM and
+#                            attach it (plus the CVE report) as release
+#                            assets so any downstream consumer / auditor
+#                            (clinical procurement, IEC 62304 SOUP review)
+#                            can download the exact SBOM that corresponds
+#                            to a tagged version.
 #
 # Required env / secrets (none mandatory yet)
 # -------------------------------------------
@@ -21,12 +27,21 @@
 #   * SBOM_CVE_FAIL_ON_HIGH=true forces check-sbom-cves to exit non-zero
 #     on any HIGH runtime CVE (default policy in CI is stricter than dev).
 #   * permissions: contents: read   -> least-privilege workflow token.
+#     The release-sbom job overrides to `contents: write` because
+#     uploading release assets requires it; that elevation is scoped to
+#     that single job only.
 #   * concurrency: cancel in-progress runs on same branch when a new
 #     commit lands; saves CI minutes and avoids stale results.
 #   * Lockfile drift detection: `npm ci` must NOT modify package-lock.json.
 #     If it does, the lockfile is not canonical and the build is flagged.
 #   * SBOM drift detection: `npm run sbom:refresh` must produce zero diff
 #     against the committed sbom.cyclonedx.json.
+#   * SBOM determinism gate (Sprint 1 task 1.6): two consecutive
+#     `npm run sbom:refresh` invocations must produce byte-equal output.
+#     Catches future regressions of the canonicalisation logic — the
+#     class of bug that caused the 5-hotfix saga around metadata.tools
+#     version, metadata.component.name, fsevents, and @esbuild platform
+#     binaries.
 # =============================================================================
 
 name: CI
@@ -36,6 +51,8 @@ on:
     branches: [main]
   push:
     branches: [main]
+  release:
+    types: [published]
 
 permissions:
   contents: read
@@ -47,6 +64,10 @@ concurrency:
 jobs:
   build-and-test:
     name: build:check + test (Node 20 / Ubuntu 22)
+    # Skip on release events — the gates already ran when the commit
+    # was pushed to main. Re-running on release would burn minutes for
+    # no signal change.
+    if: github.event_name != 'release'
     runs-on: ubuntu-22.04
     timeout-minutes: 10
 
@@ -102,3 +123,86 @@ jobs:
             exit 1
           fi
           echo "OK sbom.cyclonedx.json matches lockfile-resolved SBOM"
+
+      - name: SBOM determinism (anti-recidiva — Sprint 1 task 1.6)
+        run: |
+          # Two consecutive `npm run sbom:refresh` MUST produce byte-equal
+          # output. The 5-hotfix saga during Sprint 1 task 1.3 (metadata.tools
+          # version, metadata.component.name, fsevents, @esbuild platform
+          # binaries) was caused by canonicaliseSbom failing to strip a
+          # volatile field. This gate catches the next such regression
+          # immediately — before the SBOM-drift gate can mask it as a
+          # platform-only diff.
+          npm run sbom:refresh > /dev/null
+          cp sbom.cyclonedx.json /tmp/sbom-run-1.json
+          npm run sbom:refresh > /dev/null
+          if ! diff -q /tmp/sbom-run-1.json sbom.cyclonedx.json > /dev/null; then
+            echo "::error::SBOM determinism violated."
+            echo "::error::Two consecutive \`npm run sbom:refresh\` produced different output."
+            echo "::error::A new volatile field has slipped past canonicaliseSbom."
+            echo "::error::Inspect the diff below and add the field to the strip list in"
+            echo "::error::scripts/sbom-canonicalise.mjs (see metadata.tools/component handling)."
+            diff -u /tmp/sbom-run-1.json sbom.cyclonedx.json | head -80 >&2
+            exit 1
+          fi
+          echo "OK SBOM is bytewise idempotent across consecutive refreshes"
+
+  release-sbom:
+    name: Attach SBOM to GitHub Release (Sprint 1 task 1.6)
+    # Fires only when a Release is published from the GitHub UI or via
+    # `gh release create`. The build-and-test job is skipped on this
+    # event (see its `if:` above) — this is the only job that runs.
+    if: github.event_name == 'release'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+
+    permissions:
+      # Elevation needed to upload assets to the release. Scoped to this
+      # job only — build-and-test keeps the read-only default.
+      contents: write
+
+    steps:
+      - name: Checkout (the tag pointed to by the release)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          fetch-depth: 1
+
+      - name: Setup Node from .nvmrc
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install (mirror Vercel — npm ci with devDeps)
+        run: npm ci --include=dev --no-audit --no-fund
+
+      - name: Generate fresh SBOM + CVE report for this release
+        run: |
+          npm run sbom:refresh
+          # Run the CVE scanner but never fail the release on it — the
+          # CVE state is informative, not blocking, at release time. If
+          # the founder/operator wants to refuse the release on a HIGH,
+          # they can revoke the release manually.
+          node scripts/check-sbom-cves.mjs || true
+
+      - name: Show SBOM + CVE summary in run log
+        run: |
+          echo "=== SBOM file size and component count ==="
+          ls -la sbom.cyclonedx.json
+          node -e "console.log('components:', JSON.parse(require('fs').readFileSync('sbom.cyclonedx.json','utf8')).components.length)"
+          echo ""
+          echo "=== CVE report counts ==="
+          node -e "
+            const r = JSON.parse(require('fs').readFileSync('sbom-cve-report.json','utf8'));
+            console.log(JSON.stringify({total: r.total, counts: r.counts}, null, 2));
+          "
+
+      - name: Upload SBOM + CVE report as release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.release.tag_name }}
+          files: |
+            sbom.cyclonedx.json
+            sbom-cve-report.json
+          fail_on_unmatched_files: true
