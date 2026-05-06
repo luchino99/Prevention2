@@ -150,11 +150,15 @@ const STANDALONE_PLATFORM_CONDITIONAL = new Set([
 
 function isPlatformNativeBinary(purl) {
   if (PLATFORM_BINARY_PATTERNS.some((re) => re.test(purl))) return true;
-  // purl format here is `<bom-ref-or-name>@<version>` — split on the LAST '@'
-  // because @scope/name itself starts with '@'.
-  const at = purl.lastIndexOf('@');
-  const baseName = at > 0 ? purl.slice(0, at) : purl;
-  return STANDALONE_PLATFORM_CONDITIONAL.has(baseName);
+  // The purl produced by purlSet() is `${bom-ref ?? purl ?? name}@${version}`.
+  // For npm packages the bom-ref typically already contains `@<version>`,
+  // so the formatted string ends up like `fsevents@2.3.3@2.3.3` (version
+  // duplicated) or `@esbuild/darwin-x64@0.21.5@0.21.5`. Splitting on `@`
+  // is therefore unreliable — we anchor on `<name>@` at the start instead.
+  for (const name of STANDALONE_PLATFORM_CONDITIONAL) {
+    if (purl.startsWith(name + '@')) return true;
+  }
+  return false;
 }
 function withoutPlatformBinaries(set) {
   return new Set([...set].filter((p) => !isPlatformNativeBinary(p)));
