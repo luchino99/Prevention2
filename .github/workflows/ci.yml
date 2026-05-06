@@ -1,0 +1,104 @@
+# =============================================================================
+# Uelfy Clinical — Continuous Integration
+# -----------------------------------------------------------------------------
+# Mirrors what `npm run build:check && npm test` does locally, but in a
+# clean Ubuntu container that reproduces the Vercel build environment.
+#
+# Trigger model
+# -------------
+#   * pull_request -> main : required check (once branch protection is on)
+#   * push -> main         : sanity gate on direct merges
+#
+# Required env / secrets (none mandatory yet)
+# -------------------------------------------
+#   DATABASE_URL_STAGING : optional. When set, the run-rls-tests gate
+#                          executes against a staging Supabase. Without
+#                          it, the script skips gracefully (graceful
+#                          skip is by design — see scripts/run-rls-tests.mjs).
+#
+# Hardening choices
+# -----------------
+#   * SBOM_CVE_FAIL_ON_HIGH=true forces check-sbom-cves to exit non-zero
+#     on any HIGH runtime CVE (default policy in CI is stricter than dev).
+#   * permissions: contents: read   -> least-privilege workflow token.
+#   * concurrency: cancel in-progress runs on same branch when a new
+#     commit lands; saves CI minutes and avoids stale results.
+#   * Lockfile drift detection: `npm ci` must NOT modify package-lock.json.
+#     If it does, the lockfile is not canonical and the build is flagged.
+#   * SBOM drift detection: `npm run sbom:refresh` must produce zero diff
+#     against the committed sbom.cyclonedx.json.
+# =============================================================================
+
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: build:check + test (Node 20 / Ubuntu 22)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+
+    env:
+      SBOM_CVE_FAIL_ON_HIGH: 'true'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node from .nvmrc
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Print toolchain versions
+        run: |
+          node --version
+          npm --version
+          echo "engines:"
+          node -e "console.log(JSON.stringify(require('./package.json').engines, null, 2))"
+
+      - name: Install (mirror Vercel — npm ci with devDeps)
+        run: npm ci --include=dev --no-audit --no-fund
+
+      - name: Lockfile must be canonical (no drift after npm ci)
+        run: |
+          if ! git diff --quiet package-lock.json; then
+            echo "::error::package-lock.json was modified by npm ci."
+            echo "::error::This means the committed lockfile is not canonical."
+            echo "::error::Run \`rm -rf node_modules && npm ci\` locally to verify."
+            git diff package-lock.json | head -200
+            exit 1
+          fi
+          echo "OK package-lock.json is canonical"
+
+      - name: Build gates (10 checks incl. CVE fail-on-high)
+        run: npm run build:check
+
+      - name: Test suite (vitest, 244 tests expected)
+        run: npm test
+
+      - name: SBOM must be fresh
+        run: |
+          npm run sbom:refresh
+          if ! git diff --quiet sbom.cyclonedx.json; then
+            echo "::error::sbom.cyclonedx.json drift after \`npm run sbom:refresh\`."
+            echo "::error::Run \`npm run sbom:refresh\` locally and commit the updated file."
+            git diff --stat sbom.cyclonedx.json
+            exit 1
+          fi
+          echo "OK sbom.cyclonedx.json matches lockfile-resolved SBOM"
