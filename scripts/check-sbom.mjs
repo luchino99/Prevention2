@@ -101,6 +101,20 @@ try {
 }
 
 // Compare component sets — the most meaningful signal for SOUP drift.
+//
+// Both `liveCanon` (from `npm sbom` -> canonicaliseSbom) and
+// `committedCanon` (read from disk, written by refresh-sbom.mjs ->
+// canonicaliseSbom) are pre-filtered: canonicaliseSbom removes
+// platform-conditional components (fsevents, @esbuild/<os>-*, etc.) so
+// that the committed SBOM and the live SBOM are comparable byte-for-byte
+// across operating systems. See sbom-canonicalise.mjs for the filter.
+//
+// We re-canonicalise the committed side here for defence-in-depth: if
+// somebody hand-edits sbom.cyclonedx.json (which they shouldn't), the
+// canonicaliser still strips the platform-conditional entries before
+// comparison so we don't false-positive on a manually-introduced fsevents.
+const committedCanonNormalised = canonicaliseSbom(committedCanon);
+
 function purlSet(canon) {
   const list = Array.isArray(canon.components) ? canon.components : [];
   return new Set(
@@ -110,62 +124,8 @@ function purlSet(canon) {
   );
 }
 
-// Platform-specific native binary detection.
-// -------------------------------------------
-// `npm sbom` walks node_modules, which is platform-dependent:
-//   * macOS host: contains fsevents (darwin-only), @esbuild/darwin-*, ...
-//   * Linux CI:   contains @esbuild/linux-*, no fsevents, ...
-// The package-lock.json declares every variant via the parent's
-// optionalDependencies + os/cpu fields, so the LIVE SBOM differs across
-// platforms even though the LOCKFILE doesn't. We strip those variants from
-// the comparison to avoid false-positive drift when CI (Linux) compares
-// against a Mac-generated committed SBOM.
-//
-// TODO (Sprint 2 / task 53): regenerate sbom.cyclonedx.json directly from
-// package-lock.json (which lists every variant) so the committed SBOM is
-// platform-agnostic by construction. Until then, we accept that the SBOM
-// contains only the host-platform variant of these packages and the gate
-// ignores cross-platform drift on them.
-
-// Pattern A: native binary loaders shipped by bundlers / image libs / etc.
-// They follow a predictable @scope/<lib>-<os>-<arch> naming scheme.
-const PLATFORM_BINARY_PATTERNS = [
-  /^@esbuild\/[a-z0-9]+-[a-z0-9]+@/,         // @esbuild/darwin-x64@, @esbuild/linux-arm64@ ...
-  /^esbuild-(darwin|linux|win32|freebsd|netbsd|openbsd|sunos|android)-/,
-  /^@(swc|rollup|napi-rs|next|parcel)\/[a-z0-9-]+-(darwin|linux|win32|freebsd)-/,
-  /^@(swc|rollup|napi-rs)\/core-(darwin|linux|win32)-/,
-  /^lightningcss-(darwin|linux|win32|freebsd)-/,
-  /^@img\/sharp-[a-z0-9-]+-/,                // sharp ships os-specific binaries via @img scope
-];
-
-// Pattern B: standalone packages whose installation is gated by `os` or
-// `cpu` in their own package.json. They have plain names (no os-arch
-// suffix) so a regex would over-match — we use an exact-name allowlist.
-// Add packages here as they surface in CI runs; each entry MUST be one
-// that npm refuses to install on certain platforms (verifiable via
-// `npm view <name> os cpu`).
-const STANDALONE_PLATFORM_CONDITIONAL = new Set([
-  'fsevents',                                // darwin-only file-system events
-]);
-
-function isPlatformNativeBinary(purl) {
-  if (PLATFORM_BINARY_PATTERNS.some((re) => re.test(purl))) return true;
-  // The purl produced by purlSet() is `${bom-ref ?? purl ?? name}@${version}`.
-  // For npm packages the bom-ref typically already contains `@<version>`,
-  // so the formatted string ends up like `fsevents@2.3.3@2.3.3` (version
-  // duplicated) or `@esbuild/darwin-x64@0.21.5@0.21.5`. Splitting on `@`
-  // is therefore unreliable — we anchor on `<name>@` at the start instead.
-  for (const name of STANDALONE_PLATFORM_CONDITIONAL) {
-    if (purl.startsWith(name + '@')) return true;
-  }
-  return false;
-}
-function withoutPlatformBinaries(set) {
-  return new Set([...set].filter((p) => !isPlatformNativeBinary(p)));
-}
-
-const live = withoutPlatformBinaries(purlSet(liveCanon));
-const committed = withoutPlatformBinaries(purlSet(committedCanon));
+const live = purlSet(liveCanon);
+const committed = purlSet(committedCanonNormalised);
 
 const added = [...live].filter((p) => !committed.has(p)).sort();
 const removed = [...committed].filter((p) => !live.has(p)).sort();

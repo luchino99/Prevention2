@@ -12,13 +12,13 @@
       {
         "vendor": "npm",
         "name": "cli",
-        "version": "10.8.2"
+        "version": "10.9.4"
       }
     ],
     "component": {
       "bom-ref": "uelfy-clinical@0.2.1",
       "type": "application",
-      "name": "Prevention2",
+      "name": "Uelfy-claude",
       "version": "0.2.1",
       "scope": "required",
       "description": "Uelfy — B2B cardio-nephro-metabolic clinical risk assessment and longitudinal patient monitoring platform.",
@@ -333,56 +333,6 @@
         {
           "license": {
             "id": "MPL-2.0"
-          }
-        }
-      ]
-    },
-    {
-      "bom-ref": "@esbuild/darwin-x64@0.21.5",
-      "type": "library",
-      "name": "@esbuild/darwin-x64",
-      "version": "0.21.5",
-      "scope": "optional",
-      "description": "The macOS 64-bit binary for esbuild, a JavaScript bundler.",
-      "purl": "pkg:npm/%40esbuild/darwin-x64@0.21.5",
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@esbuild/darwin-x64"
-        },
-        {
-          "name": "cdx:npm:package:development",
-          "value": "true"
-        }
-      ],
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/@esbuild/darwin-x64/-/darwin-x64-0.21.5.tgz"
-        },
-        {
-          "type": "vcs",
-          "url": "git+https://github.com/evanw/esbuild.git"
-        },
-        {
-          "type": "website",
-          "url": "https://github.com/evanw/esbuild#readme"
-        },
-        {
-          "type": "issue-tracker",
-          "url": "https://github.com/evanw/esbuild/issues"
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-512",
-          "content": "b1efc98c5f0d9662951b890d22ec96315ff6d9969eac1faa6928b931dad7b5de91d3c92fb36a823780b4f668aea64b438adbe1f234457e5c0614141cc594636f"
-        }
-      ],
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
           }
         }
       ]
@@ -1023,57 +973,6 @@
         {
           "alg": "SHA-512",
           "content": "88a9c55ebecd91d640207888584f815f950b8bfb9c5456160fa4db015fab65cb624536363cbeadb082a1a0839aa2c922580920bbe56c6d781454334b1dff889d"
-        }
-      ],
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ]
-    },
-    {
-      "bom-ref": "@rollup/rollup-darwin-x64@4.60.3",
-      "type": "library",
-      "name": "@rollup/rollup-darwin-x64",
-      "version": "4.60.3",
-      "scope": "optional",
-      "author": "Lukas Taegert-Atkinson",
-      "description": "Native bindings for Rollup",
-      "purl": "pkg:npm/%40rollup/rollup-darwin-x64@4.60.3",
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@rollup/rollup-darwin-x64"
-        },
-        {
-          "name": "cdx:npm:package:development",
-          "value": "true"
-        }
-      ],
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/@rollup/rollup-darwin-x64/-/rollup-darwin-x64-4.60.3.tgz"
-        },
-        {
-          "type": "vcs",
-          "url": "git+https://github.com/rollup/rollup.git"
-        },
-        {
-          "type": "website",
-          "url": "https://rollupjs.org/"
-        },
-        {
-          "type": "issue-tracker",
-          "url": "https://github.com/rollup/rollup/issues"
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-512",
-          "content": "0fed1019c6610734cdf36c1e3a7b12958ed5efe44c98fb85d4291bc72300184f3e6477948f26fbe99896981942bbffc041038dbf172a45bc194da8d92aa8ee3b"
         }
       ],
       "licenses": [
@@ -4581,56 +4480,6 @@
       ]
     },
     {
-      "bom-ref": "esbuild-darwin-64@0.14.47",
-      "type": "library",
-      "name": "esbuild-darwin-64",
-      "version": "0.14.47",
-      "scope": "optional",
-      "description": "The macOS 64-bit binary for esbuild, a JavaScript bundler.",
-      "purl": "pkg:npm/esbuild-darwin-64@0.14.47",
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/esbuild-darwin-64"
-        },
-        {
-          "name": "cdx:npm:package:development",
-          "value": "true"
-        }
-      ],
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/esbuild-darwin-64/-/esbuild-darwin-64-0.14.47.tgz"
-        },
-        {
-          "type": "vcs",
-          "url": "git+https://github.com/evanw/esbuild.git"
-        },
-        {
-          "type": "website",
-          "url": "https://github.com/evanw/esbuild#readme"
-        },
-        {
-          "type": "issue-tracker",
-          "url": "https://github.com/evanw/esbuild/issues"
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-512",
-          "content": "47aa1a5b4cb9feee8471cb62fd34ba73fd9cd716136f58b3c0ade06a32708b8bc87cdb35b3c075750cc8d54882f53eb5628bce415b9e3c371fa872d3de651924"
-        }
-      ],
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ]
-    },
-    {
       "bom-ref": "esbuild@0.14.47",
       "type": "library",
       "name": "esbuild",
@@ -5286,56 +5135,6 @@
         {
           "license": {
             "id": "ISC"
-          }
-        }
-      ]
-    },
-    {
-      "bom-ref": "fsevents@2.3.3",
-      "type": "library",
-      "name": "fsevents",
-      "version": "2.3.3",
-      "scope": "optional",
-      "description": "Native Access to MacOS FSEvents",
-      "purl": "pkg:npm/fsevents@2.3.3",
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/fsevents"
-        },
-        {
-          "name": "cdx:npm:package:development",
-          "value": "true"
-        }
-      ],
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/fsevents/-/fsevents-2.3.3.tgz"
-        },
-        {
-          "type": "vcs",
-          "url": "git+https://github.com/fsevents/fsevents.git"
-        },
-        {
-          "type": "website",
-          "url": "https://github.com/fsevents/fsevents"
-        },
-        {
-          "type": "issue-tracker",
-          "url": "https://github.com/fsevents/fsevents/issues"
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-512",
-          "content": "e71a037d7f9f2fb7da0139da82658fa5b16dc21fd1efb5a630caaa1c64bae42defbc1d181eb805f81d58999df8e35b4c8f99fade4d36d765cda09c339617df43"
-        }
-      ],
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
           }
         }
       ]
@@ -11888,10 +11687,6 @@
       ]
     },
     {
-      "ref": "@esbuild/darwin-x64@0.21.5",
-      "dependsOn": []
-    },
-    {
       "ref": "@fastify/busboy@2.1.1",
       "dependsOn": []
     },
@@ -11972,10 +11767,6 @@
         "estree-walker@2.0.2",
         "picomatch@2.3.2"
       ]
-    },
-    {
-      "ref": "@rollup/rollup-darwin-x64@4.60.3",
-      "dependsOn": []
     },
     {
       "ref": "@sinclair/typebox@0.27.10",
@@ -12395,20 +12186,12 @@
       "dependsOn": []
     },
     {
-      "ref": "esbuild-darwin-64@0.14.47",
+      "ref": "esbuild@0.14.47",
       "dependsOn": []
     },
     {
-      "ref": "esbuild@0.14.47",
-      "dependsOn": [
-        "esbuild-darwin-64@0.14.47"
-      ]
-    },
-    {
       "ref": "esbuild@0.21.5",
-      "dependsOn": [
-        "@esbuild/darwin-x64@0.21.5"
-      ]
+      "dependsOn": []
     },
     {
       "ref": "estree-walker@2.0.2",
@@ -12476,10 +12259,6 @@
     },
     {
       "ref": "fs.realpath@1.0.0",
-      "dependsOn": []
-    },
-    {
-      "ref": "fsevents@2.3.3",
       "dependsOn": []
     },
     {
@@ -12883,9 +12662,7 @@
     {
       "ref": "rollup@4.60.3",
       "dependsOn": [
-        "@rollup/rollup-darwin-x64@4.60.3",
-        "@types/estree@1.0.8",
-        "fsevents@2.3.3"
+        "@types/estree@1.0.8"
       ]
     },
     {
@@ -13065,20 +12842,6 @@
       "dependsOn": []
     },
     {
-      "ref": "uelfy-clinical@0.2.1",
-      "dependsOn": [
-        "@pdf-lib/fontkit@1.1.1",
-        "@supabase/supabase-js@2.45.6",
-        "@types/node@20.19.39",
-        "@vercel/node@3.2.29",
-        "esbuild@0.21.5",
-        "pdf-lib@1.17.1",
-        "typescript@5.5.4",
-        "vitest@1.6.1",
-        "zod@3.25.76"
-      ]
-    },
-    {
       "ref": "ufo@1.6.4",
       "dependsOn": []
     },
@@ -13121,7 +12884,6 @@
       "dependsOn": [
         "@types/node@20.19.39",
         "esbuild@0.21.5",
-        "fsevents@2.3.3",
         "postcss@8.5.14",
         "rollup@4.60.3"
       ]
