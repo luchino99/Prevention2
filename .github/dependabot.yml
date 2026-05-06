@@ -1,0 +1,113 @@
+# Dependabot configuration — Uelfy Clinical Platform
+#
+# Automated dependency updates are critical for a healthcare-adjacent
+# application: unpatched transitive deps are a common attack vector.
+#
+# Policy:
+#   * Security updates: merged as soon as CI is green (Dependabot auto-rebase)
+#   * Minor/patch:      batched weekly to reduce churn
+#   * Major:            opened as separate PRs for manual review
+#
+# Grouping minimises PR noise; `open-pull-requests-limit` keeps the queue
+# manageable so PRs don't stale.
+
+version: 2
+
+updates:
+  # -------------------------------------------------------------------------
+  # Root workspace — frontend + shared
+  # -------------------------------------------------------------------------
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Rome"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "security"
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+      include: "scope"
+    groups:
+      # Patch + minor updates are batched into one PR per group.
+      typescript-tooling:
+        patterns:
+          - "typescript"
+          - "@types/*"
+          - "tsx"
+          - "tsconfig-*"
+        update-types:
+          - "minor"
+          - "patch"
+      testing:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
+          - "@testing-library/*"
+          - "jsdom"
+        update-types:
+          - "minor"
+          - "patch"
+      linters:
+        patterns:
+          - "eslint"
+          - "eslint-*"
+          - "@typescript-eslint/*"
+          - "prettier"
+        update-types:
+          - "minor"
+          - "patch"
+      clinical-runtime:
+        patterns:
+          - "zod"
+          - "pdf-lib"
+          - "@supabase/*"
+        update-types:
+          - "patch"
+    ignore:
+      # Do NOT auto-bump major versions of critical runtime libs. Each major
+      # must be validated against the clinical-equivalence test suite.
+      - dependency-name: "zod"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "pdf-lib"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@supabase/supabase-js"
+        update-types: ["version-update:semver-major"]
+
+  # -------------------------------------------------------------------------
+  # Backend (if a separate package.json exists)
+  # -------------------------------------------------------------------------
+  - package-ecosystem: "npm"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Rome"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "backend"
+    commit-message:
+      prefix: "chore(deps,backend)"
+      include: "scope"
+
+  # -------------------------------------------------------------------------
+  # GitHub Actions
+  # -------------------------------------------------------------------------
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "chore(ci)"
+      include: "scope"
