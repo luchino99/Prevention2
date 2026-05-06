@@ -1,0 +1,109 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommits"
+  ],
+
+  "timezone": "Europe/Rome",
+  "schedule": ["before 9am on monday"],
+
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 3,
+  "rangeStrategy": "bump",
+
+  "rebaseWhen": "behind-base-branch",
+
+  "configMigration": true,
+
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security", "dependencies"],
+    "schedule": ["at any time"]
+  },
+
+  "packageRules": [
+    {
+      "description": "PIN: @supabase/supabase-js is exact-pinned to 2.45.6 due to a WebSocket eager-init regression in 2.50+. Sprint 2 task #44 will identify the lowest version that includes the auth-js GHSA-8r88-6cj9-9fh5 fix without re-introducing the WebSocket bug. Until that investigation is complete, Renovate must NOT propose any update for this package.",
+      "matchPackageNames": ["@supabase/supabase-js"],
+      "enabled": false
+    },
+
+    {
+      "description": "Other Supabase packages (auth-helpers, postgrest-js, etc.) — group together. They evolve in coordination with supabase-js but are themselves not pinned.",
+      "matchPackageNames": ["!@supabase/supabase-js"],
+      "matchPackagePrefixes": ["@supabase/"],
+      "groupName": "supabase ecosystem",
+      "schedule": ["before 9am on monday"]
+    },
+
+    {
+      "description": "Test toolchain — vitest + vite + esbuild evolve together and breaking changes in one require coordinated update of the others. Group all into one PR per cycle.",
+      "matchPackageNames": ["vitest", "vite", "esbuild"],
+      "matchPackagePrefixes": ["@vitest/", "@vitejs/"],
+      "groupName": "test-toolchain (vitest/vite/esbuild)",
+      "schedule": ["before 9am on monday"]
+    },
+
+    {
+      "description": "Vercel ecosystem (@vercel/node and friends). Group to keep PRs concise.",
+      "matchPackagePrefixes": ["@vercel/"],
+      "groupName": "vercel ecosystem",
+      "schedule": ["before 9am on monday"]
+    },
+
+    {
+      "description": "TypeScript + @types — coordinated upgrade keeps types in sync with compiler.",
+      "matchPackageNames": ["typescript"],
+      "matchPackagePrefixes": ["@types/"],
+      "groupName": "typescript + types",
+      "schedule": ["before 9am on monday"]
+    },
+
+    {
+      "description": "PDF tooling — pdf-lib + @pdf-lib/* together. Small ecosystem, low frequency, but tight coupling.",
+      "matchPackagePrefixes": ["pdf-lib", "@pdf-lib/"],
+      "groupName": "pdf tooling",
+      "schedule": ["before 9am on monday"]
+    },
+
+    {
+      "description": "GitHub Actions runner versions (actions/checkout, actions/setup-node, etc.). Group all action upgrades into one PR.",
+      "matchManagers": ["github-actions"],
+      "groupName": "github-actions",
+      "schedule": ["before 9am on monday"]
+    },
+
+    {
+      "description": "Major version bumps ALWAYS require human review (no auto-merge regardless of dep type). Major bumps may have breaking API changes that even green CI cannot detect — runtime semantics, deprecations, behavioural changes in clinical-relevant libraries.",
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "labels": ["dependencies", "major-update"]
+    },
+
+    {
+      "description": "Production runtime dependencies (anything used by serverless functions or frontend at runtime) require human review for ANY update size. Includes pdf-lib, supabase-js (already pinned via separate rule), zod, @pdf-lib/fontkit. Clinical-grade software cannot auto-merge production deps without explicit review.",
+      "matchDepTypes": ["dependencies"],
+      "automerge": false,
+      "labels": ["dependencies", "runtime-update"]
+    },
+
+    {
+      "description": "Auto-merge is currently DISABLED globally because the project does not enforce required status checks on main (founder's choice — direct push workflow). When branch protection is later upgraded with required CI, this rule can be relaxed for devDeps patch updates.",
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "automerge": false
+    }
+  ],
+
+  "ignoreDeps": [],
+
+  "ignorePaths": [
+    "_archive_legacy/**",
+    "frontend-dist/**",
+    "node_modules/**"
+  ]
+}
