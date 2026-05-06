@@ -112,18 +112,23 @@ function purlSet(canon) {
 
 // Platform-specific native binary detection.
 // -------------------------------------------
-// `npm sbom` walks node_modules, which on macOS contains @esbuild/darwin-*
-// and on Linux contains @esbuild/linux-*. The package-lock.json declares
-// every variant via the parent's optionalDependencies + os/cpu fields, so
-// the LIVE SBOM differs across platforms even though the LOCKFILE doesn't.
-// We strip those variants from the comparison to avoid false-positive drift
-// when CI (Linux) compares against a Mac-generated committed SBOM.
+// `npm sbom` walks node_modules, which is platform-dependent:
+//   * macOS host: contains fsevents (darwin-only), @esbuild/darwin-*, ...
+//   * Linux CI:   contains @esbuild/linux-*, no fsevents, ...
+// The package-lock.json declares every variant via the parent's
+// optionalDependencies + os/cpu fields, so the LIVE SBOM differs across
+// platforms even though the LOCKFILE doesn't. We strip those variants from
+// the comparison to avoid false-positive drift when CI (Linux) compares
+// against a Mac-generated committed SBOM.
 //
-// TODO (Sprint 2 / task 1.1ter-D follow-up): regenerate sbom.cyclonedx.json
-// directly from package-lock.json (which lists every variant) so the
-// committed SBOM is platform-agnostic by construction. Until then, we accept
-// that the SBOM contains only the host-platform variant of native binaries
-// and the gate ignores cross-platform drift on those packages.
+// TODO (Sprint 2 / task 53): regenerate sbom.cyclonedx.json directly from
+// package-lock.json (which lists every variant) so the committed SBOM is
+// platform-agnostic by construction. Until then, we accept that the SBOM
+// contains only the host-platform variant of these packages and the gate
+// ignores cross-platform drift on them.
+
+// Pattern A: native binary loaders shipped by bundlers / image libs / etc.
+// They follow a predictable @scope/<lib>-<os>-<arch> naming scheme.
 const PLATFORM_BINARY_PATTERNS = [
   /^@esbuild\/[a-z0-9]+-[a-z0-9]+@/,         // @esbuild/darwin-x64@, @esbuild/linux-arm64@ ...
   /^esbuild-(darwin|linux|win32|freebsd|netbsd|openbsd|sunos|android)-/,
@@ -132,8 +137,24 @@ const PLATFORM_BINARY_PATTERNS = [
   /^lightningcss-(darwin|linux|win32|freebsd)-/,
   /^@img\/sharp-[a-z0-9-]+-/,                // sharp ships os-specific binaries via @img scope
 ];
+
+// Pattern B: standalone packages whose installation is gated by `os` or
+// `cpu` in their own package.json. They have plain names (no os-arch
+// suffix) so a regex would over-match — we use an exact-name allowlist.
+// Add packages here as they surface in CI runs; each entry MUST be one
+// that npm refuses to install on certain platforms (verifiable via
+// `npm view <name> os cpu`).
+const STANDALONE_PLATFORM_CONDITIONAL = new Set([
+  'fsevents',                                // darwin-only file-system events
+]);
+
 function isPlatformNativeBinary(purl) {
-  return PLATFORM_BINARY_PATTERNS.some((re) => re.test(purl));
+  if (PLATFORM_BINARY_PATTERNS.some((re) => re.test(purl))) return true;
+  // purl format here is `<bom-ref-or-name>@<version>` — split on the LAST '@'
+  // because @scope/name itself starts with '@'.
+  const at = purl.lastIndexOf('@');
+  const baseName = at > 0 ? purl.slice(0, at) : purl;
+  return STANDALONE_PLATFORM_CONDITIONAL.has(baseName);
 }
 function withoutPlatformBinaries(set) {
   return new Set([...set].filter((p) => !isPlatformNativeBinary(p)));
