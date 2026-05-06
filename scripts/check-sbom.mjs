@@ -110,8 +110,37 @@ function purlSet(canon) {
   );
 }
 
-const live = purlSet(liveCanon);
-const committed = purlSet(committedCanon);
+// Platform-specific native binary detection.
+// -------------------------------------------
+// `npm sbom` walks node_modules, which on macOS contains @esbuild/darwin-*
+// and on Linux contains @esbuild/linux-*. The package-lock.json declares
+// every variant via the parent's optionalDependencies + os/cpu fields, so
+// the LIVE SBOM differs across platforms even though the LOCKFILE doesn't.
+// We strip those variants from the comparison to avoid false-positive drift
+// when CI (Linux) compares against a Mac-generated committed SBOM.
+//
+// TODO (Sprint 2 / task 1.1ter-D follow-up): regenerate sbom.cyclonedx.json
+// directly from package-lock.json (which lists every variant) so the
+// committed SBOM is platform-agnostic by construction. Until then, we accept
+// that the SBOM contains only the host-platform variant of native binaries
+// and the gate ignores cross-platform drift on those packages.
+const PLATFORM_BINARY_PATTERNS = [
+  /^@esbuild\/[a-z0-9]+-[a-z0-9]+@/,         // @esbuild/darwin-x64@, @esbuild/linux-arm64@ ...
+  /^esbuild-(darwin|linux|win32|freebsd|netbsd|openbsd|sunos|android)-/,
+  /^@(swc|rollup|napi-rs|next|parcel)\/[a-z0-9-]+-(darwin|linux|win32|freebsd)-/,
+  /^@(swc|rollup|napi-rs)\/core-(darwin|linux|win32)-/,
+  /^lightningcss-(darwin|linux|win32|freebsd)-/,
+  /^@img\/sharp-[a-z0-9-]+-/,                // sharp ships os-specific binaries via @img scope
+];
+function isPlatformNativeBinary(purl) {
+  return PLATFORM_BINARY_PATTERNS.some((re) => re.test(purl));
+}
+function withoutPlatformBinaries(set) {
+  return new Set([...set].filter((p) => !isPlatformNativeBinary(p)));
+}
+
+const live = withoutPlatformBinaries(purlSet(liveCanon));
+const committed = withoutPlatformBinaries(purlSet(committedCanon));
 
 const added = [...live].filter((p) => !committed.has(p)).sort();
 const removed = [...committed].filter((p) => !live.has(p)).sort();
