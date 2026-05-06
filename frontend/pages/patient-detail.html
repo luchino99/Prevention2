@@ -15,12 +15,13 @@
   <link rel="stylesheet" href="../assets/css/app.css" />
 </head>
 <body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
   <div class="app-shell">
-    <aside class="app-sidebar">
+    <aside class="app-sidebar" aria-label="Primary navigation">
       <div class="brand">Uelfy Clinical</div>
       <nav>
         <a href="./dashboard.html">Dashboard</a>
-        <a href="./patients.html" class="active">Patients</a>
+        <a href="./patients.html" class="active" aria-current="page">Patients</a>
         <a href="./alerts.html">Alerts</a>
         <a href="./audit.html" id="nav-audit" class="hidden">Audit log</a>
         <a href="./tenant-settings.html">Tenant settings</a>
@@ -42,7 +43,7 @@
         </div>
       </div>
 
-      <div id="error-banner" class="inline-alert danger hidden"></div>
+      <div id="error-banner" class="inline-alert danger hidden" role="alert" aria-live="assertive"></div>
 
       <section class="card">
         <h3>Demographics</h3>

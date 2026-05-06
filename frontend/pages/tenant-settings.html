@@ -14,15 +14,16 @@
   <link rel="stylesheet" href="../assets/css/app.css" />
 </head>
 <body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
   <div class="app-shell">
-    <aside class="app-sidebar">
+    <aside class="app-sidebar" aria-label="Primary navigation">
       <div class="brand">Uelfy Clinical</div>
       <nav>
         <a href="./dashboard.html">Dashboard</a>
         <a href="./patients.html">Patients</a>
         <a href="./alerts.html">Alerts</a>
         <a href="./audit.html">Audit log</a>
-        <a href="./tenant-settings.html" class="active">Tenant settings</a>
+        <a href="./tenant-settings.html" class="active" aria-current="page">Tenant settings</a>
         <a href="#" id="signout-link">Sign out</a>
       </nav>
     </aside>
@@ -35,7 +36,7 @@
         </div>
       </div>
 
-      <div id="forbidden-banner" class="inline-alert danger" style="display:none;">
+      <div id="forbidden-banner" class="inline-alert danger" style="display:none;" role="alert" aria-live="assertive">
         Tenant settings are accessible only to <code>tenant_admin</code> or
         <code>platform_admin</code>.
       </div>
@@ -93,7 +94,7 @@
           </div>
           <div style="grid-column: 1 / -1; display:flex; gap:8px; align-items:center; margin-top:8px;">
             <button class="btn primary" type="submit" id="save-btn">Save</button>
-            <span id="save-status" class="muted"></span>
+            <span id="save-status" class="muted" role="status" aria-live="polite"></span>
           </div>
         </form>
       </section>

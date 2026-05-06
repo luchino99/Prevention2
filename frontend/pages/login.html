@@ -15,13 +15,14 @@
   <link rel="stylesheet" href="../assets/css/app.css" />
 </head>
 <body style="display:flex; align-items:center; justify-content:center; min-height:100vh;">
+  <a class="skip-link" href="#main-content">Skip to main content</a>
   <main class="card" id="main-content" tabindex="-1" style="max-width:380px; width:100%;">
     <h1 style="margin-bottom:6px;">Uelfy Clinical</h1>
     <p class="muted" style="margin-top:0; margin-bottom:18px; font-size:13px;">
       Sign in with your professional account
     </p>
 
-    <div id="error-banner" class="inline-alert danger hidden"></div>
+    <div id="error-banner" class="inline-alert danger hidden" role="alert" aria-live="assertive"></div>
 
     <form id="login-form" autocomplete="off">
       <div class="field">

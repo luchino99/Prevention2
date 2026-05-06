@@ -498,6 +498,139 @@ ORDER BY created_at;
 -- being replayed with a different tenant in the URL path).
 ```
 
+## 11b. Datadog monitor catalogue (operator wiring)
+
+The platform emits 6 canonical structured-log events that gate
+production health. Each row below is a ready-to-paste Datadog log
+monitor (or equivalent in Logflare / Grafana Loki / NewRelic Logs).
+The query string assumes the Vercel Log Drain has been configured per
+`26-DEPLOYMENT-RUNBOOK.md §11b`. Severity follows §2 of this doc.
+
+> Operator handoff: this is the canonical reference for the
+> AUD-2026-05-05 finding **OBS-01**. When all 6 monitors are armed
+> and silenced-by-default with paging enabled, the operator can tick
+> §A.6 of `31-LAUNCH-CHECKLIST.md`.
+
+### Monitor 1 — AUDIT_WRITE_FAILED (P1)
+
+```
+Type:       Log monitor
+Query:      @event:AUDIT_WRITE_FAILED
+Threshold:  count >= 1 over last 5 minutes
+Severity:   SEV-1 (page on-call immediately)
+Notify:     @oncall-engineering @dpo
+Title:      [P1] Audit write failed — strict-audit pathway broke
+Body:       A privacy-significant write was attempted without a
+            matching immutable audit row. requestId={{requestId}},
+            action={{action}}, variant={{variant}},
+            dbErrorCode={{dbErrorCode}}.
+            Runbook: docs/27-INCIDENT-RESPONSE.md §11.1.
+```
+
+Rationale: zero tolerance per Art.30 GDPR + B-09 audit guarantee.
+
+### Monitor 2 — ACCESS_DENIED cross_tenant (P2)
+
+```
+Type:       Log monitor
+Query:      @event:ACCESS_DENIED @reason:cross_tenant
+Threshold:  count >= 5 over last 15 minutes
+Severity:   SEV-2 (alert security channel, page if outside hours)
+Notify:     @oncall-security
+Title:      [P2] Cross-tenant access attempt spike
+Body:       {{count}} cross-tenant access denials in 15 minutes.
+            actorRole={{actorRole}}, actorTenantId={{actorTenantId}},
+            targetTenantId={{targetTenantId}}.
+            Possible: token reuse / probing / RLS misconfiguration.
+            Runbook: docs/27-INCIDENT-RESPONSE.md §11.3.
+```
+
+### Monitor 3 — ACCESS_DENIED cross_clinician_ppl (P3)
+
+```
+Type:       Log monitor
+Query:      @event:ACCESS_DENIED @reason:cross_clinician_ppl
+Threshold:  count >= 10 over last 1 hour
+Severity:   SEV-3 (review next business day)
+Notify:     @oncall-security (low priority)
+Title:      [P3] Clinician PPL gate denied repeatedly
+Body:       Clinician {{actorUserId}} attempted to access patients
+            they have no professional_patient_links row for.
+            Possible: workflow drift / patient unassigned.
+```
+
+### Monitor 4 — ACCESS_DENIED mfa_required campaign (P3)
+
+```
+Type:       Log monitor
+Query:      @event:ACCESS_DENIED @reason:mfa_required
+Threshold:  count >= 100 over last 15 minutes
+Severity:   SEV-3 (likely user-side: cohort lacks MFA enrolment)
+Notify:     @oncall-engineering
+Title:      [P3] MFA-required denials spike
+Body:       Likely a cohort of users hit the MFA gate without
+            enrolment. Verify operator did not flip a role flag
+            before the cohort enrolled at /pages/mfa-enroll.html.
+```
+
+### Monitor 5 — RATE_LIMIT_BACKEND_FAILURE (P2)
+
+```
+Type:       Log monitor
+Query:      @event:RATE_LIMIT_BACKEND_FAILURE
+Threshold:  count >= 1 over last 10 minutes
+Severity:   SEV-2 (in-memory fallback active — DoS surface)
+Notify:     @oncall-engineering
+Title:      [P2] Upstash rate-limit backend down
+Body:       Distributed rate-limit failed; in-memory fallback active.
+            Per-tenant DoS protection degraded across the fleet.
+            Verify UPSTASH_REDIS_REST_URL + token; check Upstash status.
+```
+
+### Monitor 6 — RETENTION_RUN absent (P3)
+
+```
+Type:       Log monitor
+Query:      @event:RETENTION_RUN
+Threshold:  count == 0 over last 25 hours
+Severity:   SEV-3 (cron didn't run)
+Notify:     @oncall-engineering
+Title:      [P3] Retention cron silent for >24h
+Body:       The /api/v1/internal/retention cron has not emitted a run
+            event in the last 25 hours. Expected schedule is daily
+            03:00 UTC. Check Vercel cron dashboard + CRON_SIGNING_SECRET.
+```
+
+### Optional bonus monitor — SCORE_ENGINE_FAILURE (P3)
+
+Tier-5 audit added a structured event for clinical engine failures
+caught by `score-engine/index.ts:emitScoreFailure`. Useful but not
+load-bearing — score modules already short-circuit gracefully.
+
+```
+Query:      @event:SCORE_ENGINE_FAILURE
+Threshold:  count >= 5 over last 15 minutes (per scoreCode)
+Severity:   SEV-3
+```
+
+### Setup checklist (operator)
+
+```
+[ ] Vercel Log Drain → Datadog (Org-wide, EU site)
+[ ] Datadog log facets exposed for: event, requestId, action,
+    variant, reason, actorUserId, actorRole, actorTenantId,
+    targetTenantId, dbErrorCode, scoreCode
+[ ] All 6 monitors created from the queries above
+[ ] On-call rotation linked: @oncall-engineering, @oncall-security,
+    @dpo
+[ ] Slack channel #uelfy-alerts exists, pingable
+[ ] Test: produce a synthetic AUDIT_WRITE_FAILED via the §6.4 probe
+    in `26-DEPLOYMENT-RUNBOOK.md`. Confirm SEV-1 page reaches on-call.
+[ ] Tick `31-LAUNCH-CHECKLIST.md §A.6 — alert wiring`.
+```
+
+---
+
 ## 12. Open items
 
 | Item | Owner | Status |

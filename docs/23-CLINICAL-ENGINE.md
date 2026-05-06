@@ -111,6 +111,48 @@ Adjacent helpers:
 - `guideline-catalog/` — structured catalogue of which guideline / source
   underpins each score (surfaced in UI + PDF as "Reference framework").
 
+### 2.1 Lab derivations boundary (audit L-03b)
+
+`applyLabDerivations(input)` lives in
+`backend/src/domain/clinical/derivations/index.ts`. It is invoked by the
+**service layer** (`assessment-service.ts`), NOT by `computeAllScores`.
+It enriches the canonical `AssessmentInput` with derived lab values
+that don't exist in the patient's source data:
+
+- `eGFR` derived from `creatinineMgDl` + `age` + `sex` via CKD-EPI 2021
+  when the caller did not supply a pre-computed value.
+- `albuminCreatinineRatio` (ACR) derived from
+  `urineAlbuminMgL` / `urineCreatinineMgDl`.
+
+**Why the split.** The score engine is a pure-function boundary:
+`(input) → ScoreResultEntry[]`. Hiding a transformation step inside
+that boundary would:
+
+1. Break the determinism contract by introducing two flavours of the
+   same `eGFR` field (caller-supplied vs derived) with no audit signal
+   for which one applied.
+2. Make the engine harder to test in isolation — every test would
+   need to either reason about derivations or stub them out.
+3. Couple `score-engine/` to `derivations/` and force a circular
+   build dependency between modules.
+
+The service layer is the right place because it ALSO owns:
+
+- Zod validation (rejects raw urine values out of range before they
+  reach a derivation that would silently NaN out).
+- Audit logging of the assessment (one consistent before-image).
+- Snapshot persistence (`clinical_input_snapshot` reflects the
+  enriched input, NOT the raw caller input — so re-runs reproduce
+  the original scores byte-identically per the §4 determinism contract).
+
+**Test contract.** Unit tests that exercise the engine directly
+(`tests/equivalence/score-equivalence.test.ts`,
+`tests/unit/clinical-engine.test.ts`) construct fixtures with
+**every required lab pre-populated**. SCORE2-Diabetes specifically
+needs `labs.eGFR` even when `creatinineMgDl` is also present — the
+fixture is responsible for emulating what the service layer would have
+done. This is documented inline in `tests/fixtures/score-cases.ts`.
+
 ---
 
 ## 3. Score modules (current set)

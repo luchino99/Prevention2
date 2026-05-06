@@ -15,14 +15,15 @@
   <link rel="stylesheet" href="../assets/css/app.css" />
 </head>
 <body style="display:flex; align-items:center; justify-content:center; min-height:100vh;">
+  <a class="skip-link" href="#main-content">Skip to main content</a>
   <main class="card" id="main-content" tabindex="-1" style="max-width:520px; width:100%;">
     <h1 id="page-title" style="margin-bottom:4px;">Two-factor authentication</h1>
     <p id="page-subtitle" class="muted" style="margin-top:0; margin-bottom:18px; font-size:13px;">
       Loading…
     </p>
 
-    <div id="error-banner" class="inline-alert danger hidden"></div>
-    <div id="success-banner" class="inline-alert success hidden"></div>
+    <div id="error-banner" class="inline-alert danger hidden" role="alert" aria-live="assertive"></div>
+    <div id="success-banner" class="inline-alert success hidden" role="status" aria-live="polite"></div>
 
     <!-- Initial dispatcher placeholder shown while we resolve session/AAL/factors. -->
     <section id="mode-loading">
