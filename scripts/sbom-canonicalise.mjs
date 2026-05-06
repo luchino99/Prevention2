@@ -98,8 +98,45 @@ export function canonicaliseSbom(sbom) {
   if (out.metadata && typeof out.metadata === 'object') {
     const meta = { ...out.metadata };
     delete meta.timestamp;
-    // Keep tools but normalise — toolchain version drifts are part of
-    // the audit trail; we only strip per-run noise.
+
+    // Strip tools[*].version. The npm version that generated the SBOM
+    // varies between developer machines (e.g. 10.8.2) and CI runners
+    // (e.g. 10.9.4) and would otherwise cause a 2-line drift on every
+    // npm self-update. The fact that npm produced the SBOM is preserved;
+    // the exact version is recoverable from the build environment.
+    if (Array.isArray(meta.tools)) {
+      meta.tools = meta.tools.map((t) => {
+        if (!t || typeof t !== 'object') return t;
+        const { version, ...rest } = t; // eslint-disable-line no-unused-vars
+        return rest;
+      });
+    }
+
+    // Normalise root application component identity. `npm sbom` derives
+    // metadata.component.name from the working directory (so a Mac
+    // checkout in ~/Documents/GitHub/Prevention2 produces "Prevention2"
+    // while a Cowork mount under ./Uelfy-claude produces "Uelfy-claude").
+    // The canonical identity is the npm package name from package.json,
+    // which is also embedded in the bom-ref / purl. We force name +
+    // version from purl so the SBOM is stable across checkout paths.
+    if (meta.component && typeof meta.component === 'object') {
+      const comp = { ...meta.component };
+      const purl = typeof comp.purl === 'string' ? comp.purl : '';
+      // Expected purl format: "pkg:npm/<name>@<version>"
+      const m = purl.match(/^pkg:npm\/(.+)@([^@]+)$/);
+      if (m) {
+        comp.name = m[1];
+        comp.version = m[2];
+      }
+      // Drop properties that include a directory-relative path (volatile).
+      if (Array.isArray(comp.properties)) {
+        comp.properties = comp.properties.filter(
+          (p) => p?.name !== 'cdx:npm:package:path',
+        );
+      }
+      meta.component = comp;
+    }
+
     out.metadata = meta;
   }
 

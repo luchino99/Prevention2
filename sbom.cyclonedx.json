@@ -11,23 +11,18 @@
     "tools": [
       {
         "vendor": "npm",
-        "name": "cli",
-        "version": "10.9.4"
+        "name": "cli"
       }
     ],
     "component": {
       "bom-ref": "uelfy-clinical@0.2.1",
       "type": "application",
-      "name": "Uelfy-claude",
+      "name": "uelfy-clinical",
       "version": "0.2.1",
       "scope": "required",
       "description": "Uelfy — B2B cardio-nephro-metabolic clinical risk assessment and longitudinal patient monitoring platform.",
       "purl": "pkg:npm/uelfy-clinical@0.2.1",
       "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": ""
-        },
         {
           "name": "cdx:npm:package:private",
           "value": "true"
