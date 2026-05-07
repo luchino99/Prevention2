@@ -235,6 +235,44 @@ budget from `RATE_LIMITS` (`read`, `write`, `admin`, `reportExport`,
 `X-RateLimit-*` headers. Heavy paths (PHI export, report generation) are
 budgeted at single-digit requests per minute per actor.
 
+**Distributed counters via Upstash (Sprint 2 task 2.4).** In production
+the rate-limit MUST use Upstash Redis. The in-memory fallback in
+`rate-limit.ts` is per-lambda — an attacker hitting 100 different cold
+serverless instances bypasses the limit entirely. Upstash provides a
+shared counter across all lambdas, which is the only correct semantic
+for a Vercel-style serverless deploy.
+
+Required Vercel environment variables (Production scope):
+
+| Variable | Source | Purpose |
+|---|---|---|
+| `UPSTASH_REDIS_REST_URL` | Upstash dashboard → Database → REST API | Endpoint for INCR/EXPIRE commands |
+| `UPSTASH_REDIS_REST_TOKEN` | Same dashboard | Bearer token for the REST API |
+
+Provisioning runbook (one-time, ~10 minutes):
+
+1. Sign up at `https://upstash.com/` (free tier: 10k requests/day,
+   256 MB DB — enough for a small clinic).
+2. **Create Database** → choose region **EU-WEST-1 (Frankfurt)** for
+   GDPR coherence with Supabase EU + Vercel EU.
+3. Copy `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` from
+   the database details panel.
+4. On Vercel → Project Settings → Environment Variables → add both
+   vars with **Production** scope (and optionally **Preview** for
+   PR-deploy parity).
+5. Vercel hot-reloads env vars. No redeploy required.
+6. Verify: `curl https://prevention2.vercel.app/api/v1/health` →
+   `subsystems.rate_limit_distributed.status` must be `"ok"` (not
+   `"degraded"`).
+7. The CI smoke-prod job (Sprint 2 task 2.4) hits `/api/v1/health` on
+   every push and fails the workflow if the subsystem is degraded —
+   alarming on accidental env var deletion.
+
+**Cost monitoring.** Free tier resets daily. Heavy traffic (>10k
+requests/day) requires upgrading to Pay-as-you-go (~$0.20/100k
+requests) or Pro ($20/month for 1M requests/day). Monitor at
+`https://console.upstash.com/usage`.
+
 ## 10. Threat model summary
 
 | Threat | Mitigation | Status |

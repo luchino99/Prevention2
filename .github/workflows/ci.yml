@@ -336,6 +336,36 @@ jobs:
           fi
           echo "OK MFA enforcement: all 3 flags active (admin + clinician + staff)"
 
+      - name: Verify rate-limit (Upstash) subsystem is up (Sprint 2 task 2.4)
+        run: |
+          # The /api/v1/health subsystem `rate_limit_distributed` reports
+          # whether Upstash Redis is configured (UPSTASH_REDIS_REST_URL +
+          # UPSTASH_REDIS_REST_TOKEN env vars set). When degraded, the
+          # rate-limit middleware falls back to in-memory counters which
+          # do NOT work cross-lambda — an attacker hitting 100 different
+          # serverless instances bypasses the limit entirely.
+          # In production this MUST be "ok". The previous "Verify health
+          # status" step accepts "degraded" as overall status (so smoke
+          # doesn't fail on transient Upstash hiccups for non-PHI paths)
+          # — this dedicated step makes the per-subsystem requirement
+          # explicit and blocking.
+          RL_STATUS=$(jq -r '.subsystems[] | select(.name=="rate_limit_distributed") | .status // "missing"' /tmp/health.json)
+          RL_DETAIL=$(jq -r '.subsystems[] | select(.name=="rate_limit_distributed") | .detail // "none"' /tmp/health.json)
+          echo "rate_limit_distributed: $RL_STATUS (detail: $RL_DETAIL)"
+          if [ "$RL_STATUS" = "missing" ]; then
+            echo "::error::rate_limit_distributed subsystem missing from /api/v1/health response."
+            exit 1
+          fi
+          if [ "$RL_STATUS" != "ok" ]; then
+            echo "::error::Distributed rate-limit (Upstash) is NOT active in production."
+            echo "::error::detail: $RL_DETAIL"
+            echo "::error::Fix: set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN in Vercel"
+            echo "::error::project Environment Variables (Production scope)."
+            echo "::error::See docs/20-SECURITY.md §Rate limiting for the provisioning runbook."
+            exit 1
+          fi
+          echo "OK Upstash rate-limit active (cross-lambda counters working)"
+
       - name: Smoke check — root path redirects to login (307/308)
         run: |
           HTTP_CODE=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 5 "$PROD_URL/")
