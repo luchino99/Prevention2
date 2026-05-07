@@ -16,8 +16,8 @@
     <article aria-labelledby="page-title">
       <h1 id="page-title">Privacy notice — Uelfy Clinical</h1>
       <p class="muted">
-        Last updated: <time datetime="2026-05-04">2026-05-04</time> ·
-        Version: 1.0
+        Last updated: <time datetime="2026-05-07">2026-05-07</time> ·
+        Version: 1.1 (Sprint 3)
       </p>
 
       <p>
@@ -35,6 +35,17 @@
         notice tailored to its data subjects. Uelfy operates as a
         Processor under Article 28 GDPR governed by a per-tenant Data
         Processing Agreement.
+      </p>
+
+      <p class="muted" style="font-size:13px;">
+        Authoritative technical companions to this notice (engineering
+        reference, not part of the legal informativa):
+        Data Protection Impact Assessment scaffold
+        (<code>docs/39-DPIA-CARDIO.md</code>),
+        consent enforcement matrix (<code>docs/41-CONSENT-ENFORCEMENT.md</code>),
+        DSR workflow audit (<code>docs/40-DSR-WORKFLOW-AUDIT.md</code>),
+        retention &amp; deletion policy (<code>docs/14-DELETION-POLICY.md</code>),
+        security controls (<code>docs/20-SECURITY.md</code>).
       </p>
 
       <h2 id="roles">1. Roles under GDPR</h2>
@@ -79,27 +90,60 @@
 
       <h2 id="purposes">3. Purposes and lawful bases</h2>
       <p>
-        Each Tenant configures its own lawful basis. Typical mappings
-        for European clinical Controllers:
+        Each Tenant configures its own lawful basis. The Platform
+        distinguishes between operations that proceed under a
+        non-consent legal basis (clinical care, audit, security) and
+        operations that require explicit opt-in via the granular
+        consent matrix in <code>backend/src/middleware/consent-gate.ts</code>:
       </p>
       <ul>
         <li>
-          Provision of clinical risk assessment and follow-up: Article
-          6(1)(b) (contract with the patient or clinician), with Article
-          9(2)(h) (provision of healthcare) for special-category data.
+          <strong>Provision of clinical risk assessment and follow-up</strong>
+          (no consent gate): Article 6(1)(c) (medical-record legal
+          obligation) and Article 6(1)(b) (contract), with Article
+          9(2)(h) (provision of healthcare by a regulated professional)
+          for special-category data.
         </li>
         <li>
-          Audit and security logging: Article 6(1)(c) (legal obligation)
-          and Article 6(1)(f) (legitimate interest of the Controller in
-          ensuring traceability).
+          <strong>Audit and security logging</strong> (no consent gate):
+          Article 6(1)(c) (Article 30 records-of-processing obligation
+          + Article 5(2) accountability).
         </li>
         <li>
-          Optional AI commentary (off by default; opt-in only): Article
-          6(1)(a) explicit consent and Article 9(2)(a) for special-category
-          data. Disabled in Tenants where the DPA does not include the
-          OpenAI sub-processor addendum.
+          <strong>Notifications</strong> (consent-gated, opt-in):
+          Article 6(1)(a) consent. Patient receives email/SMS only after
+          a positive consent record under <code>consent_type =
+          'notifications'</code>; revocation stops further dispatch
+          on the next cron pass.
+        </li>
+        <li>
+          <strong>AI-assisted clinical commentary</strong> (consent-gated,
+          opt-in; planned Sprint 5+): Article 6(1)(a) explicit consent
+          and Article 9(2)(a) for special-category data. Activated only
+          where the DPA includes the AI sub-processor addendum.
+        </li>
+        <li>
+          <strong>Sharing with external clinician</strong> (consent-gated,
+          opt-in; planned Sprint 5+): Article 6(1)(a) explicit consent
+          and Article 9(2)(a) for special-category data. Used for
+          referral / second-opinion flows.
+        </li>
+        <li>
+          <strong>Marketing communications</strong> (consent-gated,
+          opt-in): Article 6(1)(a) consent. Off by default.
         </li>
       </ul>
+      <p class="muted" style="font-size:13px;">
+        The five consent types (<code>health_data_processing</code>,
+        <code>ai_processing</code>, <code>notifications</code>,
+        <code>data_sharing_clinician</code>, <code>marketing</code>)
+        are versioned and immutable in <code>consent_records</code>:
+        revocation creates a new row with <code>granted=false</code>
+        rather than mutating history (Article 7(1) accountability).
+        Only the four opt-in types are runtime-enforced;
+        <code>health_data_processing</code> is administrative
+        record-keeping under Article 9(2)(h), not a gate.
+      </p>
 
       <h2 id="minimisation">4. Data minimisation</h2>
       <p>
@@ -121,7 +165,19 @@
             clinically active; soft-deleted on revoke or discharge.</li>
         <li>Soft-deleted patients: 30-day grace period (configurable),
             then irreversible anonymisation by the daily cron.</li>
-        <li>Audit events: 10 years (configurable 30 days … 10 years).</li>
+        <li><strong>Audit events — security category</strong>
+            (<code>action LIKE 'auth.%'</code>: login, logout,
+            failed_login): <strong>180 days</strong>. Aligned with
+            NIS2 Annex II §4 incident-detection benchmark and ISO 27001
+            A.8.15 logging guidance. Tenant override via
+            <code>retention_days_audit</code> can only tighten this
+            (never widens past 180).</li>
+        <li><strong>Audit events — default category</strong>
+            (clinical writes, consent transitions, DSR fulfilment,
+            admin actions, system events): <strong>10 years</strong>
+            (configurable 30 days … 10 years). Aligned with Italian
+            medical-deontological code (cartella clinica ≥10 years)
+            and GDPR Article 30 records-of-processing.</li>
         <li>Resolved alerts: 1 year (configurable 7 days … 5 years).</li>
         <li>Notification queue: 90 days (configurable 7 days … 1 year).</li>
         <li>Clinical PDF report storage: 2 years (configurable
@@ -129,30 +185,63 @@
             traceability after the storage object expires).</li>
         <li>DSR records: 10 years (Article 12(3) record-keeping).</li>
       </ul>
+      <p class="muted" style="font-size:13px;">
+        Implementation: <code>fn_retention_prune()</code> runs daily at
+        03:00 UTC; <code>fn_anonymize_patient()</code> runs daily at
+        04:00 UTC. Both are idempotent. Per-category split lives in
+        migration 018; full policy table with legal basis in
+        <code>docs/14-DELETION-POLICY.md</code> §1.1.
+      </p>
 
       <h2 id="rights">6. Data subject rights</h2>
       <p>
         Patients exercise their rights through the Controller. The
-        Platform supports the Controller in fulfilling them:
+        Platform supports the Controller in fulfilling them via the
+        DSR API at <code>/api/v1/admin/dsr</code> with state machine
+        and 30-day Article 12(3) SLA tracking. Detailed gap analysis
+        per Article in <code>docs/40-DSR-WORKFLOW-AUDIT.md</code>:
       </p>
       <ul>
-        <li><strong>Article 15 (access)</strong>: machine-readable JSON
-            export of every record we hold for a patient.</li>
+        <li><strong>Article 15 (access)</strong>: API endpoint and
+            state machine implemented; PDF export endpoint exists; the
+            structured machine-readable export (FHIR JSON) is being
+            wired in Sprint 3 task 3.6 — until then, access requests
+            are fulfilled by the PDF export plus the consent and audit
+            JSON included in <code>/api/v1/patients/[id]/export</code>.</li>
         <li><strong>Article 16 (rectification)</strong>: in-app edit of
-            patient demographics and clinical context.</li>
-        <li><strong>Article 17 (erasure)</strong>: soft-delete with
-            grace period, then anonymisation that strips all PII while
-            preserving deterministic score outputs for epidemiology
-            (legal basis Article 6(1)(f) with DPIA).</li>
-        <li><strong>Article 18 (restriction)</strong>: temporary
-            suspension via patient inactivation flag.</li>
-        <li><strong>Article 20 (portability)</strong>: same JSON
-            envelope as Article 15.</li>
-        <li><strong>Article 21 (objection)</strong>: handled
-            controller-side per the published lawful basis.</li>
+            patient demographics and clinical context via the standard
+            <code>PUT /api/v1/patients/[id]</code> endpoint, with audit
+            logging of every modification.</li>
+        <li><strong>Article 17 (erasure)</strong>: DSR <code>kind=erasure</code>
+            triggers <code>fn_anonymize_patient()</code> after a
+            30-day soft-delete grace, irreversibly stripping all PII
+            while preserving deterministic anonymised score outputs
+            for clinical lineage (legal basis Article 9(2)(j) +
+            Article 89(1) safeguards).</li>
+        <li><strong>Article 18 (restriction)</strong>: programmatic
+            restriction flag is planned for Sprint 4. Today,
+            restriction is fulfilled operationally via the patient
+            inactivation flag plus a manual processing-restriction
+            note in the patient record.</li>
+        <li><strong>Article 20 (portability)</strong>: same surface as
+            Article 15 — Sprint 3 task 3.6 ships the FHIR JSON
+            envelope so the patient can transfer the export to another
+            controller without bespoke parsing.</li>
+        <li><strong>Article 21 (objection)</strong>: programmatic
+            objection enum + UI is planned for Sprint 4. Today,
+            objection is handled operationally via DPO consultation
+            and a manual rejection / restriction decision recorded in
+            the DSR row.</li>
         <li><strong>Article 7(3) (withdrawal of consent)</strong>:
             consent revocation creates a new immutable consent record
-            with <code>granted=false</code>, audited via strict-mode.</li>
+            with <code>granted=false</code>, audited via strict-mode.
+            The next cron pass of any consent-gated worker
+            (notifications, AI commentary, sharing) refuses subsequent
+            operations on that purpose.</li>
+        <li><strong>Article 77 (lodge a complaint)</strong>: the data
+            subject may lodge a complaint with their national
+            supervisory authority (in Italy: Garante per la Protezione
+            dei Dati Personali — <a href="https://www.garanteprivacy.it">www.garanteprivacy.it</a>).</li>
       </ul>
 
       <h2 id="security">7. Security of processing (Article 32)</h2>
@@ -182,12 +271,19 @@
 
       <h2 id="cross-border">9. Cross-border data transfers</h2>
       <p>
-        By default, all Platform data is stored and processed in the
-        European Union (Vercel EU region, Supabase EU region, Upstash EU
-        region). Non-EU sub-processors (e.g. OpenAI for the optional AI
-        commentary feature) are activated only with the Controller's
-        explicit opt-in via DPA addendum, with Standard Contractual
-        Clauses and a transfer impact assessment on file.
+        <strong>Default and current state: ZERO transfers outside the
+        EU/EEA.</strong> All Platform data is stored and processed in
+        the European Union: Vercel EU region (Frankfurt), Supabase EU
+        region (Central / West), Upstash EU region (West).
+      </p>
+      <p>
+        Non-EU sub-processors (e.g. OpenAI for the optional AI
+        commentary feature, planned Sprint 5+) will be activated only
+        with the Controller's explicit opt-in via DPA addendum, with
+        Standard Contractual Clauses (Implementing Decision (EU)
+        2021/914) and a Transfer Impact Assessment on file. Until that
+        addendum is signed and the AI commentary feature is shipped,
+        no patient data leaves the EU under any code path.
       </p>
 
       <h2 id="children">10. Children's data</h2>
@@ -200,31 +296,73 @@
       </p>
 
       <h2 id="sub-processors">11. Sub-processors</h2>
+      <p>
+        The complete current list of sub-processors used by the
+        Platform under Article 28(2-4) GDPR. Each sub-processor is
+        bound by a written DPA with Uelfy. Controllers are notified
+        in advance of any change to this list per the controller-side
+        DPA.
+      </p>
       <ul>
-        <li><strong>Vercel Inc.</strong> — application hosting (region:
-            EU Frankfurt).</li>
-        <li><strong>Supabase Inc.</strong> — database, authentication,
-            object storage (region: EU Central / EU West).</li>
-        <li><strong>Upstash Inc.</strong> — distributed rate-limit
-            cache (region: EU West).</li>
+        <li><strong>Vercel Inc.</strong> — application hosting and edge
+            network (region: EU Frankfurt). DPA + Standard Contractual
+            Clauses on file. In the data path for every request.</li>
+        <li><strong>Supabase (Powerbase Inc.)</strong> — Postgres
+            database, authentication (GoTrue), object storage (region:
+            EU Central / EU West). DPA + SCCs on file. Holds all PHI
+            at rest.</li>
+        <li><strong>Upstash Inc.</strong> — distributed Redis rate-limit
+            cache (region: EU West Frankfurt). DPA + SCCs on file. Holds
+            ephemeral request counters keyed by (route, identifier
+            hash); no PHI persisted.</li>
+        <li><strong>GitHub Inc.</strong> — source code repository and
+            CI workflow execution (US-based). NOT in the data path —
+            no PHI ever reaches GitHub. Holds source code + the
+            committed SBOM + the audit trail of code changes.</li>
         <li><strong>OpenAI L.L.C.</strong> — optional AI commentary
-            (US; off by default; opt-in only via DPA addendum).</li>
+            (US; OFF by default; planned Sprint 5+; opt-in only via
+            DPA addendum + Article 49 / SCC + TIA). NOT currently in
+            the data path.</li>
       </ul>
 
       <h2 id="contact">12. Contact</h2>
       <p>
-        For Platform-side technical privacy questions:
-        <a href="mailto:privacy@uelfy.com">privacy@uelfy.com</a>.<br />
-        For security vulnerability disclosures:
+        <strong>Data Controller</strong> (the clinic / healthcare
+        organisation that licenses the Platform): see your local
+        controller's privacy notice for their contact details and DPO.
+        For data-subject rights, contact your healthcare provider
+        first — they will route your request through the DSR API.
+      </p>
+      <p>
+        <strong>Processor (Uelfy) technical contacts:</strong><br />
+        Privacy questions:
+        <a href="mailto:privacy@uelfy.com">privacy@uelfy.com</a><br />
+        Security vulnerability disclosures:
         <a href="mailto:security@uelfy.com">security@uelfy.com</a>
-        (RFC 9116 details at <a href="/.well-known/security.txt">security.txt</a>).<br />
-        For data subject requests, please contact your healthcare
-        provider (the Controller).
+        (RFC 9116 details at <a href="/.well-known/security.txt">security.txt</a>)<br />
+        Uelfy Data Protection Officer (DPO):
+        <a href="mailto:dpo@uelfy.com">dpo@uelfy.com</a>
+        <span class="muted">[appointment in progress; see
+        <code>docs/39-DPIA-CARDIO.md</code> §0]</span>
+      </p>
+
+      <h2 id="italian-note">13. Nota lingua italiana</h2>
+      <p>
+        Questa informativa è pubblicata in inglese come documento
+        tecnico di riferimento per il rapporto Processor-Controller. La
+        versione operativa in italiano destinata al paziente è
+        responsabilità del Titolare del trattamento (la clinica) e deve
+        essere conforme agli artt. 13 e 14 GDPR + Codice in materia di
+        protezione dei dati personali (D.lgs. 196/2003 come modificato
+        dal D.lgs. 101/2018) + linee guida del Garante per la
+        Protezione dei Dati Personali.
       </p>
 
       <p class="muted" style="margin-top:32px; font-size:12px;">
-        This notice is reviewed at least annually and on any
-        material change to processing activities.
+        This notice is reviewed at least annually (next review: 2027-05)
+        and on any material change to processing activities. Version
+        history is tracked in <code>git log -- frontend/pages/legal-privacy.html</code>
+        and summarised in <code>docs/11-CHANGELOG.md</code>.
       </p>
     </article>
 
