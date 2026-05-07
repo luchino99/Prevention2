@@ -425,3 +425,63 @@ golden-vector tests per score (see `28-TESTING-STRATEGY.md`).
 - `29-CHANGELOG-CLINICAL.md` — score-engine evolution log.
 - `backend/src/domain/clinical/score-engine/` — implementation source
   (one file per score).
+
+---
+
+## 14. Tolerance & equivalence policy (Sprint 4 task 4.4)
+
+Every validated score in the engine carries an **independent reference
+implementation** in `tests/equivalence/refs/<score>-reference.ts` (or, for
+already-covered scores, in a dedicated golden file under `tests/unit/`).
+The reference is derived from the published source with no engine
+imports — so a regression in the engine OR in the reference surfaces as
+a CI failure rather than silently propagating.
+
+For each case the suite asserts BOTH:
+
+1. `engine(input)` ≡ `reference(input)` within the per-score tolerance
+   below — guards engine drift.
+2. `reference(input)` ≡ `pinnedExpected` within the same tolerance —
+   guards reference drift (the published-paper math is the ground truth).
+
+Per-score tolerance table:
+
+| Score              | Engine output type                | Tolerance (engine ↔ reference)                | Test file                                                       |
+| ------------------ | --------------------------------- | --------------------------------------------- | --------------------------------------------------------------- |
+| BMI                | rounded to 1 decimal place        | `0.05`                                        | `tests/equivalence/score-reference-equivalence.test.ts`         |
+| eGFR (CKD-EPI 2021)| rounded to integer mL/min/1.73m²  | `0` (integer-exact)                           | `tests/equivalence/score-reference-equivalence.test.ts`         |
+| FIB-4              | float, ≤ 2 decimal places         | `0.01`                                        | `tests/unit/fib4.test.ts` + score-equivalence                   |
+| FLI                | float, 2 decimal places           | `0.05` (log + exp cascade noise)              | `tests/equivalence/score-reference-equivalence.test.ts`         |
+| FRAIL              | integer 0–5                       | `0` (integer-exact)                           | `tests/equivalence/score-reference-equivalence.test.ts`         |
+| ADA                | integer 0–11                      | `0` (integer-exact)                           | `tests/equivalence/score-reference-equivalence.test.ts`         |
+| MetS criteria count| integer 0–5                       | `0` (integer-exact)                           | `tests/unit/metabolic-syndrome.test.ts`                         |
+| PREDIMED MEDAS     | integer 0–14                      | `0` (integer-exact)                           | `tests/unit/predimed-mifflin.test.ts`                           |
+| SCORE2             | percent, 2 decimal places         | `0.01` engine ↔ regression baseline; `0.1 %` clinical golden vs paper-derived reference (Hageman 2021 Box S5) | `tests/unit/score2-golden.test.ts`                              |
+| SCORE2-Diabetes    | percent, 2 decimal places         | `0.01` engine ↔ regression baseline (clinical golden TBD)                                       | `tests/unit/score2-golden.test.ts`                              |
+
+**Coverage minimum** — every score above MUST carry **≥ 5 equivalence
+cases**. The CI script `scripts/check-equivalence-coverage.mjs` (wired
+into `npm run build:check`) fails the build if a score drops below the
+threshold, catching the "added a new score, forgot the tests" regression
+class. Adding a new validated score requires updating `EXPECTED_COVERAGE`
+in that script and landing the cases in the same PR.
+
+**Why these tolerances and not "exact"?**
+
+- Logarithmic / exponential cascades (FLI, future MELD-style scores)
+  introduce ~1e-2 floating-point noise depending on transcendental-
+  function rounding. The 0.05 tolerance is well below the smallest
+  band-defining threshold (FLI = 30 / 60), so it cannot mask a band
+  flip.
+- Engine output rounding (BMI to 1 dp, eGFR to integer) is intentional
+  — it matches the clinician-facing display contract and would round
+  a hypothetical reference-engine drift away. The reference applies
+  the same rounding so engine ↔ reference equivalence stays meaningful.
+- Integer-additive scores (FRAIL, ADA, MetS, PREDIMED) are exact by
+  construction; tolerance `0` is enforced.
+
+**Out of scope** — this policy does NOT govern external tools (HeartScore
+calculator, KDIGO calc, AGREE-II). Cross-validation against external
+authoritative tools is recommended for clinical sign-off but lives in
+`docs/25-MDR-READINESS.md §6` rather than as a CI gate, because external
+endpoints are non-deterministic build-time dependencies.

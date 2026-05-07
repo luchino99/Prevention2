@@ -156,16 +156,68 @@ Files added/modified:
 `docs/23-CLINICAL-ENGINE.md`,
 `docs/11-CHANGELOG.md`.
 
+### Sprint 4 task 4.4 — Score equivalence verification vs reference impl (CLOSED)
+
+External-audit gap **F-016** (5 deterministic scores — BMI, eGFR, FLI,
+FRAIL, ADA — had no dedicated golden suite cross-checking engine output
+against an independent paper-derived reference; coverage came indirectly
+from 4 fixtures with < 5 cases per score) closed end-to-end:
+
+- **5 reference implementations** under `tests/equivalence/refs/` —
+  `bmi-reference.ts`, `egfr-reference.ts`, `fli-reference.ts`,
+  `frail-reference.ts`, `ada-reference.ts`. Each re-derives the formula
+  from the published source (WHO 2000, Inker NEJM 2021, Bedogni BMC
+  Gastro 2006, Morley J Nutr Health Aging 2012, Bang Ann Intern Med
+  2009) with NO engine imports — independence is the whole point.
+- **`tests/equivalence/score-reference-equivalence.test.ts`** (new, 29
+  cases) asserting for each case BOTH:
+  1. `engine(input)` ≡ `reference(input)` within the per-score tolerance,
+  2. `reference(input)` ≡ `pinnedExpected` within the same tolerance.
+  If both pass, the engine matches the published formula. Each case
+  carries the paper math as a comment so the pin is auditable.
+  - BMI:   6 cases (5 WHO bands + boundary)
+  - eGFR:  6 cases (G1 → G5 ladder)
+  - FLI:   5 cases (Excluded → Probable NAFLD progression)
+  - FRAIL: 6 cases (every score 0–5)
+  - ADA:   6 cases (Low / Moderate / High band ladder)
+- **`scripts/check-equivalence-coverage.mjs`** (new) — anti-recidiva CI
+  gate. Verifies every required score has ≥ 5 equivalence cases.
+  Currently passing for all **10 scores** (BMI, eGFR, FIB-4, FLI, FRAIL,
+  ADA, MetS, PREDIMED, SCORE2, SCORE2-Diabetes). Wired into `build:check`
+  immediately after `check-sbom-cves` so a missing-coverage regression
+  fails CI before TypeScript even compiles.
+- **`docs/24-FORMULA-REGISTRY.md` §14** (new) — Tolerance & equivalence
+  policy: per-score tolerance table, paper-citation rationale for each
+  bound, coverage minimum, and explicit out-of-scope note for
+  external-tool cross-validation.
+- **`package.json`** — new `check:equivalence` npm script + wired into
+  `build:check`.
+- **Project rule respected** — zero modifications to validated formulas.
+  The 5 references are pure additive code paths; the engine is unchanged.
+
+Files added/modified:
+`tests/equivalence/refs/bmi-reference.ts` (new),
+`tests/equivalence/refs/egfr-reference.ts` (new),
+`tests/equivalence/refs/fli-reference.ts` (new),
+`tests/equivalence/refs/frail-reference.ts` (new),
+`tests/equivalence/refs/ada-reference.ts` (new),
+`tests/equivalence/score-reference-equivalence.test.ts` (new),
+`scripts/check-equivalence-coverage.mjs` (new),
+`package.json`,
+`docs/24-FORMULA-REGISTRY.md`,
+`docs/11-CHANGELOG.md`.
+
 ### Closed external-audit findings (Sprint 4 to date)
 
-| Finding | Description                                                                       | Status after Sprint 4                                                                            |
-| ------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| F-013   | Composite risk silently downgraded to "low" when scores were skipped              | ✅ already-closed (Sprint 4 task 4.1 added explicit decision metadata + tie-break, locked tests) |
-| F-014   | Alerts inbox flooded with duplicates + closure provenance asymmetric              | ✅ closed (4.2 dedup + ack workflow + auto-close, end-to-end)                                    |
-| F-015   | Follow-up engine: zero direct tests + missing HTN/smoking + ambiguous due-zero    | ✅ closed (4.3 31-case suite + HTN tiered branch + smoking-cessation + `dueInDays`)              |
+| Finding | Description                                                                                    | Status after Sprint 4                                                                            |
+| ------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| F-013   | Composite risk silently downgraded to "low" when scores were skipped                           | ✅ already-closed (Sprint 4 task 4.1 added explicit decision metadata + tie-break, locked tests) |
+| F-014   | Alerts inbox flooded with duplicates + closure provenance asymmetric                           | ✅ closed (4.2 dedup + ack workflow + auto-close, end-to-end)                                    |
+| F-015   | Follow-up engine: zero direct tests + missing HTN/smoking + ambiguous due-zero                 | ✅ closed (4.3 31-case suite + HTN tiered branch + smoking-cessation + `dueInDays`)              |
+| F-016   | 5 deterministic scores lacked dedicated independent-reference golden suites + no coverage gate | ✅ closed (4.4 5 references + 29-case equivalence suite + `check-equivalence-coverage` gate)     |
 
-Outstanding tasks (Sprint 4): 4.4 score equivalence verification,
-4.5 final changelog + risk register downgrade.
+Outstanding tasks (Sprint 4): 4.5 final Sprint-4 changelog + clinical
+changelog + risk-register downgrade.
 
 ---
 
