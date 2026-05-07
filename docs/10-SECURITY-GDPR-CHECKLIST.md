@@ -25,7 +25,9 @@ Status legend:  `✅ done` · `🟡 partial / follow-up` · `⬜ open`
 
 | # | Control | Status | Evidence |
 |---|---|---|---|
-| 2.1 | Row-Level Security enabled on every sensitive table | ✅ | `supabase/migrations/002_rls_policies.sql` |
+| 2.1 | Row-Level Security ENABLED on every sensitive table | ✅ | `supabase/migrations/002_rls_policies.sql` (17 tables) + `003`/`005`/`007` (3 added later) — total 20/20 PHI tables |
+| 2.1b | FORCE ROW LEVEL SECURITY on every PHI table (defence-in-depth: applies even to table owner) | ✅ | `supabase/migrations/012_force_row_level_security.sql` — covers all 20 PHI tables |
+| 2.1c | Anti-recidiva CI gate verifying RLS + FORCE state stays correct | ✅ | `scripts/check-rls-coverage.mjs` (in `npm run build:check`); fails if a future migration disables RLS or skips FORCE on any PHI table |
 | 2.2 | Tenant isolation enforced at the database layer | ✅ | RLS policies key off `get_current_tenant_id()` |
 | 2.3 | Role enum aligned between app code and DB | ✅ | `USER_ROLES` mirrors `public.user_role` enum |
 | 2.4 | Defence-in-depth RBAC in code on top of RLS | ✅ | `backend/src/middleware/rbac.ts` (`requireRole`, `requireClinicalWrite`, etc.) |
@@ -33,6 +35,7 @@ Status legend:  `✅ done` · `🟡 partial / follow-up` · `⬜ open`
 | 2.6 | Professional-to-patient linkage enforced for clinicians | ✅ | `professional_patient_links` lookup in `assessment-service.ts` |
 | 2.7 | Cross-tenant reads blocked at the service boundary | ✅ | `assertSameTenant` + `CROSS_TENANT_FORBIDDEN` response |
 | 2.8 | No email-as-key queries anywhere in new code | ✅ | All lookups use UUID ids; `recuperaAnagrafica.js` legacy path is deprecated |
+| 2.9 | API endpoints all gated by auth (no anonymous PHI access path) | ✅ | Sprint 2 task 2.1 audit: 22/22 endpoints have appropriate auth — 18 with standard middleware (`requireAuth`/`assertSameTenant`/`requireRole`), 1 in-handler (`auth/session.ts` validates JWT), 2 cron-auth (`internal/*` via `CRON_SIGNING_SECRET`), 1 public-by-design (`health.ts`) |
 
 ## 3. Input validation & output handling
 
