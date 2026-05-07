@@ -206,3 +206,182 @@ jobs:
             sbom.cyclonedx.json
             sbom-cve-report.json
           fail_on_unmatched_files: true
+
+  smoke-prod:
+    # ==========================================================================
+    # Sprint 1 task 1.7 — Production smoke test post-deploy.
+    # --------------------------------------------------------------------------
+    # When a commit lands on main, Vercel auto-deploys to production. This job
+    # verifies the new deploy actually responds: hits /api/v1/health (which
+    # internally checks Supabase + Upstash), then hits a few critical static
+    # paths (root redirect, login page, Supabase bundle, security.txt
+    # rewrite, security headers).
+    #
+    # If anything fails, this job goes red and you get a GitHub notification —
+    # production is in a bad state and needs manual intervention. Vercel keeps
+    # the previous deploy live when a build fails, so a red smoke does NOT
+    # automatically mean production is down (it could be that build is fresh
+    # and the new deploy regressed). Either way, you know.
+    #
+    # Why polling instead of a fixed wait
+    # -----------------------------------
+    # Vercel build time varies from ~30s (cache hit) to ~3 min (cold). A
+    # fixed delay either wastes CI minutes or fires before the deploy is
+    # ready. We wait 60s upfront (build typically starts within 10s of push
+    # and takes another 30-60s), then retry every 15s up to 6 times. Total
+    # max wait: 60 + 15*6 = 150s = 2.5 min before we declare prod down.
+    #
+    # Why we don't poll the Vercel API for deployment readiness
+    # ---------------------------------------------------------
+    # That would be more accurate but requires VERCEL_TOKEN as a GitHub
+    # secret + project/team IDs, plus extra config maintenance. Polling the
+    # health endpoint directly is end-to-end correct (if /api/v1/health
+    # returns 200, the deploy *is* live and Supabase *is* reachable) and
+    # has no token to rotate. Trade-off accepted for Sprint 1.
+    # ==========================================================================
+    name: Production smoke test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build-and-test
+    runs-on: ubuntu-22.04
+    timeout-minutes: 8
+
+    env:
+      PROD_URL: https://prevention2.vercel.app
+
+    steps:
+      - name: Wait 60s for Vercel deploy to start
+        run: sleep 60
+
+      - name: Health endpoint with polling (up to 6 attempts, 15s backoff)
+        run: |
+          for attempt in 1 2 3 4 5 6; do
+            echo "::group::Health attempt ${attempt}/6"
+            HTTP_CODE=$(curl -sS -o /tmp/health.json -w "%{http_code}" \
+                        --max-time 10 "$PROD_URL/api/v1/health" || echo "000")
+            echo "HTTP code: $HTTP_CODE"
+            if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "207" ]; then
+              echo "Body:"
+              cat /tmp/health.json
+              echo ""
+              echo "::endgroup::"
+              echo "OK health endpoint reachable on attempt ${attempt}"
+              exit 0
+            fi
+            echo "Body (failure):"
+            cat /tmp/health.json 2>/dev/null | head -50 || echo "(no body)"
+            echo "::endgroup::"
+            if [ "$attempt" = "6" ]; then
+              echo "::error::Health endpoint unreachable after 6 attempts (final code: $HTTP_CODE)"
+              echo "::error::Either Vercel build failed (check vercel dashboard) or production is down."
+              exit 1
+            fi
+            sleep 15
+          done
+
+      - name: Verify health status field is acceptable (not unhealthy)
+        run: |
+          STATUS=$(jq -r '.status // "missing"' /tmp/health.json)
+          echo "Reported status: $STATUS"
+          case "$STATUS" in
+            ok|degraded)
+              echo "Acceptable health status"
+              ;;
+            unhealthy)
+              echo "::error::Production reports UNHEALTHY status"
+              echo "Subsystems:"
+              jq -r '.subsystems[] | "  \(.name): \(.status) (\(.detail // "no detail"))"' /tmp/health.json
+              exit 1
+              ;;
+            *)
+              echo "::error::Unexpected health status: \"$STATUS\""
+              cat /tmp/health.json
+              exit 1
+              ;;
+          esac
+
+      - name: Verify Supabase subsystem is up
+        run: |
+          SUPABASE_STATUS=$(jq -r '.subsystems[] | select(.name=="supabase") | .status' /tmp/health.json)
+          SUPABASE_LATENCY=$(jq -r '.subsystems[] | select(.name=="supabase") | .latencyMs // "?"' /tmp/health.json)
+          echo "Supabase: $SUPABASE_STATUS (${SUPABASE_LATENCY}ms)"
+          if [ "$SUPABASE_STATUS" != "ok" ]; then
+            echo "::error::Supabase subsystem reports: $SUPABASE_STATUS"
+            jq -r '.subsystems[] | select(.name=="supabase")' /tmp/health.json
+            exit 1
+          fi
+          echo "OK Supabase reachable"
+
+      - name: Smoke check — root path redirects to login (307/308)
+        run: |
+          HTTP_CODE=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 5 "$PROD_URL/")
+          if [ "$HTTP_CODE" != "307" ] && [ "$HTTP_CODE" != "308" ]; then
+            echo "::error::Root expected 307/308 redirect to login, got: $HTTP_CODE"
+            exit 1
+          fi
+          echo "OK root redirects ($HTTP_CODE)"
+
+      - name: Smoke check — login page reachable (200)
+        run: |
+          HTTP_CODE=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 5 "$PROD_URL/pages/login.html")
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::error::Login page expected 200, got: $HTTP_CODE"
+            exit 1
+          fi
+          echo "OK login page (200)"
+
+      - name: Smoke check — Supabase bundle served (200)
+        run: |
+          HTTP_CODE=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 5 \
+                      "$PROD_URL/assets/vendor/supabase-js.esm.js")
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::error::Supabase bundle expected 200, got: $HTTP_CODE"
+            exit 1
+          fi
+          echo "OK supabase bundle served (200)"
+
+      - name: Smoke check — security.txt rewrite (200)
+        run: |
+          HTTP_CODE=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 5 "$PROD_URL/security.txt")
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::error::security.txt rewrite expected 200, got: $HTTP_CODE"
+            exit 1
+          fi
+          echo "OK security.txt rewrite working (200)"
+
+      - name: Smoke check — security headers present on /pages/login.html
+        run: |
+          HEADERS=$(curl -sS -I --max-time 5 "$PROD_URL/pages/login.html")
+          MISSING=""
+          for header in "content-security-policy" "strict-transport-security" "x-frame-options" "x-content-type-options" "referrer-policy" "permissions-policy"; do
+            if echo "$HEADERS" | grep -qi "^$header:"; then
+              echo "OK $header"
+            else
+              echo "MISSING $header"
+              MISSING="${MISSING}${header} "
+            fi
+          done
+          if [ -n "$MISSING" ]; then
+            echo "::error::Missing security headers: $MISSING"
+            echo "Full response headers:"
+            echo "$HEADERS" | head -30
+            exit 1
+          fi
+          echo "OK all 6 security headers present"
+
+      - name: Smoke summary in job output
+        if: always()
+        run: |
+          {
+            echo "## Production smoke test — commit ${GITHUB_SHA::7}"
+            echo ""
+            echo "* Result: **${{ job.status }}**"
+            echo "* Production URL: $PROD_URL"
+            echo "* Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            echo ""
+            if [ -f /tmp/health.json ]; then
+              echo "### /api/v1/health response"
+              echo '```json'
+              cat /tmp/health.json
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
