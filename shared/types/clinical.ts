@@ -438,6 +438,24 @@ export interface FollowUpItem {
   title: string;
   rationale: string;
   dueInMonths: number;
+  /**
+   * Sub-monthly granularity — optional, used by branches whose due date is
+   * "within X days" (e.g. confirm-undiagnosed-diabetes within 7 days,
+   * hypertensive-urgency BP recheck within 24 h). When present, the UI
+   * SHOULD render this in preference to `dueInMonths` because rounding
+   * `0.23` months to a clinician-facing label produces nonsense
+   * ("0 months ≠ 7 days"). When absent, the UI uses `dueInMonths`.
+   *
+   * The persistence layer treats this field as additive metadata: it does
+   * NOT override `dueInMonths` for read-side determinism, and the alerts
+   * engine still keys overdue logic off `nextReviewDate` for the core
+   * review item only.
+   *
+   * Sprint 4 task 4.3 (F-015 follow-up clarity): introduced so the
+   * undiagnosed-DM branch (previously emitted with `dueInMonths: 0`)
+   * carries an unambiguous 7-day target.
+   */
+  dueInDays?: number;
   priority: 'routine' | 'moderate' | 'urgent';
   recurrenceMonths?: number;
   guidelineSource?: string;

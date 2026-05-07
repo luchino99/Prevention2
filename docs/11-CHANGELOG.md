@@ -90,15 +90,82 @@ Files added/modified:
 `docs/23-CLINICAL-ENGINE.md`,
 `docs/11-CHANGELOG.md`.
 
+### Sprint 4 task 4.3 — Follow-up plan generator (CLOSED)
+
+External-audit gap **F-015** (follow-up engine has zero direct unit
+tests + missing HTN/smoking branches + ambiguous `dueInMonths: 0`)
+closed end-to-end:
+
+- **Type extension** — `FollowUpItem.dueInDays?: number` added to
+  `shared/types/clinical.ts`. Sub-monthly granularity for findings whose
+  actionable window is shorter than a month. `dueInMonths` stays as the
+  legacy field for read-side determinism; UI/PDF render `dueInDays` in
+  preference when present.
+- **Engine extension** — `FollowupInput` extended with optional
+  `vitals { sbpMmHg, dbpMmHg }` and `clinicalContext { smoking }`. Both
+  default to undefined → no fabricated cadence on absent data (engine
+  rule).
+- **Hypertension branch (NEW, ESC/ESH 2023 §6)** — three tiers:
+  - SBP ≥ 180 OR DBP ≥ 110 → `htn_urgency_recheck` with `dueInDays: 1`
+    (24-hour BP recheck, urgent).
+  - SBP 160–179 OR DBP 100–109 → `htn_stage2_followup` (1 month, urgent).
+  - SBP 140–159 OR DBP 90–99 → `htn_stage1_followup` (3 months,
+    moderate).
+- **Smoking-cessation branch (NEW, ESC 2021 §3)** —
+  `lifestyle_smoking_cessation_referral` (1 month, moderate). Gated on
+  active smoking AND a CV item already emitted, so the inbox never
+  carries a stand-alone "smoker reminder" outside a CVD interaction
+  window. The lifestyle engine handles the no-CV smoker population
+  separately.
+- **Undiagnosed-DM disambiguation** —
+  `metabolic_undiagnosed_dm_confirmation` now carries `dueInDays: 7`
+  alongside the legacy `dueInMonths: 0`. Verbatim 7-day target instead
+  of "0 months / UI guesses 1 week".
+- **Wire-through** — both `assessment-service` paths (write +
+  rehydrate) forward vitals + smoking from `enrichedInput`. Read-path
+  determinism preserved: same `now` + same vitals + same smoking → same
+  plan.
+- **Tests** — `tests/unit/followup-plan.test.ts` (new, **31 cases**)
+  pinning:
+  - Determinism (3): same input → same output, same `now` → same
+    `nextReviewDate`, different `now` → different date.
+  - Composite-risk cadence (5): every RiskLevel maps to its canonical
+    interval, including the **`indeterminate = 2 months` short-loop
+    invariant** (silence ≠ low).
+  - Per-domain branches (12): CV, renal, hepatic, frailty thresholds.
+  - Diabetic chronic-care (2): 3 annual screenings only when
+    `hasDiabetes === true`.
+  - Hypertension branch (7): 5 BP tiers + omitted vitals + nullish
+    fields.
+  - Smoking-cessation branch (4): emitted/gated/default-off cases.
+  - `dueInDays` sentinel (2).
+  - **Catalog linkage (1)** — every emitted `guidelineSource` traces
+    to a registered `guideline-registry.ts` entry. Future free-text
+    drift fails CI.
+  - Core invariants (3) — `core_review` always present, every item has
+    title + rationale + canonical priority.
+- **Docs** — `docs/23-CLINICAL-ENGINE.md` §9.1 (cadence table), §9.2
+  (per-domain branches table — full mapping), §9.3 (`dueInDays`
+  semantics), §9.4 (determinism contract + catalog-linkage invariant).
+
+Files added/modified:
+`shared/types/clinical.ts`,
+`backend/src/domain/clinical/followup-engine/followup-plan.ts`,
+`backend/src/services/assessment-service.ts`,
+`tests/unit/followup-plan.test.ts` (new),
+`docs/23-CLINICAL-ENGINE.md`,
+`docs/11-CHANGELOG.md`.
+
 ### Closed external-audit findings (Sprint 4 to date)
 
-| Finding | Description                                                          | Status after Sprint 4                                                                            |
-| ------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| F-013   | Composite risk silently downgraded to "low" when scores were skipped | ✅ already-closed (Sprint 4 task 4.1 added explicit decision metadata + tie-break, locked tests) |
-| F-014   | Alerts inbox flooded with duplicates + closure provenance asymmetric | ✅ closed (4.2 dedup + ack workflow + auto-close, end-to-end)                                    |
+| Finding | Description                                                                       | Status after Sprint 4                                                                            |
+| ------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| F-013   | Composite risk silently downgraded to "low" when scores were skipped              | ✅ already-closed (Sprint 4 task 4.1 added explicit decision metadata + tie-break, locked tests) |
+| F-014   | Alerts inbox flooded with duplicates + closure provenance asymmetric              | ✅ closed (4.2 dedup + ack workflow + auto-close, end-to-end)                                    |
+| F-015   | Follow-up engine: zero direct tests + missing HTN/smoking + ambiguous due-zero    | ✅ closed (4.3 31-case suite + HTN tiered branch + smoking-cessation + `dueInDays`)              |
 
-Outstanding tasks (Sprint 4): 4.3 follow-up plan generator, 4.4 score
-equivalence verification, 4.5 final changelog + risk register downgrade.
+Outstanding tasks (Sprint 4): 4.4 score equivalence verification,
+4.5 final changelog + risk register downgrade.
 
 ---
 

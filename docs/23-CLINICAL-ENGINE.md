@@ -438,6 +438,73 @@ linked to `due_items` for the countdown surface.
 Per project rule: this is decision-support — the clinician edits and
 confirms; no plan auto-executes.
 
+### 9.1 Cadence table by composite risk
+
+| Composite level | Interval         | Priority   | Rationale                                                                                            |
+| --------------- | ---------------- | ---------- | ---------------------------------------------------------------------------------------------------- |
+| `very_high`     | 1 month          | `urgent`   | ESC 2021 aggressive surveillance for very-high-risk CVD.                                             |
+| `high`          | 3 months         | `urgent`   | ESC / KDIGO targeted follow-up.                                                                      |
+| `moderate`      | 6 months         | `moderate` | Routine preventive recheck.                                                                          |
+| `low`           | 12 months        | `routine`  | Standard primary-care cadence.                                                                       |
+| `indeterminate` | **2 months**     | `moderate` | Short-loop to complete data collection. NEVER 12 — silence ≠ low.                                    |
+
+### 9.2 Per-domain branches (Sprint 4 task 4.3 contract)
+
+The engine layers per-domain items on top of the cadence table. Each
+item carries a `code`, `priority`, `dueInMonths` (+ optional `dueInDays`
+for sub-monthly intervals), `recurrenceMonths`, and a
+`guidelineSource` string that **must** trace to a registered entry in
+`guideline-catalog/guideline-registry.ts` (verified by
+`tests/unit/followup-plan.test.ts §7 — catalog linkage`).
+
+| Branch                    | Triggering input                                    | Items emitted                                                              | Source                   |
+| ------------------------- | --------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------ |
+| Cardiovascular            | SCORE2 ≥ 10 OR composite=very_high                  | `cv_lipid_intensive` (1 mo) + `cv_bp_target_130` (1 mo)                    | ESC 2021                 |
+| Cardiovascular            | SCORE2 5–10                                         | `cv_lipid_targeted` (3 mo)                                                 | ESC 2021                 |
+| **Hypertension** (NEW)    | SBP ≥ 180 OR DBP ≥ 110                              | `htn_urgency_recheck` (`dueInDays: 1`)                                     | ESC/ESH 2023             |
+| **Hypertension** (NEW)    | SBP 160–179 OR DBP 100–109                          | `htn_stage2_followup` (1 mo)                                               | ESC/ESH 2023             |
+| **Hypertension** (NEW)    | SBP 140–159 OR DBP 90–99                            | `htn_stage1_followup` (3 mo)                                               | ESC/ESH 2023             |
+| Renal                     | eGFR < 30                                           | `renal_nephrology_urgent` (1 mo)                                           | KDIGO 2024               |
+| Renal                     | eGFR 30–60                                          | `renal_kidney_monitoring` (3 mo)                                           | KDIGO 2024               |
+| Hepatic                   | FIB-4 ≥ 3.25                                        | `hepatic_hepatology_urgent` (1 mo)                                         | EASL 2024 MASLD          |
+| Hepatic                   | FIB-4 ≥ 1.45 OR FLI ≥ 60                            | `hepatic_monitor` (6 mo)                                                   | EASL 2024 MASLD          |
+| Metabolic                 | UNDIAGNOSED_DIABETES_SUSPECTED                      | `metabolic_undiagnosed_dm_confirmation` (`dueInDays: 7`)                   | ADA SOC 2024 §2          |
+| Metabolic                 | GLYCEMIC_CONTROL severely_decompensated             | `metabolic_endocrinology_urgent` (1 mo)                                    | ADA SOC 2024 §6          |
+| Metabolic                 | GLYCEMIC_CONTROL suboptimal                         | `metabolic_uncontrolled_glycemia` (3 mo)                                   | ADA SOC 2024 §6          |
+| Diabetic chronic-care     | `hasDiabetes === true`                              | 3 annual items: retinopathy, foot exam, urine ACR                          | ADA SOC 2024 §10/§12     |
+| Metabolic                 | ADA score ≥ 5                                       | `metabolic_dm_screening` (3 mo)                                            | ADA SOC                  |
+| Metabolic                 | MetS positive                                       | `metabolic_mets_management` (6 mo)                                         | NCEP ATP III             |
+| Frailty                   | FRAIL ≥ 3                                           | `frailty_comprehensive_geriatric` (3 mo)                                   | FRAIL Scale consensus    |
+| Frailty                   | FRAIL = 2                                           | `frailty_prehabilitation` (6 mo)                                           | FRAIL Scale consensus    |
+| **Smoking** (NEW)         | `smoking === true` AND any CV item emitted          | `lifestyle_smoking_cessation_referral` (1 mo)                              | ESC 2021 §3              |
+
+### 9.3 `dueInDays` granularity
+
+For findings whose actionable window is shorter than a month, the engine
+emits both `dueInMonths` and `dueInDays`. UI/PDF SHOULD render
+`dueInDays` in preference because rounding 0.23 months to a clinician-
+facing label produces nonsense ("0 months ≠ 7 days"). Persistence keeps
+`dueInMonths` as the legacy field for read-side determinism. Currently
+two branches emit `dueInDays`:
+
+- `metabolic_undiagnosed_dm_confirmation` → `dueInDays: 7` (ADA §2).
+- `htn_urgency_recheck` → `dueInDays: 1` (ESH 2023 hypertensive
+  urgency).
+
+### 9.4 Determinism contract
+
+`determineFollowupPlan` is a pure function. The caller MUST supply `now`
+when rehydrating an old assessment — otherwise `nextReviewDate` would
+silently drift on every read. The `assessment-service` write path uses
+`new Date()`; the read path uses `new Date(row.created_at)`. Both paths
+also forward `vitals` and `clinicalContext.smoking` from the enriched
+input so that the HTN and smoking-cessation branches are byte-equivalent
+on rehydration.
+
+The "every guidelineSource has a catalog match" invariant is locked by
+`tests/unit/followup-plan.test.ts §7` — any future free-text citation
+fails CI.
+
 ---
 
 ## 10. Lifestyle recommendation engine

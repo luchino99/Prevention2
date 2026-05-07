@@ -81,6 +81,28 @@ export interface FollowupInput {
    */
   hasDiabetes?: boolean;
   /**
+   * Optional vitals snapshot. Used by the hypertension follow-up branch
+   * (Sprint 4 task 4.3) to schedule BP rechecks at the cadence demanded
+   * by ESC/ESH 2023 §6 (newly stratified Grade-1/2 HTN). When omitted no
+   * HTN follow-up is emitted — missing data must never produce a
+   * fabricated cadence.
+   */
+  vitals?: {
+    sbpMmHg?: number | null;
+    dbpMmHg?: number | null;
+  };
+  /**
+   * Minimal lifestyle context used by the smoking-cessation branch
+   * (Sprint 4 task 4.3, ESC 2021 §3). Smoking is a continuous lifestyle
+   * variable; the engine emits a referral item only when the patient is
+   * an active smoker AND a cardiovascular item is otherwise emitted —
+   * piggybacking on the existing CV pathway so we never create a stand-
+   * alone "smoker reminder" outside a clinical interaction window.
+   */
+  clinicalContext?: {
+    smoking?: boolean;
+  };
+  /**
    * Optional anchor for date computations. Pass the assessment's
    * `createdAt` when rehydrating so the plan is byte-equivalent to the
    * one originally produced. Defaults to `new Date()` for convenience.
@@ -324,6 +346,11 @@ function metabolicItems(
   const glycemicControl = findScoreByCode(scoreResults, 'GLYCEMIC_CONTROL');
 
   // WS3/WS4 — undiagnosed diabetes: URGENT confirmation.
+  // Sprint 4 task 4.3 — `dueInDays: 7` replaces the pre-existing comment
+  // ("expressed as 0.25 is not supported; UI renders 'within 1 week'").
+  // `dueInMonths` stays at 0 to preserve backward compatibility with
+  // existing UI/PDF reads; the new field gives modern callers an
+  // unambiguous 7-day target.
   if (undiagnosedDm) {
     items.push({
       code: 'metabolic_undiagnosed_dm_confirmation',
@@ -331,7 +358,8 @@ function metabolicItems(
       rationale:
         'Patient not flagged as diabetic but labs meet ADA diagnostic thresholds. '
           + 'Confirm with repeat testing before initiating care pathway.',
-      dueInMonths: 0, // ~7 days — expressed as 0.25 is not supported; UI layer renders "within 1 week"
+      dueInMonths: 0,
+      dueInDays: 7,
       priority: 'urgent',
       guidelineSource: GUIDELINES.ADA_SOC_2024_S2.displayString,
     });
@@ -463,6 +491,119 @@ function frailtyItems(scoreResults: ScoreResultEntry[]): FollowUpItem[] {
   return items;
 }
 
+/**
+ * Hypertension follow-up items (Sprint 4 task 4.3, ESC/ESH 2023).
+ *
+ * Tiered cadence per ESC/ESH 2023 §6 ("Management of hypertension"):
+ *   - Hypertensive urgency (SBP ≥ 180 OR DBP ≥ 110) — same-day evaluation,
+ *     BP recheck within 24 h. The corresponding RED-FLAG alert already
+ *     fires from the alert engine; here we schedule the structured
+ *     follow-up item so the inbox has a due-date row to track.
+ *   - Stage 2 HTN (SBP 160–179 or DBP 100–109) — 1-month BP recheck.
+ *   - Stage 1 HTN (SBP 140–159 or DBP 90–99)  — 3-month recheck +
+ *     lifestyle intensification.
+ *   - Sub-clinical (< 140/90)                  — no follow-up emitted.
+ *
+ * The branch is gated on `vitals` being present; when both fields are
+ * missing or NaN, we emit nothing — the engine never fabricates a
+ * cadence on absent data.
+ */
+function hypertensionItems(
+  vitals: FollowupInput['vitals'],
+): FollowUpItem[] {
+  const items: FollowUpItem[] = [];
+  const sbp = typeof vitals?.sbpMmHg === 'number' ? vitals.sbpMmHg : null;
+  const dbp = typeof vitals?.dbpMmHg === 'number' ? vitals.dbpMmHg : null;
+  if (sbp === null && dbp === null) return items;
+
+  const urgency = (sbp !== null && sbp >= 180) || (dbp !== null && dbp >= 110);
+  const stage2  = (sbp !== null && sbp >= 160 && sbp < 180)
+    || (dbp !== null && dbp >= 100 && dbp < 110);
+  const stage1  = (sbp !== null && sbp >= 140 && sbp < 160)
+    || (dbp !== null && dbp >= 90  && dbp < 100);
+
+  // Build a stable "150/95 mmHg" label only from the values that are
+  // numerically defined — never substitute zero for a missing reading.
+  const bpLabel = sbp !== null && dbp !== null
+    ? `${sbp}/${dbp} mmHg`
+    : sbp !== null
+      ? `SBP ${sbp} mmHg`
+      : `DBP ${dbp} mmHg`;
+
+  if (urgency) {
+    items.push({
+      code: 'htn_urgency_recheck',
+      title: 'Hypertensive urgency BP recheck',
+      rationale:
+        `BP ${bpLabel} meets ESH 2023 hypertensive-urgency threshold `
+          + '(SBP ≥ 180 or DBP ≥ 110). Same-day evaluation; BP recheck '
+          + 'within 24 hours.',
+      dueInMonths: 0,
+      dueInDays: 1,
+      priority: 'urgent',
+      guidelineSource: GUIDELINES.ESC_ESH_2023_HTN.displayString,
+    });
+  } else if (stage2) {
+    items.push({
+      code: 'htn_stage2_followup',
+      title: 'Stage-2 hypertension review (BP recheck + therapy)',
+      rationale:
+        `BP ${bpLabel} (Stage 2 HTN per ESH 2023). Initiate or escalate `
+          + 'antihypertensive therapy and recheck in 1 month.',
+      dueInMonths: 1,
+      priority: 'urgent',
+      recurrenceMonths: 3,
+      guidelineSource: GUIDELINES.ESC_ESH_2023_HTN.displayString,
+    });
+  } else if (stage1) {
+    items.push({
+      code: 'htn_stage1_followup',
+      title: 'Stage-1 hypertension review (lifestyle + recheck)',
+      rationale:
+        `BP ${bpLabel} (Stage 1 HTN per ESH 2023). Lifestyle `
+          + 'intensification with structured BP recheck at 3 months.',
+      dueInMonths: 3,
+      priority: 'moderate',
+      recurrenceMonths: 6,
+      guidelineSource: GUIDELINES.ESC_ESH_2023_HTN.displayString,
+    });
+  }
+
+  return items;
+}
+
+/**
+ * Smoking-cessation referral (Sprint 4 task 4.3, ESC 2021 §3).
+ *
+ * Emitted only when the patient is an active smoker AND a cardiovascular
+ * item is already present in the plan. The CV gating reflects the ESC
+ * 2021 framing: smoking-cessation interventions are integrated into CVD
+ * prevention pathways, NOT a standalone reminder. By piggybacking on the
+ * presence of `cv_*` items we avoid a perpetual unread-row in patients
+ * who currently have no other CVD-active concern beyond smoking; the
+ * lifestyle engine handles that population separately.
+ */
+function smokingCessationItems(
+  smoking: boolean,
+  cardiovascularItemEmitted: boolean,
+): FollowUpItem[] {
+  if (!smoking || !cardiovascularItemEmitted) return [];
+  return [
+    {
+      code: 'lifestyle_smoking_cessation_referral',
+      title: 'Smoking-cessation programme referral',
+      rationale:
+        'Active smoking with elevated cardiovascular risk. ESC 2021 §3 '
+          + 'recommends structured smoking-cessation support integrated '
+          + 'with CVD prevention.',
+      dueInMonths: 1,
+      priority: 'moderate',
+      recurrenceMonths: 6,
+      guidelineSource: GUIDELINES.ESC_2021_PREVENTION.displayString,
+    },
+  ];
+}
+
 // ============================================================================
 // Narrative projections for legacy `actions` and `domainMonitoring`
 // ============================================================================
@@ -590,6 +731,8 @@ export function determineFollowupPlan(input: FollowupInput): FollowupPlan {
     compositeRisk,
     scoreResults,
     hasDiabetes = false,
+    vitals,
+    clinicalContext,
     now = new Date(),
   } = input;
 
@@ -599,13 +742,22 @@ export function determineFollowupPlan(input: FollowupInput): FollowupPlan {
   const nextReviewDate = addMonthsISO(now, intervalMonths);
 
   // Structured items — the new source of truth.
+  // Cardiovascular items are computed first because the smoking-cessation
+  // branch is gated on whether ANY CV item was emitted (ESC 2021 framing:
+  // cessation lives inside the CVD prevention pathway).
+  const cvItems = cardiovascularItems(scoreResults, level);
   const items: FollowUpItem[] = [
     coreReviewItem(level),
-    ...cardiovascularItems(scoreResults, level),
+    ...cvItems,
+    ...hypertensionItems(vitals),
     ...renalItems(scoreResults),
     ...hepaticItems(scoreResults),
     ...metabolicItems(scoreResults, hasDiabetes),
     ...frailtyItems(scoreResults),
+    ...smokingCessationItems(
+      clinicalContext?.smoking === true,
+      cvItems.length > 0,
+    ),
   ];
 
   // Legacy narrative projection for the PDF/UI until they migrate to

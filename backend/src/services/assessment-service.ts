@@ -540,10 +540,22 @@ export async function createAssessment(
   // makes the pipeline deterministic across create and rehydrate paths.
   const now = new Date();
 
+  // Sprint 4 task 4.3 — feed vitals + smoking through so the new
+  // hypertension and smoking-cessation follow-up branches can fire.
+  // Both inputs are optional on the engine side; missing data → no
+  // fabricated cadence (the engine never substitutes zero for an absent
+  // BP reading).
   const followupPlan = determineFollowupPlan({
     compositeRisk,
     scoreResults,
     hasDiabetes: enrichedInput.clinicalContext.hasDiabetes === true,
+    vitals: {
+      sbpMmHg: enrichedInput.vitals.sbpMmHg ?? null,
+      dbpMmHg: enrichedInput.vitals.dbpMmHg ?? null,
+    },
+    clinicalContext: {
+      smoking: enrichedInput.clinicalContext.smoking === true,
+    },
     now,
   });
 
@@ -943,10 +955,20 @@ export async function loadAssessmentSnapshot(
   const createdAtIso = (row.created_at as string) ?? new Date().toISOString();
   const now = new Date(createdAtIso);
 
+  // Sprint 4 task 4.3 — read-path mirror of the write path: pass vitals
+  // + smoking so the rehydrated plan emits the same HTN / smoking-
+  // cessation branches.
   const followupPlan = determineFollowupPlan({
     compositeRisk,
     scoreResults,
     hasDiabetes: enrichedInput.clinicalContext.hasDiabetes === true,
+    vitals: {
+      sbpMmHg: enrichedInput.vitals.sbpMmHg ?? null,
+      dbpMmHg: enrichedInput.vitals.dbpMmHg ?? null,
+    },
+    clinicalContext: {
+      smoking: enrichedInput.clinicalContext.smoking === true,
+    },
     now,
   });
 
