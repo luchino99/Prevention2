@@ -35,6 +35,7 @@ import { applySecurityHeaders } from '../../../../backend/src/middleware/securit
 import { checkRateLimitAsync, applyRateLimitHeaders } from '../../../../backend/src/middleware/rate-limit.js';
 import { supabaseAdmin } from '../../../../backend/src/config/supabase.js';
 import { recordAuditStrict, emitAccessDenialLog } from '../../../../backend/src/audit/audit-logger.js';
+import { toFhirBundle } from '../../../../backend/src/services/fhir-export-service.js';
 import {
   replyDbError,
   replyError,
@@ -203,6 +204,12 @@ async function handleExport(req: any, res: VercelResponse, patientId: string): P
   // recordAuditStrict throws AuditWriteError on persistence failure so this
   // catch branch is reachable in practice.
   const auditRequestId = randomUUID();
+  // Capture the requested format here so the audit row records the
+  // exact representation served to the caller (Art.30 records-of-
+  // processing detail). Default 'uelfy' to match the current
+  // Sprint-2-and-earlier audit history.
+  const auditFormat =
+    typeof req.query?.format === 'string' ? req.query.format.toLowerCase() : 'uelfy';
   try {
     await recordAuditStrict(req.auth, {
       action: 'patient.export',
@@ -211,6 +218,7 @@ async function handleExport(req: any, res: VercelResponse, patientId: string): P
       requestId: auditRequestId,
       metadata: {
         dsr_id: dsrRow?.id ?? null,
+        export_format: auditFormat,
         assessments_count: assessments.data?.length ?? 0,
         alerts_count: alerts.data?.length ?? 0,
         consents_count: consents.data?.length ?? 0,
@@ -258,12 +266,31 @@ async function handleExport(req: any, res: VercelResponse, patientId: string): P
     },
   };
 
+  // ---- Format selection (Sprint 3 task 3.6) ----
+  // ?format=fhir → FHIR R4 Bundle (interoperability for Art.20 portability)
+  // (default) or ?format=uelfy → proprietary uelfy.patient-export/v1 envelope
+  // Anything else → 400 INVALID_FORMAT.
+  const requestedFormat =
+    typeof req.query?.format === 'string' ? req.query.format.toLowerCase() : 'uelfy';
+
+  let payload: unknown;
+  let downloadName: string;
+  if (requestedFormat === 'uelfy' || requestedFormat === '') {
+    payload = envelope;
+    downloadName = `patient-${patientId}-export-${Date.now()}.json`;
+  } else if (requestedFormat === 'fhir') {
+    payload = toFhirBundle(envelope);
+    downloadName = `patient-${patientId}-fhir-bundle-${Date.now()}.json`;
+  } else {
+    replyError(res, 400, 'INVALID_FORMAT', {
+      detail: 'Supported formats: uelfy (default), fhir',
+    });
+    return;
+  }
+
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  res.setHeader(
-    'Content-Disposition',
-    `attachment; filename="patient-${patientId}-export-${Date.now()}.json"`,
-  );
-  res.status(200).send(JSON.stringify(envelope, null, 2));
+  res.setHeader('Content-Disposition', `attachment; filename="${downloadName}"`);
+  res.status(200).send(JSON.stringify(payload, null, 2));
 }
 
 export default withAuth(async (req, res: VercelResponse) => {

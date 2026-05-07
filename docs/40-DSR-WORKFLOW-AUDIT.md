@@ -52,8 +52,8 @@ Verified by `tests/integration/api-dsr-state-machine.test.ts` (8 tests).
 | DSR kind | Programmatic fulfilment | Status |
 |---|---|---|
 | `erasure` | `fn_anonymize_patient(...)` RPC | ✅ implemented |
-| `access` | JSON manifest STUB uploaded to private bucket | ⚠️ stub only — see gap §3 |
-| `portability` | JSON manifest STUB uploaded to private bucket | ⚠️ stub only — see gap §3 |
+| `access` | Full proprietary `uelfy.patient-export/v1` envelope at `/api/v1/patients/[id]/export` (existing); **also** FHIR R4 Bundle via `?format=fhir` (Sprint 3 task 3.6) | ✅ closed task 3.6 |
+| `portability` | Same endpoint as access — `?format=fhir` returns Bundle interoperable with any FHIR R4 ingester (Art.20 spirit) | ✅ closed task 3.6 |
 | `rectification` | none — manual workflow required | ❌ no programmatic path |
 | `restriction` (Art.18) | not in `dsr_kind` enum | ❌ enum extension needed |
 | `objection` (Art.21) | not in `dsr_kind` enum | ❌ enum extension needed |
@@ -86,12 +86,12 @@ Every DSR transition writes a structured `audit_events` row via
 | **Art.12** | Transparent communication | informativa in `legal-privacy.html` (to update task 3.5) | 🟡 partial |
 | **Art.12(3)** | 30-day SLA | `sla_deadline` column DEFAULT 30d; **NO automated alerting if breached** | 🟡 enforcement missing |
 | **Art.13/14** | Information at collection | Privacy notice page (to enhance task 3.5) | 🟡 partial |
-| **Art.15** | Right of access | API endpoint + state machine ✅; worker outputs **STUB only**, not full PHI export | 🟡 worker incomplete |
+| **Art.15** | Right of access | API endpoint + state machine ✅; full PHI export via `/api/v1/patients/[id]/export` (proprietary or `?format=fhir`); Sprint 3 task 3.6 closes the worker stub | ✅ implemented |
 | **Art.16** | Rectification | No programmatic path — admin must manually edit in Supabase dashboard | ❌ gap |
 | **Art.17** | Erasure ("right to be forgotten") | `fn_anonymize_patient` ✅ + 30d grace cron ✅ | ✅ implemented |
 | **Art.18** | Restriction of processing | NOT in enum; no flag mechanism on patient row | ❌ gap |
 | **Art.19** | Notification obligation | Not implemented (notify recipients of rectification/erasure) | ❌ gap (low frequency in our model) |
-| **Art.20** | Right to portability | API endpoint + state machine ✅; worker outputs **STUB only**, no FHIR/structured format | 🟡 worker incomplete |
+| **Art.20** | Right to portability | Same endpoint as Art.15; FHIR R4 Bundle via `?format=fhir` (Sprint 3 task 3.6) — any FHIR-aware system can ingest the export without bespoke parsing | ✅ implemented |
 | **Art.21** | Right to object | NOT in enum; no UI for subject to opt-out specific processing | ❌ gap |
 | **Art.22** | Automated decision-making | N/A — clinical scoring is decision-SUPPORT, not automated decisions per Art.22(1). Documented in `docs/22-GDPR-READINESS.md` | ✅ N/A |
 
