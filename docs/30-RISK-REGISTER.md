@@ -137,6 +137,22 @@
 
 ---
 
+## Section F-INT — External-audit findings (closed by Sprint 4)
+
+External-AI audit findings ingested during Sprints 3–4. Not part of the
+original B-series critical-blocker list; tracked here as a separate
+slice so the closure trail is auditable. Each entry references the
+Sprint 4 task (4.1–4.4) that closed it.
+
+| ID | Title | Severity (pre-Sprint-4) | Status | Resolution |
+|---|---|---|---|---|
+| F-013 | Composite risk lacks explicit decision metadata + tie-break rule (consumers cannot reproduce why a domain "won") | High | ✅ Resolved (Sprint 4 task 4.1) | `composite-risk.ts` exposes `CompositeDecision { winningDomain, contributingDomains[], unstratifiedCount, rationale }`; tie-break canonical priority `cardio > renal > metabolic > hepatic > frailty`; locked by 6 cases in `tests/unit/composite-risk.test.ts` "composite decision metadata" describe block. Doc: `docs/23-CLINICAL-ENGINE.md §7.2`. |
+| F-014 | Alerts inbox flooded with duplicates of the same finding across assessments + closure provenance asymmetric (`acknowledged_*` and `resolved_at` only) | High | ✅ Resolved (Sprint 4 task 4.2) | Migration 019 adds `dedup_key` + partial unique index `idx_alerts_dedup_inflight` (in-flight dedup) + `dismissed_at` / `dismissed_by` / `resolved_by` (audit symmetry) + `fn_auto_close_stale_alerts` (cron `/api/v1/internal/alerts-auto-close` daily 03:30 UTC). Ack endpoint refactored to discriminated zod union — `note` REQUIRED for resolve/dismiss; terminal-state guard returns HTTP 409. New audit actions `alert.dismiss` + `alert.auto_close`. Doc: `docs/23-CLINICAL-ENGINE.md §8.1`. Tests: 31 new (16 + 15). |
+| F-015 | Follow-up engine has zero direct unit tests + missing hypertension and smoking-cessation branches + ambiguous `dueInMonths: 0` for "within X days" findings | High | ✅ Resolved (Sprint 4 task 4.3) | `tests/unit/followup-plan.test.ts` (39 cases) pins determinism, cadence table, all per-domain branches, diabetic chronic-care annual screenings, the new HTN tiered branch (ESC/ESH 2023, 7 cases), the new smoking-cessation branch (ESC 2021 §3, 4 cases), `dueInDays` sentinel (2 cases), and the catalog-linkage invariant ("every emitted `guidelineSource` traces to a registered catalog entry"). New `FollowUpItem.dueInDays?: number` optional field. Doc: `docs/23-CLINICAL-ENGINE.md §9.1–§9.4`. |
+| F-016 | 5 deterministic scores (BMI, eGFR, FLI, FRAIL, ADA) lack dedicated independent-reference golden suites; coverage came indirectly from 4 fixtures with < 5 cases per score; no CI gate to catch new scores landing without tests | High | ✅ Resolved (Sprint 4 task 4.4) | 5 reference impls under `tests/equivalence/refs/<score>-reference.ts` re-derived from published source (WHO 2000, Inker NEJM 2021, Bedogni BMC Gastro 2006, Morley 2012, Bang 2009); 29-case dual-assertion suite (engine ≡ ref ≡ paper-pin); CI gate `scripts/check-equivalence-coverage.mjs` (≥ 5 cases per score, 10 scores covered) wired into `build:check`. Tolerance policy in `docs/24-FORMULA-REGISTRY.md §14`. |
+
+---
+
 ## Section F — Regulatory / external (EXT register)
 
 These are not engineering risks — they are deliverables owned outside
@@ -170,6 +186,7 @@ production-grade deployment posture.
 | Medium | 12 listed | All have a documented mitigation or roadmap item |
 | Low | 10 listed | All on roadmap |
 | Clinical | 9 listed | All resolved, mitigated, or architectural |
+| External-AI audit (F-series) | 4 listed | All resolved by Sprint 4 (4.1 → F-013, 4.2 → F-014, 4.3 → F-015, 4.4 → F-016) |
 | EXT | 13 listed | Owned outside engineering |
 
 **Engineering-side residual risk for production launch:** the 12 Medium

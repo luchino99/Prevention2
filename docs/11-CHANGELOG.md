@@ -7,11 +7,54 @@ executed per the project blueprint.
 
 ---
 
-## [Sprint 4 — Clinical excellence] — 2026-05-07 — **In progress**
+## [Sprint 4 — Clinical excellence] — 2026-05-07 — **CLOSED — 4 external-AI audit findings resolved end-to-end**
 
 Sprint 4 hardens the deterministic clinical engine — composite-risk
 aggregation, alert lifecycle, follow-up planning, and score equivalence —
 without modifying any validated formula (project rule).
+
+### Sprint 4 outcome at a glance
+
+| Metric                     | Before Sprint 4 | After Sprint 4 |
+| -------------------------- | --------------- | -------------- |
+| Test count                 | 244             | **370**        |
+| External-audit F-findings  | 4 open          | **0 open**     |
+| Unit-test files            | 17              | **22**         |
+| Reference impls (BMI/eGFR/FLI/FRAIL/ADA) | 0  | **5**          |
+| CI gates in `build:check`  | 9               | **10** (added `check-equivalence-coverage`) |
+| Migrations applied         | 18              | **19**         |
+
+External-AI audit findings closed by Sprint 4 (full table in
+`docs/30-RISK-REGISTER.md` Section F-INT):
+
+- **F-013** — Composite risk lacks decision metadata + tie-break rule →
+  closed by **task 4.1** (CompositeDecision block, canonical priority
+  `cardio > renal > metabolic > hepatic > frailty`, 6 new tests).
+- **F-014** — Alerts inbox flooded with duplicates + closure provenance
+  asymmetric → closed by **task 4.2** (migration 019: `dedup_key` +
+  partial unique index + `dismissed_*`/`resolved_by` columns +
+  `fn_auto_close_stale_alerts` cron; ack endpoint requires note for
+  resolve/dismiss; new audit actions; 31 new tests).
+- **F-015** — Follow-up engine has zero direct tests + missing HTN /
+  smoking branches + ambiguous due-zero → closed by **task 4.3** (new
+  tiered HTN branch ESC/ESH 2023, new smoking-cessation branch ESC
+  2021 §3, `dueInDays` sentinel, catalog-linkage invariant, 39 new
+  tests).
+- **F-016** — 5 deterministic scores lacked dedicated independent-
+  reference golden suites + no coverage CI gate → closed by **task 4.4**
+  (5 paper-derived reference impls, 29 new dual-assertion cases, new
+  CI gate `check-equivalence-coverage.mjs` enforcing ≥ 5 cases per
+  validated score across 10 scores, tolerance policy in
+  `docs/24-FORMULA-REGISTRY.md §14`).
+
+Project rule respected end-to-end: **zero changes to validated score
+formulas**. Every Sprint-4 deliverable is either additive code (new
+references, new tests, new gates) or behavioural enhancement of the
+interpretation layer above the validated calculations
+(composite-risk decision metadata, follow-up branches, alert
+lifecycle).
+
+### Per-task detail follows below
 
 ### Sprint 4 task 4.1 — Composite-risk engine refinement (CLOSED)
 

@@ -38,6 +38,137 @@
 
 ---
 
+## [2026-05-07.04] — Score equivalence references (F-016)
+
+**Class.** additive (no engine output change).
+**Scope.** New independent paper-derived reference implementations for
+BMI / eGFR / FLI / FRAIL / ADA under
+`tests/equivalence/refs/<score>-reference.ts`. Engine modules untouched.
+
+**User authorisation.** Sprint 4 task 4.4. Project rule "preserve
+validated formulas" honoured: the 5 references are pure additive code
+paths that re-derive each formula from the published source and assert
+the engine matches.
+
+**Change.**
+- Added `bmiReference`, `egfrReference`, `fliReference`,
+  `frailReference`, `adaReference`. Each has zero engine imports.
+- Added `tests/equivalence/score-reference-equivalence.test.ts` with 29
+  cases (≥5 per score) doing dual-assertion (engine ↔ ref ↔ paper-pin).
+- Added CI gate `scripts/check-equivalence-coverage.mjs` enforcing
+  ≥5 cases per validated score (10 scores covered).
+- Tolerance policy documented in `docs/24-FORMULA-REGISTRY.md §14` with
+  per-score bound + paper citation rationale.
+
+**Recompute legacy?** No — engine output unchanged.
+
+**Tests added.** 29 in `tests/equivalence/score-reference-equivalence.test.ts`.
+Total suite: 341 → 370 passing.
+
+---
+
+## [2026-05-07.03] — Follow-up engine: hypertension + smoking branches + dueInDays (F-015)
+
+**Class.** behavioural (new follow-up items emitted; existing items unchanged).
+**Scope.** `followup-engine/followup-plan.ts` — new branches and field;
+`shared/types/clinical.ts` — `FollowUpItem.dueInDays` optional field;
+`assessment-service.ts` — wire-through of vitals + smoking on both
+write and read paths.
+
+**User authorisation.** Sprint 4 task 4.3 — interpretation layer above
+validated scores. Validated score formulas untouched.
+
+**Change.**
+- New ESC/ESH 2023 hypertension branch with three tiers: Stage 1
+  (`htn_stage1_followup`, 3 mo), Stage 2 (`htn_stage2_followup`, 1 mo),
+  Hypertensive urgency (`htn_urgency_recheck`, `dueInDays: 1`).
+- New ESC 2021 §3 smoking-cessation branch
+  (`lifestyle_smoking_cessation_referral`, 1 mo) gated on smoker AND
+  any CV item already emitted.
+- New `dueInDays?: number` optional field on `FollowUpItem` for
+  sub-monthly granularity. Currently used by undiagnosed-DM (7 days)
+  and HTN urgency (1 day). `dueInMonths` preserved for legacy readers.
+- All new branches deterministic + guideline-sourced from existing
+  catalog entries (`ESC_ESH_2023_HTN`, `ESC_2021_PREVENTION`).
+
+**Recompute legacy?** No — old assessments retain their previously
+computed `followup_plan`. Re-derivation on read returns the new
+branches if vitals/smoking are present in `clinical_input_snapshot`,
+which is correct (we have the input, the new branches surface).
+
+**Tests added.** `tests/unit/followup-plan.test.ts` (new, 39 cases
+including 7 HTN tier cases, 4 smoking-gating cases, 2 `dueInDays`
+sentinel cases, 1 catalog-linkage invariant, 6 cadence-table cases).
+
+---
+
+## [2026-05-07.02] — Alert engine: in-flight dedup + ack workflow + auto-close (F-014)
+
+**Class.** behavioural (alert lifecycle hardened; deriver outputs
+gain a `dedupKey` field; engine thresholds unchanged).
+**Scope.** Persistence layer + ack endpoint + new cron + new audit
+actions; `alert-deriver.ts` + `assessment-service.ts` write paths.
+
+**User authorisation.** Sprint 4 task 4.2. No clinical threshold
+changed; this is alerts-pipeline hardening.
+
+**Change.**
+- Migration 019: `alerts.dedup_key TEXT` + partial unique index
+  `idx_alerts_dedup_inflight` ensuring at most one open/acknowledged
+  alert per `(tenant, patient, dedup_key)`. Audit-symmetry columns
+  (`dismissed_at`, `dismissed_by`, `resolved_by`) added.
+- `create_assessment_atomic` re-defined with `INSERT … ON CONFLICT
+  (…) DO NOTHING` for the alerts batch; rows with `dedup_key IS NULL`
+  (event-style alerts like `clinical_risk_up`) bypass the predicate
+  and continue to land unconditionally.
+- New `fn_auto_close_stale_alerts(p_max_age_days INT DEFAULT 30)` —
+  idempotent SECURITY DEFINER function; cron at
+  `/api/v1/internal/alerts-auto-close` (daily 03:30 UTC).
+- Ack endpoint: discriminated zod union — `note` REQUIRED for
+  `resolve` and `dismiss` (≥3 chars trimmed); `acknowledge` keeps
+  `note` optional; terminal-state guard refuses re-closure (HTTP 409
+  `ALERT_ALREADY_CLOSED`); `dismiss` writes canonical `alert.dismiss`
+  audit action (added in this sprint).
+- Deriver-side: every emitted `AlertEntry` now carries a
+  `dedupKey: AlertDedupKey | null`. Per docs/23 §8.1 mapping table.
+
+**Recompute legacy?** No — pre-019 alerts have `dedup_key = NULL` and
+continue to behave as before. Only new rows are dedup-aware.
+
+**Tests added.** `tests/unit/alert-deriver-dedup.test.ts` (16) +
+`tests/unit/alerts-ack-body-schema.test.ts` (15).
+
+---
+
+## [2026-05-07.01] — Composite decision metadata (F-013)
+
+**Class.** behavioural (additive metadata on the composite-risk
+profile; risk levels themselves unchanged).
+**Scope.** `risk-aggregation/composite-risk.ts` —
+`CompositeRiskProfile.decision: CompositeDecision`.
+
+**User authorisation.** Sprint 4 task 4.1. The composite-risk
+aggregation rule (max-of-stratified, "silence is not safety") is
+unchanged; this entry adds **provenance** for the chosen level.
+
+**Change.**
+- New `CompositeDecision` interface: `winningDomain`,
+  `contributingDomains[]`, `unstratifiedCount`, `rationale`.
+- Tie-break canonical priority for equal-level domains:
+  `cardiovascular > renal > metabolic > hepatic > frailty`.
+- DB-rehydration path emits a placeholder decision with explicit
+  "metadata not persisted on this historical row" rationale; live
+  re-aggregation produces the full decision.
+
+**Recompute legacy?** No — the numeric composite level on historical
+rows is unchanged; only the new `decision` block is absent (and the
+rehydration path documents this clearly).
+
+**Tests added.** 6 new cases in `tests/unit/composite-risk.test.ts`
+(decision metadata block).
+
+---
+
 ## [2026-05-04.02] — PREDIMED adherence bands aligned to Schroder 2011
 
 **Class.** formula (band thresholds — score formula unchanged).
