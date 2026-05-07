@@ -105,9 +105,14 @@ Status legend:  `✅ done` · `🟡 partial / follow-up` · `⬜ open`
 | 8.5 | Purpose limitation recorded | ✅ | `purpose` column |
 | 8.6 | Data minimization — storage only of fields required for scoring | ✅ | Shared types + Zod schemas; no unused payload fields persisted |
 | 8.7 | Data retention policy documented per entity | ✅ | `fn_retention_prune()` SQL function + daily `/api/v1/internal/retention` cron (Vercel cron schedule `0 3 * * *`) |
-| 8.8 | Data export (portability) endpoint | ✅ | `api/v1/patients/[id]/export.ts` — returns versioned envelope `uelfy.patient-export/v1`, creates `data_subject_requests` row |
+| 8.7b | Per-category retention for `audit_events` (Sprint 3 task 3.3) | ✅ | Migration 018: `auth.*` events 180d (NIS2 + ISO 27001), default 10y (medical-deontological + Art.30). Per-tenant override via LEAST(). Doc 14 §1.1. |
+| 8.8 | Data export (portability) endpoint | ✅ | `api/v1/patients/[id]/export.ts` — returns versioned envelope `uelfy.patient-export/v1` by default, FHIR R4 Bundle via `?format=fhir` (Sprint 3 task 3.6); creates `data_subject_requests` row |
+| 8.8b | FHIR R4 interoperability for Art.20 portability (Sprint 3 task 3.6) | ✅ | `backend/src/services/fhir-export-service.ts` + 10 unit tests; 5 resource types (Patient, Observation, RiskAssessment, DiagnosticReport, Consent) wrapped in Bundle type=collection with `gdpr-art20-portability` tag |
 | 8.9 | Right-to-erasure via soft-delete + anonymization job | ✅ | `patients.deleted_at` + `fn_anonymize_patient()` + daily `/api/v1/internal/anonymize` (grace window 30d, configurable) |
-| 8.10 | DPO / joint controller records | ⬜ | Documentation task (non-code) |
+| 8.10 | DPO / joint controller records | 🟡 | DPIA scaffold (Sprint 3 task 3.4) at `docs/39-DPIA-CARDIO.md` with 13 [TO COMPLETE BY DPO/CONTROLLER] placeholders for legal sign-off before first paying customer |
+| 8.11 | Granular consent runtime enforcement (Sprint 3 task 3.2) | ✅ | `backend/src/middleware/consent-gate.ts` exports `assertConsentFor` / `hasConsentFor` for the 4 enforceable consent types (`ai_processing`, `notifications`, `data_sharing_clinician`, `marketing`); type-level guard prevents accidental gating of `health_data_processing`. Decision matrix in `docs/41-CONSENT-ENFORCEMENT.md`. Currently inert (no opt-in operation exists yet); first integration Sprint 4. |
+| 8.12 | Privacy notice (Art.13/14) updated for Sprint 3 controls (task 3.5) | ✅ | `frontend/pages/legal-privacy.html` v1.1: 13 sections, granular purposes, per-category retention, honest per-Article rights status, EU-only sub-processor list with GitHub disclosure |
+| 8.13 | DSR workflow per-Article gap analysis (Sprint 3 task 3.1) | ✅ | `docs/40-DSR-WORKFLOW-AUDIT.md`: Art.15+Art.17+Art.20 implemented; Art.16 via standard CRUD; Art.18+Art.21 deferred Sprint 4 with documented path |
 
 ## 9. Clinical safety
 

@@ -124,7 +124,8 @@ The controller (tenant clinic) confirms the basis per data category.
 
 ## Article 7 — Conditions for consent
 
-**Status.** ✅ for the recording mechanism.
+**Status.** ✅ recording mechanism + ✅ runtime enforcement
+(Sprint 3 task 3.2).
 
 - `consent_records` table (migration 001) — append-only event log with
   `granted` boolean, `policy_version`, `consent_text_hash`, `granted_at`,
@@ -135,6 +136,14 @@ The controller (tenant clinic) confirms the basis per data category.
   text the subject had agreed to.
 - `recordAuditStrict` is used for grant **and** revoke so the audit trail
   cannot silently drop a consent decision.
+- **Runtime enforcement** (Sprint 3 task 3.2):
+  `backend/src/middleware/consent-gate.ts` exports
+  `assertConsentFor(patientId, consentType)` and `hasConsentFor(...)`.
+  The 4 enforceable consent types (`ai_processing`, `notifications`,
+  `data_sharing_clinician`, `marketing`) require positive opt-in;
+  `health_data_processing` is NOT enforced because its legal basis
+  is Art.9(2)(h), not consent. Decision matrix + application-points
+  roadmap in `docs/41-CONSENT-ENFORCEMENT.md`.
 
 ⚪ `EXT-LEGAL`: the actual policy text and translations belong to the
 controller.
@@ -198,15 +207,20 @@ All clinical data is treated as Art.9 special-category from the outset:
 
 ## Article 15 — Right of access
 
-**Status.** ✅.
+**Status.** ✅ (full implementation — Sprint 3 task 3.6 closed
+the worker-stub gap).
 
 - Endpoint: `GET /api/v1/patients/[id]/export`.
-- Returns a JSON envelope with patient profile, clinical profiles,
-  assessments, score results, alerts, follow-up plans, lifestyle
-  snapshots, consents, and (sanitised) audit events visible to the
-  subject.
+- Returns either a proprietary JSON envelope
+  (`uelfy.patient-export/v1`) by default OR a FHIR R4 Bundle via
+  `?format=fhir` (Sprint 3 task 3.6 — interoperable format for
+  any FHIR-aware ingester).
+- Includes patient profile, clinical profiles, assessments,
+  score results, alerts, follow-up plans, lifestyle snapshots,
+  consents, and (sanitised) audit events visible to the subject.
 - Audit IP hashes are kept server-side only — not handed back.
-- Action `patient.export` is logged via `recordAuditStrict`.
+- Action `patient.export` is logged via `recordAuditStrict` with
+  metadata field `export_format` for Art.30 records-of-processing.
 
 ---
 
@@ -255,12 +269,28 @@ All clinical data is treated as Art.9 special-category from the outset:
 
 ## Article 20 — Portability
 
-**Status.** ✅.
+**Status.** ✅ (FHIR R4 interoperability — Sprint 3 task 3.6).
 
 Same export endpoint as Art.15 (`GET /api/v1/patients/[id]/export`).
-Output is structured JSON suitable for re-ingestion (no PDFs, no
-opaque blobs). Score outputs include `engine_version` so the recipient
-can correlate with a published formula registry.
+Two formats:
+
+* **Default** (`?format=uelfy` or omitted): proprietary
+  `uelfy.patient-export/v1` envelope — full audit trail and
+  detailed clinical-profile shape.
+* **`?format=fhir`** (Sprint 3 task 3.6): FHIR R4 Bundle
+  (`type=collection`, tagged `gdpr-art20-portability`) with 5
+  resource types — Patient, Observation (per measurement),
+  RiskAssessment (per score), DiagnosticReport (per assessment,
+  linking child RiskAssessments), Consent. Any FHIR-aware system
+  (other clinic EHR, personal-health-record app, second-opinion
+  provider) can ingest the Bundle without bespoke parsing.
+
+Score outputs include `engine_version` (proprietary) or are emitted
+as the RiskAssessment.note text (FHIR) so the recipient can correlate
+with a published formula registry.
+
+Mapping spec + standards rationale in
+`backend/src/services/fhir-export-service.ts` header.
 
 ---
 
@@ -321,14 +351,28 @@ preconditions.
 
 ## Article 30 — Records of processing activities
 
-**Status.** ✅ system records, ⚪ `EXT-LEGAL` controller-side ROPA.
+**Status.** ✅ system records (Sprint 3 task 3.3 brought retention
+into Art.5(1)(e) compliance), ⚪ `EXT-LEGAL` controller-side ROPA.
 
 - The platform side: `audit_events` table is the authoritative
-  per-action record. Retention default 7 years (medical-record
-  alignment); per-tenant configurable via `tenants.retention_days_audit`.
-- The controller-side ROPA (categories of subjects, recipients, transfers,
-  retention) is `EXT-LEGAL` — Uelfy supplies the inputs (sub-processor
-  list, default retention windows, technical/organisational measures).
+  per-action record, split into TWO retention categories
+  (Sprint 3 task 3.3 / migration 018):
+  - **security** (`action LIKE 'auth.%'`): 180 days default,
+    aligned with NIS2 Annex II §4 and ISO 27001 A.8.15.
+  - **default** (everything else): 10 years default,
+    aligned with Italian medical-deontological code + Art.30
+    records-of-processing obligation.
+  Per-tenant override via `tenants.retention_days_audit` applies
+  to the default category and tightens (never widens) the security
+  category via LEAST(). Full table in `docs/14-DELETION-POLICY.md` §1.1.
+- The `patient.export` audit row carries `export_format` metadata
+  (Sprint 3 task 3.6) so the ROPA reflects the exact representation
+  served (proprietary vs FHIR R4).
+- The controller-side ROPA (categories of subjects, recipients,
+  transfers, retention) is `EXT-LEGAL` — Uelfy supplies the inputs
+  (sub-processor list in privacy notice §11, default retention
+  windows in `docs/14-DELETION-POLICY.md`, technical/organisational
+  measures in `docs/20-SECURITY.md`).
 
 ---
 
@@ -371,15 +415,29 @@ See `27-INCIDENT-RESPONSE.md`:
 
 ## Article 35 — Data Protection Impact Assessment (DPIA)
 
-**Status.** ⚪ `EXT-LEGAL` — required for large-scale Art.9 processing.
+**Status.** 🟡 scaffold ready (Sprint 3 task 3.4) — awaiting DPO
++ Controller sign-off before first paying customer.
 
-The platform supplies the technical inputs (data flows, retention,
-sub-processors, security controls). The substantive DPIA is the
-controller's deliverable. Particularly required when:
+- **Technical scaffold**: `docs/39-DPIA-CARDIO.md` (413 lines, 11
+  sections per the WP248 / Italian Garante template). Covers
+  Description of processing, Necessity + proportionality, Data
+  flow diagram, Risk table (10 risks R1-R10 with severity /
+  likelihood pre-mitigation, mitigation reference, residual rating),
+  Likely consequences, Measures envisaged (cross-references
+  `20-SECURITY.md`), Consultation, Sign-off, Periodic review.
+- **13 [TO COMPLETE BY DPO/CONTROLLER]** placeholders for legal
+  validation. Must be signed before the first paying customer.
+- **Article 36 prior consultation (Garante)**: NOT triggered under
+  the literal Art.36(1) reading because residual risks max at
+  Medium per the scaffold §4. DPO MUST confirm before relying.
+- Ad-hoc review triggers documented in `docs/39-DPIA-CARDIO.md` §9:
+  annual, plus material change to processing, plus new sub-processor,
+  plus security incident affecting PHI, plus new regulator guidance.
 
-- Onboarding paediatric or large-cohort tenants.
-- Enabling optional AI commentary (off by default).
-- Cross-border processing to non-EU sub-processors.
+The substantive DPIA remains the controller's deliverable. Uelfy
+supplies the technical inputs (data flows, retention, sub-processors,
+security controls) via the scaffold; the DPO / Controller fills
+the [TO COMPLETE] sections and signs §8.
 
 ---
 

@@ -7,6 +7,105 @@ executed per the project blueprint.
 
 ---
 
+## [Sprint 3 — Privacy & GDPR enforcement] — 2026-05-07 — **DSR audit, granular consent middleware, per-category retention, DPIA scaffold, FHIR R4 export**
+
+Closes the Sprint 3 backlog: every external-audit finding in the
+GDPR/privacy area was either confirmed already-implemented (with
+runtime gates added) or surfaced a real gap that this sprint closes.
+No clinical formula or score logic touched. Retention policy is now
+GDPR Art.5(1)(e) compliant per category; consent enforcement
+middleware is shipped READY-but-inert (correct for current
+clinical-care-only operations); FHIR R4 portability is live behind
+`?format=fhir`.
+
+### Added
+
+- **Task 3.1 — DSR workflow audit (`docs/40-DSR-WORKFLOW-AUDIT.md`).**
+  176-line per-Article gap analysis (GDPR Art.12-22), severity
+  tiering, Sprint 3 remediation plan (3.2-3.6), Sprint 4 deferrals
+  (Art.12(3) SLA cron, Art.18 restriction flag, Art.21 objection
+  enum), Sprint 5+ wishlist (subject self-service portal).
+- **Task 3.2 — Consent enforcement middleware**
+  (`backend/src/middleware/consent-gate.ts`, 172 lines + 11 unit
+  tests + `docs/41-CONSENT-ENFORCEMENT.md` 253-line decision
+  matrix). `assertConsentFor()` + `hasConsentFor()` with
+  `EnforceableConsentType` type-level guard preventing accidental
+  gating of `health_data_processing` (which has Art.9(2)(h)
+  basis, not consent). Middleware is READY-but-not-APPLIED — zero
+  endpoint imports it today by design (no opt-in operation exists
+  yet; Sprint 4 notifications will be the first user).
+- **Task 3.3 — Per-category audit retention**
+  (`supabase/migrations/018_audit_retention_per_category.sql`,
+  CREATE OR REPLACE `fn_retention_prune`). Splits `audit_events`
+  retention: `auth.*` events 180 days (NIS2 Annex II §4 +
+  ISO 27001 A.8.15), default 10 years (medical-deontological +
+  Art.30). Per-tenant override via `tenants.retention_days_audit`
+  applies via LEAST() — global tightening propagates to security,
+  widening does not. `docs/14-DELETION-POLICY.md` §1.1 expanded
+  with the per-category table + legal basis.
+- **Task 3.4 — DPIA scaffold (`docs/39-DPIA-CARDIO.md`).**
+  413-line scaffold for the GDPR Art.35 obligation: 11 sections
+  (Description, Necessity+Proportionality, Data flow, 10-row Risk
+  table with severity/likelihood pre/post + residual, Likely
+  consequences, Measures envisaged with cross-refs to actual
+  controls, Consultation, Sign-off, Periodic review).
+  13 `[TO COMPLETE BY DPO/CONTROLLER]` placeholders for legal
+  validation before first paying customer.
+- **Task 3.5 — Privacy notice update**
+  (`frontend/pages/legal-privacy.html`, 238→376 lines). §3
+  Purposes rewritten with 6 distinct purposes (4 opt-in
+  consent-gated + 2 non-consent), §5 Retention with per-category
+  split, §6 Rights HONEST per-Article (Art.15/20 in upgrade noted
+  → now closed by 3.6, Art.18/21 deferred Sprint 4, Art.77 with
+  Garante link), §9 stronger "ZERO transfers outside EU/EEA",
+  §11 added GitHub (NOT in PHI path), §12 DPO contact placeholder,
+  §13 NEW Italian-language note.
+- **Task 3.6 — FHIR R4 export** (`backend/src/services/fhir-export-service.ts`,
+  390 lines + 10 unit tests). `toFhirBundle()` maps proprietary
+  envelope to FHIR R4 Bundle (type=collection) with 5 resources:
+  Patient, Observation (per measurement), RiskAssessment (per
+  score), DiagnosticReport (per assessment, links child
+  RiskAssessments), Consent. Available at
+  `/api/v1/patients/[id]/export?format=fhir`. Default `?format=uelfy`
+  preserves the existing proprietary envelope (backwards-compatible).
+  Audit row metadata extended with `export_format`.
+- **Task 3.7 — this commit** (Sprint 3 closure docs sync).
+
+### Changed
+
+- `docs/40-DSR-WORKFLOW-AUDIT.md` — Art.15 + Art.20 marked
+  ✅ implemented (was 🟡 worker incomplete).
+- `docs/22-GDPR-READINESS.md` — see commit diff for Article-by-
+  Article status updates (Art.7, Art.13/14, Art.15, Art.20,
+  Art.30, Art.35 lines refreshed for Sprint 3 work).
+- `docs/10-SECURITY-GDPR-CHECKLIST.md` — privacy section extended
+  with Sprint 3 controls (consent middleware, per-category
+  retention, FHIR export availability).
+- `frontend/pages/legal-privacy.html` — version 1.0 → 1.1
+  (Sprint 3); see Task 3.5 above.
+
+### Closed external-audit findings (gold standard for Sprint 3)
+
+| Finding | Description | Status after Sprint 3 |
+|---|---|---|
+| F-010 | DSR workflow incomplete (export stub, deletion partial, anonymize separato) | ✅ closed (3.1 audit + 3.6 FHIR + erasure was already complete; 3 deferred items filed for Sprint 4) |
+| F-011 | Consent tracking minimale, no granular per finalità | ✅ closed (false positive on schema — already granular; real gap was runtime enforcement, closed by 3.2 middleware) |
+| F-012 | Audit log retention 3650d uniform may be over-retention | ✅ closed (3.3 per-category split: auth 180d, default 10y) |
+
+### Deferred (filed, not blocking)
+
+- **Sprint 4** — Art.12(3) SLA enforcement cron (alert if DSR open
+  >25 days), Art.18 restriction flag on patient + middleware,
+  Art.21 objection enum in `dsr_kind` + UI flow, consent-gate
+  application points (notifications dispatcher).
+- **Sprint 5+** — subject self-service DSR portal
+  (`/pages/dsr-request.html`); rectification formal flow under
+  Art.16; FHIR resources beyond MVP (CarePlan, Flag, Provenance,
+  AuditEvent); Italian translation of privacy notice (controller
+  responsibility per §13 of the notice).
+
+---
+
 ## [Sprint 2 — Security boundary hardening] — 2026-05-07 — **Anti-recidiva gates, runtime probes, supabase-js upgrade**
 
 Closure of the Sprint 2 hardening backlog: every task that the external-AI
