@@ -1,9 +1,19 @@
 # Uelfy Clinical — Deployment Runbook
 
+> **⚠️ Sprint 1 update (May 2026).** The CI/CD pipeline, daily push
+> workflow, Renovate dependency automation, SBOM gates, and production
+> smoke test are documented in detail in
+> [`docs/35-CI-CD-WORKFLOW.md`](./35-CI-CD-WORKFLOW.md). This file
+> remains the authoritative reference for stack overview, env vars,
+> database migration procedure, and manual deploy/rollback. Read 35 for
+> the daily founder workflow; read this file for migrations and manual
+> operations.
+
 > **Scope.** Operational procedure to deploy, upgrade, roll back, and
 > smoke-test the platform. Companion to `20-SECURITY.md` (security
-> controls), `27-INCIDENT-RESPONSE.md` (incident playbook), and
-> `12-PACKAGE-UPGRADE.md` (dependency policy).
+> controls), `27-INCIDENT-RESPONSE.md` (incident playbook),
+> `12-PACKAGE-UPGRADE.md` (dependency policy), and
+> `35-CI-CD-WORKFLOW.md` (CI/CD daily ops, Sprint 1).
 >
 > **Audience.** Operators with access to the Vercel project and the
 > Supabase project. Assumes baseline familiarity with Vercel CLI and
