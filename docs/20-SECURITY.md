@@ -273,6 +273,84 @@ requests/day) requires upgrading to Pay-as-you-go (~$0.20/100k
 requests) or Pro ($20/month for 1M requests/day). Monitor at
 `https://console.upstash.com/usage`.
 
+## 9b. Web security headers (HTTP)
+
+All response headers are configured in `vercel.json` (single source of
+truth). Active enforcement on every response:
+
+| Header | Value | Purpose |
+|---|---|---|
+| `Strict-Transport-Security` | `max-age=63072000; includeSubDomains; preload` | Force HTTPS for 2 years; eligible for browser HSTS preload list |
+| `X-Content-Type-Options` | `nosniff` | Block MIME-type sniffing (no JS execution from text/plain etc.) |
+| `X-Frame-Options` | `DENY` | Block being iframed by any origin (legacy header; CSP `frame-ancestors 'none'` is the modern equivalent and also set) |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` | Strip referrer URL on cross-origin requests; full URL only same-origin |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=(), payment=(), usb=(), gyroscope=(), magnetometer=(), accelerometer=(), interest-cohort=()` | Disable browser features the app does not use; opt out of FLoC/cohort tracking |
+| `Cross-Origin-Opener-Policy` | `same-origin` | Isolate browsing context; prevent window.opener leaks across origins |
+| `Cross-Origin-Resource-Policy` | `same-origin` | Block cross-origin resource embedding |
+| `Cache-Control` (on `/api/*` only) | `no-store, no-cache, must-revalidate, private` | Never cache PHI responses anywhere |
+
+### Content-Security-Policy
+
+Per-area policies (route-scoped):
+
+| Route | CSP value (enforced) | Notes |
+|---|---|---|
+| `/pages/*` | full policy with `style-src 'self' 'unsafe-inline'`, `script-src 'self'`, `connect-src` allows Supabase | Login + clinical pages — needs Supabase WS for realtime |
+| `/components/*` | same as `/pages/*` minus `manifest-src`, `worker-src`, `upgrade-insecure-requests` | Reusable HTML components |
+| `/api/*` | `default-src 'none'; frame-ancestors 'none'` | API responses are JSON; nothing should ever be loaded from them |
+
+**`'unsafe-inline'` on `style-src`** is the only remaining permissive
+clause. It exists because 61 occurrences of `style="..."` attributes
+are spread across 10 HTML pages (legacy from the consumer-app refactor).
+`script-src` is already strict (no `'unsafe-inline'`, no `'unsafe-eval'`).
+
+### Content-Security-Policy-Report-Only (Sprint 2 task 2.6)
+
+A second header is published alongside the enforced CSP, with stricter
+rules:
+- removed `'unsafe-inline'` from `style-src`
+- added `style-src-attr 'none'` (bans `style="..."` attributes)
+- added `script-src-attr 'none'` (bans `onclick="..."` etc., even though
+  none are currently used — defence-in-depth against future regressions)
+
+**Behaviour.** Browsers parse the Report-Only policy and **report
+violations to the console** (DevTools → Console) but do NOT block the
+resource. This lets us:
+1. Quantify exactly how many style-attribute uses are still in the
+   shipped pages.
+2. Catch regressions where new code introduces inline scripts or
+   handlers (which would silently work today but break in Sprint 5).
+3. Plan the eventual switch to enforcement once inline-style refactor
+   is complete.
+
+**No reporting endpoint** is configured — violations land only in the
+DevTools console. Adding a `report-uri` / `report-to` collector is
+deferred (Sentry/Datadog integration, optional). For solo-founder phase
+this is acceptable: open DevTools while navigating and read the
+violations tab.
+
+**Forward path.** Sprint 5 (UX clinical safety) will refactor
+`style="..."` attributes into CSS classes (Sprint 2 task 2.6 follow-up
+filed as task 62). Once attribute count is zero, the Report-Only header
+is promoted to enforcement (replacing the lenient enforced CSP) and the
+follow-up task is closed.
+
+### How to verify CSP live
+
+```bash
+curl -sI https://prevention2.vercel.app/pages/login.html \
+  | grep -i "content-security"
+```
+
+Expected: 2 lines — one `content-security-policy` (enforced) and one
+`content-security-policy-report-only` (stricter, advisory).
+
+The Sprint 1 task 1.7 smoke-prod CI gate already verifies the
+**presence** of all 6 security headers on every push. CSP Report-Only
+is an additional informational header; smoke does not enforce its
+presence (would create unnecessary churn during the inline-style
+refactor in Sprint 5).
+
 ## 10. Threat model summary
 
 | Threat | Mitigation | Status |
