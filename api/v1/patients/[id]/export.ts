@@ -35,6 +35,7 @@ import { applySecurityHeaders } from '../../../../backend/src/middleware/securit
 import { checkRateLimitAsync, applyRateLimitHeaders } from '../../../../backend/src/middleware/rate-limit.js';
 import { supabaseAdmin } from '../../../../backend/src/config/supabase.js';
 import { recordAuditStrict, emitAccessDenialLog } from '../../../../backend/src/audit/audit-logger.js';
+import { logStructured } from '../../../../backend/src/observability/structured-log.js';
 import { toFhirBundle } from '../../../../backend/src/services/fhir-export-service.js';
 import {
   replyDbError,
@@ -282,9 +283,18 @@ async function handleExport(req: any, res: VercelResponse, patientId: string): P
     payload = toFhirBundle(envelope);
     downloadName = `patient-${patientId}-fhir-bundle-${Date.now()}.json`;
   } else {
-    replyError(res, 400, 'INVALID_FORMAT', {
-      detail: 'Supported formats: uelfy (default), fhir',
+    // Opaque error envelope (per replyError contract). The supported
+    // formats are documented in the endpoint header comment + the
+    // structured log below carries the requested-vs-supported delta
+    // for server-side debugging.
+    logStructured('warn', 'EXPORT_FORMAT_INVALID', {
+      requestedFormat,
+      supportedFormats: ['uelfy', 'fhir'],
+      actorUserId: req.auth.userId,
+      route: 'GET /api/v1/patients/[id]/export',
+      patientId,
     });
+    replyError(res, 400, 'INVALID_FORMAT');
     return;
   }
 
