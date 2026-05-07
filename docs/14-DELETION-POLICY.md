@@ -28,13 +28,47 @@ each jurisdiction.
 | Followup plans | 5 years | Hard delete | 003 migration |
 | Alerts (`alerts`) | 2 years from `resolved_at` / `dismissed_at` | Hard delete | retention cron |
 | Report exports (`report_exports`) | 1 year from `created_at` | Hard delete row + Storage object (`clinical-reports` bucket) | retention cron |
-| Audit events (`audit_events`) | 7 years | Append-only; never deleted by application code | 004 migration |
+| Audit events `auth.*` category (`audit_events WHERE action LIKE 'auth.%'`) | **180 days** (security observability) | Hard delete via `fn_retention_prune` daily cron | 018 migration |
+| Audit events default category (`audit_events WHERE action NOT LIKE 'auth.%'`) | **10 years** (medical-legal default) | Hard delete via `fn_retention_prune` daily cron | 018 migration (was 015) |
 | Consent records (`consent_records`) | Forever (append-only history) | Never deleted; revocation is a new row with `granted=false` | 001 migration |
 | Auth users (`auth.users`) | While the linked `public.users` row exists | On hard tenant offboarding: anonymize email + revoke session | manual |
 
 `fn_retention_prune()` is invoked daily at 03:00 UTC by the Vercel cron
 schedule `0 3 * * *`. `fn_anonymize_patient()` is invoked daily at 04:00 UTC
 by `0 4 * * *`. Both are idempotent and safe to re-run.
+
+### 1.1 Audit events retention by category (Sprint 3 task 3.3)
+
+`audit_events` rows are split into TWO retention categories inside
+`fn_retention_prune` (migration 018):
+
+| Category | Action pattern | Default retention | Per-tenant override behaviour | Legal / standards basis |
+|---|---|---|---|---|
+| **Security** | `action LIKE 'auth.%'` (login, logout, failed_login) | **180 days** | `LEAST(tenants.retention_days_audit, 180)` — global override tightens but never widens this | NIS2 Annex II §4 incident-detection logs ~6 months · ISO 27001 A.8.15 logging · CERT-EU baseline · GDPR Art.5(1)(e) storage limitation |
+| **Default** | everything else (`patient.*`, `assessment.*`, `consent.*`, `dsr.*`, `admin.*`, `system.*`, `report.*`, `retention.*`, `anonymize.*`, etc.) | **10 years** (3650 days) | `tenants.retention_days_audit` (range 30–3650) | Italian medical-deontological code (cartella clinica ≥10 years from last access) · GDPR Art.30 records of processing · Art.9(2)(h) healthcare provision basis |
+
+Why split rather than uniform 10y for everything?
+
+* `auth.*` events are **security observability artefacts**, not clinical
+  records. Their forensic value drops sharply after the
+  incident-detection window (typically 6 months). Storing 10 years of
+  every login is unjustified under GDPR Art.5(1)(e) (storage
+  limitation) and inflates `audit_events` volume by 1-2 orders of
+  magnitude relative to the clinical-event stream.
+* All other categories carry medical-legal weight (clinical writes,
+  consent grants/revokes, DSR fulfilment evidence) and stay at the
+  10-year default.
+
+Per-tenant overrides on `tenants.retention_days_audit` continue to
+work and apply to the **default** category. For the **security**
+category we take `LEAST(override, 180)` so an operator who voluntarily
+tightens the global window does NOT see their tighter setting widened
+back up by the security floor.
+
+If a future controller asks for category-specific overrides (e.g.
+"keep auth events for 1 year for compliance with sector-specific
+guidance"), add `tenants.retention_days_audit_security` in a follow-up
+migration.
 
 ---
 
