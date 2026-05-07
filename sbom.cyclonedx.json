@@ -1030,14 +1030,14 @@
       ]
     },
     {
-      "bom-ref": "@supabase/auth-js@2.65.1",
+      "bom-ref": "@supabase/auth-js@2.105.3",
       "type": "library",
       "name": "@supabase/auth-js",
-      "version": "2.65.1",
+      "version": "2.105.3",
       "scope": "required",
       "author": "Supabase",
-      "description": "Official client library for Supabase Auth",
-      "purl": "pkg:npm/%40supabase/auth-js@2.65.1",
+      "description": "Official SDK for Supabase Auth",
+      "purl": "pkg:npm/%40supabase/auth-js@2.105.3",
       "properties": [
         {
           "name": "cdx:npm:package:path",
@@ -1047,289 +1047,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@supabase/auth-js/-/auth-js-2.65.1.tgz"
-        },
-        {
-          "type": "vcs",
-          "url": "git+https://github.com/supabase/auth-js.git"
-        },
-        {
-          "type": "website",
-          "url": "https://github.com/supabase/auth-js"
-        },
-        {
-          "type": "issue-tracker",
-          "url": "https://github.com/supabase/auth-js/issues"
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-512",
-          "content": "200ee2d97ab649634234c2b1c263e51da7c141d6b4aad9c5afc427cb206bf8a692c685d7a84cc50a74357464f2e9bb198d50605eefbea37aab0f2a53b296803f"
-        }
-      ],
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ]
-    },
-    {
-      "bom-ref": "@supabase/functions-js@2.4.3",
-      "type": "library",
-      "name": "@supabase/functions-js",
-      "version": "2.4.3",
-      "scope": "required",
-      "author": "Supabase",
-      "description": "JS Client library to interact with Supabase Functions.",
-      "purl": "pkg:npm/%40supabase/functions-js@2.4.3",
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@supabase/functions-js"
-        }
-      ],
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/@supabase/functions-js/-/functions-js-2.4.3.tgz"
-        },
-        {
-          "type": "vcs",
-          "url": "git+https://github.com/supabase/functions-js.git"
-        },
-        {
-          "type": "website",
-          "url": "https://github.com/supabase/functions-js#readme"
-        },
-        {
-          "type": "issue-tracker",
-          "url": "https://github.com/supabase/functions-js/issues"
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-512",
-          "content": "b0e2d7cbe996472bb82cbbf5a2763276afb5d26351438af3a90c4d85baca2d32d371d7264bd85b5a27f46c6cff35abe68907cfb3865c990269e16a8e5e547801"
-        }
-      ],
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ]
-    },
-    {
-      "bom-ref": "@supabase/node-fetch@2.6.15",
-      "type": "library",
-      "name": "@supabase/node-fetch",
-      "version": "2.6.15",
-      "scope": "required",
-      "author": "David Frank",
-      "description": "A light-weight module that brings window.fetch to node.js",
-      "purl": "pkg:npm/%40supabase/node-fetch@2.6.15",
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@supabase/node-fetch"
-        }
-      ],
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/@supabase/node-fetch/-/node-fetch-2.6.15.tgz"
-        },
-        {
-          "type": "vcs",
-          "url": "git+https://github.com/supabase/node-fetch.git"
-        },
-        {
-          "type": "website",
-          "url": "https://github.com/supabase/node-fetch"
-        },
-        {
-          "type": "issue-tracker",
-          "url": "https://github.com/supabase/node-fetch/issues"
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-512",
-          "content": "d626d579851a7315988bd8b471fe5e7e297a69d27d591c9904b8af823b3e014a5ec31d45df13e2ee02e0680488d929884313e80848c0b0b03328f80c25580e51"
-        }
-      ],
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ]
-    },
-    {
-      "bom-ref": "@supabase/postgrest-js@1.16.3",
-      "type": "library",
-      "name": "@supabase/postgrest-js",
-      "version": "1.16.3",
-      "scope": "required",
-      "author": "Supabase",
-      "description": "Isomorphic PostgREST client",
-      "purl": "pkg:npm/%40supabase/postgrest-js@1.16.3",
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@supabase/postgrest-js"
-        }
-      ],
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/@supabase/postgrest-js/-/postgrest-js-1.16.3.tgz"
-        },
-        {
-          "type": "vcs",
-          "url": "git+https://github.com/supabase/postgrest-js.git"
-        },
-        {
-          "type": "website",
-          "url": "https://github.com/supabase/postgrest-js"
-        },
-        {
-          "type": "issue-tracker",
-          "url": "https://github.com/supabase/postgrest-js/issues"
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-512",
-          "content": "1c8e9db1b5baf002a538fa1f5230d36a8b220c10ad5b85c09b40f5f293f0c685b7cca384d91bb5dd9ebd5aecacf5f77a893a5f0d588d728e6c82bb673f4ebae8"
-        }
-      ],
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ]
-    },
-    {
-      "bom-ref": "@supabase/realtime-js@2.10.7",
-      "type": "library",
-      "name": "@supabase/realtime-js",
-      "version": "2.10.7",
-      "scope": "required",
-      "author": "Supabase",
-      "description": "Listen to realtime updates to your PostgreSQL database",
-      "purl": "pkg:npm/%40supabase/realtime-js@2.10.7",
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@supabase/realtime-js"
-        }
-      ],
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/@supabase/realtime-js/-/realtime-js-2.10.7.tgz"
-        },
-        {
-          "type": "vcs",
-          "url": "git+https://github.com/supabase/realtime-js.git"
-        },
-        {
-          "type": "website",
-          "url": "https://github.com/supabase/realtime-js"
-        },
-        {
-          "type": "issue-tracker",
-          "url": "https://github.com/supabase/realtime-js/issues"
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-512",
-          "content": "38b234862480a904aa46918c4d4c28216a39d5e522bd262568d060c6c5d913b3d2a16875db03d1755b74a6c50c694cc4a27481f392b6d7019ced6e631e74fab8"
-        }
-      ],
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ]
-    },
-    {
-      "bom-ref": "@supabase/storage-js@2.7.1",
-      "type": "library",
-      "name": "@supabase/storage-js",
-      "version": "2.7.1",
-      "scope": "required",
-      "author": "Supabase",
-      "description": "Isomorphic storage client for Supabase.",
-      "purl": "pkg:npm/%40supabase/storage-js@2.7.1",
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@supabase/storage-js"
-        }
-      ],
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/@supabase/storage-js/-/storage-js-2.7.1.tgz"
-        },
-        {
-          "type": "vcs",
-          "url": "git+https://github.com/supabase/storage-js.git"
-        },
-        {
-          "type": "website",
-          "url": "https://github.com/supabase/storage-js"
-        },
-        {
-          "type": "issue-tracker",
-          "url": "https://github.com/supabase/storage-js/issues"
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-512",
-          "content": "6ac6077320d1d5f2aaacca72b404b5ce3c847efc6e388a750885d7ee38b89471dc24aab293eb0b97f571826e2c37abbccefb94b5a7bd7b8903c503f6aabc1604"
-        }
-      ],
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ]
-    },
-    {
-      "bom-ref": "@supabase/supabase-js@2.45.6",
-      "type": "library",
-      "name": "@supabase/supabase-js",
-      "version": "2.45.6",
-      "scope": "required",
-      "author": "Supabase",
-      "description": "Isomorphic Javascript client for Supabase",
-      "purl": "pkg:npm/%40supabase/supabase-js@2.45.6",
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@supabase/supabase-js"
-        }
-      ],
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/@supabase/supabase-js/-/supabase-js-2.45.6.tgz"
+          "url": "https://registry.npmjs.org/@supabase/auth-js/-/auth-js-2.105.3.tgz"
         },
         {
           "type": "vcs",
@@ -1337,7 +1055,7 @@
         },
         {
           "type": "website",
-          "url": "https://github.com/supabase/supabase-js"
+          "url": "https://github.com/supabase/supabase-js/tree/master/packages/core/auth-js"
         },
         {
           "type": "issue-tracker",
@@ -1347,7 +1065,289 @@
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "a955d249486122a7459c5d9550681e79c3efc357035baf9abdc4db460babe0b6869f3ac909b337471ee0f35fd24998e37aa60eb661ee2968621f357f10df0ab7"
+          "content": "84c16eccffbe9a345f7b4fc152ae3f7bcd825c80e0ca35208349212cdf306a897f833a0cd6dda21a685f2521af40743576bdd7a96a4fe93840c386cb1cca2de5"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@supabase/functions-js@2.105.3",
+      "type": "library",
+      "name": "@supabase/functions-js",
+      "version": "2.105.3",
+      "scope": "required",
+      "author": "Supabase",
+      "description": "JS SDK to interact with Supabase Functions.",
+      "purl": "pkg:npm/%40supabase/functions-js@2.105.3",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@supabase/functions-js"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@supabase/functions-js/-/functions-js-2.105.3.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/supabase/supabase-js.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/supabase/supabase-js/tree/master/packages/core/functions-js"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/supabase/supabase-js/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "2b2bad5302cb519f5f457b2214008bea5abb6a40551c59747e7a909ebc636ec3dca3c8de6f81328ab42ebebe764022e78a4ce33110b4bb1007392339e1a0eb64"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@supabase/phoenix@0.4.1",
+      "type": "library",
+      "name": "@supabase/phoenix",
+      "version": "0.4.1",
+      "scope": "required",
+      "author": "Chris McCord",
+      "description": "The official JavaScript client for the Phoenix web framework.",
+      "purl": "pkg:npm/%40supabase/phoenix@0.4.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@supabase/phoenix"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@supabase/phoenix/-/phoenix-0.4.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git://github.com/supabase/phoenix.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/supabase/phoenix#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/supabase/phoenix/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "85618990301f594358f24d02d3cd2edec18d15dda7725f5eae12a03fb8671a48095847d3e4f77f4976a5e109965c110256566b6a79cc01cf6c05a691c96a6250"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@supabase/postgrest-js@2.105.3",
+      "type": "library",
+      "name": "@supabase/postgrest-js",
+      "version": "2.105.3",
+      "scope": "required",
+      "author": "Supabase",
+      "description": "Isomorphic PostgREST client",
+      "purl": "pkg:npm/%40supabase/postgrest-js@2.105.3",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@supabase/postgrest-js"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@supabase/postgrest-js/-/postgrest-js-2.105.3.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/supabase/supabase-js.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/supabase/supabase-js/tree/master/packages/core/postgrest-js"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/supabase/supabase-js/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "8c555844772b8b464c713ccaa50dabdb058e07cfeb3ec6e3f76931982995254891add82232db989644b4e8586cf1425984438bd14a46861d3a5c3c21f09c2d05"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@supabase/realtime-js@2.105.3",
+      "type": "library",
+      "name": "@supabase/realtime-js",
+      "version": "2.105.3",
+      "scope": "required",
+      "author": "Supabase",
+      "description": "Listen to realtime updates to your PostgreSQL database",
+      "purl": "pkg:npm/%40supabase/realtime-js@2.105.3",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@supabase/realtime-js"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@supabase/realtime-js/-/realtime-js-2.105.3.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/supabase/supabase-js.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/supabase/supabase-js/tree/master/packages/core/realtime-js"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/supabase/supabase-js/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "2fea8f88996ad512a1dd00f67ce446085a3644a0ca96f1bd9a3bcfb54110276b4c8b1af1ef454857a8fc05d5b34246dcd4d6a8ea6bd359a8f20e15f74c58258f"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@supabase/storage-js@2.105.3",
+      "type": "library",
+      "name": "@supabase/storage-js",
+      "version": "2.105.3",
+      "scope": "required",
+      "author": "Supabase",
+      "description": "Isomorphic storage client for Supabase.",
+      "purl": "pkg:npm/%40supabase/storage-js@2.105.3",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@supabase/storage-js"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@supabase/storage-js/-/storage-js-2.105.3.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/supabase/supabase-js.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/supabase/supabase-js/tree/master/packages/core/storage-js"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/supabase/supabase-js/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "33ba0f0827078a6fc5b11eab288b35d0d77d996d39d4dd9242f036ee38952daee840c1456fb7da5f9742411578192e50785b01715e49fdf5a5e0fa686b0f1c05"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@supabase/supabase-js@2.105.3",
+      "type": "library",
+      "name": "@supabase/supabase-js",
+      "version": "2.105.3",
+      "scope": "required",
+      "author": "Supabase",
+      "description": "Isomorphic Javascript SDK for Supabase",
+      "purl": "pkg:npm/%40supabase/supabase-js@2.105.3",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@supabase/supabase-js"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@supabase/supabase-js/-/supabase-js-2.105.3.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/supabase/supabase-js.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/supabase/supabase-js/tree/master/packages/core/supabase-js"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/supabase/supabase-js/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "e439bdf88eb52c05b08f0fb4cdca97852993c5425a60704fc87c0c088047e130543700e7da961422c8baa14bb4239afd1ed2ed68597bc38c1af8357d811b1b0e"
         }
       ],
       "licenses": [
@@ -1795,52 +1795,6 @@
         {
           "alg": "SHA-512",
           "content": "a2baeb0fbe0c054c8af233800ffaf4fa57dad48d8c3ba23ebc0926016ccc61b09c82b378942ae62b9da044542afc94717d83dfa2792be1bd23718ece96a76a6f"
-        }
-      ],
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ]
-    },
-    {
-      "bom-ref": "@types/phoenix@1.6.7",
-      "type": "library",
-      "name": "@types/phoenix",
-      "version": "1.6.7",
-      "scope": "required",
-      "description": "TypeScript definitions for phoenix",
-      "purl": "pkg:npm/%40types/phoenix@1.6.7",
-      "properties": [
-        {
-          "name": "cdx:npm:package:path",
-          "value": "node_modules/@types/phoenix"
-        }
-      ],
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/@types/phoenix/-/phoenix-1.6.7.tgz"
-        },
-        {
-          "type": "vcs",
-          "url": "git+https://github.com/DefinitelyTyped/DefinitelyTyped.git"
-        },
-        {
-          "type": "website",
-          "url": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/phoenix"
-        },
-        {
-          "type": "issue-tracker",
-          "url": "https://github.com/DefinitelyTyped/DefinitelyTyped/issues"
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-512",
-          "content": "a0df62bdefff4120647f5f6b7c3bf8e4cede64f8b47845f2961b7638b11789cbb96f82a84353b35c8c3ec434865b14b17b52667a9451fd91f6f37becbb9d7cfd"
         }
       ],
       "licenses": [
@@ -5588,6 +5542,53 @@
         {
           "license": {
             "id": "Apache-2.0"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "iceberg-js@0.8.1",
+      "type": "library",
+      "name": "iceberg-js",
+      "version": "0.8.1",
+      "scope": "required",
+      "author": "mandarini",
+      "description": "A small, framework-agnostic JavaScript/TypeScript client for the Apache Iceberg REST Catalog",
+      "purl": "pkg:npm/iceberg-js@0.8.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/iceberg-js"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/iceberg-js/-/iceberg-js-0.8.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/supabase/iceberg-js.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/supabase/iceberg-js#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/supabase/iceberg-js/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "d5d8554195e17078deefbf7c21533ec68a3fd597557f338c21cf3fae05528a344adfc103a8e2681ae95af4dffc648e510fc413c4d42d2bf1a8ce9afea94a9144"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
           }
         }
       ]
@@ -10259,7 +10260,7 @@
       "type": "library",
       "name": "tr46",
       "version": "0.0.3",
-      "scope": "required",
+      "scope": "optional",
       "author": "Sebastian Mayr",
       "description": "An implementation of the Unicode TR46 spec",
       "purl": "pkg:npm/tr46@0.0.3",
@@ -10267,6 +10268,10 @@
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/tr46"
+        },
+        {
+          "name": "cdx:npm:package:development",
+          "value": "true"
         }
       ],
       "externalReferences": [
@@ -10491,6 +10496,241 @@
         {
           "alg": "SHA-512",
           "content": "5e78b7e4d2b38e032bc1ebf2b074c202bb4b0e93efc9ef3357fd04e04c989f8dcfeffeeabd0c0f87d0469077b06ccba5567b5b8a099c4fbadd5f704da3dc1126"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "0BSD"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "tslib@2.8.1",
+      "type": "library",
+      "name": "tslib",
+      "version": "2.8.1",
+      "scope": "required",
+      "author": "Microsoft Corp.",
+      "description": "Runtime library for TypeScript helper functions",
+      "purl": "pkg:npm/tslib@2.8.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@supabase/auth-js/node_modules/tslib"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/tslib/-/tslib-2.8.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/Microsoft/tslib.git"
+        },
+        {
+          "type": "website",
+          "url": "https://www.typescriptlang.org/"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/Microsoft/TypeScript/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "a0916ef781d06fe29576e49440bef09e99aa9df98bb0e03f9c087a6fa107d30084a0ad3f98f79753a737c0a0d5f373243ae1cf447b525ca294f7d2016b34bfdb"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "0BSD"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "tslib@2.8.1",
+      "type": "library",
+      "name": "tslib",
+      "version": "2.8.1",
+      "scope": "required",
+      "author": "Microsoft Corp.",
+      "description": "Runtime library for TypeScript helper functions",
+      "purl": "pkg:npm/tslib@2.8.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@supabase/functions-js/node_modules/tslib"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/tslib/-/tslib-2.8.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/Microsoft/tslib.git"
+        },
+        {
+          "type": "website",
+          "url": "https://www.typescriptlang.org/"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/Microsoft/TypeScript/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "a0916ef781d06fe29576e49440bef09e99aa9df98bb0e03f9c087a6fa107d30084a0ad3f98f79753a737c0a0d5f373243ae1cf447b525ca294f7d2016b34bfdb"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "0BSD"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "tslib@2.8.1",
+      "type": "library",
+      "name": "tslib",
+      "version": "2.8.1",
+      "scope": "required",
+      "author": "Microsoft Corp.",
+      "description": "Runtime library for TypeScript helper functions",
+      "purl": "pkg:npm/tslib@2.8.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@supabase/postgrest-js/node_modules/tslib"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/tslib/-/tslib-2.8.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/Microsoft/tslib.git"
+        },
+        {
+          "type": "website",
+          "url": "https://www.typescriptlang.org/"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/Microsoft/TypeScript/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "a0916ef781d06fe29576e49440bef09e99aa9df98bb0e03f9c087a6fa107d30084a0ad3f98f79753a737c0a0d5f373243ae1cf447b525ca294f7d2016b34bfdb"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "0BSD"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "tslib@2.8.1",
+      "type": "library",
+      "name": "tslib",
+      "version": "2.8.1",
+      "scope": "required",
+      "author": "Microsoft Corp.",
+      "description": "Runtime library for TypeScript helper functions",
+      "purl": "pkg:npm/tslib@2.8.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@supabase/realtime-js/node_modules/tslib"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/tslib/-/tslib-2.8.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/Microsoft/tslib.git"
+        },
+        {
+          "type": "website",
+          "url": "https://www.typescriptlang.org/"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/Microsoft/TypeScript/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "a0916ef781d06fe29576e49440bef09e99aa9df98bb0e03f9c087a6fa107d30084a0ad3f98f79753a737c0a0d5f373243ae1cf447b525ca294f7d2016b34bfdb"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "0BSD"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "tslib@2.8.1",
+      "type": "library",
+      "name": "tslib",
+      "version": "2.8.1",
+      "scope": "required",
+      "author": "Microsoft Corp.",
+      "description": "Runtime library for TypeScript helper functions",
+      "purl": "pkg:npm/tslib@2.8.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@supabase/storage-js/node_modules/tslib"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/tslib/-/tslib-2.8.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/Microsoft/tslib.git"
+        },
+        {
+          "type": "website",
+          "url": "https://www.typescriptlang.org/"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/Microsoft/TypeScript/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "a0916ef781d06fe29576e49440bef09e99aa9df98bb0e03f9c087a6fa107d30084a0ad3f98f79753a737c0a0d5f373243ae1cf447b525ca294f7d2016b34bfdb"
         }
       ],
       "licenses": [
@@ -11111,7 +11351,7 @@
       "type": "library",
       "name": "webidl-conversions",
       "version": "3.0.1",
-      "scope": "required",
+      "scope": "optional",
       "author": "Domenic Denicola",
       "description": "Implements the WebIDL algorithms for converting to and from JavaScript values",
       "purl": "pkg:npm/webidl-conversions@3.0.1",
@@ -11119,6 +11359,10 @@
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/webidl-conversions"
+        },
+        {
+          "name": "cdx:npm:package:development",
+          "value": "true"
         }
       ],
       "externalReferences": [
@@ -11158,7 +11402,7 @@
       "type": "library",
       "name": "whatwg-url",
       "version": "5.0.0",
-      "scope": "required",
+      "scope": "optional",
       "author": "Sebastian Mayr",
       "description": "An implementation of the WHATWG URL Standard's URL API and parsing machinery",
       "purl": "pkg:npm/whatwg-url@5.0.0",
@@ -11166,6 +11410,10 @@
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/whatwg-url"
+        },
+        {
+          "name": "cdx:npm:package:development",
+          "value": "true"
         }
       ],
       "externalReferences": [
@@ -11768,53 +12016,51 @@
       "dependsOn": []
     },
     {
-      "ref": "@supabase/auth-js@2.65.1",
+      "ref": "@supabase/auth-js@2.105.3",
       "dependsOn": [
-        "@supabase/node-fetch@2.6.15"
+        "tslib@2.8.1"
       ]
     },
     {
-      "ref": "@supabase/functions-js@2.4.3",
+      "ref": "@supabase/functions-js@2.105.3",
       "dependsOn": [
-        "@supabase/node-fetch@2.6.15"
+        "tslib@2.8.1"
       ]
     },
     {
-      "ref": "@supabase/node-fetch@2.6.15",
+      "ref": "@supabase/phoenix@0.4.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "@supabase/postgrest-js@2.105.3",
       "dependsOn": [
-        "whatwg-url@5.0.0"
+        "tslib@2.8.1"
       ]
     },
     {
-      "ref": "@supabase/postgrest-js@1.16.3",
+      "ref": "@supabase/realtime-js@2.105.3",
       "dependsOn": [
-        "@supabase/node-fetch@2.6.15"
-      ]
-    },
-    {
-      "ref": "@supabase/realtime-js@2.10.7",
-      "dependsOn": [
-        "@supabase/node-fetch@2.6.15",
-        "@types/phoenix@1.6.7",
+        "@supabase/phoenix@0.4.1",
         "@types/ws@8.18.1",
+        "tslib@2.8.1",
         "ws@8.20.0"
       ]
     },
     {
-      "ref": "@supabase/storage-js@2.7.1",
+      "ref": "@supabase/storage-js@2.105.3",
       "dependsOn": [
-        "@supabase/node-fetch@2.6.15"
+        "iceberg-js@0.8.1",
+        "tslib@2.8.1"
       ]
     },
     {
-      "ref": "@supabase/supabase-js@2.45.6",
+      "ref": "@supabase/supabase-js@2.105.3",
       "dependsOn": [
-        "@supabase/auth-js@2.65.1",
-        "@supabase/functions-js@2.4.3",
-        "@supabase/node-fetch@2.6.15",
-        "@supabase/postgrest-js@1.16.3",
-        "@supabase/realtime-js@2.10.7",
-        "@supabase/storage-js@2.7.1"
+        "@supabase/auth-js@2.105.3",
+        "@supabase/functions-js@2.105.3",
+        "@supabase/postgrest-js@2.105.3",
+        "@supabase/realtime-js@2.105.3",
+        "@supabase/storage-js@2.105.3"
       ]
     },
     {
@@ -11859,10 +12105,6 @@
       "dependsOn": [
         "undici-types@6.21.0"
       ]
-    },
-    {
-      "ref": "@types/phoenix@1.6.7",
-      "dependsOn": []
     },
     {
       "ref": "@types/ws@8.18.1",
@@ -12312,6 +12554,10 @@
     },
     {
       "ref": "human-signals@5.0.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "iceberg-js@0.8.1",
       "dependsOn": []
     },
     {
@@ -12822,6 +13068,26 @@
     },
     {
       "ref": "tslib@1.14.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "tslib@2.8.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "tslib@2.8.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "tslib@2.8.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "tslib@2.8.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "tslib@2.8.1",
       "dependsOn": []
     },
     {
