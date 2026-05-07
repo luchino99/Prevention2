@@ -24,7 +24,8 @@
 
 | Package | Pinned at | Risk accepted | Owner | Review by |
 |---|---|---|---|---|
-| `@supabase/supabase-js` | `2.45.6` (exact, no caret) | Pulls in `@supabase/auth-js@2.65.1` which has GHSA-8r88-6cj9-9fh5 (LOW, CVSS 0). Versions ≥2.50 trigger a WebSocket eager-init regression that breaks login on Node 20. | founder | Sprint 2 task 2.7 (this doc) |
+| `@supabase/supabase-js` | `2.105.3` (exact, no caret) | Bumped Sprint 2 task 2.7 — closed LOW CVE in `@supabase/auth-js`. Requires `ws` package as Realtime transport on Node 20 (no native WebSocket); see `backend/src/config/supabase.ts` and §3. | founder | Sprint 5 (or when Node 22 becomes the default — eliminates the `ws` dependency) |
+| `ws` (Node WebSocket client) | `^8` | Mandatory dependency to satisfy `@supabase/supabase-js` ≥ 2.50 eager-WebSocket check on Node 20. Even though the platform never opens a Realtime channel, the eager check fires at `createClient()`. `ws` is a stable, widely-vetted library (used internally by Node's `undici`/`fetch`). Will be removable when the project bumps to Node 22+ which has native `globalThis.WebSocket`. | founder | When Node 20 → 22 migration |
 
 All other packages are managed via Renovate (see `renovate.json` — group
 schedules, no auto-merge).
@@ -162,7 +163,7 @@ Append-only. Each upgrade attempt or pin renewal is one row.
 | Date | Package | From → To | Outcome | Operator | Notes |
 |---|---|---|---|---|---|
 | 2026-04-XX | `@supabase/supabase-js` | `2.50.0` → `2.45.6` | PINNED | founder | Original WebSocket regression discovery. See `docs/11-CHANGELOG.md` `[0.2.1-hotfix-websocket]`. |
-| 2026-05-07 | `@supabase/supabase-js` | `2.45.6` → ??? | INVESTIGATE | founder | Sprint 2 task 2.7. Test plan in §3. Pending operator execution. |
+| 2026-05-07 | `@supabase/supabase-js` | `2.45.6` → `2.105.3` (exact pin) | ADOPTED with `ws` transport patch | founder | Sprint 2 task 2.7. First Vercel preview returned 500 on `/api/v1/auth/session` with stack trace `"Node.js 20 detected without native WebSocket support"`. Resolved by installing `ws@^8` as runtime dep + passing `transport: ws` in `backend/src/config/supabase.ts` (per official Supabase guidance for Node < 22). Second preview deploy verified login works. Auth-js 2.65.1 → 2.105.3 — closes GHSA-8r88-6cj9-9fh5 (LOW, CVSS 0). |
 
 ---
 

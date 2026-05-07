@@ -25,28 +25,43 @@
  * NEVER expose the service-role client to a browser — `supabaseAdmin`
  * bypasses RLS by design.
  *
- * Realtime opt-out
- * ----------------
+ * Realtime WebSocket transport (Sprint 2 task 2.7)
+ * ------------------------------------------------
  * `@supabase/supabase-js` versions ≥ 2.50 perform an eager check for a
- * native WebSocket implementation at `createClient()`. On Node 20
- * (Vercel serverless runtime) and on Node 22 without `globalThis.WebSocket`,
- * that check throws:
+ * native WebSocket implementation at `createClient()`. Node.js 20
+ * (the Vercel serverless runtime, our `.nvmrc` target) does NOT have
+ * a built-in `globalThis.WebSocket` (added in Node 22). Without an
+ * explicit transport, the check throws:
  *
  *     "Node.js 20 detected without native WebSocket support"
  *
- * which crashes every authenticated endpoint at boot. The platform
- * uses ZERO Realtime channels — only `auth.getUser`, `from(...)`,
- * `storage.from(...)`. We:
+ * which crashes every authenticated endpoint at boot.
  *
- *   1. Pin `@supabase/supabase-js` to `2.45.6` in `package.json` (last
- *      stable version before the eager WebSocket regression).
- *   2. Pass `realtime: { params: { eventsPerSecond: 0 } }` as a
- *      defence-in-depth so future versions that re-introduce the same
- *      issue still don't bring down the API. The Realtime module is
- *      lazily constructed but the option is honoured if it ever runs.
+ * Resolution path
+ * ---------------
+ * Per Supabase docs, on Node < 22 the operator must install the `ws`
+ * package and pass it as the Realtime transport. We do exactly that:
+ *
+ *   import ws from 'ws';
+ *   createClient(url, key, { realtime: { transport: ws, ... } });
+ *
+ * The platform uses ZERO Realtime channels — only `auth.getUser`,
+ * `from(...)`, `storage.from(...)`. The `ws` import is therefore a
+ * formality to satisfy the eager check; the underlying TCP connection
+ * is never opened (no `.channel()` call anywhere in the codebase).
+ * `eventsPerSecond: 0` is kept as defence-in-depth.
+ *
+ * History
+ * -------
+ *   * Original incident: bumping to 2.50.0 broke prod login on Node 20.
+ *     Resolved by pinning to 2.45.6 (last version without the eager check).
+ *   * Sprint 2 task 2.7: bumped to 2.105.3 to close LOW CVE
+ *     GHSA-8r88-6cj9-9fh5 (auth-js Insecure Path Routing). To make the
+ *     bump safe on Node 20 we adopted the official `ws` transport path.
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import ws from 'ws';
 import { getEnvConfig } from './env.js';
 
 let _adminInstance: SupabaseClient | undefined;
@@ -62,9 +77,14 @@ function getOrCreateAdminClient(): SupabaseClient {
           autoRefreshToken: false,
           persistSession: false,
         },
-        // Defence-in-depth against the WebSocket-eager-check regression
-        // in supabase-js ≥ 2.50. We never use Realtime on the server.
-        realtime: { params: { eventsPerSecond: 0 } },
+        // Provide `ws` as the WebSocket transport so the eager check
+        // in supabase-js ≥ 2.50 succeeds on Node 20 (no native
+        // globalThis.WebSocket). We never call .channel() so no actual
+        // TCP connection is opened; eventsPerSecond:0 is belt-and-braces.
+        realtime: {
+          transport: ws as unknown as never,
+          params: { eventsPerSecond: 0 },
+        },
       },
     );
   }
@@ -115,8 +135,11 @@ export function createUserClient(accessToken: string): SupabaseClient {
           Authorization: `Bearer ${accessToken}`,
         },
       },
-      // Same Realtime opt-out rationale as supabaseAdmin above.
-      realtime: { params: { eventsPerSecond: 0 } },
+      // Same `ws` transport rationale as supabaseAdmin above.
+      realtime: {
+        transport: ws as unknown as never,
+        params: { eventsPerSecond: 0 },
+      },
     },
   );
 }
