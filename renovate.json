@@ -27,7 +27,7 @@
 
   "packageRules": [
     {
-      "description": "PIN: @supabase/supabase-js is exact-pinned to 2.45.6 due to a WebSocket eager-init regression in 2.50+. Sprint 2 task #44 will identify the lowest version that includes the auth-js GHSA-8r88-6cj9-9fh5 fix without re-introducing the WebSocket bug. Until that investigation is complete, Renovate must NOT propose any update for this package.",
+      "description": "PIN: @supabase/supabase-js is exact-pinned to 2.105.3 (Sprint 2 task 2.7 — closes auth-js GHSA-8r88-6cj9-9fh5). Bumps require manual ws-transport verification: versions >= 2.50 perform an eager WebSocket check at createClient() that fails on Node 20 unless the `ws` package is provided as transport. The current setup works (see backend/src/config/supabase.ts and docs/38-DEPENDENCY-RISK.md) but a future major bump might re-break the contract. Renovate must NOT auto-propose updates — manual upgrade only, following the test protocol in docs/38 §2.",
       "matchPackageNames": ["@supabase/supabase-js"],
       "enabled": false
     },

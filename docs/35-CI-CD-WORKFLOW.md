@@ -118,10 +118,13 @@ lockfile and `package.json` diverge.
 - When updating a dependency: edit `package.json`, then `npm install`
   to regenerate the lockfile, then commit BOTH files together.
 
-**The `@supabase/supabase-js@2.45.6` exact pin (no caret):** versions
-≥2.50 have a WebSocket eager-init regression on Node 20 that breaks
-login. Renovate is configured to ignore this package (see §6) until
-Sprint 2 task #44 identifies a safe upgrade target.
+**The `@supabase/supabase-js@2.105.3` exact pin (no caret):** versions
+≥2.50 perform an eager WebSocket check at `createClient()` that
+crashes Node 20 (no native `globalThis.WebSocket`). Sprint 2 task
+2.7 closed this by installing `ws` as a runtime dep and passing
+`realtime: { transport: ws, ... }` in `backend/src/config/supabase.ts`.
+Renovate is configured to ignore this package (see §6) — manual upgrade
+only, following the test protocol in `docs/38-DEPENDENCY-RISK.md` §2.
 
 ---
 

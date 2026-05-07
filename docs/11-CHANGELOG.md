@@ -7,6 +7,190 @@ executed per the project blueprint.
 
 ---
 
+## [Sprint 2 — Security boundary hardening] — 2026-05-07 — **Anti-recidiva gates, runtime probes, supabase-js upgrade**
+
+Closure of the Sprint 2 hardening backlog: every task that the external-AI
+audit (audit_valutazione_prevention2_formattata.docx) flagged as a security
+gap was either confirmed already-fixed (with anti-recidiva gates added so
+regressions surface in CI), addressed via runtime probe + smoke-prod
+enforcement, or upgraded out of scope. No score formula touched — clinical
+engine fully preserved.
+
+### Added
+
+- **Task 2.1 — RLS coverage anti-recidiva gate.** New
+  `scripts/check-rls-coverage.mjs` queries pg_class for the 20 PHI tables
+  on every CI run; fails the build if any table loses RLS ENABLE or
+  FORCE. Skips gracefully without `DATABASE_URL`. Wired into `build:check`.
+  Audit confirmed migration 012 already covers all 20 PHI tables; the new
+  gate ensures future migrations cannot silently drop coverage.
+- **Task 2.3 — MFA enforcement runtime probe.** `api/v1/health` now
+  reports a `mfa_enforcement` subsystem that returns `ok` only when all
+  three flags (`MFA_ENFORCEMENT_ENABLED`, `_CLINICIAN_ENABLED`, `_STAFF_ENABLED`)
+  are `true` in Vercel production env. CI smoke-prod fails if degraded —
+  policy regressions can no longer ship unnoticed.
+- **Task 2.4 — Distributed rate-limit smoke gate.** CI smoke-prod fails
+  if `subsystems.rate_limit_distributed.status != "ok"`. Anti-recidiva
+  against accidental deletion of `UPSTASH_REDIS_REST_URL` /
+  `UPSTASH_REDIS_REST_TOKEN` env vars (loss would silently fall back to
+  per-lambda in-memory counters, useless for cross-lambda rate-limit).
+- **Task 2.5 — Secrets rotation runbook.** `docs/36-SECRETS-ROTATION.md`
+  (331 lines, 8 sections): inventory of 10 secrets, per-secret cadence
+  (90/180 days), step-by-step rotation procedures with downtime impact,
+  emergency-leak path, universal `/api/v1/health` post-rotation
+  verification. Closes the gap on ISO 27001 / SOC 2 / IEC 62304
+  procurement question "what is your rotation policy?".
+- **Task 2.6 — CSP advisory tightening.** `vercel.json` now publishes a
+  `Content-Security-Policy-Report-Only` header alongside the enforced CSP
+  on `/pages/*` and `/components/*`, with stricter rules: no
+  `'unsafe-inline'` on `style-src`, `style-src-attr 'none'`,
+  `script-src-attr 'none'`. Browsers log violations to DevTools without
+  blocking; lets us quantify the 60+ inline-style occurrences before
+  Sprint 5 refactor (filed as task 62). `script-src` was already strict.
+- **Task 2.7 — `@supabase/supabase-js` upgrade.** Bumped 2.45.6 →
+  2.105.3 (exact pin). Closes GHSA-8r88-6cj9-9fh5 (auth-js LOW CVE,
+  CVSS 0). Required adding `ws@8.20.0` as runtime dep + transport patch
+  in `backend/src/config/supabase.ts` to satisfy the eager WebSocket
+  check that supabase-js ≥2.50 performs at `createClient()` (Node 20
+  has no native `globalThis.WebSocket`). The platform never opens a
+  Realtime channel; `ws` is purely there to satisfy the eager check.
+- **`docs/38-DEPENDENCY-RISK.md`** — decision register for non-trivial
+  runtime-dep upgrades. Test-before-merge protocol (8 acceptance
+  criteria), per-package pin rationale, decision log table, CVE waivers.
+- **`docs/37-SUPABASE-STAGING-SETUP.md`** — placeholder runbook (Sprint 2
+  task 2.2 deferred). 4-step procedure to provision Supabase staging +
+  add `DATABASE_URL_STAGING` GitHub secret + activate live RLS tests in CI.
+- **`docs/20-SECURITY.md` §9b "Web security headers (HTTP)"** — full
+  table of enforced headers, per-route CSP map, Report-Only strategy.
+
+### Changed
+
+- **`docs/10-SECURITY-GDPR-CHECKLIST.md` §2** extended: 2.1b explicit FORCE
+  ROW LEVEL SECURITY, 2.1c anti-recidiva CI gate reference, 2.9 endpoint
+  auth-coverage audit (22/22 endpoints have appropriate auth — 18 standard
+  middleware, 1 in-handler validateAccessToken, 2 cron-auth, 1
+  public-by-design).
+- **`docs/20-SECURITY.md` §3 (Authentication)** MFA bullet replaced with
+  full role→flag matrix table + Vercel activation step-by-step procedure.
+- **`docs/20-SECURITY.md` §9 (Rate limiting)** extended with Upstash
+  provisioning runbook (region EU-WEST-1 for GDPR), required env vars
+  table, free-tier cost monitoring guidance.
+- **`renovate.json`** pin rationale for `@supabase/supabase-js` updated to
+  reflect 2.105.3 + ws transport (was: WebSocket regression at 2.50).
+- **`docs/35-CI-CD-WORKFLOW.md` §3** pin rationale updated.
+
+### Closed CVEs
+
+- **GHSA-8r88-6cj9-9fh5** (LOW, CVSS 0) — `@supabase/auth-js` Insecure
+  Path Routing from Malformed User Input. Closed by Sprint 2 task 2.7
+  via supabase-js bump 2.45.6 → 2.105.3 (auth-js 2.65.1 → 2.105.3).
+- (`esbuild` GHSA-67mh-4wv8-2f99 was already closed in Sprint 1 task
+  1.1ter-A by reclassifying to devDependencies — out of runtime scope.)
+
+### Audit findings status (external-AI evaluation, May 2026)
+
+All security findings from the external-AI audit are now either closed
+or filed with a documented test path:
+
+- F-002 (RLS coverage) → false positive; closed Sprint 2 task 2.1
+- F-006 (MFA matrix) → false positive; matrix already complete, runtime
+  verification added in task 2.3
+- F-007 (Upstash rate-limit) → already provisioned; smoke gate added
+  in task 2.4
+- F-008 (secrets rotation) → policy + runbook in `docs/36`
+- (other findings are filed in `docs/30-RISK-REGISTER.md` Section D /
+  Section F per the original tier classification)
+
+### Deferred (filed, not blocking)
+
+- **Sprint 2 task 2.2** — RLS regression tests in CI with
+  `DATABASE_URL_STAGING`. Requires Supabase staging provisioning;
+  runbook in `docs/37`. Activate when staging becomes operationally
+  needed (second contributor or first paying customer).
+- **Sprint 1 task 1.1ter-D** — `sbom-cve-report.json` idempotency
+  (timestamp drift causes per-run noise; cosmetic).
+- **Sprint 5 task 62** — Refactor inline `style="..."` attributes to
+  CSS classes (60+ occurrences across 10 HTML pages); enables removal
+  of `'unsafe-inline'` from the enforced `style-src` CSP and promotes
+  the Report-Only policy to enforcement.
+- **Sprint 5+ task 53** — Regenerate SBOM directly from
+  `package-lock.json` (cross-platform by construction); removes the
+  platform-filter workaround in `scripts/sbom-canonicalise.mjs`.
+
+---
+
+## [Sprint 1 — CI/CD foundation hardening] — 2026-05-07 — **Lockfile, runtime alignment, GitHub Actions, Renovate, smoke-prod**
+
+Pre-condition for Sprint 2: a CI/CD pipeline that catches regressions
+before they reach production. Built from zero on top of the existing
+Vercel + Supabase + Upstash stack. Documentation in
+`docs/35-CI-CD-WORKFLOW.md` (603 lines, daily-ops runbook).
+
+### Added
+
+- **Task 1.1bis** — `.nvmrc` pinned to Node 20.18.0; aligns developer
+  Mac, GitHub Actions runner, and Vercel serverless runtime on the
+  same Node patch version.
+- **Task 1.1ter-A** — `.gitignore` added (was missing entirely; led to
+  `node_modules/` and `frontend-dist/` surfacing as untracked).
+  `esbuild` reclassified from `dependencies` to `devDependencies`
+  (closes GHSA-67mh-4wv8-2f99 from runtime CVE scope). SBOM regenerated.
+- **Task 1.2** — Vercel `installCommand` overridden in `vercel.json` to
+  `npm ci --include=dev --no-audit --no-fund` (was: `npm install`
+  default, non-deterministic).
+- **Task 1.3** — `.github/workflows/ci.yml` — three-job CI pipeline:
+  * `build:check + test (Node 20 / Ubuntu 22)` — 11 build gates +
+    244 vitest tests on every PR and push to main, with lockfile
+    drift detection, SBOM freshness gate, and SBOM determinism gate
+    (anti-recidiva for the canonicalisation 5-hotfix saga that closed
+    in Sprint 1: metadata.tools.version, metadata.component.name from
+    purl, fsevents standalone, @esbuild platform binaries, and the
+    final cross-platform pivot via `scripts/sbom-canonicalise.mjs`).
+  * `Attach SBOM to GitHub Release` — fires only on `release: published`
+    events; uploads `sbom.cyclonedx.json` + `sbom-cve-report.json` as
+    release assets for IEC 62304 SOUP / B2B procurement audits.
+  * `Production smoke test` — fires only on push to main, after
+    build-and-test passes; polls `/api/v1/health` for up to ~3 minutes,
+    verifies all 3 subsystems (`supabase`, `rate_limit_distributed`,
+    `mfa_enforcement`) are `ok`, plus 5 static-path smoke checks (root
+    redirect, login page, Supabase bundle, security.txt rewrite,
+    6 security headers).
+- **Task 1.4** — Branch protection on `main` (minimal: no force pushes,
+  no deletions). Direct-push workflow preserved per founder choice;
+  upgrade to required-PR + required-status-checks deferred to Sprint 5
+  (when team grows beyond 1 contributor).
+- **Task 1.5** — `renovate.json` (Renovate GitHub App). Weekly cadence
+  (Monday 9am Europe/Rome), grouping by ecosystem (supabase, vercel,
+  test-toolchain, typescript, pdf, github-actions), `@supabase/supabase-js`
+  pin protection, no auto-merge (founder chose direct-push without
+  required-status-checks). Dependabot disabled to avoid PR duplication
+  (also did not respect the supabase-js pin).
+- **Task 1.6** — SBOM determinism gate in CI (run `sbom:refresh` twice,
+  verify byte-equal output) + release-sbom artifact job.
+- **Task 1.7** — Production smoke test post-deploy (see Task 1.3 above).
+- **Task 1.8** — `docs/35-CI-CD-WORKFLOW.md` (603 lines): TL;DR daily push
+  workflow, toolchain alignment, deterministic install, CI workflow
+  description, Vercel deploy lifecycle, dependency management, branch
+  protection, SBOM management, common operations, failure modes & recovery
+  tables, glossary, quick-reference card.
+- **`docs/26-DEPLOYMENT-RUNBOOK.md`** WARNING banner cross-references the
+  new `docs/35-CI-CD-WORKFLOW.md`.
+
+### Changed
+
+- **`package.json`** — `engines.node: "20.x"`, `esbuild` moved to
+  `devDependencies`, `@supabase/supabase-js` exact-pinned at `2.45.6`
+  (later bumped to `2.105.3` in Sprint 2 task 2.7).
+- **`scripts/sbom-canonicalise.mjs`** — extended to filter platform-
+  conditional binaries (esbuild OS variants, fsevents) and to strip
+  volatile fields (`metadata.tools[*].version`, `metadata.component.name`
+  forced from `purl`) so the committed SBOM is byte-equal across
+  macOS / Linux / Windows.
+- **`scripts/check-sbom.mjs`** simplified — relies on canonicalisation
+  for filtering instead of duplicating the logic locally.
+
+---
+
 ## [Tier 5b — Residual closure] — 2026-05-04 — **C-01 SCORE2 cll, PREDIMED Schroder bands, BMR/TDEE golden, integration mocks**
 
 Final residual-closure pass after the Tier-5 audit. Targets the items
