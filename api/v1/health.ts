@@ -60,6 +60,51 @@ function checkUpstash(): SubsystemCheck {
   };
 }
 
+/**
+ * MFA enforcement policy probe (Sprint 2 task 2.3).
+ *
+ * The MFA matrix in auth-middleware.ts gates four roles via env flags:
+ *   * platform_admin + tenant_admin → MFA_ENFORCEMENT_ENABLED
+ *   * clinician                     → MFA_ENFORCEMENT_CLINICIAN_ENABLED
+ *   * assistant_staff               → MFA_ENFORCEMENT_STAFF_ENABLED
+ * In production all three flags MUST be set to "true". A flag that is
+ * unset or set to "false" silently disables MFA for the relevant
+ * role(s) — a high-impact policy regression that no compile-time check
+ * can catch. This subsystem makes the live policy state visible at
+ * /api/v1/health and lets the smoke-prod CI gate alarm on it.
+ *
+ * Note: this DOES NOT verify that any actual user has enrolled MFA —
+ * it only verifies that the gate is configured to require it. Per-user
+ * enrolment status is a different (per-tenant) operational concern.
+ */
+function checkMfaEnforcement(): SubsystemCheck {
+  const isFlagOn = (name: string): boolean => {
+    const v = process.env[name];
+    return typeof v === 'string' && v.toLowerCase() === 'true';
+  };
+  const flags = {
+    admin: isFlagOn('MFA_ENFORCEMENT_ENABLED'),
+    clinician: isFlagOn('MFA_ENFORCEMENT_CLINICIAN_ENABLED'),
+    staff: isFlagOn('MFA_ENFORCEMENT_STAFF_ENABLED'),
+  };
+  const allOn = flags.admin && flags.clinician && flags.staff;
+  const noneOn = !flags.admin && !flags.clinician && !flags.staff;
+  const status: 'ok' | 'degraded' | 'down' = allOn ? 'ok' : 'degraded';
+  // Compose a one-line detail listing which flags are on (omit values
+  // that would leak the literal env-var name patterns to anonymous
+  // probes — keep it terse).
+  const onFlags: string[] = [];
+  if (flags.admin) onFlags.push('admin');
+  if (flags.clinician) onFlags.push('clinician');
+  if (flags.staff) onFlags.push('staff');
+  const detail = noneOn
+    ? 'all_flags_off_mfa_disabled'
+    : allOn
+      ? undefined
+      : `partial:${onFlags.join('+')}`;
+  return { name: 'mfa_enforcement', status, detail };
+}
+
 function overall(subs: SubsystemCheck[]): 'ok' | 'degraded' | 'unhealthy' {
   if (subs.some((s) => s.name === 'supabase' && s.status === 'down')) return 'unhealthy';
   if (subs.some((s) => s.status === 'down' || s.status === 'degraded')) return 'degraded';
@@ -94,6 +139,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   const subs: SubsystemCheck[] = [];
   subs.push(await checkSupabase());
   subs.push(checkUpstash());
+  subs.push(checkMfaEnforcement());
 
   const status = overall(subs);
   const http = status === 'unhealthy' ? 503 : status === 'degraded' ? 207 : 200;

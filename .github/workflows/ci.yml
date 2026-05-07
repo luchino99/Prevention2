@@ -311,6 +311,31 @@ jobs:
           fi
           echo "OK Supabase reachable"
 
+      - name: Verify MFA enforcement policy is fully active (Sprint 2 task 2.3)
+        run: |
+          # The /api/v1/health subsystem `mfa_enforcement` reports whether
+          # all three MFA flags (admin / clinician / staff) are ON in the
+          # Vercel production environment. If any is OFF, the corresponding
+          # role can sign in with password-only — a high-impact policy
+          # regression that no compile-time check can catch.
+          MFA_STATUS=$(jq -r '.subsystems[] | select(.name=="mfa_enforcement") | .status // "missing"' /tmp/health.json)
+          MFA_DETAIL=$(jq -r '.subsystems[] | select(.name=="mfa_enforcement") | .detail // "none"' /tmp/health.json)
+          echo "MFA enforcement: $MFA_STATUS (detail: $MFA_DETAIL)"
+          if [ "$MFA_STATUS" = "missing" ]; then
+            echo "::error::mfa_enforcement subsystem missing from /api/v1/health response."
+            echo "::error::Either the deployed code is older than Sprint 2 task 2.3, or the handler is broken."
+            exit 1
+          fi
+          if [ "$MFA_STATUS" != "ok" ]; then
+            echo "::error::MFA enforcement is NOT fully active in production."
+            echo "::error::detail: $MFA_DETAIL"
+            echo "::error::Fix: set MFA_ENFORCEMENT_ENABLED, MFA_ENFORCEMENT_CLINICIAN_ENABLED,"
+            echo "::error::and MFA_ENFORCEMENT_STAFF_ENABLED to \"true\" in Vercel project env vars."
+            echo "::error::See docs/20-SECURITY.md §MFA enforcement for the activation runbook."
+            exit 1
+          fi
+          echo "OK MFA enforcement: all 3 flags active (admin + clinician + staff)"
+
       - name: Smoke check — root path redirects to login (307/308)
         run: |
           HTTP_CODE=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 5 "$PROD_URL/")

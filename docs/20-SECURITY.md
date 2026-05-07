@@ -91,9 +91,44 @@ Three trust boundaries, three gates:
   `supabaseAdmin.auth.getUser(token)`.
 - **Session refresh.** Handled client-side by the Supabase SDK
   (`autoRefreshToken: true`). The server only ever sees access tokens.
-- **MFA.** TOTP available for `tenant_admin` and `platform_admin`
-  (frontend/pages/mfa-enroll.html). Enforcement policy is per-tenant
-  (configurable; not yet enforced platform-wide — see `EXT-LEGAL`).
+- **MFA.** TOTP enrolment available at `frontend/pages/mfa-enroll.html`
+  for any role. Enforcement is role-keyed via the matrix in
+  `requiredMfaFlagForRole()` (auth-middleware.ts):
+
+  | Role | Env flag | Enforced when flag = `"true"` |
+  |---|---|---|
+  | `platform_admin` | `MFA_ENFORCEMENT_ENABLED` | login + every authenticated request |
+  | `tenant_admin` | `MFA_ENFORCEMENT_ENABLED` | login + every authenticated request |
+  | `clinician` | `MFA_ENFORCEMENT_CLINICIAN_ENABLED` | login + every authenticated request |
+  | `assistant_staff` | `MFA_ENFORCEMENT_STAFF_ENABLED` | login + every authenticated request |
+  | `patient` | (none — non-gated by product decision) | n/a |
+
+  When a role's flag is ON and the user's JWT carries `aal != 'aal2'`,
+  the request is rejected with `403 MFA_REQUIRED` and a structured
+  `ACCESS_DENIED reason=mfa_required` audit log line. The frontend
+  redirects to `/pages/mfa-enroll.html`.
+
+  **Production activation (Sprint 2 task 2.3):** all three flags MUST
+  be set to `"true"` in Vercel project environment variables (Project
+  Settings → Environment Variables → Production scope). Procedure:
+
+  1. Open `https://vercel.com/<org>/prevention2/settings/environment-variables`
+  2. For each of the three vars, click **Add New** (or **Edit** if it
+     exists), set the value to `true`, scope to **Production** only.
+  3. Click **Save**. Vercel hot-reloads env vars (no redeploy needed
+     for the change to take effect on the next request).
+  4. Verify via `curl https://prevention2.vercel.app/api/v1/health` —
+     `subsystems.mfa_enforcement.status` must be `"ok"` (not
+     `"degraded"`).
+  5. The CI smoke-prod job (Sprint 1 task 1.7 + Sprint 2 task 2.3
+     extension) runs this check on every push and fails the workflow
+     if any flag is off — alarming on policy regressions automatically.
+
+  **Why three separate flags instead of one:** the DPA + change-management
+  for "all our doctors must now MFA" is a different decision from "all
+  our admins must now MFA". Different rollout cadences, different user
+  comms, different support load. Decoupled flags let the operator
+  enable each cohort independently.
 - **Failed-login telemetry.** `recordFailedLogin` hashes the IP, captures
   domain-level email metadata only (no full email), and writes
   `auth.failed_login` rows with `outcome=failure` for monitoring.
