@@ -716,6 +716,11 @@ export async function createAssessment(
     now,
   });
 
+  // Sprint 4 task 4.2 (F-014) — surface the deriver's dedup_key so the
+  // SQL layer (migration 019: idx_alerts_dedup_inflight + INSERT … ON
+  // CONFLICT DO NOTHING) can absorb duplicate findings across
+  // assessments. Event-style alerts (clinical_risk_up) have dedupKey:
+  // null and stay un-deduped on purpose.
   const alertRowsPayload = alerts.map((a) => ({
     type: a.type,
     severity: a.severity,
@@ -723,6 +728,7 @@ export async function createAssessment(
     audience: 'clinician' as const,
     title: a.title,
     message: a.message,
+    dedup_key: a.dedupKey, // null is fine — predicate excludes NULLs
   }));
 
   const rpcPayload = {
@@ -953,9 +959,13 @@ export async function loadAssessmentSnapshot(
   });
 
   // Prefer persisted alerts — they carry acknowledgements and timestamps.
+  // Sprint 4 task 4.2 (F-014): also project the dedup_key column added in
+  // migration 019, so the read-side AlertEntry shape stays in sync with the
+  // write-side. Legacy rows pre-019 carry NULL → mapped to `null`, which is
+  // the correct sentinel for "no in-flight dedup signature".
   const { data: persistedAlerts } = await supabaseAdmin
     .from('alerts')
-    .select('type, severity, title, message, created_at')
+    .select('type, severity, title, message, created_at, dedup_key')
     .eq('assessment_id', assessmentId);
 
   let alerts: ReturnType<typeof deriveAlerts>;
@@ -966,6 +976,7 @@ export async function loadAssessmentSnapshot(
       title: String(a.title ?? ''),
       message: String(a.message ?? ''),
       timestamp: String(a.created_at ?? new Date().toISOString()),
+      dedupKey: typeof a.dedup_key === 'string' ? a.dedup_key : null,
     }));
   } else {
     const previousCompositeRisk = await loadPreviousCompositeRisk(

@@ -358,6 +358,73 @@ The alert engine is split (Task #17, CWS-5) into:
 so a clinician can triage "what to fix in the assessment" separately
 from "what to schedule".
 
+### 8.1 Inbox dedup, audit symmetry, auto-close (Sprint 4 task 4.2 / F-014)
+
+Pre-Sprint-4 every assessment inserted the FULL alert set without
+checking whether the same finding was already open for the patient. A
+patient with persistent FIB-4 ≥ 3.25 therefore got an "Advanced Liver
+Fibrosis" red-flag at every assessment until labs improved — flooding
+the inbox and eroding clinician attention. Migration 019 closes the
+gap end-to-end:
+
+**Deriver-side contract** — `alert-deriver.ts` attaches a
+`dedupKey: AlertDedupKey | null` to every emitted entry:
+
+| Alert type                            | Dedup signature                              | Rationale                                                                         |
+| ------------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------------- |
+| `red_flag` Very High CV Risk          | `red_flag::very_high_cardiovascular_risk`    | One open per patient at a time — same finding across assessments collapses.       |
+| `red_flag` Advanced CKD               | `red_flag::advanced_ckd`                     | "                                                                                 |
+| `red_flag` Advanced Liver Fibrosis    | `red_flag::advanced_liver_fibrosis`          | "                                                                                 |
+| `red_flag` Frailty                    | `red_flag::frailty`                          | "                                                                                 |
+| `red_flag` Severe Hypertension        | `red_flag::severe_hypertension`              | "                                                                                 |
+| `red_flag` Hyperglycaemic Crisis      | `red_flag::hyperglycaemic_crisis`            | "                                                                                 |
+| `red_flag` Very High HbA1c            | `red_flag::very_high_hba1c`                  | "                                                                                 |
+| `red_flag` Uncontrolled Diabetes      | `red_flag::uncontrolled_diabetes`            | "                                                                                 |
+| `red_flag` Severe Albuminuria         | `red_flag::severe_albuminuria`               | "                                                                                 |
+| `red_flag` Severe Transaminase        | `red_flag::severe_transaminase_elevation`    | "                                                                                 |
+| `diet_adherence_drop`                 | `diet_adherence_drop`                        | "                                                                                 |
+| `activity_decline`                    | `activity_decline`                           | "                                                                                 |
+| `followup_due`                        | `followup_due::<nextReviewDate>`             | Re-scheduling the review fires a fresh alert (the date is the actionable signal). |
+| `clinical_risk_up`                    | `null`                                       | Event-style — every transition is a distinct historical fact.                     |
+
+**Persistence-side enforcement** — migration 019 adds:
+
+- `alerts.dedup_key TEXT` (nullable)
+- Partial unique index `idx_alerts_dedup_inflight ON (tenant_id,
+  patient_id, dedup_key) WHERE dedup_key IS NOT NULL AND status IN
+  ('open','acknowledged')` — at most ONE in-flight row per signature.
+- The atomic write RPC (`create_assessment_atomic`) uses
+  `INSERT … ON CONFLICT (…) WHERE … DO NOTHING` so duplicate findings
+  are silently absorbed. Already-closed (resolved/dismissed) rows fall
+  outside the predicate, so a finding can legitimately re-fire after
+  the previous one has been closed by the clinician.
+
+**Audit-symmetry columns** — migration 019 also adds `dismissed_at`,
+`dismissed_by`, and `resolved_by`. Pre-019 only `acknowledged_*` and
+`resolved_at` were tracked, so closure or dismissal had no actor
+provenance. Post-019 every state transition has a who + when, which is
+required for NIS2 / IEC 62304 §5.7 incident traceability.
+
+**Ack workflow hardening** — `POST /api/v1/alerts/[id]/ack` now uses a
+zod discriminated union:
+
+- `acknowledge`: note optional ("I see this, working on it").
+- `resolve`: note REQUIRED, ≥3 chars after trim.
+- `dismiss`: note REQUIRED, ≥3 chars after trim.
+- The endpoint refuses re-closure of `resolved`/`dismissed` rows
+  (HTTP 409 `ALERT_ALREADY_CLOSED`).
+- `dismiss` writes the canonical `alert.dismiss` audit action (added
+  this sprint) — pre-Sprint-4 it was silently mapped onto
+  `alert.acknowledge`.
+
+**Auto-close cron** — `fn_auto_close_stale_alerts(p_max_age_days)`
+(default 30, hard cap 365 via `ALERTS_AUTO_CLOSE_MAX_AGE_DAYS`)
+transitions stale `open` rows to `resolved` with a structured
+`metadata.auto_closed = true` marker. Triggered daily at 03:30 UTC by
+`/api/v1/internal/alerts-auto-close` (registered in `vercel.json`).
+Acknowledged rows are NOT auto-closed: a clinician has already seen
+them and is presumed to be triaging on a longer cadence.
+
 ---
 
 ## 9. Follow-up planning

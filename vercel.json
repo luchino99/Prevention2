@@ -8,7 +8,8 @@
     "api/v1/assessments/[id]/report.ts": { "maxDuration": 30 },
     "api/v1/patients/[id]/export.ts": { "maxDuration": 30 },
     "api/v1/internal/retention.ts": { "maxDuration": 60 },
-    "api/v1/internal/anonymize.ts": { "maxDuration": 60 }
+    "api/v1/internal/anonymize.ts": { "maxDuration": 60 },
+    "api/v1/internal/alerts-auto-close.ts": { "maxDuration": 30 }
   },
   "crons": [
     {
@@ -18,6 +19,10 @@
     {
       "path": "/api/v1/internal/anonymize",
       "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/v1/internal/alerts-auto-close",
+      "schedule": "30 3 * * *"
     }
   ],
   "redirects": [

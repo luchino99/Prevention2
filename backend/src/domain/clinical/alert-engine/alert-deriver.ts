@@ -34,12 +34,61 @@ import type { CompositeRiskProfile } from '../risk-aggregation/composite-risk.js
 
 export type AlertSeverity = 'info' | 'warning' | 'critical';
 
+/**
+ * Stable in-flight dedup signatures.
+ *
+ * The deriver attaches one of these strings (or `null`) to every emitted
+ * alert. The persistence layer (migration 019: `idx_alerts_dedup_inflight`
+ * + `INSERT … ON CONFLICT (tenant_id, patient_id, dedup_key) WHERE … DO
+ * NOTHING`) uses it to enforce: at most ONE open or acknowledged alert
+ * per (tenant, patient, dedup_key).
+ *
+ * Design rule:
+ *   - **Findings** (a clinically persistent state — eGFR < 30, FIB-4 ≥ 3.25,
+ *     SBP ≥ 180, etc.) get a stable, semantic key. The same finding repeated
+ *     across assessments is silently absorbed — the inbox shows one row.
+ *   - **Events** (a per-assessment trend transition — clinical_risk_up
+ *     from `moderate` → `high` on this specific visit) keep `null`. Each
+ *     event row is a distinct historical fact and must always land.
+ *
+ * Keys are namespaced as `<type>::<finding_slug>` so a future deriver can
+ * grep / migrate them without colliding with another type.
+ *
+ * NEVER include patient-specific data (numeric thresholds, names, dates)
+ * in a dedup_key — the key is a *signature*, not a snapshot. If the
+ * underlying value matters for re-firing, encode it in metadata, not here.
+ */
+export type AlertDedupKey =
+  // Score-backed red-flags
+  | 'red_flag::very_high_cardiovascular_risk'
+  | 'red_flag::advanced_ckd'
+  | 'red_flag::advanced_liver_fibrosis'
+  | 'red_flag::frailty'
+  // Guideline-threshold raw-input red-flags
+  | 'red_flag::severe_hypertension'
+  | 'red_flag::hyperglycaemic_crisis'
+  | 'red_flag::very_high_hba1c'
+  | 'red_flag::uncontrolled_diabetes'
+  | 'red_flag::severe_albuminuria'
+  | 'red_flag::severe_transaminase_elevation'
+  // Trend / completeness alerts
+  | 'diet_adherence_drop'
+  | 'activity_decline'
+  // Follow-up scheduling — keyed by review date so a re-scheduled review
+  // emits a fresh row (the review date is the actionable signal).
+  | `followup_due::${string}`;
+
 export interface AlertEntry {
   type: string;
   severity: AlertSeverity;
   title: string;
   message: string;
   timestamp: string;
+  /**
+   * Persistence-layer dedup signature. `null` for event-style alerts
+   * (clinical_risk_up) that must always fire per-assessment.
+   */
+  dedupKey: AlertDedupKey | null;
 }
 
 export interface AlertDeriverInput {
@@ -214,6 +263,10 @@ function deriveRiskUpAlert(
     title: 'Composite Risk Increased',
     message: `Composite risk level has increased from ${LEVEL_NAMES[previousRisk.level]} to ${LEVEL_NAMES[currentRisk.level]}. Recommend immediate clinical review.`,
     timestamp: nowISO,
+    // Event-style alert: every transition is a distinct historical fact.
+    // We do NOT collapse `low → moderate` followed by `moderate → high`
+    // into one row — both transitions must be visible in the timeline.
+    dedupKey: null,
   };
 }
 
@@ -243,6 +296,12 @@ function deriveFollowupDueAlert(
   if (daysUntilReview > 14) return null;
 
   const nowISO = now.toISOString();
+  // The review date IS the actionable identity of this alert: re-scheduling
+  // to a different date is a different finding (the previous one is now moot).
+  // Including it in the dedup_key lets the in-flight unique index drop a
+  // duplicate "due in 14 days" alert while still allowing the next review
+  // cycle to surface a fresh row.
+  const dedupKey: AlertDedupKey = `followup_due::${followupPlan.nextReviewDate}`;
   if (daysUntilReview < 0) {
     return {
       type: 'followup_due',
@@ -250,6 +309,7 @@ function deriveFollowupDueAlert(
       title: 'Follow-up Overdue',
       message: `Clinical review was due ${Math.abs(daysUntilReview)} day(s) ago (${followupPlan.nextReviewDate}). Schedule appointment immediately.`,
       timestamp: nowISO,
+      dedupKey,
     };
   }
 
@@ -259,6 +319,7 @@ function deriveFollowupDueAlert(
     title: 'Follow-up Due Soon',
     message: `Clinical review is due in ${daysUntilReview} day(s) (${followupPlan.nextReviewDate}). Please schedule.`,
     timestamp: nowISO,
+    dedupKey,
   };
 }
 
@@ -307,6 +368,10 @@ export function deriveCompletenessAlerts(
       title: 'SCORE2 Data Missing',
       message: `Cardiovascular risk assessment requires: ${missing}. Please obtain the missing inputs.`,
       timestamp: new Date().toISOString(),
+      // Legacy/back-compat path — completeness has its own dedicated stream
+      // (completeness-checker.ts). These rows are not written through the
+      // dedup-aware path.
+      dedupKey: null,
     });
   }
 
@@ -318,6 +383,7 @@ export function deriveCompletenessAlerts(
       message:
         'Renal risk assessment requires serum creatinine for eGFR calculation. Please obtain labs.',
       timestamp: new Date().toISOString(),
+      dedupKey: null,
     });
   }
 
@@ -330,6 +396,7 @@ export function deriveCompletenessAlerts(
         title: `Missing: ${flag}`,
         message: `Critical laboratory value ${flag} is missing. This affects risk stratification.`,
         timestamp: new Date().toISOString(),
+        dedupKey: null,
       });
     }
   });
@@ -362,6 +429,7 @@ function deriveRedFlagAlerts(
       title: 'Very High Cardiovascular Risk',
       message: `10-year SCORE2 risk is ${score2.valueNumeric.toFixed(1)}%. Urgent cardiology referral and intensive management recommended.`,
       timestamp: nowISO,
+      dedupKey: 'red_flag::very_high_cardiovascular_risk',
     });
   }
 
@@ -375,6 +443,7 @@ function deriveRedFlagAlerts(
       title: 'Advanced Chronic Kidney Disease',
       message: `eGFR is ${egfr.valueNumeric.toFixed(0)} mL/min/1.73m² (Stage G4–G5). Urgent nephrology referral recommended.`,
       timestamp: nowISO,
+      dedupKey: 'red_flag::advanced_ckd',
     });
   }
 
@@ -388,6 +457,7 @@ function deriveRedFlagAlerts(
       title: 'Advanced Liver Fibrosis',
       message: `FIB-4 index is ${fib4.valueNumeric.toFixed(2)}. High risk for cirrhosis. Urgent hepatology referral and ultrasound recommended.`,
       timestamp: nowISO,
+      dedupKey: 'red_flag::advanced_liver_fibrosis',
     });
   }
 
@@ -401,6 +471,7 @@ function deriveRedFlagAlerts(
       title: 'Frailty Identified',
       message: `FRAIL score = ${frail.valueNumeric} (frail category). Geriatric assessment and multidisciplinary intervention recommended.`,
       timestamp: nowISO,
+      dedupKey: 'red_flag::frailty',
     });
   }
 
@@ -436,6 +507,9 @@ function deriveDietAdherenceAlert(
       title: 'Diet Adherence Decline',
       message: `PREDIMED score decreased from ${prev} to ${curr}. Consider dietary counseling reinforcement.`,
       timestamp: nowISO,
+      // One open "diet adherence" alert per patient at a time. The exact
+      // before/after values are stored in metadata, not the dedup key.
+      dedupKey: 'diet_adherence_drop',
     };
   }
   return null;
@@ -472,6 +546,9 @@ function deriveActivityDeclineAlert(
       title: 'Significant Activity Decline',
       message: `Weekly physical activity decreased from ${prev} to ${curr} minutes. Consider exercise program review.`,
       timestamp: nowISO,
+      // One open "activity decline" alert per patient at a time. Volume of
+      // decline lives in metadata (and in the inbox row's message text).
+      dedupKey: 'activity_decline',
     };
   }
   return null;
@@ -531,6 +608,7 @@ function deriveSevereHypertensionAlert(
       + 'hypertensive urgency (SBP ≥180 or DBP ≥110). Same-day clinical '
       + 'evaluation and prompt BP-lowering treatment recommended.',
     timestamp: nowISO,
+    dedupKey: 'red_flag::severe_hypertension',
   };
 }
 
@@ -556,6 +634,7 @@ function deriveHyperglycaemicCrisisAlert(
       + '≥250). Urgent evaluation for diabetic ketoacidosis / hyperosmolar '
       + 'state recommended.',
     timestamp: nowISO,
+    dedupKey: 'red_flag::hyperglycaemic_crisis',
   };
 }
 
@@ -580,6 +659,7 @@ function deriveVeryHighHbA1cAlert(
       `HbA1c is ${hba1c.toFixed(1)}% (ADA 2024 threshold ≥10). Severe `
       + 'glycaemic dysregulation; urgent therapy escalation recommended.',
     timestamp: nowISO,
+    dedupKey: 'red_flag::very_high_hba1c',
   };
 }
 
@@ -610,6 +690,7 @@ function deriveUncontrolledDiabetesAlert(
       + 'threshold ≥9 for "poorly controlled"). Intensify monitoring and '
       + 'review pharmacotherapy.',
     timestamp: nowISO,
+    dedupKey: 'red_flag::uncontrolled_diabetes',
   };
 }
 
@@ -636,6 +717,7 @@ function deriveSevereAlbuminuriaAlert(
       + 'category A3, threshold ≥300). Nephrology referral and optimisation '
       + 'of renoprotective therapy recommended.',
     timestamp: nowISO,
+    dedupKey: 'red_flag::severe_albuminuria',
   };
 }
 
@@ -673,6 +755,7 @@ function deriveSevereTransaminaseAlert(
       + 'drug-induced liver injury, viral hepatitis, or other acute '
       + 'hepatocellular insult recommended.',
     timestamp: nowISO,
+    dedupKey: 'red_flag::severe_transaminase_elevation',
   };
 }
 

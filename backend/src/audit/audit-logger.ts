@@ -59,6 +59,11 @@ export type AuditAction =
   | 'alert.create'
   | 'alert.acknowledge'
   | 'alert.resolve'
+  // Sprint 4 task 4.2 — explicit `dismiss` action (clinician marked the
+  // finding as not relevant) and `auto_close` (system housekeeping for
+  // stale rows), so dashboards can distinguish the three closure paths.
+  | 'alert.dismiss'
+  | 'alert.auto_close'
   | 'consent.grant'
   | 'consent.revoke'
   | 'followup.create'

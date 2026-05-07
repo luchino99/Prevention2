@@ -7,6 +7,101 @@ executed per the project blueprint.
 
 ---
 
+## [Sprint 4 — Clinical excellence] — 2026-05-07 — **In progress**
+
+Sprint 4 hardens the deterministic clinical engine — composite-risk
+aggregation, alert lifecycle, follow-up planning, and score equivalence —
+without modifying any validated formula (project rule).
+
+### Sprint 4 task 4.1 — Composite-risk engine refinement (CLOSED)
+
+See entry below the Sprint 3 section: `composite-risk.ts` now exposes a
+`decision: CompositeDecision` with winning-domain, contributing-domains,
+unstratified count, and tie-break rationale (canonical priority
+`cardiovascular > renal > metabolic > hepatic > frailty`). Section §7.2
+of `docs/23-CLINICAL-ENGINE.md` documents the contract.
+
+### Sprint 4 task 4.2 — Alert engine: dedup + ack workflow (CLOSED)
+
+External-audit gap **F-014** (alerts inbox flooded with duplicates of the
+same finding across assessments + closure provenance asymmetric) closed
+end-to-end:
+
+- **Migration `019_alerts_dedup_and_audit.sql`**:
+  - `alerts.dedup_key TEXT` (nullable for legacy rows).
+  - Partial unique index `idx_alerts_dedup_inflight ON (tenant_id,
+    patient_id, dedup_key) WHERE dedup_key IS NOT NULL AND status IN
+    ('open','acknowledged')` — at most ONE in-flight alert per finding
+    signature per patient.
+  - Audit-symmetry columns `dismissed_at`, `dismissed_by`, `resolved_by`
+    (pre-019 only `acknowledged_*` and `resolved_at` were tracked).
+  - `create_assessment_atomic` re-defined (canonical body from migration
+    013) with §9 alerts insert switched to
+    `INSERT … ON CONFLICT (…) WHERE … DO NOTHING`. Rows with
+    `dedup_key IS NULL` (event-style alerts like `clinical_risk_up`)
+    fall outside the predicate and continue to land unconditionally.
+  - `fn_auto_close_stale_alerts(p_max_age_days INT DEFAULT 30)` —
+    SECURITY DEFINER, idempotent, transitions stale `open` rows to
+    `resolved` with `metadata.auto_closed = true`. Acknowledged rows
+    are NOT auto-closed (clinician already triaging).
+- **Deriver-side contract** — `alert-deriver.ts` now attaches a
+  deterministic `dedupKey: AlertDedupKey | null` to every emitted alert.
+  See `docs/23-CLINICAL-ENGINE.md §8.1` for the full mapping (10
+  red-flag signatures + 2 trend keys + per-review-date `followup_due`
+  key + explicit `null` for `clinical_risk_up`).
+- **Ack-endpoint hardening** — `POST /api/v1/alerts/[id]/ack` now uses a
+  zod **discriminated union**: `acknowledge` keeps `note` optional;
+  `resolve` and `dismiss` REQUIRE `note` (≥3 chars after trim, ≤1000
+  chars). Closing without a documented reason was the pre-019 loophole
+  that let the inbox drift silently empty. Endpoint now refuses
+  re-closure of `resolved` / `dismissed` rows
+  (HTTP 409 `ALERT_ALREADY_CLOSED`). `dismiss` writes the canonical
+  `alert.dismiss` audit action (registered in this sprint) instead of
+  being collapsed onto `alert.acknowledge`.
+- **Auto-close cron** — `/api/v1/internal/alerts-auto-close` (registered
+  in `vercel.json` at `30 3 * * *` UTC, max duration 30s). Authenticated
+  via `CRON_SIGNING_SECRET` + `x-vercel-cron` header (Vercel deployments).
+  Configurable threshold via `ALERTS_AUTO_CLOSE_MAX_AGE_DAYS` (default
+  30, hard cap 365). Emits `ALERTS_AUTO_CLOSE_RUN` structured event +
+  `alert.auto_close` audit row per run.
+- **Audit registry** — `AuditAction` union extended with `alert.dismiss`
+  and `alert.auto_close` so dashboards distinguish the three closure
+  paths (clinician-resolve, clinician-dismiss, system-auto-close).
+- **Tests** —
+  - `tests/unit/alert-deriver-dedup.test.ts` (new, 13 cases): one test
+    per finding signature, `clinical_risk_up: null` invariant,
+    `followup_due` review-date encoding, in-batch no-twin invariant.
+  - `tests/unit/alerts-ack-body-schema.test.ts` (new, 13 cases): pins
+    the discriminated-union zod schema across every action.
+- **Docs** —
+  - `docs/23-CLINICAL-ENGINE.md` §8.1 — full mapping table + state
+    machine + auto-close rationale.
+
+Files added/modified:
+`supabase/migrations/019_alerts_dedup_and_audit.sql`,
+`backend/src/domain/clinical/alert-engine/alert-deriver.ts`,
+`backend/src/services/assessment-service.ts`,
+`backend/src/audit/audit-logger.ts`,
+`api/v1/alerts/[id]/ack.ts`,
+`api/v1/internal/alerts-auto-close.ts` (new),
+`vercel.json`,
+`tests/unit/alert-deriver-dedup.test.ts` (new),
+`tests/unit/alerts-ack-body-schema.test.ts` (new),
+`docs/23-CLINICAL-ENGINE.md`,
+`docs/11-CHANGELOG.md`.
+
+### Closed external-audit findings (Sprint 4 to date)
+
+| Finding | Description                                                          | Status after Sprint 4                                                                            |
+| ------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| F-013   | Composite risk silently downgraded to "low" when scores were skipped | ✅ already-closed (Sprint 4 task 4.1 added explicit decision metadata + tie-break, locked tests) |
+| F-014   | Alerts inbox flooded with duplicates + closure provenance asymmetric | ✅ closed (4.2 dedup + ack workflow + auto-close, end-to-end)                                    |
+
+Outstanding tasks (Sprint 4): 4.3 follow-up plan generator, 4.4 score
+equivalence verification, 4.5 final changelog + risk register downgrade.
+
+---
+
 ## [Sprint 3 — Privacy & GDPR enforcement] — 2026-05-07 — **DSR audit, granular consent middleware, per-category retention, DPIA scaffold, FHIR R4 export**
 
 Closes the Sprint 3 backlog: every external-audit finding in the
