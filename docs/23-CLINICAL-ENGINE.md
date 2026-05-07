@@ -277,6 +277,61 @@ The `indeterminate` band exists explicitly (migration 006) so a profile
 with too many skipped scores does not collapse to "low risk" by
 omission.
 
+### 7.1 Domain derivers and aggregation rule
+
+Five domains are computed independently from their authoritative
+score(s):
+
+| Domain | Source score(s) | Notes |
+|---|---|---|
+| `cardiovascular` | SCORE2, SCORE2-Diabetes | Skip semantics + truthful skip reasons via `humanizeScore2SkipReason` |
+| `metabolic` | Metabolic Syndrome (Grundy 2005 + IDF 2009 Harmonization) + ADA, BMI | Highest of MetS / ADA / BMI bands |
+| `hepatic` | FLI (Bedogni 2006), FIB-4 (Sterling + AASLD 2023 age-adjusted) | FIB-4 stages dominate FLI |
+| `renal` | eGFR (CKD-EPI 2021), KDIGO ACR (when albuminuria provided) | ACR A2 → +1 stage; A3 → +2; clamped to G5 |
+| `frailty` | FRAIL scale (Morley 2012) | Optional — `null` if not assessed |
+
+**Composite rule**: `max-of-stratified` across the five domains.
+Indeterminate domains are EXCLUDED from the max — silence is not
+safety. A composite of `high` therefore means "at least one domain
+reached `high`" with at least one stratified domain, not "everything is
+fine elsewhere".
+
+Numeric encoding `low=1 / moderate=2 / high=3 / very_high=4 /
+indeterminate=0` makes the `0` for indeterminate naturally sort below
+`low`, so a downstream `numeric >= 3` check does NOT catch
+indeterminate — the consumer has to either inspect `level` directly or
+use `decision.unstratifiedCount` (see §7.2) for data-completeness
+gating.
+
+### 7.2 Composite decision metadata (Sprint 4 task 4.1)
+
+`CompositeRiskProfile.decision` carries audit metadata produced AFTER
+the composite level is settled. Pure post-hoc analysis; does NOT
+influence the level itself. See the `CompositeDecision` interface for
+field semantics:
+
+| Field | Purpose |
+|---|---|
+| `winningDomain` | Single domain to attribute the composite to (UX hint, tie-broken by canonical priority `cardiovascular > renal > metabolic > hepatic > frailty`). |
+| `contributingDomains[]` | Every stratified domain matching the composite level. ≥1 when composite is stratified. |
+| `unstratifiedCount` | Number of domains that ended up `indeterminate`. Surfaces data-completeness gaps. |
+| `rationale` | Human-readable one-liner suitable for UI tooltip / PDF caption / audit log. |
+
+The tie-break priority `cardio > renal > metabolic > hepatic > frailty`
+is a UX hint reflecting which condition is most likely to drive the
+NEXT clinical action (cardiovascular events typically have shorter
+intervention windows than metabolic). It does NOT influence the
+composite level — the level was already settled by max-of-stratified
+before `winningDomain` is computed.
+
+The frontend / PDF report can use `decision.rationale` directly as a
+"Why this risk?" caption. Example output for a patient with high
+cardio + high renal:
+
+> Composite risk: high. Driven by 2 domains (cardiovascular, renal);
+> primary actionable driver: cardiovascular. Detail: cardiovascular:
+> SCORE2 18% — high | renal: eGFR 35 mL/min/1.73m² (G3b) + ACR A1.
+
 ---
 
 ## 8. Alert engine

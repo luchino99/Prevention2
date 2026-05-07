@@ -181,3 +181,104 @@ describe('aggregateCompositeRisk — truthful skip reasoning', () => {
     );
   });
 });
+
+// ============================================================================
+// Sprint 4 task 4.1 — composite decision audit metadata
+// ============================================================================
+
+describe('aggregateCompositeRisk — composite decision metadata', () => {
+  it('decision.winningDomain = "none" when composite is indeterminate', () => {
+    const profile = aggregateCompositeRisk([]);
+    expect(profile.level).toBe('indeterminate');
+    expect(profile.decision.winningDomain).toBe('none');
+    expect(profile.decision.contributingDomains).toHaveLength(0);
+    expect(profile.decision.unstratifiedCount).toBe(4);
+    expect(profile.decision.rationale.toLowerCase()).toContain('could not be stratified');
+  });
+
+  it('decision.winningDomain points to the only stratified domain when composite is high', () => {
+    const profile = aggregateCompositeRisk([
+      {
+        scoreCode: 'SCORE2',
+        valueNumeric: 25,
+        category: 'high',
+        rawPayload: {},
+      } as ScoreResultEntry,
+    ]);
+    expect(profile.level).toBe('high');
+    expect(profile.decision.winningDomain).toBe('cardiovascular');
+    expect(profile.decision.contributingDomains).toContain('cardiovascular');
+    expect(profile.decision.rationale).toContain('Driven by cardiovascular domain');
+  });
+
+  it('decision tie-break priority: cardiovascular > renal when both high', () => {
+    const profile = aggregateCompositeRisk(
+      [
+        { scoreCode: 'SCORE2', valueNumeric: 18, category: 'high', rawPayload: {} } as ScoreResultEntry,
+        {
+          scoreCode: 'EGFR',
+          valueNumeric: 35,
+          category: 'moderately_to_severely_decreased',
+          rawPayload: { stage: 'G3b' },
+        } as ScoreResultEntry,
+      ],
+    );
+    expect(profile.level).toBe('high');
+    expect(profile.decision.winningDomain).toBe('cardiovascular');
+    expect(profile.decision.contributingDomains).toEqual(
+      expect.arrayContaining(['cardiovascular', 'renal']),
+    );
+    expect(profile.decision.rationale).toContain('Driven by 2 domains');
+    expect(profile.decision.rationale).toContain('primary actionable driver: cardiovascular');
+  });
+
+  it('decision.unstratifiedCount surfaces data-completeness gap', () => {
+    // High cardio with everything else missing — composite is stratified
+    // but several domains are indeterminate. Exact count depends on how
+    // each deriver treats absence (some default to 'low', some to
+    // 'indeterminate' — see deriver source). We assert ≥1 indeterminate
+    // and that the rationale mentions the data-gap phrase.
+    const profile = aggregateCompositeRisk([
+      { scoreCode: 'SCORE2', valueNumeric: 22, category: 'high', rawPayload: {} } as ScoreResultEntry,
+    ]);
+    expect(profile.level).toBe('high');
+    expect(profile.decision.unstratifiedCount).toBeGreaterThanOrEqual(1);
+    expect(profile.decision.rationale).toContain('indeterminate (data gap)');
+  });
+
+  it('decision.contributingDomains lists the dominating domain(s) at the composite level', () => {
+    // Multi-score input: SCORE2 high, FIB-4 elevated, EGFR G3b. Final
+    // composite level depends on each deriver's mapping (e.g. FIB-4
+    // ≥3.25 may bump hepatic to very_high). We assert structural
+    // properties: composite is stratified (not indeterminate),
+    // winningDomain is non-'none', contributingDomains includes the
+    // winningDomain.
+    const profile = aggregateCompositeRisk([
+      { scoreCode: 'SCORE2', valueNumeric: 14, category: 'high', rawPayload: {} } as ScoreResultEntry,
+      { scoreCode: 'FIB4', valueNumeric: 3.5, category: 'high', rawPayload: {} } as ScoreResultEntry,
+      {
+        scoreCode: 'EGFR',
+        valueNumeric: 38,
+        category: 'moderately_to_severely_decreased',
+        rawPayload: { stage: 'G3b' },
+      } as ScoreResultEntry,
+    ]);
+    expect(profile.level).not.toBe('indeterminate');
+    expect(profile.decision.winningDomain).not.toBe('none');
+    expect(profile.decision.contributingDomains.length).toBeGreaterThanOrEqual(1);
+    expect(profile.decision.contributingDomains).toContain(profile.decision.winningDomain);
+  });
+
+  it('decision.rationale includes detail strings from contributing domains', () => {
+    // SCORE2 valueNumeric=20 with category=very_high. The deriver may
+    // or may not propagate to composite=very_high depending on its
+    // category-vs-numeric thresholds. We assert structural properties:
+    // composite stratified, rationale mentions Detail + cardiovascular.
+    const profile = aggregateCompositeRisk([
+      { scoreCode: 'SCORE2', valueNumeric: 20, category: 'very_high', rawPayload: {} } as ScoreResultEntry,
+    ]);
+    expect(profile.level).not.toBe('indeterminate');
+    expect(profile.decision.rationale).toContain('Detail:');
+    expect(profile.decision.rationale.toLowerCase()).toContain('cardiovascular');
+  });
+});

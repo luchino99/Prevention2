@@ -305,6 +305,19 @@ async function loadPreviousCompositeRisk(
       hepatic: toDomain(rp.hepatic_risk, 'hepatic'),
       renal: toDomain(rp.renal_risk, 'renal'),
       frailty,
+      // Decision metadata (Sprint 4 task 4.1) is computed at aggregate
+      // time and is not persisted in `risk_profiles` columns. When
+      // loading a previous assessment back, we emit a placeholder that
+      // is explicit about its reconstructed origin so consumers can
+      // distinguish a fresh decision from a historical one.
+      decision: {
+        winningDomain: 'none' as const,
+        contributingDomains: [],
+        unstratifiedCount: 0,
+        rationale:
+          'Composite decision metadata not persisted on this historical row; ' +
+          're-run aggregation on the live score results to obtain the current decision.',
+      },
     };
   } catch (e) {
     logStructured('warn', 'ASSESSMENT_PREV_LOAD_FAILED', {

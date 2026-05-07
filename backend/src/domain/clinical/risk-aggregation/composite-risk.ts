@@ -37,6 +37,48 @@ export type { RiskLevel } from '../../../../../shared/types/clinical.js';
 
 export type DomainRisk = DomainRiskEntry;
 
+export type CompositeDomainName =
+  | 'cardiovascular'
+  | 'metabolic'
+  | 'hepatic'
+  | 'renal'
+  | 'frailty';
+
+/**
+ * Audit metadata for the composite-risk decision (Sprint 4 task 4.1).
+ *
+ * Computed AFTER the composite level is settled by max-of-stratified
+ * aggregation. Tells the consumer (UI, PDF report, alert engine) WHY
+ * the composite landed at the level it did:
+ *
+ *   - `winningDomain` — the single domain whose `level` matches the
+ *     composite. When multiple domains tie at the top (the common case
+ *     in clinically meaningful scenarios) this is the FIRST tie-broken
+ *     by the canonical priority order: cardiovascular > renal > metabolic
+ *     > hepatic > frailty. The priority reflects which condition is
+ *     most likely to drive the next clinical action; it is purely a
+ *     UX hint and does not influence the composite level.
+ *   - `contributingDomains` — every stratified domain that matches the
+ *     composite level (>=1 if level is stratified, exactly 0 if the
+ *     composite is `indeterminate`).
+ *   - `unstratifiedCount` — number of domains that were
+ *     `indeterminate`. Surfaces data-completeness gaps: "high" composite
+ *     with 3 indeterminate domains is less actionable than "high" with
+ *     0 indeterminate domains.
+ *   - `rationale` — human-readable one-liner suitable for UI tooltip
+ *     or PDF "Why this risk?" caption. Composed deterministically from
+ *     the contributing domain reasonings.
+ *
+ * This struct is PURE METADATA. No clinical decision-making here —
+ * the composite `level` itself is the authoritative output.
+ */
+export interface CompositeDecision {
+  winningDomain: CompositeDomainName | 'none';
+  contributingDomains: CompositeDomainName[];
+  unstratifiedCount: number;
+  rationale: string;
+}
+
 export interface CompositeRiskProfile {
   level: RiskLevel;
   /**
@@ -54,6 +96,11 @@ export interface CompositeRiskProfile {
   hepatic: DomainRisk;
   renal: DomainRisk;
   frailty: DomainRisk | null;
+  /**
+   * Audit metadata about HOW the composite level was reached
+   * (Sprint 4 task 4.1). See {@link CompositeDecision}.
+   */
+  decision: CompositeDecision;
 }
 
 // ============================================================================
@@ -614,6 +661,14 @@ export function aggregateCompositeRisk(
     compositeLevel = numericToRiskLevel(compositeNumeric);
   }
 
+  // Sprint 4 task 4.1 — audit metadata describing HOW the composite
+  // landed at this level. Pure post-hoc analysis of the already-computed
+  // domain entries; does not influence the level.
+  const decision = computeCompositeDecision(
+    compositeLevel,
+    { cardiovascular, metabolic, hepatic, renal, frailty },
+  );
+
   return {
     level: compositeLevel,
     numeric: compositeNumeric,
@@ -622,5 +677,111 @@ export function aggregateCompositeRisk(
     hepatic,
     renal,
     frailty,
+    decision,
+  };
+}
+
+// ============================================================================
+// Composite decision metadata helper (Sprint 4 task 4.1)
+// ============================================================================
+
+/**
+ * Build the {@link CompositeDecision} audit struct given the already-
+ * computed composite level and the per-domain results.
+ *
+ * Tie-breaking priority (canonical, documented in CompositeDecision):
+ *   cardiovascular > renal > metabolic > hepatic > frailty
+ *
+ * This priority is a UX hint for the `winningDomain` field — it picks
+ * the most clinically actionable driver when multiple domains tie at
+ * the top. It does NOT influence the composite level itself; the
+ * composite was already settled by max-of-stratified.
+ */
+function computeCompositeDecision(
+  compositeLevel: RiskLevel,
+  domains: {
+    cardiovascular: DomainRiskEntry;
+    metabolic: DomainRiskEntry;
+    hepatic: DomainRiskEntry;
+    renal: DomainRiskEntry;
+    frailty: DomainRiskEntry | null;
+  },
+): CompositeDecision {
+  // Build a name→entry list in the canonical tie-break priority order.
+  const ordered: Array<[CompositeDomainName, DomainRiskEntry | null]> = [
+    ['cardiovascular', domains.cardiovascular],
+    ['renal', domains.renal],
+    ['metabolic', domains.metabolic],
+    ['hepatic', domains.hepatic],
+    ['frailty', domains.frailty],
+  ];
+
+  // Count domains that ended up indeterminate (data-completeness gap).
+  const unstratifiedCount = ordered.filter(
+    ([, entry]) => entry !== null && entry.level === 'indeterminate',
+  ).length;
+
+  // Indeterminate composite has no winning domain.
+  if (compositeLevel === 'indeterminate') {
+    return {
+      winningDomain: 'none',
+      contributingDomains: [],
+      unstratifiedCount,
+      rationale:
+        'Composite risk could not be stratified — no domain produced a stratified result. ' +
+        'Review per-domain reasoning fields for the missing inputs.',
+    };
+  }
+
+  // Domains that match the composite level — these "drove" it.
+  const contributingDomains: CompositeDomainName[] = [];
+  for (const [name, entry] of ordered) {
+    if (entry !== null && entry.level === compositeLevel) {
+      contributingDomains.push(name);
+    }
+  }
+
+  // Tie-break: first one in canonical priority order wins.
+  const winningDomain: CompositeDomainName =
+    contributingDomains[0] ?? ('cardiovascular' as CompositeDomainName);
+
+  // Compose rationale. Aggregate the contributing domain reasonings
+  // into one human-readable line. Cap to keep audit logs / PDF
+  // captions readable.
+  const reasoningSnippets: string[] = [];
+  for (const name of contributingDomains) {
+    const entry =
+      name === 'cardiovascular' ? domains.cardiovascular :
+      name === 'metabolic' ? domains.metabolic :
+      name === 'hepatic' ? domains.hepatic :
+      name === 'renal' ? domains.renal :
+      domains.frailty;
+    if (entry) {
+      reasoningSnippets.push(`${name}: ${entry.reasoning}`);
+    }
+  }
+
+  const driverPhrase =
+    contributingDomains.length === 1
+      ? `Driven by ${winningDomain} domain.`
+      : `Driven by ${contributingDomains.length} domains (${contributingDomains.join(', ')}); ` +
+        `primary actionable driver: ${winningDomain}.`;
+
+  const dataGapPhrase =
+    unstratifiedCount > 0
+      ? ` ${unstratifiedCount} domain${unstratifiedCount === 1 ? '' : 's'} indeterminate (data gap).`
+      : '';
+
+  const reasoningLine =
+    reasoningSnippets.length > 0
+      ? ` Detail: ${reasoningSnippets.join(' | ')}`
+      : '';
+
+  return {
+    winningDomain,
+    contributingDomains,
+    unstratifiedCount,
+    rationale:
+      `Composite risk: ${compositeLevel}. ${driverPhrase}${dataGapPhrase}${reasoningLine}`,
   };
 }
