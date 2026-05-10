@@ -28,10 +28,10 @@
     "build": "node scripts/fetch-noto-fonts.mjs && node scripts/fetch-supabase-sdk.mjs && node scripts/inject-public-config.mjs && node scripts/check-engine-determinism.mjs && node scripts/verify-build.mjs",
     "build:check": "node scripts/fetch-noto-fonts.mjs && node scripts/fetch-supabase-sdk.mjs && node scripts/inject-public-config.mjs && node scripts/verify-build.mjs && node scripts/check-engine-determinism.mjs && node scripts/check-rate-limit-async.mjs && node scripts/check-sbom.mjs && node scripts/check-sbom-cves.mjs && node scripts/check-sbom-cve-report-idempotency.mjs && node scripts/check-sbom-lockfile-parity.mjs && node scripts/check-equivalence-coverage.mjs && node scripts/check-no-inline-styles.mjs && node scripts/check-bundle-budget.mjs && node scripts/run-rls-tests.mjs && node scripts/check-rls-coverage.mjs && tsc --noEmit --project tsconfig.json",
     "verify:build": "node scripts/verify-build.mjs",
-    "test": "vitest run",
+    "test": "vitest run --config tests/vitest.config.ts",
     "test:rls": "node scripts/run-rls-tests.mjs",
-    "test:pdf": "vitest run tests/unit/pdf-report-service.test.ts",
-    "test:coverage": "vitest run --coverage",
+    "test:pdf": "vitest run --config tests/vitest.config.ts tests/unit/pdf-report-service.test.ts",
+    "test:coverage": "vitest run --coverage --config tests/vitest.config.ts",
     "check:coverage": "npm run test:coverage --silent && node scripts/check-coverage-thresholds.mjs"
   },
   "dependencies": {
