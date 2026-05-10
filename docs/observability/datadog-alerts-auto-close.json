@@ -1,0 +1,78 @@
+{
+  "_meta": {
+    "template_for": "Uelfy Clinical — ALERTS_AUTO_CLOSE_RUN",
+    "purpose": "Sprint 4 task 4.2 cron — daily 03:30 UTC stale-alert auto-close (>30d open → resolved with metadata.auto_closed=true). Missed run ⇒ inbox drift; very-high closed_count ⇒ deeper signal that triage isn't happening.",
+    "source_event_emitter": "api/v1/internal/alerts-auto-close.ts",
+    "fields_emitted": [
+      "event = 'ALERTS_AUTO_CLOSE_RUN'",
+      "runId (UUID per cron invocation)",
+      "startedAt (ISO 8601)",
+      "maxAgeDays (int — default 30)",
+      "closedCount (int — number of stale alerts closed this run)"
+    ],
+    "import_to": "Datadog Dashboards → New → Import dashboard JSON",
+    "companion_runbook": "docs/23-CLINICAL-ENGINE.md §8.1 + docs/27-INCIDENT-RESPONSE.md §11.4"
+  },
+  "title": "Uelfy — ALERTS_AUTO_CLOSE_RUN",
+  "description": "Daily stale-alert auto-close cron. Expected: 1 event/day @ 03:30 UTC. closedCount > 0 means clinicians are not triaging within 30d.",
+  "layout_type": "ordered",
+  "widgets": [
+    {
+      "definition": {
+        "title": "ALERTS_AUTO_CLOSE_RUN events per day",
+        "type": "timeseries",
+        "requests": [
+          {
+            "q": "count:logs @event:ALERTS_AUTO_CLOSE_RUN",
+            "display_type": "bars"
+          }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "title": "Stale alerts auto-closed per day",
+        "type": "timeseries",
+        "requests": [
+          { "q": "sum:logs @event:ALERTS_AUTO_CLOSE_RUN @closedCount" }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "title": "Auto-close threshold (config — should be 30 days)",
+        "type": "query_value",
+        "requests": [
+          { "q": "max:logs @event:ALERTS_AUTO_CLOSE_RUN @maxAgeDays.last('1h')" }
+        ]
+      }
+    }
+  ],
+  "monitors": [
+    {
+      "_purpose": "Missed run — same blast radius as RETENTION_RUN missed (cron infra failure).",
+      "name": "Uelfy — ALERTS_AUTO_CLOSE_RUN missed",
+      "type": "log alert",
+      "query": "logs(\"@event:ALERTS_AUTO_CLOSE_RUN\").index(\"*\").rollup(\"count\").last(\"28h\") < 1",
+      "message": "No ALERTS_AUTO_CLOSE_RUN in last 28 hours. The cron should fire daily at 03:30 UTC.\n\nRunbook: docs/27-INCIDENT-RESPONSE.md §11.4",
+      "tags": ["uelfy", "sev-3", "cron"],
+      "options": {
+        "thresholds": { "critical": 1 },
+        "notify_no_data": true,
+        "no_data_timeframe": 60
+      }
+    },
+    {
+      "_purpose": "High auto-close volume — clinicians not triaging the inbox.",
+      "name": "Uelfy — alerts triage backlog (high auto-close count)",
+      "type": "log alert",
+      "query": "max(last_7d):sum:logs.aggregate{*}.over(\"@event:ALERTS_AUTO_CLOSE_RUN\").rollup(\"sum\",\"@closedCount\") > 100",
+      "message": "More than 100 stale alerts auto-closed in last 7 days. Clinicians are not triaging the inbox within 30d. Coordinate with the tenant admin.\n\nRunbook: docs/23-CLINICAL-ENGINE.md §8.1",
+      "tags": ["uelfy", "sev-3", "clinical-ops"],
+      "options": {
+        "thresholds": { "critical": 100 },
+        "notify_no_data": false
+      }
+    }
+  ]
+}

@@ -7,6 +7,142 @@ executed per the project blueprint.
 
 ---
 
+## [Sprint 6 — Observability & coverage maturity] — 2026-05-07 — **CLOSED**
+
+Sprint 6 closes the operational-readiness gap left by Sprint 5: the
+deploy chain is hardened, but the post-deploy observability surface
+was thin. Sprint 6 ships per-module code-coverage gating, deep
+health probes, dashboard templates for every structured-log event,
+and an SLO contract document. Zero changes to clinical engine logic.
+
+### Sprint 6 outcome at a glance
+
+| Metric | Before Sprint 6 | After Sprint 6 |
+| --- | --- | --- |
+| Backlog L-tier open | 9 | **8** (L-07 closed) |
+| Health endpoint subsystems probed | 3 | **4** (added Storage) |
+| Per-subsystem timeout enforcement | ❌ | ✅ 3 s hard cap |
+| Datadog dashboard JSON templates | 0 | **4** (RETENTION_RUN, ALERTS_AUTO_CLOSE_RUN, AUDIT_WRITE_FAILED, ACCESS_DENIED) |
+| SLO definitions doc | ❌ | ✅ `docs/41-SLO-DEFINITIONS.md` |
+| Per-module coverage thresholds | ❌ | ✅ 13 modules, validated-formula floor 90 % |
+
+### Sprint 6 task 6.1 — Per-module code coverage gate (CLOSED — closes L-07)
+
+- `tests/vitest.config.ts` extended with `json-summary` reporter +
+  `reportsDirectory: 'coverage'` + tighter exclude list (tests +
+  fixtures + frontend-dist).
+- `@vitest/coverage-v8@^1.6.0` added to devDependencies. Operator
+  must run `npm install` once to pull it.
+- New `scripts/check-coverage-thresholds.mjs` enforces per-module
+  line-coverage floors:
+  - **Tier 1 (90 %)** — validated formulas: SCORE2, SCORE2-DM,
+    eGFR, FIB-4, FRAIL, ADA, BMI; SCORE2-eligibility 85 %;
+    FLI 85 %; MetS 85 %.
+  - **Tier 2 (80 %)** — interpretation layers: composite-risk,
+    alert-deriver, followup-plan.
+  - **Tier 3 (70 %)** — supporting: guideline-registry,
+    guideline-resolver.
+- New npm scripts: `test:coverage`, `check:coverage`. Coverage gate
+  runs separately from `build:check` (coverage takes longer than
+  structural gates; runs in a dedicated CI step or via
+  `npm run check:coverage` locally).
+- Gate is SKIP-graceful: missing `coverage/coverage-summary.json`
+  exits 0 with a hint, same pattern as RLS gates. Allows
+  `build:check` to pass on a fresh checkout before the operator has
+  generated coverage once.
+
+### Sprint 6 task 6.2 — Health endpoint deep probes (CLOSED)
+
+- `api/v1/health.ts` extended with a Storage subsystem probe
+  (`clinical-reports` bucket list, 1-row pagination — cheapest
+  reachability check).
+- All probes now bounded by a per-subsystem `PROBE_TIMEOUT_MS` of
+  3 s via `withTimeout()` helper. A hung subsystem maps to
+  `status: 'down'` with `detail: 'timeout'` instead of hanging the
+  whole `/api/v1/health` request.
+- Per-subsystem latency budgets surfaced via `detail:
+  "slow:<latency>ms"` without flipping the overall verdict — the
+  dashboard tile picks them up while the page stays "ok" (latency
+  is a degradation signal, not a downtime signal).
+- Critical-subsystems set extended to include `storage`: a down
+  bucket breaks PDF reports, which is a clinician-blocking failure
+  → HTTP 503 (was previously HTTP 207 because Upstash was the only
+  non-critical degradation).
+- Probes run concurrently via `Promise.all` so the worst-case wall
+  time is bounded by the slowest probe, not their sum.
+
+### Sprint 6 task 6.3 — Datadog dashboard JSON templates (CLOSED)
+
+- `docs/observability/` directory created with importable JSON for
+  the 4 canonical structured-log events:
+  - `datadog-retention-run.json` — daily retention cron (1 event/day
+    expected; 28h missed-run alert).
+  - `datadog-alerts-auto-close.json` — Sprint 4 task 4.2 cron
+    (closedCount > 100/7d alert: clinicians not triaging).
+  - `datadog-audit-write-failed.json` — B-09 invariant; strict
+    variant > 0 in 5min ⇒ SEV-1 page.
+  - `datadog-access-denied.json` — RBAC + tenant-isolation denials;
+    cross_tenant > 20/15min ⇒ SEV-2.
+- Each template ships:
+  - count-over-time timeseries
+  - faceted breakdown by `variant` / `reason` / `action`
+  - p95 latency tile where applicable
+  - monitor (alert) example with SLO-anchored thresholds
+- README at `docs/observability/README.md` documents import
+  workflow + Grafana Loki translation.
+
+### Sprint 6 task 6.4 — SLO definitions doc (CLOSED)
+
+- `docs/41-SLO-DEFINITIONS.md` (new) — 6-section SLO contract:
+  1. SLO architecture (multi-window multi-burn-rate per Google SRE).
+  2. Per-objective targets:
+     - **Availability** — 99.5 % initial (99.9 % post-first-tenant)
+     - **Latency** — p95 budgets per endpoint class (read 200 ms,
+       write 500 ms, PDF 5 s, FHIR 3 s, alert ack 300 ms)
+     - **Audit-pipeline integrity** — strict variant zero tolerance
+       (B-09 invariant, no error budget)
+     - **Cron liveness** — 28-hour budget per cron
+     - **Health endpoint** — 99 % HTTP 200 over 24h
+     - **RBAC noise floor** — per-tenant baselines + spike alerts
+  3. Reporting cadence (daily / weekly / monthly / quarterly).
+  4. Update protocol (PR-body justification, monitor + runbook
+     sync, tenant communication).
+  5. Out of scope (per-region SLOs, frontend Core Web Vitals,
+     time-to-first-PDF).
+  6. Cross-references.
+
+### Sprint 6 task 6.5 — Wrap (this entry)
+
+- This changelog section + risk register downgrade L-07 →
+  ✅ Resolved + security checklist §12 extended (12.3 deep probes,
+  12.4 dashboards, 12.5 SLOs, 12.6 coverage).
+
+### Sprint 6 closed-pending summary
+
+| Backlog ID | Title | Sprint 6 task | Status |
+|---|---|---|---|
+| L-07 | Per-score code-coverage report | 6.1 | ✅ Resolved |
+| (new) | Health endpoint deep probes | 6.2 | ✅ Resolved |
+| (new) | Datadog dashboard templates | 6.3 | ✅ Resolved |
+| (new) | SLO definitions doc | 6.4 | ✅ Resolved |
+
+Files added/modified (Sprint 6):
+`tests/vitest.config.ts` (json-summary reporter + tighter excludes),
+`scripts/check-coverage-thresholds.mjs` (new),
+`api/v1/health.ts` (deep probes + timeouts + storage),
+`docs/observability/README.md` (new),
+`docs/observability/datadog-retention-run.json` (new),
+`docs/observability/datadog-alerts-auto-close.json` (new),
+`docs/observability/datadog-audit-write-failed.json` (new),
+`docs/observability/datadog-access-denied.json` (new),
+`docs/41-SLO-DEFINITIONS.md` (new),
+`package.json` (devDep + 2 npm scripts),
+`docs/30-RISK-REGISTER.md` (L-07 closed),
+`docs/10-SECURITY-GDPR-CHECKLIST.md` (§12 extended),
+`docs/11-CHANGELOG.md` (this entry).
+
+---
+
 ## [Sprint 5 — Production hardening & CSP enforce] — 2026-05-07 — **CLOSED — 5 leftover backlog items resolved**
 
 Sprint 5 closes every Sprint 1/2 leftover and pushes the deploy chain

@@ -30,7 +30,9 @@
     "verify:build": "node scripts/verify-build.mjs",
     "test": "vitest run",
     "test:rls": "node scripts/run-rls-tests.mjs",
-    "test:pdf": "vitest run tests/unit/pdf-report-service.test.ts"
+    "test:pdf": "vitest run tests/unit/pdf-report-service.test.ts",
+    "test:coverage": "vitest run --coverage",
+    "check:coverage": "npm run test:coverage --silent && node scripts/check-coverage-thresholds.mjs"
   },
   "dependencies": {
     "@pdf-lib/fontkit": "^1.1.1",
@@ -43,6 +45,7 @@
     "@types/node": "^20.14.0",
     "@types/ws": "^8.18.1",
     "@vercel/node": "^3.2.0",
+    "@vitest/coverage-v8": "^1.6.0",
     "esbuild": "^0.21.5",
     "typescript": "5.5.4",
     "vitest": "^1.6.0"

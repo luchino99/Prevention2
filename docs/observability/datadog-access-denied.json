@@ -1,0 +1,98 @@
+{
+  "_meta": {
+    "template_for": "Uelfy Clinical — ACCESS_DENIED",
+    "purpose": "Detect anomalous tenant-isolation or RBAC denial spikes. A single denial is normal (operator tries the wrong button); a sustained spike indicates either a broken UI flow or an active probe.",
+    "source_event_emitter": "backend/src/audit/audit-logger.ts emitAccessDenialLog()",
+    "fields_emitted": [
+      "event = 'ACCESS_DENIED'",
+      "reason = 'unauthenticated' | 'role_mismatch' | 'cross_tenant' | 'cross_clinician_ppl' | 'mfa_required'",
+      "actorUserId",
+      "actorRole",
+      "actorTenantId",
+      "ipHash (SHA-256, prefix-stripped)",
+      "route (e.g. 'GET /api/v1/patients/[id]')",
+      "targetResourceId",
+      "targetTenantId",
+      "allowedRoles (when reason=role_mismatch)"
+    ],
+    "import_to": "Datadog Dashboards → New → Import dashboard JSON",
+    "companion_runbook": "docs/27-INCIDENT-RESPONSE.md §11.3"
+  },
+  "title": "Uelfy — ACCESS_DENIED",
+  "description": "Per-reason denial breakdown. Cross-tenant + cross-clinician_ppl spikes ⇒ probe attempt or new tenant misconfiguration.",
+  "layout_type": "ordered",
+  "widgets": [
+    {
+      "definition": {
+        "title": "ACCESS_DENIED — count over time, faceted by reason",
+        "type": "timeseries",
+        "requests": [
+          {
+            "q": "count:logs @event:ACCESS_DENIED by @reason",
+            "display_type": "bars"
+          }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "title": "Cross-tenant + cross-clinician_ppl rate (last 1h)",
+        "type": "query_value",
+        "requests": [
+          {
+            "q": "count:logs @event:ACCESS_DENIED @reason:(cross_tenant OR cross_clinician_ppl).last('1h')"
+          }
+        ],
+        "precision": 0
+      }
+    },
+    {
+      "definition": {
+        "title": "Top denied routes (last 24h)",
+        "type": "toplist",
+        "requests": [
+          {
+            "q": "top(count:logs @event:ACCESS_DENIED.last('24h'), 10, 'sum', 'desc') by @route"
+          }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "title": "Top actor roles by denial",
+        "type": "toplist",
+        "requests": [
+          {
+            "q": "top(count:logs @event:ACCESS_DENIED.last('24h'), 10, 'sum', 'desc') by @actorRole"
+          }
+        ]
+      }
+    }
+  ],
+  "monitors": [
+    {
+      "_purpose": "Cross-tenant denial spike — likely an active probe or a misconfigured UI. SEV-2.",
+      "name": "Uelfy — cross_tenant ACCESS_DENIED spike",
+      "type": "log alert",
+      "query": "logs(\"@event:ACCESS_DENIED @reason:cross_tenant\").index(\"*\").rollup(\"count\").last(\"15m\") > 20",
+      "message": "More than 20 cross-tenant denials in 15 min. Either a probe attempt or a UI bug producing wrong tenant_id in URL params.\n\nRunbook: docs/27-INCIDENT-RESPONSE.md §11.3",
+      "tags": ["uelfy", "sev-2", "rbac"],
+      "options": {
+        "thresholds": { "critical": 20, "warning": 5 },
+        "notify_no_data": false
+      }
+    },
+    {
+      "_purpose": "MFA-required denials elevated — UX regression or stale enrolment.",
+      "name": "Uelfy — mfa_required denial rate elevated",
+      "type": "log alert",
+      "query": "logs(\"@event:ACCESS_DENIED @reason:mfa_required\").index(\"*\").rollup(\"count\").last(\"1h\") > 10",
+      "message": "10+ mfa_required denials in 1h. Check that the mfa-enroll flow still completes; tenant admins may need to reset stuck factors.\n\nRunbook: docs/27-INCIDENT-RESPONSE.md §11.3",
+      "tags": ["uelfy", "sev-3", "auth"],
+      "options": {
+        "thresholds": { "critical": 10 },
+        "notify_no_data": false
+      }
+    }
+  ]
+}

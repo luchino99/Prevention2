@@ -33,6 +33,312 @@
   },
   "components": [
     {
+      "bom-ref": "@ampproject/remapping@2.3.0",
+      "type": "library",
+      "name": "@ampproject/remapping",
+      "version": "2.3.0",
+      "scope": "optional",
+      "author": "Justin Ridgewell",
+      "description": "Remap sequential sourcemaps through transformations to point at the original source code",
+      "purl": "pkg:npm/%40ampproject/remapping@2.3.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@ampproject/remapping"
+        },
+        {
+          "name": "cdx:npm:package:development",
+          "value": "true"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@ampproject/remapping/-/remapping-2.3.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/ampproject/remapping.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/ampproject/remapping#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/ampproject/remapping/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "df4899b403e0cfe2d3218a1e8afa98a3ce777f4da305849de6e1a71a9905574337c4eb7d68def77ab920600999538df1e157ea7272f15bd2a98374792c2e1863"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@babel/helper-string-parser@7.27.1",
+      "type": "library",
+      "name": "@babel/helper-string-parser",
+      "version": "7.27.1",
+      "scope": "optional",
+      "author": "The Babel Team",
+      "description": "A utility package to parse strings",
+      "purl": "pkg:npm/%40babel/helper-string-parser@7.27.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@babel/helper-string-parser"
+        },
+        {
+          "name": "cdx:npm:package:development",
+          "value": "true"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@babel/helper-string-parser/-/helper-string-parser-7.27.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/babel/babel.git"
+        },
+        {
+          "type": "website",
+          "url": "https://babel.dev/docs/en/next/babel-helper-string-parser"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/babel/babel/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "a8c952c4a6e946502b89d0c4c64f769d2a1bc837693e28d4ab60d6ea80e752a77488e1b19908f2aa13088a123dfb3bf82cfc997518ded9c6af58f6c26d69b778"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@babel/helper-validator-identifier@7.28.5",
+      "type": "library",
+      "name": "@babel/helper-validator-identifier",
+      "version": "7.28.5",
+      "scope": "optional",
+      "author": "The Babel Team",
+      "description": "Validate identifier/keywords name",
+      "purl": "pkg:npm/%40babel/helper-validator-identifier@7.28.5",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@babel/helper-validator-identifier"
+        },
+        {
+          "name": "cdx:npm:package:development",
+          "value": "true"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@babel/helper-validator-identifier/-/helper-validator-identifier-7.28.5.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/babel/babel.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/babel/babel#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/babel/babel/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "a92b3889fc33289495dfdb9c363b2f73a5951ece9bed2d37b0e87639c1c5f541df54fa965802d4b0d515ce1481888b63459a0b1f1ee721aad58ea295bac519d5"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@babel/parser@7.29.3",
+      "type": "library",
+      "name": "@babel/parser",
+      "version": "7.29.3",
+      "scope": "optional",
+      "author": "The Babel Team",
+      "description": "A JavaScript parser",
+      "purl": "pkg:npm/%40babel/parser@7.29.3",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@babel/parser"
+        },
+        {
+          "name": "cdx:npm:package:development",
+          "value": "true"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@babel/parser/-/parser-7.29.3.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/babel/babel.git"
+        },
+        {
+          "type": "website",
+          "url": "https://babel.dev/docs/en/next/babel-parser"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/babel/babel/issues?utf8=%E2%9C%93&q=is%3Aissue+label%3A%22pkg%3A+parser+%28babylon%29%22+is%3Aopen"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "6f772da50c29f8f44ebd4fdcb6d7383989783337c9516cba15983e3cc5dfce6b7ffb7f621d5174b037ea6b2f1340cdc90361143b229c159b7be635ab8908a3b0"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@babel/types@7.29.0",
+      "type": "library",
+      "name": "@babel/types",
+      "version": "7.29.0",
+      "scope": "optional",
+      "author": "The Babel Team",
+      "description": "Babel Types is a Lodash-esque utility library for AST nodes",
+      "purl": "pkg:npm/%40babel/types@7.29.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@babel/types"
+        },
+        {
+          "name": "cdx:npm:package:development",
+          "value": "true"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@babel/types/-/types-7.29.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/babel/babel.git"
+        },
+        {
+          "type": "website",
+          "url": "https://babel.dev/docs/en/next/babel-types"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/babel/babel/issues?utf8=%E2%9C%93&q=is%3Aissue+label%3A%22pkg%3A%20types%22+is%3Aopen"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "2f07591e949c338433f17c3688a4b34be71f825673246be87d0202cbb5bbbf871aaeee046809b252e3ba046adbc90da6615d755b453c8f998185dd7875ddc1d0"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@bcoe/v8-coverage@0.2.3",
+      "type": "library",
+      "name": "@bcoe/v8-coverage",
+      "version": "0.2.3",
+      "scope": "optional",
+      "author": "Charles Samborski",
+      "description": "Helper functions for V8 coverage files.",
+      "purl": "pkg:npm/%40bcoe/v8-coverage@0.2.3",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@bcoe/v8-coverage"
+        },
+        {
+          "name": "cdx:npm:package:development",
+          "value": "true"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git://github.com/demurgos/v8-coverage.git"
+        },
+        {
+          "type": "website",
+          "url": "https://demurgos.github.io/v8-coverage"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/demurgos/v8-coverage/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "d21610f120780dbe73bd90786b174c1c6c046908e467316342237d2d562f2050769d25075bdb58a715ab88fad60c0488c626976b1f3744470bc6e49d9c63d9b7"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
       "bom-ref": "@cspotcode/source-map-support@0.8.1",
       "type": "library",
       "name": "@cspotcode/source-map-support",
@@ -384,6 +690,57 @@
       ]
     },
     {
+      "bom-ref": "@istanbuljs/schema@0.1.6",
+      "type": "library",
+      "name": "@istanbuljs/schema",
+      "version": "0.1.6",
+      "scope": "optional",
+      "author": "Corey Farrell",
+      "description": "Schemas describing various structures used by nyc and istanbuljs",
+      "purl": "pkg:npm/%40istanbuljs/schema@0.1.6",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@istanbuljs/schema"
+        },
+        {
+          "name": "cdx:npm:package:development",
+          "value": "true"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@istanbuljs/schema/-/schema-0.1.6.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/istanbuljs/schema.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/istanbuljs/schema#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/istanbuljs/schema/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "f9283a18247fc32d684a640316ae0b4030219b71132a7a2bc4dfb2e676cb50b391dcfd1cd787f65aeaf38f7ff1a8f5ed6ac2c57c7779891150ec026de0a1f673"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
       "bom-ref": "@jest/schemas@29.6.3",
       "type": "library",
       "name": "@jest/schemas",
@@ -422,6 +779,57 @@
         {
           "alg": "SHA-512",
           "content": "9a8e63e57fa321998942f78129e4bf72502e7a2a55eca8225f5bcc802c5a9b544d622a84d70eb69f4fed2499c7b635bc647710728e6063ce630379a2d0bfa748"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@jridgewell/gen-mapping@0.3.13",
+      "type": "library",
+      "name": "@jridgewell/gen-mapping",
+      "version": "0.3.13",
+      "scope": "optional",
+      "author": "Justin Ridgewell",
+      "description": "Generate source maps",
+      "purl": "pkg:npm/%40jridgewell/gen-mapping@0.3.13",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@jridgewell/gen-mapping"
+        },
+        {
+          "name": "cdx:npm:package:development",
+          "value": "true"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@jridgewell/gen-mapping/-/gen-mapping-0.3.13.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/jridgewell/sourcemaps.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/jridgewell/sourcemaps/tree/main/packages/gen-mapping"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/jridgewell/sourcemaps/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "da492dffb9e227a32010fc45d1b61d43a7ad65a03e7d0bc370b29c921cb5c8840ecdaa0a8c10634a3eb7fda2d58d8137aa146de5dbccfae5327c283a50a0816c"
         }
       ],
       "licenses": [
@@ -524,6 +932,159 @@
         {
           "alg": "SHA-512",
           "content": "71843ddf5d20aeac6e7966e5f96b885086a251a0dc8fb58eab97d58449633558117ce52163d7f2db34ef7e8a96b2779b87c4a5ef45527056c80af2672ca0743a"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@jridgewell/trace-mapping@0.3.31",
+      "type": "library",
+      "name": "@jridgewell/trace-mapping",
+      "version": "0.3.31",
+      "scope": "optional",
+      "author": "Justin Ridgewell",
+      "description": "Trace the original position through a source map",
+      "purl": "pkg:npm/%40jridgewell/trace-mapping@0.3.31",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@ampproject/remapping/node_modules/@jridgewell/trace-mapping"
+        },
+        {
+          "name": "cdx:npm:package:development",
+          "value": "true"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@jridgewell/trace-mapping/-/trace-mapping-0.3.31.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/jridgewell/sourcemaps.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/jridgewell/sourcemaps/tree/main/packages/trace-mapping"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/jridgewell/sourcemaps/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "cf3351f9275048327373c8e869e3fc410a0242bf0db98c76748232b65d507811191c9f6e5ba85e6ecad881bcfc849c1441aa374d608cb667d5f0dbb5b7038b03"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@jridgewell/trace-mapping@0.3.31",
+      "type": "library",
+      "name": "@jridgewell/trace-mapping",
+      "version": "0.3.31",
+      "scope": "optional",
+      "author": "Justin Ridgewell",
+      "description": "Trace the original position through a source map",
+      "purl": "pkg:npm/%40jridgewell/trace-mapping@0.3.31",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@jridgewell/gen-mapping/node_modules/@jridgewell/trace-mapping"
+        },
+        {
+          "name": "cdx:npm:package:development",
+          "value": "true"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@jridgewell/trace-mapping/-/trace-mapping-0.3.31.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/jridgewell/sourcemaps.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/jridgewell/sourcemaps/tree/main/packages/trace-mapping"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/jridgewell/sourcemaps/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "cf3351f9275048327373c8e869e3fc410a0242bf0db98c76748232b65d507811191c9f6e5ba85e6ecad881bcfc849c1441aa374d608cb667d5f0dbb5b7038b03"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@jridgewell/trace-mapping@0.3.31",
+      "type": "library",
+      "name": "@jridgewell/trace-mapping",
+      "version": "0.3.31",
+      "scope": "optional",
+      "author": "Justin Ridgewell",
+      "description": "Trace the original position through a source map",
+      "purl": "pkg:npm/%40jridgewell/trace-mapping@0.3.31",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/istanbul-lib-source-maps/node_modules/@jridgewell/trace-mapping"
+        },
+        {
+          "name": "cdx:npm:package:development",
+          "value": "true"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@jridgewell/trace-mapping/-/trace-mapping-0.3.31.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/jridgewell/sourcemaps.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/jridgewell/sourcemaps/tree/main/packages/trace-mapping"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/jridgewell/sourcemaps/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "cf3351f9275048327373c8e869e3fc410a0242bf0db98c76748232b65d507811191c9f6e5ba85e6ecad881bcfc849c1441aa374d608cb667d5f0dbb5b7038b03"
         }
       ],
       "licenses": [
@@ -2093,6 +2654,57 @@
         {
           "license": {
             "id": "Apache-2.0"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@vitest/coverage-v8@1.6.1",
+      "type": "library",
+      "name": "@vitest/coverage-v8",
+      "version": "1.6.1",
+      "scope": "optional",
+      "author": "Anthony Fu",
+      "description": "V8 coverage provider for Vitest",
+      "purl": "pkg:npm/%40vitest/coverage-v8@1.6.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@vitest/coverage-v8"
+        },
+        {
+          "name": "cdx:npm:package:development",
+          "value": "true"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@vitest/coverage-v8/-/coverage-v8-1.6.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/vitest-dev/vitest.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/vitest-dev/vitest/tree/main/packages/coverage-v8#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/vitest-dev/vitest/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "e98791670b8ee284c62b10f76e28e893be7aa24b474889b779ccd557335edec72acee84bc25b481774bd64bfefc0e548a5446653a4a7661ce25d701fc3cfd097"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
           }
         }
       ]
@@ -5394,6 +6006,57 @@
       ]
     },
     {
+      "bom-ref": "has-flag@4.0.0",
+      "type": "library",
+      "name": "has-flag",
+      "version": "4.0.0",
+      "scope": "optional",
+      "author": "Sindre Sorhus",
+      "description": "Check if argv has a specific flag",
+      "purl": "pkg:npm/has-flag@4.0.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/has-flag"
+        },
+        {
+          "name": "cdx:npm:package:development",
+          "value": "true"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/has-flag/-/has-flag-4.0.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/sindresorhus/has-flag.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/sindresorhus/has-flag#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/sindresorhus/has-flag/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "1329094ff4352a34d672da698080207d23b4b4a56e6548e180caf5ee4a93ba6325e807efdc421295e53ba99533a170c54c01d30c2e0d3a81bf67153712f94c3d"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
       "bom-ref": "has-unicode@2.0.1",
       "type": "library",
       "name": "has-unicode",
@@ -5440,6 +6103,57 @@
         {
           "license": {
             "id": "ISC"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "html-escaper@2.0.2",
+      "type": "library",
+      "name": "html-escaper",
+      "version": "2.0.2",
+      "scope": "optional",
+      "author": "Andrea Giammarchi",
+      "description": "fast and safe way to escape and unescape &<>'\" chars",
+      "purl": "pkg:npm/html-escaper@2.0.2",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/html-escaper"
+        },
+        {
+          "name": "cdx:npm:package:development",
+          "value": "true"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/html-escaper/-/html-escaper-2.0.2.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/WebReflection/html-escaper.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/WebReflection/html-escaper"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/WebReflection/html-escaper/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "1f688cb5dd08e0cb7979889aa517480e3a7e5f37a55d0d2d144e094bb605c057af5d73263a9f66c8dad4bc28340fac2cf22aa444f05f28781bc228354a694b7e"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
           }
         }
       ]
@@ -6001,6 +6715,210 @@
       ]
     },
     {
+      "bom-ref": "istanbul-lib-coverage@3.2.2",
+      "type": "library",
+      "name": "istanbul-lib-coverage",
+      "version": "3.2.2",
+      "scope": "optional",
+      "author": "Krishnan Anantheswaran",
+      "description": "Data library for istanbul coverage objects",
+      "purl": "pkg:npm/istanbul-lib-coverage@3.2.2",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/istanbul-lib-coverage"
+        },
+        {
+          "name": "cdx:npm:package:development",
+          "value": "true"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/istanbul-lib-coverage/-/istanbul-lib-coverage-3.2.2.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+ssh://git@github.com/istanbuljs/istanbuljs.git"
+        },
+        {
+          "type": "website",
+          "url": "https://istanbul.js.org/"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/istanbuljs/istanbuljs/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "3bc769b05fabd1657ff0c35129f9e6aed09686e2a3c6bab6c3e8e9cc12f95192938b62de5569d63a6591c4595eb0938d99cfb02c01af29064439a9e4a342c54e"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "istanbul-lib-report@3.0.1",
+      "type": "library",
+      "name": "istanbul-lib-report",
+      "version": "3.0.1",
+      "scope": "optional",
+      "author": "Krishnan Anantheswaran",
+      "description": "Base reporting library for istanbul",
+      "purl": "pkg:npm/istanbul-lib-report@3.0.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/istanbul-lib-report"
+        },
+        {
+          "name": "cdx:npm:package:development",
+          "value": "true"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/istanbul-lib-report/-/istanbul-lib-report-3.0.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+ssh://git@github.com/istanbuljs/istanbuljs.git"
+        },
+        {
+          "type": "website",
+          "url": "https://istanbul.js.org/"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/istanbuljs/istanbuljs/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "1827c4d66b6c1c63842c253c7bf67b616ce99b26ebc7ff9d4937cbaef63ca9199a63acd74ca5a7e964088da005c34ebd89c9ba19530d920bb437323888f65437"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "istanbul-lib-source-maps@5.0.6",
+      "type": "library",
+      "name": "istanbul-lib-source-maps",
+      "version": "5.0.6",
+      "scope": "optional",
+      "author": "Krishnan Anantheswaran",
+      "description": "Source maps support for istanbul",
+      "purl": "pkg:npm/istanbul-lib-source-maps@5.0.6",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/istanbul-lib-source-maps"
+        },
+        {
+          "name": "cdx:npm:package:development",
+          "value": "true"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/istanbul-lib-source-maps/-/istanbul-lib-source-maps-5.0.6.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+ssh://git@github.com/istanbuljs/istanbuljs.git"
+        },
+        {
+          "type": "website",
+          "url": "https://istanbul.js.org/"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/istanbuljs/istanbuljs/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "ca0d9df849b82a2cd90b99e25a141a2289a07f95a52f8bce3a3679c460a617c4a73c4fe60d659782f444c5d7290a087d94b4516b5fdf498a76ca699b275a48f8"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "istanbul-reports@3.2.0",
+      "type": "library",
+      "name": "istanbul-reports",
+      "version": "3.2.0",
+      "scope": "optional",
+      "author": "Krishnan Anantheswaran",
+      "description": "istanbul reports",
+      "purl": "pkg:npm/istanbul-reports@3.2.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/istanbul-reports"
+        },
+        {
+          "name": "cdx:npm:package:development",
+          "value": "true"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/istanbul-reports/-/istanbul-reports-3.2.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+ssh://git@github.com/istanbuljs/istanbuljs.git"
+        },
+        {
+          "type": "website",
+          "url": "https://istanbul.js.org/"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/istanbuljs/istanbuljs/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "1c6616592fde86a4d5df1375d22db7b643e4a47e3a30b08830534269a28d6af0174c5d5192ac5ac043ed9e39c667a5ca4889c12a488e03904a4be699898dc0bc"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ]
+    },
+    {
       "bom-ref": "js-tokens@9.0.1",
       "type": "library",
       "name": "js-tokens",
@@ -6307,6 +7225,56 @@
       ]
     },
     {
+      "bom-ref": "magicast@0.3.5",
+      "type": "library",
+      "name": "magicast",
+      "version": "0.3.5",
+      "scope": "optional",
+      "description": "Modify a JS/TS file and write back magically just like JSON!",
+      "purl": "pkg:npm/magicast@0.3.5",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/magicast"
+        },
+        {
+          "name": "cdx:npm:package:development",
+          "value": "true"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/magicast/-/magicast-0.3.5.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/unjs/magicast.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/unjs/magicast#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/unjs/magicast/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "2f45a1b6d0e5fb604eb326ef10e2caedf5b7500d0e434210d9de99976c7f6babd546cddb018d0408e4871de2f98c3f926cea4e094122d32d43807127f509f501"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
       "bom-ref": "make-dir@3.1.0",
       "type": "library",
       "name": "make-dir",
@@ -6347,6 +7315,57 @@
         {
           "alg": "SHA-512",
           "content": "83715e3f6d0b3708402dbffa0b3e837781769e0cded23cfbb5bceb0f6c0057ea3d15e3477b8acbfb22b699dd09fdf8927f5b1ad400e15ea8b9fa857038cfde1b"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "make-dir@4.0.0",
+      "type": "library",
+      "name": "make-dir",
+      "version": "4.0.0",
+      "scope": "optional",
+      "author": "Sindre Sorhus",
+      "description": "Make a directory and its parents if needed - Think `mkdir -p`",
+      "purl": "pkg:npm/make-dir@4.0.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/istanbul-lib-report/node_modules/make-dir"
+        },
+        {
+          "name": "cdx:npm:package:development",
+          "value": "true"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/make-dir/-/make-dir-4.0.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/sindresorhus/make-dir.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/sindresorhus/make-dir#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/sindresorhus/make-dir/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "8577544d960854eb75131fff8c0422fb04d9669529c018ffd10b0ecea7a06f7ac630c78989212ee712c79d87c1ad1578447dbe38248e3bde48b3fef1d562786f"
         }
       ],
       "licenses": [
@@ -9955,6 +10974,57 @@
       ]
     },
     {
+      "bom-ref": "supports-color@7.2.0",
+      "type": "library",
+      "name": "supports-color",
+      "version": "7.2.0",
+      "scope": "optional",
+      "author": "Sindre Sorhus",
+      "description": "Detect whether a terminal supports color",
+      "purl": "pkg:npm/supports-color@7.2.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/supports-color"
+        },
+        {
+          "name": "cdx:npm:package:development",
+          "value": "true"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/supports-color/-/supports-color-7.2.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/chalk/supports-color.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/chalk/supports-color#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/chalk/supports-color/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "aa9080bd197db2db8e1ef78ab27ec79dc251befe74d6a21a70acd094effe2f0c5cf7ed2adb02f2bf80dfbedf34fc33e7da9a8e06c25d0e2a205c647df8ebf047"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
       "bom-ref": "tar@6.2.1",
       "type": "library",
       "name": "tar",
@@ -9995,6 +11065,57 @@
         {
           "alg": "SHA-512",
           "content": "0d9e323914f0adb4e3ffb31962adb0fbf645748e8e67f7fd4851d1fbbd6021551984e40f1f35422e9bd19cf83268ca5f5b1c64ff838dbdadc6412c8d20a46fe8"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "test-exclude@6.0.0",
+      "type": "library",
+      "name": "test-exclude",
+      "version": "6.0.0",
+      "scope": "optional",
+      "author": "Ben Coe",
+      "description": "test for inclusion or exclusion of paths using globs",
+      "purl": "pkg:npm/test-exclude@6.0.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/test-exclude"
+        },
+        {
+          "name": "cdx:npm:package:development",
+          "value": "true"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/test-exclude/-/test-exclude-6.0.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/istanbuljs/test-exclude.git"
+        },
+        {
+          "type": "website",
+          "url": "https://istanbul.js.org/"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/istanbuljs/test-exclude/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "7001963c8c8e1d4eb396683cf23c26ed54725e730dee257af0e1806d80e4fcc87fc42fe9cd53e542d63a9e0a081ffe7fb5c8ae8467ef11253c1ab1eb7310f9eb"
         }
       ],
       "licenses": [
@@ -11902,6 +13023,38 @@
   ],
   "dependencies": [
     {
+      "ref": "@ampproject/remapping@2.3.0",
+      "dependsOn": [
+        "@jridgewell/gen-mapping@0.3.13",
+        "@jridgewell/trace-mapping@0.3.31"
+      ]
+    },
+    {
+      "ref": "@babel/helper-string-parser@7.27.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "@babel/helper-validator-identifier@7.28.5",
+      "dependsOn": []
+    },
+    {
+      "ref": "@babel/parser@7.29.3",
+      "dependsOn": [
+        "@babel/types@7.29.0"
+      ]
+    },
+    {
+      "ref": "@babel/types@7.29.0",
+      "dependsOn": [
+        "@babel/helper-string-parser@7.27.1",
+        "@babel/helper-validator-identifier@7.28.5"
+      ]
+    },
+    {
+      "ref": "@bcoe/v8-coverage@0.2.3",
+      "dependsOn": []
+    },
+    {
       "ref": "@cspotcode/source-map-support@0.8.1",
       "dependsOn": [
         "@jridgewell/trace-mapping@0.3.9"
@@ -11934,9 +13087,20 @@
       "dependsOn": []
     },
     {
+      "ref": "@istanbuljs/schema@0.1.6",
+      "dependsOn": []
+    },
+    {
       "ref": "@jest/schemas@29.6.3",
       "dependsOn": [
         "@sinclair/typebox@0.27.10"
+      ]
+    },
+    {
+      "ref": "@jridgewell/gen-mapping@0.3.13",
+      "dependsOn": [
+        "@jridgewell/sourcemap-codec@1.5.5",
+        "@jridgewell/trace-mapping@0.3.31"
       ]
     },
     {
@@ -11946,6 +13110,27 @@
     {
       "ref": "@jridgewell/sourcemap-codec@1.5.5",
       "dependsOn": []
+    },
+    {
+      "ref": "@jridgewell/trace-mapping@0.3.31",
+      "dependsOn": [
+        "@jridgewell/resolve-uri@3.1.2",
+        "@jridgewell/sourcemap-codec@1.5.5"
+      ]
+    },
+    {
+      "ref": "@jridgewell/trace-mapping@0.3.31",
+      "dependsOn": [
+        "@jridgewell/resolve-uri@3.1.2",
+        "@jridgewell/sourcemap-codec@1.5.5"
+      ]
+    },
+    {
+      "ref": "@jridgewell/trace-mapping@0.3.31",
+      "dependsOn": [
+        "@jridgewell/resolve-uri@3.1.2",
+        "@jridgewell/sourcemap-codec@1.5.5"
+      ]
     },
     {
       "ref": "@jridgewell/trace-mapping@0.3.9",
@@ -12168,6 +13353,25 @@
         "ajv@8.6.3",
         "json-schema-to-ts@1.6.4",
         "ts-morph@12.0.0"
+      ]
+    },
+    {
+      "ref": "@vitest/coverage-v8@1.6.1",
+      "dependsOn": [
+        "@ampproject/remapping@2.3.0",
+        "@bcoe/v8-coverage@0.2.3",
+        "debug@4.4.3",
+        "istanbul-lib-coverage@3.2.2",
+        "istanbul-lib-report@3.0.1",
+        "istanbul-lib-source-maps@5.0.6",
+        "istanbul-reports@3.2.0",
+        "magic-string@0.30.21",
+        "magicast@0.3.5",
+        "picocolors@1.0.0",
+        "std-env@3.10.0",
+        "strip-literal@2.1.1",
+        "test-exclude@6.0.0",
+        "vitest@1.6.1"
       ]
     },
     {
@@ -12542,7 +13746,15 @@
       "dependsOn": []
     },
     {
+      "ref": "has-flag@4.0.0",
+      "dependsOn": []
+    },
+    {
       "ref": "has-unicode@2.0.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "html-escaper@2.0.2",
       "dependsOn": []
     },
     {
@@ -12598,6 +13810,33 @@
       "dependsOn": []
     },
     {
+      "ref": "istanbul-lib-coverage@3.2.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "istanbul-lib-report@3.0.1",
+      "dependsOn": [
+        "istanbul-lib-coverage@3.2.2",
+        "make-dir@4.0.0",
+        "supports-color@7.2.0"
+      ]
+    },
+    {
+      "ref": "istanbul-lib-source-maps@5.0.6",
+      "dependsOn": [
+        "@jridgewell/trace-mapping@0.3.31",
+        "debug@4.4.3",
+        "istanbul-lib-coverage@3.2.2"
+      ]
+    },
+    {
+      "ref": "istanbul-reports@3.2.0",
+      "dependsOn": [
+        "html-escaper@2.0.2",
+        "istanbul-lib-report@3.0.1"
+      ]
+    },
+    {
       "ref": "js-tokens@9.0.1",
       "dependsOn": []
     },
@@ -12632,9 +13871,23 @@
       ]
     },
     {
+      "ref": "magicast@0.3.5",
+      "dependsOn": [
+        "@babel/parser@7.29.3",
+        "@babel/types@7.29.0",
+        "source-map-js@1.2.1"
+      ]
+    },
+    {
       "ref": "make-dir@3.1.0",
       "dependsOn": [
         "semver@6.3.1"
+      ]
+    },
+    {
+      "ref": "make-dir@4.0.0",
+      "dependsOn": [
+        "semver@7.7.4"
       ]
     },
     {
@@ -12997,6 +14250,12 @@
       ]
     },
     {
+      "ref": "supports-color@7.2.0",
+      "dependsOn": [
+        "has-flag@4.0.0"
+      ]
+    },
+    {
       "ref": "tar@6.2.1",
       "dependsOn": [
         "chownr@2.0.0",
@@ -13005,6 +14264,14 @@
         "minizlib@2.1.2",
         "mkdirp@1.0.4",
         "yallist@4.0.0"
+      ]
+    },
+    {
+      "ref": "test-exclude@6.0.0",
+      "dependsOn": [
+        "@istanbuljs/schema@0.1.6",
+        "glob@7.2.3",
+        "minimatch@3.1.5"
       ]
     },
     {

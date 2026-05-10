@@ -1,0 +1,80 @@
+{
+  "_meta": {
+    "template_for": "Uelfy Clinical — RETENTION_RUN",
+    "purpose": "Daily retention cron observability. The cron walks every tenant's per-category retention windows + platform defaults; a no-show or a row-count spike means the GDPR Art.5(1)(e) storage-limitation control is broken.",
+    "source_event_emitter": "api/v1/internal/retention.ts",
+    "fields_emitted": [
+      "event = 'RETENTION_RUN'",
+      "runId (UUID per cron invocation)",
+      "startedAt (ISO 8601)",
+      "storageDeletions (int)",
+      "pruneResult.tenant_count",
+      "pruneResult.audit_per_tenant (rows pruned)",
+      "pruneResult.audit_null_tenant",
+      "pruneResult.alerts_resolved (rows pruned)",
+      "pruneResult.notifications (rows pruned)"
+    ],
+    "import_to": "Datadog Dashboards → New → Import dashboard JSON",
+    "companion_runbook": "docs/27-INCIDENT-RESPONSE.md §11.4"
+  },
+  "title": "Uelfy — RETENTION_RUN",
+  "description": "Daily retention cron health. Expected: 1 event/day @ 03:00 UTC. Missed run ⇒ retention silently halted (GDPR Art.5(1)(e) breach).",
+  "layout_type": "ordered",
+  "widgets": [
+    {
+      "definition": {
+        "title": "RETENTION_RUN events per day",
+        "type": "timeseries",
+        "requests": [
+          {
+            "q": "count:logs @event:RETENTION_RUN",
+            "display_type": "bars"
+          }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "title": "Audit rows pruned (per-tenant + null-tenant)",
+        "type": "timeseries",
+        "requests": [
+          { "q": "sum:logs @event:RETENTION_RUN @pruneResult.audit_per_tenant" },
+          { "q": "sum:logs @event:RETENTION_RUN @pruneResult.audit_null_tenant" }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "title": "Storage object deletions per run",
+        "type": "timeseries",
+        "requests": [
+          { "q": "sum:logs @event:RETENTION_RUN @storageDeletions" }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "title": "Tenant coverage (number of tenants pruned)",
+        "type": "query_value",
+        "requests": [
+          { "q": "avg:logs @event:RETENTION_RUN @pruneResult.tenant_count.last('24h')" }
+        ]
+      }
+    }
+  ],
+  "monitors": [
+    {
+      "_purpose": "Missed cron run — Vercel cron can fail silently. We expect 1 event/day; <1 in 28h is a hard failure.",
+      "name": "Uelfy — RETENTION_RUN missed",
+      "type": "log alert",
+      "query": "logs(\"@event:RETENTION_RUN\").index(\"*\").rollup(\"count\").last(\"28h\") < 1",
+      "message": "No RETENTION_RUN event in last 28 hours. The cron should fire daily at 03:00 UTC. SEV-2 — storage-limitation control halted.\n\nRunbook: docs/27-INCIDENT-RESPONSE.md §11.4. Verify Vercel Cron Jobs page; if green there, check function logs for runtime errors.",
+      "tags": ["uelfy", "sev-2", "gdpr", "cron"],
+      "options": {
+        "thresholds": { "critical": 1 },
+        "notify_no_data": true,
+        "no_data_timeframe": 60
+      }
+    }
+  ]
+}

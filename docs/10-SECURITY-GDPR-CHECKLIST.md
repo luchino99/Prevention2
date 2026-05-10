@@ -158,8 +158,10 @@ Status legend:  `✅ done` · `🟡 partial / follow-up` · `⬜ open`
 |---|---|---|---|
 | 12.1 | Structured error logging (no secrets) | ✅ | `console.error('[component] ...')` convention |
 | 12.2 | Errors never leak internals to clients | ✅ | Uniform error envelope |
-| 12.3 | Health check endpoint | ✅ | `api/v1/health.ts` — `200 ok` / `207 degraded` / `503 unhealthy` with subsystem breakdown (Supabase + distributed rate-limit) |
-| 12.4 | Alert on abnormal audit volume (failed_login spikes) | ⬜ | Ops task — dashboard needed |
+| 12.3 | Health check endpoint with deep probes | ✅ | Sprint 6 task 6.2 — `api/v1/health.ts` runs 4 concurrent probes (Supabase / Storage / Upstash / MFA-flag policy) each bounded by a 3 s hard timeout. Per-subsystem latency budgets: Supabase 500 ms, Storage 750 ms, Upstash 250 ms — overruns surface as `detail: "slow:<latency>ms"` without flipping the overall verdict. Storage added to the critical-subsystems set: a down storage bucket fails PDF reports, so it warrants `503 unhealthy` (HTTP 207 degraded reserved for Upstash fallback / partial MFA flags). |
+| 12.4 | Datadog dashboard templates for every structured-log event | ✅ | Sprint 6 task 6.3 — importable JSON in `docs/observability/datadog-*.json` covering `RETENTION_RUN`, `ALERTS_AUTO_CLOSE_RUN`, `AUDIT_WRITE_FAILED`, `ACCESS_DENIED`. Each template ships a count-over-time tile, a faceted breakdown, and a monitor (alert) example with the SLO-anchored thresholds. Operator imports via Datadog UI; same queries map to Grafana Loki. README at `docs/observability/README.md`. |
+| 12.5 | SLO definitions doc + burn-rate alerts | ✅ | Sprint 6 task 6.4 — `docs/41-SLO-DEFINITIONS.md` defines: 99.5 % availability initial target (99.9 % post-first-tenant), per-endpoint p95 latency budgets (read 200 ms / write 500 ms / PDF 5 s / FHIR 3 s / alert ack 300 ms), zero-tolerance audit-strict invariant, 28-hour cron-liveness budget, RBAC denial baselines per tenant. Multi-window multi-burn-rate alerting (14.4× over 1h SEV-2; 6× over 6h SEV-3) per Google SRE pattern. |
+| 12.6 | Per-module code-coverage report | ✅ | Sprint 6 task 6.1 (closes L-07) — `tests/vitest.config.ts` emits `json-summary` via `@vitest/coverage-v8`; `scripts/check-coverage-thresholds.mjs` enforces per-module floors (validated formulas 90 %, interpretation layers 80 %, supporting modules 70 %). Run via `npm run check:coverage`. |
 
 ---
 
