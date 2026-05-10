@@ -14,11 +14,11 @@
   <meta name="theme-color" content="#0E5C7B" />
   <link rel="stylesheet" href="../assets/css/app.css" />
 </head>
-<body style="display:flex; align-items:center; justify-content:center; min-height:100vh;">
+<body class="flex center min-h-screen">
   <a class="skip-link" href="#main-content">Skip to main content</a>
-  <main class="card" id="main-content" tabindex="-1" style="max-width:380px; width:100%;">
-    <h1 style="margin-bottom:6px;">Uelfy Clinical</h1>
-    <p class="muted" style="margin-top:0; margin-bottom:18px; font-size:13px;">
+  <main class="card max-w-380 w-100" id="main-content" tabindex="-1">
+    <h1 class="mb-6">Uelfy Clinical</h1>
+    <p class="muted mt-0 mb-18 text-sm">
       Sign in with your professional account
     </p>
 
@@ -33,10 +33,10 @@
         <label for="password">Password</label>
         <input type="password" id="password" name="password" required autocomplete="current-password" />
       </div>
-      <button type="submit" class="btn" style="width:100%;" id="submit-btn">Sign in</button>
+      <button type="submit" class="btn w-100" id="submit-btn">Sign in</button>
     </form>
 
-    <p class="muted mt-16" style="font-size:12px; text-align:center;">
+    <p class="muted mt-16 text-xs text-center">
       By signing in you agree to the
       <a href="./legal-privacy.html">privacy notice</a>.
     </p>

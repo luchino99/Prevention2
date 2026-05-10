@@ -36,9 +36,18 @@
 // They follow a predictable @scope/<lib>-<os>-<arch> naming scheme.
 const PLATFORM_BINARY_PATTERNS = [
   /^@esbuild\/[a-z0-9]+-[a-z0-9]+/,
-  /^esbuild-(darwin|linux|win32|freebsd|netbsd|openbsd|sunos|android)-/,
-  /^@(swc|rollup|napi-rs|next|parcel)\/[a-z0-9-]+-(darwin|linux|win32|freebsd)-/,
-  /^@(swc|rollup|napi-rs)\/core-(darwin|linux|win32)-/,
+  // Older esbuild ≤0.14 used a flat `esbuild-<os>-<arch>` naming. Modern
+  // esbuild ≥0.15 moved to scoped `@esbuild/<os>-<arch>`. Keep both so a
+  // transitive dep pinning the old layout (e.g. @vercel/node 3.x) is
+  // also filtered.
+  /^esbuild-(darwin|linux|win32|windows|freebsd|netbsd|openbsd|sunos|android)-/,
+  // @rollup/rollup-<os>-<arch>(-<libc>)? — covers darwin, linux, win32,
+  // freebsd, openbsd, android, openharmony, plus any future OS Rollup adds.
+  // Using a permissive shape (just any `@rollup/rollup-…-…`) so a new
+  // platform binary doesn't slip past the filter.
+  /^@rollup\/rollup-[a-z0-9_]+-[a-z0-9_]+(-[a-z0-9_]+)?$/,
+  /^@(swc|napi-rs|next|parcel)\/[a-z0-9-]+-(darwin|linux|win32|freebsd|openbsd|android|openharmony)-/,
+  /^@(swc|napi-rs)\/core-(darwin|linux|win32)-/,
   /^lightningcss-(darwin|linux|win32|freebsd)-/,
   /^@img\/sharp-[a-z0-9-]+-/,
 ];

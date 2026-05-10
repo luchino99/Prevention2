@@ -115,7 +115,7 @@
 | L-05 | Automated alert on RLS-denial spikes | ✅ Resolved | `emitAccessDenialLog()` in `audit-logger.ts` + wiring in `middleware/rbac.ts` (Tier 1, Task #67). Captures 4 reason classes: `unauthenticated`, `role_mismatch`, `cross_tenant` (Tier 1) + **`cross_clinician_ppl` propagated in Tier 4** across `patients/[id]/export`, `consents/index` (list+grant), and `assessment-service.assertPatientAccess`. Field contract locked by `AccessDenialContext` type. Dashboard queries + SEV-3/2/1 thresholds in `27-INCIDENT-RESPONSE.md §11.3`. External alert wiring is operator config (same destination as L-04) |
 | L-06 | Linter-enforced ban on `Math.random()` / `Date.now()` inside `backend/src/domain/clinical/` | ✅ Resolved | `scripts/check-engine-determinism.mjs` (Tier 1, Task #64). 6 deterministic-locked sub-trees gated, 5 forbidden patterns; integrated into `npm run build` (Vercel deploy) AND `npm run build:check` (pre-PR). Regression-tested with injected violations: gate catches all 3 pattern families with file:line diagnostics |
 | L-07 | Per-score code-coverage report (informational, not gating) | 🔵 Roadmap |
-| L-08 | Frontend bundle-size budget enforcement | 🔵 Roadmap |
+| L-08 | Frontend bundle-size budget enforcement | ✅ Resolved (Sprint 5 task 5.4) | `scripts/check-bundle-budget.mjs` enforces per-file byte budgets across 15 tracked assets (supabase-js, app.css, page JS, components). Budgets sized with ~30–50% headroom over Sprint-5 baseline; failures require a conscious budget bump in the PR body. Wired into `build:check`. Current usage: every file 7–66 % of its budget. |
 | L-09 | MFA required for all clinician roles | ✅ Resolved | Tier 4 + Tier 5: role-keyed matrix `requiredMfaFlagForRole(role)` exported from `auth-middleware.ts` and covered by `tests/unit/mfa-matrix.test.ts` (8 cases: default-off, per-flag isolation, cross-flag independence, truthy/falsy parsing). `MFA_ENFORCEMENT_ENABLED` covers admins, `MFA_ENFORCEMENT_CLINICIAN_ENABLED` covers clinician, `MFA_ENFORCEMENT_STAFF_ENABLED` covers assistant_staff; all default-off. Patient intentionally not gated. The Tier 3 mfa-enroll dispatcher is role-agnostic (handles enrol + challenge for every role uniformly). `mfa_required` AccessDenialReason on the L-05 dashboard. JWT helper renamed `decodeJwtPayloadAfterVerification` (S-03) with explicit "SAFE: getUser already verified" comment at the call-site |
 | L-10 | Patient-subject-facing breach-notification channel (Art.34) | 🔵 Architectural + ⚪ EXT-LEGAL | `docs/32-EXT-LEGAL-TEMPLATES.md §5` documents the architectural decision: Uelfy (processor) does NOT maintain a patient-facing comm channel; the controller uses its own existing patient registry. Uelfy supplies the breach evidence pack within the 24-hour processor SLA. Patient-letter template is counsel/controller-side |
 
@@ -184,9 +184,10 @@ production-grade deployment posture.
 | Critical (B-series) | 0 | All 16 closed (15 from initial audit + 1 post-deploy regression resolved by migration 013) |
 | High | 14 listed | 0 unresolved; all mitigated, partial, or architectural |
 | Medium | 12 listed | All have a documented mitigation or roadmap item |
-| Low | 10 listed | All on roadmap |
+| Low | 10 listed | 1 closed in Sprint 5 (L-08 → 5.4); 9 remain on roadmap |
 | Clinical | 9 listed | All resolved, mitigated, or architectural |
 | External-AI audit (F-series) | 4 listed | All resolved by Sprint 4 (4.1 → F-013, 4.2 → F-014, 4.3 → F-015, 4.4 → F-016) |
+| Sprint backlog (#52, #53, #55, #62) | 0 | All resolved by Sprint 5 (5.1 → #62, 5.2 → #53, 5.3 → #52, 5.5 → #55 runbook) |
 | EXT | 13 listed | Owned outside engineering |
 
 **Engineering-side residual risk for production launch:** the 12 Medium

@@ -45,10 +45,10 @@ function guidelineCellHtml(item) {
     const ev = formatEvidenceLabel(g.evidenceLevel);
     const titleAttr = g.title ? ` title="${escapeHtml(g.title)}"` : '';
     const evChip = ev
-      ? `<span class="badge muted" style="margin-left:6px;"${titleAttr}>${escapeHtml(ev)}</span>`
+      ? `<span class="badge muted ml-6"${titleAttr}>${escapeHtml(ev)}</span>`
       : '';
     const link = g.url
-      ? ` <a href="${escapeHtml(g.url)}" target="_blank" rel="noopener" style="font-size:0.85em;">link ↗</a>`
+      ? ` <a href="${escapeHtml(g.url)}" target="_blank" rel="noopener" class="text-xs">link ↗</a>`
       : '';
     return `${baseLabel}${evChip}${link}`;
   }
@@ -57,7 +57,7 @@ function guidelineCellHtml(item) {
 function guidelineSourceLineHtml(item) {
   const inner = guidelineCellHtml(item);
   if (!inner) return '';
-  return `<div class="muted mt-4" style="font-size:0.8em;">Source: ${inner}</div>`;
+  return `<div class="muted mt-4 text-xs">Source: ${inner}</div>`;
 }
 
 const params = new URLSearchParams(window.location.search);
@@ -398,30 +398,30 @@ async function renderDueItems() {
           || (typeof days === 'number' && days < 0 ? 'overdue' : 'upcoming');
         const badgeCls = countdownBadgeClass(status, it.priority);
         const statusPill = status
-          ? `<span class="badge muted" style="margin-left:6px;">${escapeHtml(countdownStatusLabel(status))}</span>`
+          ? `<span class="badge muted ml-6">${escapeHtml(countdownStatusLabel(status))}</span>`
           : '';
         const sourceBadge = it.sourceEngine
-          ? `<span class="badge muted" style="margin-left:6px;">${escapeHtml(it.sourceEngine)}</span>`
+          ? `<span class="badge muted ml-6">${escapeHtml(it.sourceEngine)}</span>`
           : '';
         const domainBadge = it.domain
-          ? `<span class="badge muted" style="margin-left:6px;">${escapeHtml(it.domain)}</span>`
+          ? `<span class="badge muted ml-6">${escapeHtml(it.domain)}</span>`
           : '';
         const rationale = it.rationale
-          ? `<div class="muted mt-4" style="font-size:0.9em;">${escapeHtml(it.rationale)}</div>`
+          ? `<div class="muted mt-4 text-xs">${escapeHtml(it.rationale)}</div>`
           : '';
         const guideline = guidelineSourceLineHtml(it);
         return `
-          <li class="mt-8" style="padding:10px 12px;border:1px solid var(--border,#e5e7eb);border-radius:6px;">
-            <div class="flex between" style="align-items:flex-start;">
+          <li class="mt-8 list-card-item">
+            <div class="flex between align-start">
               <div>
                 <strong>${escapeHtml(it.title)}</strong>
                 ${statusPill}${sourceBadge}${domainBadge}
                 ${rationale}
                 ${guideline}
               </div>
-              <div style="text-align:right;white-space:nowrap;">
+              <div class="text-right nowrap">
                 <span class="badge ${escapeHtml(badgeCls)}">${escapeHtml(label2)}</span>
-                <div class="muted mt-4" style="font-size:0.8em;">Due ${escapeHtml(it.dueAt ?? '—')}</div>
+                <div class="muted mt-4 text-xs">Due ${escapeHtml(it.dueAt ?? '—')}</div>
               </div>
             </div>
           </li>`;
@@ -537,28 +537,28 @@ async function renderCompletenessNotices() {
       : `${ordered.length} optional gaps`;
 
     wrap.innerHTML = `
-      <div class="muted mt-4" style="font-size:0.8em;">
+      <div class="muted mt-4 text-xs">
         As of assessment ${escapeHtml(asOf || '—')}.
       </div>
       <ul class="list-plain mt-8">
         ${ordered.map((w) => {
           const missing = Array.isArray(w.missingFields) && w.missingFields.length
-            ? `<div class="mono muted mt-4" style="font-size:0.8em;">Missing: ${w.missingFields.map(escapeHtml).join(', ')}</div>`
+            ? `<div class="mono muted mt-4 text-xs">Missing: ${w.missingFields.map(escapeHtml).join(', ')}</div>`
             : '';
           const action = w.suggestedAction
-            ? `<div class="muted mt-4" style="font-size:0.85em;"><em>Suggested:</em> ${escapeHtml(w.suggestedAction)}</div>`
+            ? `<div class="muted mt-4 text-xs"><em>Suggested:</em> ${escapeHtml(w.suggestedAction)}</div>`
             : '';
           return `
-            <li class="mt-8" style="padding:10px 12px;border:1px solid var(--border,#e5e7eb);border-radius:6px;">
-              <div class="flex between" style="align-items:flex-start;gap:12px;">
+            <li class="mt-8 list-card-item">
+              <div class="flex between align-start gap-12">
                 <div>
                   <strong>${escapeHtml(w.title ?? w.code ?? 'Missing data')}</strong>
-                  <span class="mono muted" style="margin-left:6px;font-size:0.8em;">${escapeHtml(w.code ?? '')}</span>
-                  <div class="muted mt-4" style="font-size:0.9em;">${escapeHtml(w.detail ?? '')}</div>
+                  <span class="mono muted ml-6 text-xs">${escapeHtml(w.code ?? '')}</span>
+                  <div class="muted mt-4 text-xs">${escapeHtml(w.detail ?? '')}</div>
                   ${missing}
                   ${action}
                 </div>
-                <div style="white-space:nowrap;">
+                <div class="nowrap">
                   ${completenessBadge(w.severity)}
                 </div>
               </div>
@@ -676,15 +676,15 @@ async function renderLifestyleProfile() {
           ${top.map((r) => {
             const sourceLine = guidelineSourceLineHtml(r);
             return `
-              <li class="mt-8" style="padding:10px 12px;border:1px solid var(--border,#e5e7eb);border-radius:6px;">
-                <div class="flex between" style="align-items:flex-start;gap:12px;">
+              <li class="mt-8 list-card-item">
+                <div class="flex between align-start gap-12">
                   <div>
                     <strong>${escapeHtml(r.title ?? r.code ?? 'Recommendation')}</strong>
-                    <span class="badge muted" style="margin-left:6px;">supportive</span>
-                    <div class="muted mt-4" style="font-size:0.9em;">${escapeHtml(r.rationale ?? '')}</div>
+                    <span class="badge muted ml-6">supportive</span>
+                    <div class="muted mt-4 text-xs">${escapeHtml(r.rationale ?? '')}</div>
                     ${sourceLine}
                   </div>
-                  <div style="white-space:nowrap;">
+                  <div class="nowrap">
                     ${priorityBadge(r.priority)}
                   </div>
                 </div>
@@ -692,7 +692,7 @@ async function renderLifestyleProfile() {
           }).join('')}
         </ul>
         ${remaining > 0
-          ? `<div class="muted mt-8" style="font-size:0.85em;">
+          ? `<div class="muted mt-8 text-xs">
                + ${remaining} additional recommendation${remaining === 1 ? '' : 's'} —
                <a href="./assessment-view.html?id=${encodeURIComponent(latest.id)}">open the latest assessment</a>
                for the full list.
@@ -701,10 +701,10 @@ async function renderLifestyleProfile() {
       `;
 
     wrap.innerHTML = `
-      <div class="muted mt-4" style="font-size:0.8em;">
+      <div class="muted mt-4 text-xs">
         As of assessment ${escapeHtml(asOf || '—')}.
       </div>
-      <div class="grid two mt-8" style="gap:8px 16px;">
+      <div class="grid two mt-8 lifestyle-grid">
         <div><div class="kpi-label">PREDIMED (MEDAS)</div><div>${predimedCell}</div></div>
         <div><div class="kpi-label">Physical activity</div><div>${activityCell}</div></div>
         <div><div class="kpi-label">Sedentary risk</div><div>${sedentaryCell}</div></div>

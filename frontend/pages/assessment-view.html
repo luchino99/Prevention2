@@ -39,7 +39,7 @@
 
       <div class="topbar">
         <div>
-          <h1 id="page-title" style="margin-bottom:2px;">Assessment</h1>
+          <h1 id="page-title" class="mb-2">Assessment</h1>
           <div class="muted" id="page-subline">Loading…</div>
         </div>
         <div class="flex gap-8">
@@ -78,7 +78,7 @@
             activity snapshots, follow-up plan, alerts, due-items, and any
             generated PDF reports. <strong>This action cannot be undone.</strong>
           </p>
-          <div class="flex gap-8 mt-12" style="justify-content:flex-end;">
+          <div class="flex gap-8 mt-12 justify-end">
             <button class="btn ghost" id="delete-cancel-btn" type="button">Cancel</button>
             <button class="btn danger" id="delete-confirm-btn" type="button">Confirm Delete</button>
           </div>
@@ -90,9 +90,9 @@
         <div class="grid three" id="composite-grid"></div>
       </section>
 
-      <section class="card" id="completeness-card" style="display:none;">
+      <section class="card hidden" id="completeness-card">
         <h3>Data completeness</h3>
-        <p class="muted" style="margin-top:-4px;font-size:13px;">
+        <p class="muted mt-neg-4 text-sm">
           Scores that could not be computed because of missing inputs.
           These are <strong>not</strong> clinical alerts — they describe data
           collection gaps, not acute findings.
@@ -120,9 +120,9 @@
         <div class="grid two" id="lifestyle-wrap"></div>
       </section>
 
-      <section class="card" id="lifestyle-recs-card" style="display:none;">
+      <section class="card hidden" id="lifestyle-recs-card">
         <h3>Lifestyle recommendations</h3>
-        <p class="muted" style="margin-top:-4px;font-size:13px;">
+        <p class="muted mt-neg-4 text-sm">
           Bounded, guideline-sourced counselling nudges derived from the
           patient's own data. All entries carry an explicit
           <strong>supportive</strong> authority flag — they are

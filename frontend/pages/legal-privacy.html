@@ -12,7 +12,7 @@
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to main content</a>
-  <main id="main-content" class="container" style="max-width:820px; margin:32px auto; padding:0 16px;">
+  <main id="main-content" class="container container-narrow">
     <article aria-labelledby="page-title">
       <h1 id="page-title">Privacy notice — Uelfy Clinical</h1>
       <p class="muted">
@@ -37,7 +37,7 @@
         Processing Agreement.
       </p>
 
-      <p class="muted" style="font-size:13px;">
+      <p class="muted text-sm">
         Authoritative technical companions to this notice (engineering
         reference, not part of the legal informativa):
         Data Protection Impact Assessment scaffold
@@ -133,7 +133,7 @@
           opt-in): Article 6(1)(a) consent. Off by default.
         </li>
       </ul>
-      <p class="muted" style="font-size:13px;">
+      <p class="muted text-sm">
         The five consent types (<code>health_data_processing</code>,
         <code>ai_processing</code>, <code>notifications</code>,
         <code>data_sharing_clinician</code>, <code>marketing</code>)
@@ -185,7 +185,7 @@
             traceability after the storage object expires).</li>
         <li>DSR records: 10 years (Article 12(3) record-keeping).</li>
       </ul>
-      <p class="muted" style="font-size:13px;">
+      <p class="muted text-sm">
         Implementation: <code>fn_retention_prune()</code> runs daily at
         03:00 UTC; <code>fn_anonymize_patient()</code> runs daily at
         04:00 UTC. Both are idempotent. Per-category split lives in
@@ -358,7 +358,7 @@
         Protezione dei Dati Personali.
       </p>
 
-      <p class="muted" style="margin-top:32px; font-size:12px;">
+      <p class="muted mt-32 text-xs">
         This notice is reviewed at least annually (next review: 2027-05)
         and on any material change to processing activities. Version
         history is tracked in <code>git log -- frontend/pages/legal-privacy.html</code>
@@ -366,7 +366,7 @@
       </p>
     </article>
 
-    <p style="margin-top:32px;">
+    <p class="mt-32">
       <a href="./login.html">← Back to sign in</a>
     </p>
   </main>

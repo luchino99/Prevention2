@@ -60,6 +60,8 @@ Status legend:  `✅ done` · `🟡 partial / follow-up` · `⬜ open`
 | 4.6 | CORS strict allow-list, credentials-aware | ✅ | `applyStrictCors` — only configured origins |
 | 4.7 | No inline `<script>` dependencies in new frontend pages | ✅ | Module scripts + external files only (small config block excepted) |
 | 4.8 | `iframe` + `postMessage` architecture removed | ✅ | New frontend uses a single app shell (see `frontend/DEPRECATED.md`) |
+| 4.9 | CSP enforce — no `'unsafe-inline'` on style-src | ✅ | Sprint 5 task 5.1: 117 inline `style="…"` attributes refactored to CSS classes; `vercel.json` CSP for `/pages/*` and `/components/*` now serves `style-src 'self'; style-src-attr 'none'; script-src-attr 'none'` (also removes inline event handlers). Anti-recidiva gate `scripts/check-no-inline-styles.mjs` wired into `build:check`. |
+| 4.10 | Frontend bundle-size budget enforcement | ✅ | Sprint 5 task 5.4: `scripts/check-bundle-budget.mjs` enforces per-file byte budgets (15 tracked assets, supabase-js ≤250 KB, app.css ≤80 KB, page JS / components 20–50 KB). Wired into `build:check`. |
 
 ## 5. Rate limiting & anti-abuse
 

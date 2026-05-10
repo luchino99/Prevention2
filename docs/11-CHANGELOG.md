@@ -7,6 +7,143 @@ executed per the project blueprint.
 
 ---
 
+## [Sprint 5 — Production hardening & CSP enforce] — 2026-05-07 — **CLOSED — 5 leftover backlog items resolved**
+
+Sprint 5 closes every Sprint 1/2 leftover and pushes the deploy chain
+to true CSP enforce by removing `'unsafe-inline'` from style-src
+end-to-end. Five new CI gates land in `build:check`; zero changes to
+clinical engine logic.
+
+### Sprint 5 outcome at a glance
+
+| Metric                    | Before Sprint 5 | After Sprint 5 |
+| ------------------------- | --------------- | -------------- |
+| CI gates in `build:check` | 10              | **15**         |
+| Inline `style="…"` (HTML+JS) | 117          | **0**          |
+| CSP style-src             | `'self' 'unsafe-inline'` | `'self'; style-src-attr 'none'` |
+| Tracked frontend assets w/ size budget | 0 | **15**       |
+| RLS tests in CI           | SKIP (no staging) | **runbook ready, secrets-driven** |
+
+### Sprint 5 task 5.1 — Inline style refactor → CSP enforce (CLOSED — closes #62)
+
+- 117 `style="…"` attributes removed across 11 HTML files + 7 JS files.
+- 12 new utility classes + 8 semantic-component classes added to
+  `app.css §12 (utility)` and `§15 (page-specific components)`. Examples:
+  `m-0`, `mb-2`, `text-xxs`, `w-100`, `cursor-pointer`, `min-h-screen`,
+  `cell-truncate-320`, `code-block`, `list-card-item`, `grid-auto-220`,
+  `container-narrow`, `lifestyle-grid`.
+- `vercel.json` CSP for `/pages/*` and `/components/*` switched to
+  `style-src 'self'; style-src-attr 'none'; script-src-attr 'none'`
+  — both inline `<style>` blocks AND inline `style="…"` attributes
+  AND inline event handlers are now blocked at the browser level.
+  The CSP-Report-Only header is removed (the previously-strict variant
+  is now the enforced one).
+- New CI gate `scripts/check-no-inline-styles.mjs` walks
+  `frontend/**/{*.html,*.js}` (skipping CSS body / vendored files) and
+  fails the build on any re-introduction of `style="…"`.
+- Project rule respected: zero engine logic touched.
+
+### Sprint 5 task 5.2 — SBOM cross-platform from `package-lock.json` (CLOSED — closes #53)
+
+- New `scripts/sbom-from-lockfile.mjs` — pure function reading
+  `package-lock.json` directly to produce a CycloneDX 1.5 SBOM. Zero
+  dependency on `node_modules`, so the inventory is byte-equivalent
+  whether generated on Mac (darwin-arm64) or CI Linux (linux-x64).
+- New CI gate `scripts/check-sbom-lockfile-parity.mjs` — asserts the
+  committed SBOM ≡ the lockfile-derived inventory (modulo platform
+  binaries excluded by both sides via the existing canonicaliser
+  filter). Catches "added a dep but forgot `npm run sbom:refresh`"
+  earlier than the existing `check-sbom` gate.
+- `scripts/sbom-canonicalise.mjs` platform-binary filter widened to
+  cover `@rollup/rollup-<os>-<arch>` (any), `esbuild-windows-*`
+  (legacy 0.14 layout), and `openharmony` / `openbsd` for new SWC /
+  napi-rs packages.
+- Verified post-fix: 230-component inventory parity between committed
+  SBOM and lockfile, zero drift.
+
+### Sprint 5 task 5.3 — `sbom-cve-report.json` idempotency (CLOSED — closes #52)
+
+- `scripts/check-sbom-cves.mjs` refactored:
+  - `generated_at` (ISO timestamp) **REMOVED** — was the primary
+    drift source (every run would change the field, polluting `git
+    diff` with a single-line non-meaningful change every time the
+    audit ran).
+  - Findings now sorted alphabetically by package name.
+  - Each `findings[i].advisories[]` array sorted by title/url.
+  - `cve` arrays inside each advisory sorted.
+  - `schema_version: "1.0"` added to track future format changes.
+- New CI gate `scripts/check-sbom-cve-report-idempotency.mjs` —
+  verifies the committed report has no volatile fields, is sorted
+  per spec, and has internal consistency (`total === sum(counts)`).
+  Catches manual edits + would surface any future regression in the
+  generator.
+
+### Sprint 5 task 5.4 — Frontend bundle-size budget (CLOSED — closes L-08)
+
+- New CI gate `scripts/check-bundle-budget.mjs` enforcing per-file
+  byte budgets across 15 tracked assets: `supabase-js.esm.js` (≤250
+  KB), `app.css` (≤80 KB), each page JS / component (20–50 KB).
+- Budgets sized at ~30–50% headroom over the Sprint-5 baseline so
+  legitimate growth still passes; an unintended
+  dependency-import or stray asset fails CI fast.
+- Budget bumps require a conscious documented decision in the PR
+  body — built-in checklist. Current usage: every file 7–66 % of its
+  budget.
+
+### Sprint 5 task 5.5 — RLS regression tests in CI runbook (CLOSED — closes #55)
+
+- New `docs/35-RLS-STAGING-RUNBOOK.md` — step-by-step setup for a
+  dedicated Supabase staging project (≈30 min, free tier sufficient).
+  Covers project creation, migration replay, GitHub Actions secret
+  wiring, local-dev opt-in, rotation cadence, and the cost note (€0
+  on free tier).
+- The actual gate scripts (`scripts/run-rls-tests.mjs` +
+  `scripts/check-rls-coverage.mjs`) already auto-detect
+  `DATABASE_URL` and flip from SKIP to ENFORCE — no code change
+  needed. The runbook documents the exact secrets, names, and
+  workflow YAML edit so the founder can flip the gate live whenever
+  staging is provisioned.
+
+### Sprint 5 task 5.6 — Sprint 5 wrap (this entry)
+
+- This changelog section + risk-register downgrade in
+  `docs/30-RISK-REGISTER.md` Section D rows L-08 (✅ Resolved by 5.4)
+  and the new "Sprint 5 closures" notes on the four closed pending
+  rows (#52, #53, #55, #62 / Sprint 5 task table).
+- `docs/10-SECURITY-GDPR-CHECKLIST.md` §4 Transport & browser
+  hardening — control 4.x noting the post-5.1 CSP-enforce posture.
+
+### Sprint 5 closed-pending summary
+
+| Backlog ID | Title | Sprint 5 task | Status |
+|---|---|---|---|
+| #52 | SBOM CVE report idempotency (no-drift) | 5.3 | ✅ Resolved |
+| #53 | SBOM cross-platform from package-lock | 5.2 | ✅ Resolved |
+| #55 | RLS regression tests in CI w/ DATABASE_URL_STAGING | 5.5 | ✅ Resolved (runbook + auto-detect) |
+| #62 | Inline style refactor for CSP enforce | 5.1 | ✅ Resolved |
+| L-08 | Frontend bundle-size budget enforcement | 5.4 | ✅ Resolved |
+
+Files added/modified (Sprint 5):
+`frontend/assets/css/app.css` (12 new utility classes + 8 semantic blocks),
+`frontend/pages/*.html` (11 files),
+`frontend/pages/*.js` (7 files),
+`vercel.json` (CSP enforce),
+`scripts/check-no-inline-styles.mjs` (new),
+`scripts/sbom-from-lockfile.mjs` (new),
+`scripts/check-sbom-lockfile-parity.mjs` (new),
+`scripts/check-sbom-cves.mjs` (deterministic refactor),
+`scripts/check-sbom-cve-report-idempotency.mjs` (new),
+`scripts/check-bundle-budget.mjs` (new),
+`scripts/sbom-canonicalise.mjs` (platform filter widened),
+`sbom-cve-report.json` (canonical format),
+`package.json` (5 new check:* scripts wired into build:check),
+`docs/35-RLS-STAGING-RUNBOOK.md` (new),
+`docs/10-SECURITY-GDPR-CHECKLIST.md`,
+`docs/30-RISK-REGISTER.md`,
+`docs/11-CHANGELOG.md`.
+
+---
+
 ## [Sprint 4 — Clinical excellence] — 2026-05-07 — **CLOSED — 4 external-AI audit findings resolved end-to-end**
 
 Sprint 4 hardens the deterministic clinical engine — composite-risk

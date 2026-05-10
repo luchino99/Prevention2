@@ -154,10 +154,10 @@ function guidelineCellHtml(item) {
     const ev = formatEvidenceLabel(g.evidenceLevel);
     const titleAttr = g.title ? ` title="${escapeHtml(g.title)}"` : '';
     const evChip = ev
-      ? `<span class="badge muted" style="margin-left:6px;"${titleAttr}>${escapeHtml(ev)}</span>`
+      ? `<span class="badge muted ml-6"${titleAttr}>${escapeHtml(ev)}</span>`
       : '';
     const link = g.url
-      ? ` <a href="${escapeHtml(g.url)}" target="_blank" rel="noopener" style="font-size:0.85em;">link ↗</a>`
+      ? ` <a href="${escapeHtml(g.url)}" target="_blank" rel="noopener" class="text-xs">link ↗</a>`
       : '';
     return `${baseLabel}${evChip}${link}`;
   }
@@ -167,7 +167,7 @@ function guidelineCellHtml(item) {
 function guidelineSourceLineHtml(item) {
   const inner = guidelineCellHtml(item);
   if (!inner) return '';
-  return `<div class="muted mt-4" style="font-size:0.8em;">Source: ${inner}</div>`;
+  return `<div class="muted mt-4 text-xs">Source: ${inner}</div>`;
 }
 
 function renderComposite(c) {
@@ -182,8 +182,8 @@ function renderComposite(c) {
   document.getElementById('composite-grid').innerHTML = cells.map(([label, level, reason]) => `
     <div>
       <div class="kpi-label">${escapeHtml(label)}</div>
-      <div style="margin:4px 0;">${riskBadge(level)}</div>
-      <div class="muted" style="font-size:12px;">${escapeHtml(reason ?? '')}</div>
+      <div class="my-4">${riskBadge(level)}</div>
+      <div class="muted text-xs">${escapeHtml(reason ?? '')}</div>
     </div>
   `).join('');
 }
@@ -238,7 +238,7 @@ function renderFollowup(p) {
     </div>
     <div class="mt-16">
       <div class="kpi-label">Domain monitoring</div>
-      <div>${(p.domainMonitoring ?? []).map((d) => `<span class="badge muted" style="margin-right:6px;">${escapeHtml(d)}</span>`).join('') || '<span class="muted">—</span>'}</div>
+      <div>${(p.domainMonitoring ?? []).map((d) => `<span class="badge muted mr-6">${escapeHtml(d)}</span>`).join('') || '<span class="muted">—</span>'}</div>
     </div>
     ${itemsHtml}`;
 }
@@ -288,14 +288,14 @@ function renderLifestyle(nutri, act) {
 
   document.getElementById('lifestyle-wrap').innerHTML = `
     <div>
-      <h4 style="margin:0 0 8px;">Nutrition</h4>
+      <h4 class="mt-0 mb-8">Nutrition</h4>
       <div><span class="kpi-label">PREDIMED:</span> ${nutri?.predimedScore != null ? escapeHtml(String(nutri.predimedScore)) + ' / 14' : '<span class="muted">—</span>'}</div>
       <div><span class="kpi-label">Adherence:</span> ${escapeHtml(nutri?.adherenceBand ?? '—')}</div>
       <div><span class="kpi-label">BMR:</span> ${escapeHtml(String(Math.round(nutri?.bmrKcal ?? 0)))} kcal</div>
       <div><span class="kpi-label">TDEE:</span> ${escapeHtml(String(Math.round(nutri?.tdeeKcal ?? 0)))} kcal</div>
     </div>
     <div>
-      <h4 style="margin:0 0 8px;">Activity (WHO / GPAQ)</h4>
+      <h4 class="mt-0 mb-8">Activity (WHO / GPAQ)</h4>
       <div><span class="kpi-label">Moderate:</span> ${mod !== null ? escapeHtml(mod) + ' min/week' : '<span class="muted">—</span>'}</div>
       <div><span class="kpi-label">Vigorous:</span> ${vig !== null ? escapeHtml(vig) + ' min/week' : '<span class="muted">—</span>'}</div>
       <div><span class="kpi-label">Total:</span> ${totalMin !== null ? escapeHtml(totalMin) + ' min/week' : '<span class="muted">—</span>'}</div>
@@ -338,16 +338,16 @@ function renderLifestyleRecommendations(recs) {
   wrap.innerHTML = `
     <ul class="list-plain">
       ${ordered.map((r) => `
-        <li class="mt-8" style="padding:10px 12px;border:1px solid #e5e7eb;border-radius:6px;background:#fff;">
-          <div class="flex between" style="align-items:flex-start;gap:8px;">
+        <li class="mt-8 list-card-item list-card-item--bg-white">
+          <div class="flex between align-start gap-8">
             <div>
               <strong>${escapeHtml(r.title ?? r.code ?? 'Recommendation')}</strong>
-              <span class="badge muted" style="margin-left:6px;">${escapeHtml(r.domain ?? '—')}</span>
-              <span class="badge muted" style="margin-left:6px;" title="Non-prescriptive counselling nudge">supportive</span>
-              <div class="muted mt-4" style="font-size:0.92em;">${escapeHtml(r.rationale ?? '')}</div>
+              <span class="badge muted ml-6">${escapeHtml(r.domain ?? '—')}</span>
+              <span class="badge muted ml-6" title="Non-prescriptive counselling nudge">supportive</span>
+              <div class="muted mt-4 text-sm">${escapeHtml(r.rationale ?? '')}</div>
               ${guidelineSourceLineHtml(r)}
             </div>
-            <div style="white-space:nowrap;">${recPriorityBadge(r.priority)}</div>
+            <div class="nowrap">${recPriorityBadge(r.priority)}</div>
           </div>
         </li>`).join('')}
     </ul>`;
@@ -365,8 +365,8 @@ function renderCompleteness(warnings) {
   wrap.innerHTML = warnings.map((w) => `
     <li class="${escapeHtml(w.severity ?? 'info')}">
       <span class="cw-title">${escapeHtml(w.title)}</span>
-      <span class="muted" style="font-size:12px;"> · ${escapeHtml(w.code)}</span>
-      <div class="muted" style="font-size:13px; margin-top:2px;">${escapeHtml(w.detail ?? '')}</div>
+      <span class="muted text-xs"> · ${escapeHtml(w.code)}</span>
+      <div class="muted text-sm mt-2">${escapeHtml(w.detail ?? '')}</div>
       <span class="cw-action"><strong>Suggested action:</strong> ${escapeHtml(w.suggestedAction ?? '—')}</span>
       ${Array.isArray(w.missingFields) && w.missingFields.length
         ? `<span class="cw-fields">Missing: ${w.missingFields.map((f) => `<code>${escapeHtml(f)}</code>`).join(', ')}</span>`

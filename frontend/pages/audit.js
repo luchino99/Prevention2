@@ -100,7 +100,7 @@ async function render() {
             ${escapeHtml(e.outcome ?? 'success')}
           </span>
         </td>
-        <td class="mono" style="max-width:320px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(e.metadata_json ? JSON.stringify(e.metadata_json) : '')}">
+        <td class="mono cell-truncate-320" title="${escapeHtml(e.metadata_json ? JSON.stringify(e.metadata_json) : '')}">
           ${escapeHtml(e.metadata_json ? JSON.stringify(e.metadata_json) : '—')}
         </td>
       </tr>`).join('');

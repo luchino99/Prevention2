@@ -100,7 +100,14 @@ if (!vulns || typeof vulns !== 'object') {
 const counts = { info: 0, low: 0, moderate: 0, high: 0, critical: 0 };
 const findings = [];
 
-for (const [name, entry] of Object.entries(vulns)) {
+// Sorted iteration over vuln entries — `Object.entries` preserves
+// insertion order from npm, which is non-deterministic across runs and
+// platforms. Iterating in sorted-key order makes `findings[]` stable.
+const sortedVulnEntries = Object.entries(vulns).sort(
+  ([a], [b]) => (a < b ? -1 : a > b ? 1 : 0),
+);
+
+for (const [name, entry] of sortedVulnEntries) {
   const sev = String(entry?.severity ?? 'unknown');
   if (sev in counts) counts[sev] += 1;
 
@@ -111,27 +118,45 @@ for (const [name, entry] of Object.entries(vulns)) {
     (v) => typeof v === 'object' && v && (v.url || v.source || v.title),
   );
 
+  // Sort advisories by title so a finding with multiple GHSA entries
+  // is also deterministic across runs. CVE arrays sorted, too.
+  const advisoriesShaped = advisories
+    .map((a) => ({
+      title: a.title ?? null,
+      url: a.url ?? null,
+      cve: Array.isArray(a.cve) ? [...a.cve].sort() : (a.cve ? [a.cve] : []),
+      cvss: a.cvss?.score ?? null,
+      vector: a.cvss?.vectorString ?? null,
+    }))
+    .sort((a, b) => {
+      const ka = String(a.title ?? a.url ?? '');
+      const kb = String(b.title ?? b.url ?? '');
+      return ka < kb ? -1 : ka > kb ? 1 : 0;
+    });
+
   findings.push({
     package: name,
     severity: sev,
     isDirect: Boolean(entry?.isDirect),
     range: entry?.range ?? null,
     fixAvailable: entry?.fixAvailable ?? false,
-    advisories: advisories.map((a) => ({
-      title: a.title ?? null,
-      url: a.url ?? null,
-      cve: Array.isArray(a.cve) ? a.cve : (a.cve ? [a.cve] : []),
-      cvss: a.cvss?.score ?? null,
-      vector: a.cvss?.vectorString ?? null,
-    })),
+    advisories: advisoriesShaped,
   });
 }
 
 // Persist the report so reviewers can see the current scan state even
 // when the gate passes. The file is checked in for traceability — it
 // is the supply-chain analogue of `sbom.cyclonedx.json`.
+//
+// Sprint 5 task 5.3 (#52) — idempotency:
+//   * `generated_at` is OMITTED (replaced by the stable lockfile-anchor
+//     string below). Including a wall-clock ISO would diff every run.
+//   * Findings are alphabetically sorted by package; each advisories
+//     array is sorted by title — so the report is byte-identical given
+//     the same input vulnerabilities. Re-running the gate after npm
+//     install is now a no-op for `git status`.
 const out = {
-  generated_at: new Date().toISOString(),
+  schema_version: '1.0',
   npm_audit_exit_code: r.status,
   counts,
   total: findings.length,

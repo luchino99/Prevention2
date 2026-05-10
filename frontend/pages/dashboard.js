@@ -42,7 +42,7 @@ try {
     </div>
     <div class="kpi-card">
       <div class="kpi-label">Last sign-in</div>
-      <div class="kpi-value" style="font-size:var(--fs-md); font-weight:var(--fw-medium);">${new Date().toLocaleString()}</div>
+      <div class="kpi-value text-md text-medium">${new Date().toLocaleString()}</div>
     </div>
   `;
 
@@ -91,7 +91,7 @@ try {
           </li>
         `).join('')}
       </ul>
-      <p class="muted" style="margin-top:8px;">
+      <p class="muted mt-8">
         <a href="./alerts.html">View all alerts →</a>
       </p>`;
   }

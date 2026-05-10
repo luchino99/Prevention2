@@ -34,7 +34,7 @@
 
       <div class="topbar">
         <div>
-          <h1 style="margin-bottom:2px;">Patients</h1>
+          <h1 class="mb-2">Patients</h1>
           <div class="muted" id="tenant-label">Loading…</div>
         </div>
         <div class="flex gap-8">
@@ -60,7 +60,7 @@
   <!-- New patient dialog -->
   <dialog id="new-patient-dialog" class="dialog">
     <form id="new-patient-form" method="dialog" class="dialog-body">
-      <h3 style="margin-top:0;">New patient</h3>
+      <h3 class="mt-0">New patient</h3>
       <div id="np-error" class="inline-alert danger hidden"></div>
 
       <div class="grid two">
@@ -115,7 +115,7 @@
         Patient has granted health data processing consent
       </label>
 
-      <div class="flex gap-8 mt-16" style="justify-content:flex-end;">
+      <div class="flex gap-8 mt-16 justify-end">
         <button type="button" class="btn secondary" id="np-cancel">Cancel</button>
         <button type="submit" class="btn" id="np-submit">Create patient</button>
       </div>
