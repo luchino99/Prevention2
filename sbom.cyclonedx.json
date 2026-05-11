@@ -15,13 +15,13 @@
       }
     ],
     "component": {
-      "bom-ref": "uelfy-clinical@0.2.1",
+      "bom-ref": "uelfy-clinical@0.2.2",
       "type": "application",
       "name": "uelfy-clinical",
-      "version": "0.2.1",
+      "version": "0.2.2",
       "scope": "required",
       "description": "Uelfy — B2B cardio-nephro-metabolic clinical risk assessment and longitudinal patient monitoring platform.",
-      "purl": "pkg:npm/uelfy-clinical@0.2.1",
+      "purl": "pkg:npm/uelfy-clinical@0.2.2",
       "properties": [
         {
           "name": "cdx:npm:package:private",
