@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex,nofollow" />
-  <title>Alerts — Uelfy Clinical</title>
+  <title>Alert clinici — Uelfy Clinical</title>
   <!-- Favicon set (clinical-context) — see frontend/assets/icons/favicon.svg -->
   <link rel="icon" type="image/svg+xml" href="../assets/icons/favicon.svg" />
   <link rel="alternate icon" type="image/png" sizes="32x32" href="../assets/icons/favicon-32.png" />
@@ -15,17 +15,17 @@
   <link rel="stylesheet" href="../assets/css/app.css" />
 </head>
 <body>
-  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <a class="skip-link" href="#main-content" data-i18n="common.skip_to_content">Vai al contenuto principale</a>
   <div class="app-shell">
-    <aside class="app-sidebar" aria-label="Primary navigation">
-      <div class="brand">Uelfy Clinical</div>
+    <aside class="app-sidebar" data-i18n-attr="aria-label:nav.primary_navigation">
+      <div class="brand" data-i18n="common.app_name">Uelfy Clinical</div>
       <nav>
-        <a href="./dashboard.html">Dashboard</a>
-        <a href="./patients.html">Patients</a>
-        <a href="./alerts.html" class="active" aria-current="page">Alerts</a>
-        <a href="./audit.html" id="nav-audit" class="hidden">Audit log</a>
-        <a href="./tenant-settings.html">Tenant settings</a>
-        <a href="#" id="signout-link">Sign out</a>
+        <a href="./dashboard.html" data-i18n="nav.dashboard">Cruscotto</a>
+        <a href="./patients.html" data-i18n="nav.patients">Pazienti</a>
+        <a href="./alerts.html" class="active" aria-current="page" data-i18n="nav.alerts">Alert clinici</a>
+        <a href="./audit.html" id="nav-audit" class="hidden" data-i18n="nav.audit">Log di sicurezza</a>
+        <a href="./tenant-settings.html" data-i18n="nav.tenant_settings">Impostazioni</a>
+        <a href="#" id="signout-link" data-i18n="common.sign_out">Esci</a>
       </nav>
     </aside>
 
@@ -34,27 +34,27 @@
 
       <div class="topbar">
         <div>
-          <h1 class="mb-2">Clinical alerts</h1>
-          <div class="muted" id="tenant-label">Loading…</div>
+          <h1 class="mb-2" data-i18n="alerts.title">Alert clinici</h1>
+          <div class="muted" id="tenant-label" data-i18n="common.loading">Caricamento in corso…</div>
         </div>
         <div class="flex gap-8">
           <select id="filter-status">
-            <option value="open" selected>Open</option>
-            <option value="acknowledged">Acknowledged</option>
-            <option value="resolved">Resolved</option>
-            <option value="dismissed">Dismissed</option>
+            <option value="open" selected data-i18n="alerts.status_open">Aperti</option>
+            <option value="acknowledged" data-i18n="alerts.status_acknowledged">In carico</option>
+            <option value="resolved" data-i18n="alerts.status_resolved">Risolti</option>
+            <option value="dismissed" data-i18n="alerts.status_dismissed">Archiviati</option>
           </select>
           <select id="filter-severity">
-            <option value="">All severities</option>
-            <option value="critical">Critical</option>
-            <option value="warning">Warning</option>
-            <option value="info">Info</option>
+            <option value="" data-i18n="alerts.filter_severity_all">Tutte le gravità</option>
+            <option value="critical" data-i18n="alerts.severity_critical">Critico</option>
+            <option value="warning" data-i18n="alerts.severity_warning">Avviso</option>
+            <option value="info" data-i18n="alerts.severity_info">Informativo</option>
           </select>
         </div>
       </div>
 
       <section class="card">
-        <div id="alerts-table-wrap"><p class="muted">Loading…</p></div>
+        <div id="alerts-table-wrap"><p class="muted" data-i18n="common.loading">Caricamento in corso…</p></div>
         <div class="flex between mt-16" id="pagination-wrap"></div>
       </section>
     </main>
@@ -63,15 +63,15 @@
   <!-- Action dialog -->
   <dialog id="action-dialog" class="dialog">
     <form id="action-form" method="dialog" class="dialog-body">
-      <h3 id="action-title">Acknowledge alert</h3>
+      <h3 id="action-title" data-i18n="alerts.acknowledge_alert">Prendi in carico l'alert</h3>
       <div id="action-error" class="inline-alert danger hidden"></div>
       <div class="field">
-        <label>Optional note (logged in metadata)</label>
-        <textarea name="note" rows="3" maxlength="1000" placeholder="Rationale, actions taken, follow-up…"></textarea>
+        <label data-i18n="alerts.action_note_label">Nota clinica (registrata nei metadati)</label>
+        <textarea name="note" rows="3" maxlength="1000" data-i18n-attr="placeholder:alerts.note_placeholder" placeholder="Motivazione, azioni intraprese, follow-up…"></textarea>
       </div>
       <div class="flex gap-8 justify-end">
-        <button type="button" class="btn secondary" id="action-cancel">Cancel</button>
-        <button type="submit" class="btn" id="action-submit">Confirm</button>
+        <button type="button" class="btn secondary" id="action-cancel" data-i18n="common.cancel">Annulla</button>
+        <button type="submit" class="btn" id="action-submit" data-i18n="common.confirm">Conferma</button>
       </div>
     </form>
   </dialog>

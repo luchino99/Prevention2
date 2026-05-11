@@ -9,9 +9,14 @@
  * Depends on window.__UELFY_CONFIG__ being populated by
  * assets/js/public-config.js, which the page MUST include with a
  * non-module <script> tag BEFORE this module.
+ *
+ * Sprint 8 task 8.2: i18n via t() + bootstrapI18n().
  */
 
 import { api, requireAuth } from '../assets/js/api-client.js';
+import { t, bootstrapI18n, getCurrentLocale } from '../i18n/index.js';
+
+bootstrapI18n();
 
 await requireAuth();
 
@@ -37,12 +42,12 @@ try {
 
   document.getElementById('kpi-row').innerHTML = `
     <div class="kpi-card">
-      <div class="kpi-label">Total patients</div>
+      <div class="kpi-label">${t('dashboard.kpi_patients')}</div>
       <div class="kpi-value">${pagination.total ?? '—'}</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-label">Last sign-in</div>
-      <div class="kpi-value text-md text-medium">${new Date().toLocaleString()}</div>
+      <div class="kpi-label">${t('dashboard.kpi_last_signin')}</div>
+      <div class="kpi-value text-md text-medium">${new Date().toLocaleString(getCurrentLocale())}</div>
     </div>
   `;
 
@@ -62,43 +67,49 @@ try {
         <td>${name}</td>
         <td>${dob}</td>
         <td>${sex}</td>
-        <td><a href="./patient-detail.html?id=${id}">Open</a></td>
+        <td><a href="./patient-detail.html?id=${id}">${t('common.open')}</a></td>
       </tr>`;
   }).join('');
 
   document.getElementById('patients-table-wrap').innerHTML = patients?.length ? `
     <table class="table">
       <thead>
-        <tr><th>Ref</th><th>Name</th><th>DOB</th><th>Sex</th><th></th></tr>
+        <tr>
+          <th>${t('dashboard.col_ref')}</th>
+          <th>${t('patients.col_name')}</th>
+          <th>${t('dashboard.col_dob')}</th>
+          <th>${t('dashboard.col_sex')}</th>
+          <th></th>
+        </tr>
       </thead>
       <tbody>${rows}</tbody>
     </table>
-  ` : `<p class="muted">No patients yet.</p>`;
+  ` : `<p class="muted">${t('patients.empty_title')}.</p>`;
 
   const openCritical = alertsResp?.alerts ?? [];
   if (openCritical.length === 0) {
     document.getElementById('alerts-wrap').innerHTML =
-      `<p class="muted">No open critical alerts.</p>`;
+      `<p class="muted">${t('dashboard.no_open_critical')}</p>`;
   } else {
     document.getElementById('alerts-wrap').innerHTML = `
       <ul class="list-plain">
         ${openCritical.slice(0, 6).map((a) => `
           <li>
             <span class="badge danger">${escapeHtml(a.severity)}</span>
-            <strong>${escapeHtml(a.title ?? a.type ?? 'Alert')}</strong>
-            <span class="muted"> · ${escapeHtml(a.patient?.display_name || a.patient?.external_code || 'Patient')}</span>
-            <a class="ml-8" href="./patient-detail.html?id=${encodeURIComponent(a.patient_id)}">Open</a>
+            <strong>${escapeHtml(a.title ?? a.type ?? t('alerts.title'))}</strong>
+            <span class="muted"> · ${escapeHtml(a.patient?.display_name || a.patient?.external_code || t('common.patient'))}</span>
+            <a class="ml-8" href="./patient-detail.html?id=${encodeURIComponent(a.patient_id)}">${t('common.open')}</a>
           </li>
         `).join('')}
       </ul>
       <p class="muted mt-8">
-        <a href="./alerts.html">View all alerts →</a>
+        <a href="./alerts.html">${t('dashboard.view_all_alerts')} →</a>
       </p>`;
   }
 } catch (e) {
   console.error(e);
   document.getElementById('patients-table-wrap').innerHTML =
-    `<div class="inline-alert danger">Failed to load patients: ${e.message}</div>`;
+    `<div class="inline-alert danger">${t('dashboard.load_patients_failed')}: ${e.message}</div>`;
 }
 
 document.getElementById('signout-link').addEventListener('click', async (e) => {

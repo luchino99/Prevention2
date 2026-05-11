@@ -22,7 +22,12 @@
  *   - All interpolated URLs are escaped as attribute values AND
  *     URI-component encoded at the caller site (`encodeURIComponent`).
  *   - No third-party imports.
+ *
+ * Sprint 8 task 8.2 — i18n: aria-labels and visible chip text now resolved
+ * via `t()`. Date formatting uses the active locale (it-IT).
  */
+
+import { t, getCurrentLocale } from '../i18n/index.js';
 
 // ---------------------------------------------------------------------------
 // Tiny utilities
@@ -45,13 +50,13 @@ function shortId(id) {
   return String(id).slice(0, 8);
 }
 
-/** Locale-aware short date ("Apr 24, 2026"), or '' on invalid input. */
+/** Locale-aware short date ("24 apr 2026" in it-IT), or '' on invalid input. */
 function formatShortDate(iso) {
   if (!iso) return '';
   try {
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return '';
-    return d.toLocaleDateString(undefined, {
+    return d.toLocaleDateString(getCurrentLocale(), {
       year: 'numeric',
       month: 'short',
       day: '2-digit',
@@ -101,12 +106,13 @@ function renderBreadcrumb(crumbs) {
     parts.push(`<li class="crumb">${cell}</li>`);
     if (!last) parts.push('<li class="sep" aria-hidden="true">›</li>');
   });
-  return `<nav class="breadcrumb" aria-label="Breadcrumb"><ol>${parts.join('')}</ol></nav>`;
+  return `<nav class="breadcrumb" aria-label="${escape(t('nav.breadcrumb_aria'))}"><ol>${parts.join('')}</ol></nav>`;
 }
 
 function renderBack(backHref, backLabel) {
   if (!backHref) return '';
-  return `<a class="btn ghost sm nav-back" href="${escape(backHref)}">← ${escape(backLabel || 'Back')}</a>`;
+  const lbl = escape(backLabel || t('common.back'));
+  return `<a class="btn ghost sm nav-back" href="${escape(backHref)}">← ${lbl}</a>`;
 }
 
 function renderAssessmentNav({ assessment, prevAssessmentId, nextAssessmentId, patientId }) {
@@ -117,17 +123,20 @@ function renderAssessmentNav({ assessment, prevAssessmentId, nextAssessmentId, p
     if (patientId) qs.set('patientId', patientId);
     return `./assessment-view.html?${qs.toString()}`;
   };
+  const prevTxt = escape(t('nav.prev_chip'));
+  const nextTxt = escape(t('nav.next_chip'));
   const prev = prevAssessmentId
-    ? `<a class="nav-chip" rel="prev" href="${escape(makeHref(prevAssessmentId))}" aria-label="Previous assessment">‹ Prev</a>`
-    : `<span class="nav-chip disabled" aria-hidden="true">‹ Prev</span>`;
+    ? `<a class="nav-chip" rel="prev" href="${escape(makeHref(prevAssessmentId))}" aria-label="${escape(t('nav.previous_assessment_aria'))}">${prevTxt}</a>`
+    : `<span class="nav-chip disabled" aria-hidden="true">${prevTxt}</span>`;
   const next = nextAssessmentId
-    ? `<a class="nav-chip" rel="next" href="${escape(makeHref(nextAssessmentId))}" aria-label="Next assessment">Next ›</a>`
-    : `<span class="nav-chip disabled" aria-hidden="true">Next ›</span>`;
+    ? `<a class="nav-chip" rel="next" href="${escape(makeHref(nextAssessmentId))}" aria-label="${escape(t('nav.next_assessment_aria'))}">${nextTxt}</a>`
+    : `<span class="nav-chip disabled" aria-hidden="true">${nextTxt}</span>`;
+  const prefix = escape(t('nav.assessment_label_prefix'));
   const label = assessment.createdAt
-    ? `Assessment · ${escape(formatShortDate(assessment.createdAt))}`
-    : `Assessment · ${escape(shortId(assessment.id))}`;
+    ? `${prefix}${escape(formatShortDate(assessment.createdAt))}`
+    : `${prefix}${escape(shortId(assessment.id))}`;
   return `
-    <div class="assessment-nav-chips" role="group" aria-label="Assessment navigation">
+    <div class="assessment-nav-chips" role="group" aria-label="${escape(t('nav.assessment_nav_aria'))}">
       ${prev}
       <span class="nav-chip-label">${label}</span>
       ${next}
@@ -135,7 +144,7 @@ function renderAssessmentNav({ assessment, prevAssessmentId, nextAssessmentId, p
 }
 
 function riskLevelAriaLabel(level) {
-  if (!level) return 'risk not yet stratified';
+  if (!level) return t('nav.composite_risk_not_stratified');
   return String(level).replace('_', ' ');
 }
 
@@ -146,14 +155,15 @@ function renderPatientChip(patient) {
   const name = escape(patient.displayName || '—');
   const metaBits = [];
   if (patient.sex) metaBits.push(escape(patient.sex));
-  if (typeof patient.age === 'number') metaBits.push(`${patient.age}y`);
+  if (typeof patient.age === 'number') metaBits.push(t('nav.age_suffix', { years: patient.age }));
   const meta = metaBits.join(' · ');
   const level = patient.riskLevel ? escape(patient.riskLevel) : '';
+  const compositePrefix = escape(t('nav.composite_risk_title_prefix'));
   const dotAttrs = level
-    ? ` data-level="${level}" title="Composite risk: ${escape(riskLevelAriaLabel(patient.riskLevel))}"`
-    : ' title="Composite risk not yet available"';
+    ? ` data-level="${level}" title="${compositePrefix}${escape(riskLevelAriaLabel(patient.riskLevel))}"`
+    : ` title="${escape(t('nav.composite_risk_not_available'))}"`;
   return `
-    <div class="patient-chip" role="navigation" aria-label="Current patient">
+    <div class="patient-chip" role="navigation" aria-label="${escape(t('nav.current_patient_aria'))}">
       <span class="risk-dot"${dotAttrs} aria-hidden="true"></span>
       <a href="${escape(href)}" class="patient-chip__link">
         <strong class="mono">${ref}</strong>
@@ -187,7 +197,7 @@ export function mountNavHeader({
   container,
   crumbs = [],
   backHref = null,
-  backLabel = 'Back',
+  backLabel = null,
   patient = null,
   assessment = null,
   prevAssessmentId = null,

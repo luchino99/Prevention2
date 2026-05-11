@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex,nofollow" />
-  <title>Sign in — Uelfy Clinical</title>
+  <title>Accesso — Uelfy Clinical</title>
   <!-- Favicon set (clinical-context) — see frontend/assets/icons/favicon.svg -->
   <link rel="icon" type="image/svg+xml" href="../assets/icons/favicon.svg" />
   <link rel="alternate icon" type="image/png" sizes="32x32" href="../assets/icons/favicon-32.png" />
@@ -15,30 +15,30 @@
   <link rel="stylesheet" href="../assets/css/app.css" />
 </head>
 <body class="flex center min-h-screen">
-  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <a class="skip-link" href="#main-content" data-i18n="common.skip_to_content">Vai al contenuto principale</a>
   <main class="card max-w-380 w-100" id="main-content" tabindex="-1">
-    <h1 class="mb-6">Uelfy Clinical</h1>
-    <p class="muted mt-0 mb-18 text-sm">
-      Sign in with your professional account
+    <h1 class="mb-6" data-i18n="login.title">Uelfy Clinical</h1>
+    <p class="muted mt-0 mb-18 text-sm" data-i18n="login.subtitle">
+      Acceda con il Suo account professionale
     </p>
 
     <div id="error-banner" class="inline-alert danger hidden" role="alert" aria-live="assertive"></div>
 
     <form id="login-form" autocomplete="off">
       <div class="field">
-        <label for="email">Email</label>
+        <label for="email" data-i18n="login.email_label">E-mail</label>
         <input type="email" id="email" name="email" required autocomplete="username" />
       </div>
       <div class="field">
-        <label for="password">Password</label>
+        <label for="password" data-i18n="login.password_label">Password</label>
         <input type="password" id="password" name="password" required autocomplete="current-password" />
       </div>
-      <button type="submit" class="btn w-100" id="submit-btn">Sign in</button>
+      <button type="submit" class="btn w-100" id="submit-btn" data-i18n="login.submit">Accedi</button>
     </form>
 
     <p class="muted mt-16 text-xs text-center">
-      By signing in you agree to the
-      <a href="./legal-privacy.html">privacy notice</a>.
+      <span data-i18n="login.privacy_note_prefix">Accedendo accetta l'</span>
+      <a href="./legal-privacy.html" data-i18n="login.privacy_note_link">informativa sulla privacy</a>.
     </p>
   </main>
 

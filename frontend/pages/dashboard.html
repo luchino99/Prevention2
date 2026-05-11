@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex,nofollow" />
-  <title>Dashboard — Uelfy Clinical</title>
+  <title>Cruscotto — Uelfy Clinical</title>
   <!-- Favicon set (clinical-context) — see frontend/assets/icons/favicon.svg -->
   <link rel="icon" type="image/svg+xml" href="../assets/icons/favicon.svg" />
   <link rel="alternate icon" type="image/png" sizes="32x32" href="../assets/icons/favicon-32.png" />
@@ -15,25 +15,25 @@
   <link rel="stylesheet" href="../assets/css/app.css" />
 </head>
 <body>
-  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <a class="skip-link" href="#main-content" data-i18n="common.skip_to_content">Vai al contenuto principale</a>
   <div class="app-shell">
-    <aside class="app-sidebar" aria-label="Primary navigation">
-      <div class="brand">Uelfy Clinical</div>
+    <aside class="app-sidebar" data-i18n-attr="aria-label:nav.primary_navigation">
+      <div class="brand" data-i18n="common.app_name">Uelfy Clinical</div>
       <nav>
-        <a href="./dashboard.html" class="active" aria-current="page">Dashboard</a>
-        <a href="./patients.html">Patients</a>
-        <a href="./alerts.html">Alerts</a>
-        <a href="./audit.html" id="nav-audit" class="hidden">Audit log</a>
-        <a href="./tenant-settings.html">Tenant settings</a>
-        <a href="#" id="signout-link">Sign out</a>
+        <a href="./dashboard.html" class="active" aria-current="page" data-i18n="nav.dashboard">Cruscotto</a>
+        <a href="./patients.html" data-i18n="nav.patients">Pazienti</a>
+        <a href="./alerts.html" data-i18n="nav.alerts">Alert clinici</a>
+        <a href="./audit.html" id="nav-audit" class="hidden" data-i18n="nav.audit">Log di sicurezza</a>
+        <a href="./tenant-settings.html" data-i18n="nav.tenant_settings">Impostazioni</a>
+        <a href="#" id="signout-link" data-i18n="common.sign_out">Esci</a>
       </nav>
     </aside>
 
     <main class="app-main" id="main-content" tabindex="-1">
       <div class="topbar">
         <div>
-          <h1>Dashboard</h1>
-          <div class="muted" id="tenant-label">Loading…</div>
+          <h1 data-i18n="dashboard.title">Cruscotto</h1>
+          <div class="muted" id="tenant-label" data-i18n="common.loading">Caricamento in corso…</div>
         </div>
         <div class="user-meta" id="user-meta"></div>
       </div>
@@ -42,14 +42,14 @@
 
       <section class="card mt-16">
         <div class="flex between">
-          <h3 class="m-0">Recent patients</h3>
-          <a href="./patients.html" class="btn secondary">View all</a>
+          <h3 class="m-0" data-i18n="dashboard.recent_patients">Pazienti recenti</h3>
+          <a href="./patients.html" class="btn secondary" data-i18n="dashboard.view_all">Vedi tutti</a>
         </div>
         <div id="patients-table-wrap" class="mt-16"></div>
       </section>
 
       <section class="card">
-        <h3>Open high-severity alerts</h3>
+        <h3 data-i18n="dashboard.high_severity_alerts">Alert ad alta gravità aperti</h3>
         <div id="alerts-wrap"></div>
       </section>
     </main>

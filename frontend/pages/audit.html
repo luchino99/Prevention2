@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex,nofollow" />
-  <title>Audit log — Uelfy Clinical</title>
+  <title>Log di sicurezza — Uelfy Clinical</title>
   <!-- Favicon set (clinical-context) — see frontend/assets/icons/favicon.svg -->
   <link rel="icon" type="image/svg+xml" href="../assets/icons/favicon.svg" />
   <link rel="alternate icon" type="image/png" sizes="32x32" href="../assets/icons/favicon-32.png" />
@@ -15,45 +15,45 @@
   <link rel="stylesheet" href="../assets/css/app.css" />
 </head>
 <body>
-  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <a class="skip-link" href="#main-content" data-i18n="common.skip_to_content">Vai al contenuto principale</a>
   <div class="app-shell">
-    <aside class="app-sidebar" aria-label="Primary navigation">
-      <div class="brand">Uelfy Clinical</div>
+    <aside class="app-sidebar" data-i18n-attr="aria-label:nav.primary_navigation">
+      <div class="brand" data-i18n="common.app_name">Uelfy Clinical</div>
       <nav>
-        <a href="./dashboard.html">Dashboard</a>
-        <a href="./patients.html">Patients</a>
-        <a href="./alerts.html">Alerts</a>
-        <a href="./audit.html" class="active">Audit log</a>
-        <a href="./tenant-settings.html">Tenant settings</a>
-        <a href="#" id="signout-link">Sign out</a>
+        <a href="./dashboard.html" data-i18n="nav.dashboard">Cruscotto</a>
+        <a href="./patients.html" data-i18n="nav.patients">Pazienti</a>
+        <a href="./alerts.html" data-i18n="nav.alerts">Alert clinici</a>
+        <a href="./audit.html" class="active" data-i18n="nav.audit">Log di sicurezza</a>
+        <a href="./tenant-settings.html" data-i18n="nav.tenant_settings">Impostazioni</a>
+        <a href="#" id="signout-link" data-i18n="common.sign_out">Esci</a>
       </nav>
     </aside>
 
     <main class="app-main" id="main-content" tabindex="-1">
       <div class="topbar">
         <div>
-          <h1 class="mb-2">Audit log</h1>
-          <div class="muted" id="tenant-label">Loading…</div>
+          <h1 class="mb-2" data-i18n="audit.title">Log di sicurezza</h1>
+          <div class="muted" id="tenant-label" data-i18n="common.loading">Caricamento in corso…</div>
         </div>
         <div class="flex gap-8">
-          <button class="btn secondary" id="export-csv-btn" type="button" title="Download the current filter set as CSV">Export CSV</button>
+          <button class="btn secondary" id="export-csv-btn" type="button" data-i18n="audit.export_csv" data-i18n-attr="title:audit.export_csv_title">Esporta CSV</button>
         </div>
       </div>
 
       <section class="card mb-16">
         <div class="grid-auto-180">
           <div>
-            <label class="muted" for="filter-action">Action</label>
+            <label class="muted" for="filter-action" data-i18n="audit.filter_action">Azione</label>
             <input id="filter-action" type="search" placeholder="patient.create" autocomplete="off" />
           </div>
           <div>
-            <label class="muted" for="filter-actor">Actor user id</label>
+            <label class="muted" for="filter-actor" data-i18n="audit.filter_actor">ID utente</label>
             <input id="filter-actor" type="search" placeholder="UUID" autocomplete="off" />
           </div>
           <div>
-            <label class="muted" for="filter-resource-type">Resource type</label>
+            <label class="muted" for="filter-resource-type" data-i18n="audit.filter_resource">Tipo risorsa</label>
             <select id="filter-resource-type">
-              <option value="">— any —</option>
+              <option value="" data-i18n="audit.option_any">— qualunque —</option>
               <option value="patient">patient</option>
               <option value="assessment">assessment</option>
               <option value="consent">consent</option>
@@ -66,26 +66,26 @@
             </select>
           </div>
           <div>
-            <label class="muted" for="filter-outcome">Outcome</label>
+            <label class="muted" for="filter-outcome" data-i18n="audit.filter_outcome">Esito</label>
             <select id="filter-outcome">
-              <option value="">— any —</option>
-              <option value="success">success</option>
-              <option value="failure">failure</option>
+              <option value="" data-i18n="audit.option_any">— qualunque —</option>
+              <option value="success" data-i18n="audit.outcome_success">success</option>
+              <option value="failure" data-i18n="audit.outcome_failure">failure</option>
             </select>
           </div>
           <div>
-            <label class="muted" for="filter-from">From (UTC)</label>
+            <label class="muted" for="filter-from" data-i18n="audit.filter_from">Dal (UTC)</label>
             <input id="filter-from" type="datetime-local" />
           </div>
           <div>
-            <label class="muted" for="filter-to">To (UTC)</label>
+            <label class="muted" for="filter-to" data-i18n="audit.filter_to">Al (UTC)</label>
             <input id="filter-to" type="datetime-local" />
           </div>
         </div>
       </section>
 
       <section class="card">
-        <div id="audit-table-wrap"><p class="muted">Loading…</p></div>
+        <div id="audit-table-wrap"><p class="muted" data-i18n="common.loading">Caricamento in corso…</p></div>
         <div class="flex between mt-16" id="pagination-wrap"></div>
       </section>
     </main>

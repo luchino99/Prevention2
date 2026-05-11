@@ -9,10 +9,15 @@
  * Depends on window.__UELFY_CONFIG__ being populated by
  * assets/js/public-config.js, which the page MUST include with a
  * non-module <script> tag BEFORE this module.
+ *
+ * Sprint 8 task 8.2: i18n via t() + bootstrapI18n().
  */
 
 import { api, requireAuth } from '../assets/js/api-client.js';
 import { mountNavHeader } from '../components/nav-header.js';
+import { t, bootstrapI18n, getCurrentLocale } from '../i18n/index.js';
+
+bootstrapI18n();
 
 await requireAuth();
 
@@ -25,11 +30,11 @@ const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
 mountNavHeader({
   container: document.getElementById('nav-header-mount'),
   crumbs: [
-    { label: 'Dashboard', href: './dashboard.html' },
-    { label: 'Alerts' },
+    { label: t('nav.dashboard'), href: './dashboard.html' },
+    { label: t('nav.alerts') },
   ],
   backHref: './dashboard.html',
-  backLabel: 'Back to dashboard',
+  backLabel: t('patients.back_to_dashboard'),
 });
 
 const PAGE_SIZE = 30;
@@ -49,9 +54,9 @@ let currentAction = { alertId: null, action: null };
 function openAction(alertId, action) {
   currentAction = { alertId, action };
   document.getElementById('action-title').textContent =
-    action === 'acknowledge' ? 'Acknowledge alert'
-    : action === 'resolve' ? 'Resolve alert'
-    : 'Dismiss alert';
+    action === 'acknowledge' ? t('alerts.acknowledge_alert')
+    : action === 'resolve' ? t('alerts.resolve_alert')
+    : t('alerts.dismiss_alert');
   document.getElementById('action-error').classList.add('hidden');
   document.getElementById('action-form').reset();
   dialog.showModal();
@@ -69,7 +74,7 @@ document.getElementById('action-form').addEventListener('submit', async (e) => {
     dialog.close();
     render();
   } catch (ex) {
-    err.textContent = ex.message || 'Action failed';
+    err.textContent = ex.message || t('alerts.action_failed');
     err.classList.remove('hidden');
   } finally {
     btn.disabled = false;
@@ -78,7 +83,7 @@ document.getElementById('action-form').addEventListener('submit', async (e) => {
 
 async function render() {
   const wrap = document.getElementById('alerts-table-wrap');
-  wrap.innerHTML = `<p class="muted">Loading…</p>`;
+  wrap.innerHTML = `<p class="muted">${t('common.loading')}</p>`;
   try {
     const { alerts, pagination } = await api.listAlerts({
       status: state.status,
@@ -87,7 +92,7 @@ async function render() {
       pageSize: PAGE_SIZE,
     });
     if (!alerts?.length) {
-      wrap.innerHTML = `<p class="muted">No alerts match the current filter.</p>`;
+      wrap.innerHTML = `<p class="muted">${t('alerts.empty_filter')}</p>`;
       document.getElementById('pagination-wrap').innerHTML = '';
       return;
     }
@@ -96,23 +101,23 @@ async function render() {
         a.patient?.display_name || a.patient?.external_code || '—';
       const pid = a.patient_id;
       const actions = state.status === 'open' ? `
-        <button class="btn secondary" data-id="${a.id}" data-action="acknowledge">Ack</button>
-        <button class="btn secondary" data-id="${a.id}" data-action="resolve">Resolve</button>
-        <button class="btn secondary" data-id="${a.id}" data-action="dismiss">Dismiss</button>
+        <button class="btn secondary" data-id="${a.id}" data-action="acknowledge">${t('alerts.btn_ack')}</button>
+        <button class="btn secondary" data-id="${a.id}" data-action="resolve">${t('alerts.btn_resolve')}</button>
+        <button class="btn secondary" data-id="${a.id}" data-action="dismiss">${t('alerts.btn_dismiss')}</button>
       ` : state.status === 'acknowledged' ? `
-        <button class="btn secondary" data-id="${a.id}" data-action="resolve">Resolve</button>
+        <button class="btn secondary" data-id="${a.id}" data-action="resolve">${t('alerts.btn_resolve')}</button>
       ` : '';
       return `
         <tr>
           <td><span class="badge ${escapeHtml(a.severity)}">${escapeHtml(a.severity)}</span></td>
-          <td>${escapeHtml(a.title ?? a.type ?? 'Alert')}</td>
+          <td>${escapeHtml(a.title ?? a.type ?? t('alerts.title'))}</td>
           <td>
             ${pid
               ? `<a href="./patient-detail.html?id=${encodeURIComponent(pid)}">${escapeHtml(patientName)}</a>`
               : escapeHtml(patientName)}
           </td>
           <td class="mono">${escapeHtml(a.type ?? '—')}</td>
-          <td>${escapeHtml(new Date(a.created_at).toLocaleString())}</td>
+          <td>${escapeHtml(new Date(a.created_at).toLocaleString(getCurrentLocale()))}</td>
           <td class="flex gap-8">${actions}</td>
         </tr>`;
     }).join('');
@@ -120,7 +125,14 @@ async function render() {
     wrap.innerHTML = `
       <table class="table">
         <thead>
-          <tr><th>Severity</th><th>Title</th><th>Patient</th><th>Type</th><th>Opened</th><th>Actions</th></tr>
+          <tr>
+            <th>${t('alerts.col_severity')}</th>
+            <th>${t('alerts.col_title')}</th>
+            <th>${t('common.patient')}</th>
+            <th>${t('alerts.col_type')}</th>
+            <th>${t('alerts.col_opened')}</th>
+            <th>${t('alerts.col_actions')}</th>
+          </tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>`;
@@ -131,15 +143,15 @@ async function render() {
 
     const totalPages = Math.max(1, Math.ceil((pagination?.total || 0) / PAGE_SIZE));
     document.getElementById('pagination-wrap').innerHTML = `
-      <div class="muted">Page ${state.page} / ${totalPages} · ${pagination?.total ?? '—'} alerts</div>
+      <div class="muted">${t('alerts.pagination_label', { page: state.page, total: totalPages, count: pagination?.total ?? '—' })}</div>
       <div class="flex gap-8">
-        <button class="btn secondary" id="prev-page" ${state.page <= 1 ? 'disabled' : ''}>Prev</button>
-        <button class="btn secondary" id="next-page" ${state.page >= totalPages ? 'disabled' : ''}>Next</button>
+        <button class="btn secondary" id="prev-page" ${state.page <= 1 ? 'disabled' : ''}>${t('common.previous')}</button>
+        <button class="btn secondary" id="next-page" ${state.page >= totalPages ? 'disabled' : ''}>${t('common.next')}</button>
       </div>`;
     document.getElementById('prev-page').onclick = () => { state.page--; render(); };
     document.getElementById('next-page').onclick = () => { state.page++; render(); };
   } catch (e) {
-    wrap.innerHTML = `<div class="inline-alert danger">Failed to load alerts: ${escapeHtml(e.message)}</div>`;
+    wrap.innerHTML = `<div class="inline-alert danger">${t('alerts.load_failed')}: ${escapeHtml(e.message)}</div>`;
   }
 }
 

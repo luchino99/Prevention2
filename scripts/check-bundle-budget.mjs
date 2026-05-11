@@ -76,6 +76,12 @@ const BUDGETS = {
   'frontend/components/progress-charts.js':       40 * 1024,
   'frontend/components/nav-header.js':            20 * 1024,
   'frontend/components/progress-thresholds.js':   20 * 1024,
+  // i18n runtime (Sprint 8 task 8.1). The dictionary file grows linearly
+  // with translation coverage — generous budget for it. The helper is
+  // capped tight to catch any accidental feature creep into framework
+  // territory.
+  'frontend/i18n/index.js':                       10 * 1024,
+  'frontend/i18n/it.js':                          50 * 1024,
 };
 
 const TAG = '[check-bundle-budget]';

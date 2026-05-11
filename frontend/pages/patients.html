@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex,nofollow" />
-  <title>Patients — Uelfy Clinical</title>
+  <title>Pazienti — Uelfy Clinical</title>
   <!-- Favicon set (clinical-context) — see frontend/assets/icons/favicon.svg -->
   <link rel="icon" type="image/svg+xml" href="../assets/icons/favicon.svg" />
   <link rel="alternate icon" type="image/png" sizes="32x32" href="../assets/icons/favicon-32.png" />
@@ -15,17 +15,17 @@
   <link rel="stylesheet" href="../assets/css/app.css" />
 </head>
 <body>
-  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <a class="skip-link" href="#main-content" data-i18n="common.skip_to_content">Vai al contenuto principale</a>
   <div class="app-shell">
-    <aside class="app-sidebar" aria-label="Primary navigation">
-      <div class="brand">Uelfy Clinical</div>
+    <aside class="app-sidebar" data-i18n-attr="aria-label:nav.primary_navigation">
+      <div class="brand" data-i18n="common.app_name">Uelfy Clinical</div>
       <nav>
-        <a href="./dashboard.html">Dashboard</a>
-        <a href="./patients.html" class="active" aria-current="page">Patients</a>
-        <a href="./alerts.html">Alerts</a>
-        <a href="./audit.html" id="nav-audit" class="hidden">Audit log</a>
-        <a href="./tenant-settings.html">Tenant settings</a>
-        <a href="#" id="signout-link">Sign out</a>
+        <a href="./dashboard.html" data-i18n="nav.dashboard">Cruscotto</a>
+        <a href="./patients.html" class="active" aria-current="page" data-i18n="nav.patients">Pazienti</a>
+        <a href="./alerts.html" data-i18n="nav.alerts">Alert clinici</a>
+        <a href="./audit.html" id="nav-audit" class="hidden" data-i18n="nav.audit">Log di sicurezza</a>
+        <a href="./tenant-settings.html" data-i18n="nav.tenant_settings">Impostazioni</a>
+        <a href="#" id="signout-link" data-i18n="common.sign_out">Esci</a>
       </nav>
     </aside>
 
@@ -34,23 +34,24 @@
 
       <div class="topbar">
         <div>
-          <h1 class="mb-2">Patients</h1>
-          <div class="muted" id="tenant-label">Loading…</div>
+          <h1 class="mb-2" data-i18n="patients.title">Pazienti</h1>
+          <div class="muted" id="tenant-label" data-i18n="common.loading">Caricamento in corso…</div>
         </div>
         <div class="flex gap-8">
           <input
             id="search-input"
             type="search"
-            placeholder="Search by name or code…"
+            data-i18n-attr="placeholder:patients.search_placeholder,aria-label:patients.search_placeholder"
+            placeholder="Cerca per cognome, codice paziente…"
             autocomplete="off"
           />
-          <button class="btn" id="new-patient-btn" type="button">+ New patient</button>
+          <button class="btn" id="new-patient-btn" type="button" data-i18n="patients.new_patient_btn">+ Nuovo paziente</button>
         </div>
       </div>
 
       <section class="card">
         <div id="patients-table-wrap">
-          <p class="muted">Loading…</p>
+          <p class="muted" data-i18n="common.loading">Caricamento in corso…</p>
         </div>
         <div class="flex between mt-16" id="pagination-wrap"></div>
       </section>
@@ -60,64 +61,64 @@
   <!-- New patient dialog -->
   <dialog id="new-patient-dialog" class="dialog">
     <form id="new-patient-form" method="dialog" class="dialog-body">
-      <h3 class="mt-0">New patient</h3>
+      <h3 class="mt-0" data-i18n="patients.new_dialog_title">Nuovo paziente</h3>
       <div id="np-error" class="inline-alert danger hidden"></div>
 
       <div class="grid two">
         <div class="field">
-          <label>First name *</label>
+          <label data-i18n="patients.field_first_name">Nome *</label>
           <input name="firstName" required maxlength="100" />
         </div>
         <div class="field">
-          <label>Last name *</label>
+          <label data-i18n="patients.field_last_name">Cognome *</label>
           <input name="lastName" required maxlength="100" />
         </div>
       </div>
 
       <div class="grid two">
         <div class="field">
-          <label>External code *</label>
-          <input name="externalCode" required maxlength="50" placeholder="MRN, internal id…" />
+          <label data-i18n="patients.field_external_code">Codice paziente *</label>
+          <input name="externalCode" required maxlength="50" data-i18n-attr="placeholder:patients.field_external_code_placeholder" placeholder="Numero cartella, ID interno…" />
         </div>
         <div class="field">
-          <label>Sex *</label>
+          <label data-i18n="patients.field_sex">Sesso *</label>
           <select name="sex" required>
             <option value="">—</option>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
+            <option value="male" data-i18n="patients.sex_male">Maschio</option>
+            <option value="female" data-i18n="patients.sex_female">Femmina</option>
           </select>
         </div>
       </div>
 
       <div class="grid two">
         <div class="field">
-          <label>Date of birth *</label>
+          <label data-i18n="patients.field_dob">Data di nascita *</label>
           <input name="dateOfBirth" type="date" required />
         </div>
         <div class="field">
-          <label>Contact email</label>
+          <label data-i18n="patients.field_email">E-mail di contatto</label>
           <input name="email" type="email" maxlength="200" />
         </div>
       </div>
 
       <div class="field">
-        <label>Contact phone</label>
+        <label data-i18n="patients.field_phone">Telefono di contatto</label>
         <input name="phoneNumber" maxlength="20" placeholder="+39 …" />
       </div>
 
       <div class="field">
-        <label>Notes</label>
+        <label data-i18n="patients.field_notes">Note</label>
         <textarea name="notes" rows="2" maxlength="2000"></textarea>
       </div>
 
       <label class="checkbox-row">
         <input name="consentGiven" type="checkbox" />
-        Patient has granted health data processing consent
+        <span data-i18n="patients.consent_label">Il paziente ha prestato il consenso al trattamento dei dati sanitari</span>
       </label>
 
       <div class="flex gap-8 mt-16 justify-end">
-        <button type="button" class="btn secondary" id="np-cancel">Cancel</button>
-        <button type="submit" class="btn" id="np-submit">Create patient</button>
+        <button type="button" class="btn secondary" id="np-cancel" data-i18n="common.cancel">Annulla</button>
+        <button type="submit" class="btn" id="np-submit" data-i18n="patients.create_patient_btn">Crea paziente</button>
       </div>
     </form>
   </dialog>

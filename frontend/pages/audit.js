@@ -26,6 +26,9 @@
  */
 
 import { api, requireAuth, supabase } from '../assets/js/api-client.js';
+import { t, bootstrapI18n, getCurrentLocale } from '../i18n/index.js';
+
+bootstrapI18n();
 
 await requireAuth();
 
@@ -52,7 +55,7 @@ try {
   if (!['tenant_admin', 'platform_admin'].includes(user.role)) {
     document.querySelector('main').innerHTML = `
       <div class="inline-alert danger">
-        The audit log is accessible only to tenant_admin or platform_admin roles.
+        ${t('audit.access_denied')}
       </div>`;
     throw new Error('forbidden');
   }
@@ -78,19 +81,19 @@ function buildQuery(extra = {}) {
 
 async function render() {
   const wrap = document.getElementById('audit-table-wrap');
-  wrap.innerHTML = `<p class="muted">Loading…</p>`;
+  wrap.innerHTML = `<p class="muted">${t('common.loading')}</p>`;
   try {
     const { events, pagination } = await api.listAudit(buildQuery());
 
     if (!events?.length) {
-      wrap.innerHTML = `<p class="muted">No audit events match the current filter.</p>`;
+      wrap.innerHTML = `<p class="muted">${t('audit.empty_body')}</p>`;
       document.getElementById('pagination-wrap').innerHTML = '';
       return;
     }
 
     const rows = events.map((e) => `
       <tr>
-        <td>${escapeHtml(new Date(e.created_at).toLocaleString())}</td>
+        <td>${escapeHtml(new Date(e.created_at).toLocaleString(getCurrentLocale()))}</td>
         <td class="mono">${escapeHtml(e.action)}</td>
         <td class="mono">${escapeHtml(e.entity_type ?? '—')}</td>
         <td class="mono">${escapeHtml((e.entity_id ?? '').substring(0, 8) || '—')}</td>
@@ -109,8 +112,13 @@ async function render() {
       <table class="table">
         <thead>
           <tr>
-            <th>At</th><th>Action</th><th>Resource</th><th>Resource id</th>
-            <th>Actor</th><th>Outcome</th><th>Metadata</th>
+            <th>${t('audit.col_at')}</th>
+            <th>${t('audit.col_action')}</th>
+            <th>${t('audit.col_resource')}</th>
+            <th>${t('audit.col_resource_id')}</th>
+            <th>${t('audit.col_actor')}</th>
+            <th>${t('audit.col_outcome')}</th>
+            <th>${t('audit.col_metadata')}</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
@@ -118,15 +126,15 @@ async function render() {
 
     const totalPages = Math.max(1, Math.ceil((pagination?.total || 0) / PAGE_SIZE));
     document.getElementById('pagination-wrap').innerHTML = `
-      <div class="muted">Page ${state.page} / ${totalPages} · ${pagination?.total ?? '—'} events</div>
+      <div class="muted">${t('audit.pagination_label', { page: state.page, total: totalPages, count: pagination?.total ?? '—' })}</div>
       <div class="flex gap-8">
-        <button class="btn secondary" id="prev-page" ${state.page <= 1 ? 'disabled' : ''}>Prev</button>
-        <button class="btn secondary" id="next-page" ${state.page >= totalPages ? 'disabled' : ''}>Next</button>
+        <button class="btn secondary" id="prev-page" ${state.page <= 1 ? 'disabled' : ''}>${t('common.previous')}</button>
+        <button class="btn secondary" id="next-page" ${state.page >= totalPages ? 'disabled' : ''}>${t('common.next')}</button>
       </div>`;
     document.getElementById('prev-page').onclick = () => { state.page--; render(); };
     document.getElementById('next-page').onclick = () => { state.page++; render(); };
   } catch (e) {
-    wrap.innerHTML = `<div class="inline-alert danger">Failed to load audit events: ${escapeHtml(e.message)}</div>`;
+    wrap.innerHTML = `<div class="inline-alert danger">${t('audit.load_failed')}: ${escapeHtml(e.message)}</div>`;
   }
 }
 
@@ -136,7 +144,7 @@ async function exportCsv() {
   const btn = document.getElementById('export-csv-btn');
   const originalLabel = btn.textContent;
   btn.disabled = true;
-  btn.textContent = 'Exporting…';
+  btn.textContent = t('audit.exporting');
   try {
     // Build the same filter shape the table uses, but request a single
     // big page (server caps at 5000) and CSV format. We bypass apiFetch
@@ -147,7 +155,7 @@ async function exportCsv() {
 
     // Reuse the SDK's auth session to get an access token.
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) throw new Error('No active session — please sign in again.');
+    if (!session?.access_token) throw new Error(t('errors.unauthorized'));
 
     const res = await fetch(`/api/v1/admin/audit?${params}`, {
       method: 'GET',
@@ -168,7 +176,7 @@ async function exportCsv() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   } catch (e) {
-    alert(`Export failed: ${e.message}`);
+    alert(`${t('audit.export_failed')}: ${e.message}`);
   } finally {
     btn.disabled = false;
     btn.textContent = originalLabel;

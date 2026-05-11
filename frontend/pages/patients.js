@@ -9,10 +9,15 @@
  * Depends on window.__UELFY_CONFIG__ being populated by
  * assets/js/public-config.js, which the page MUST include with a
  * non-module <script> tag BEFORE this module.
+ *
+ * Sprint 8 task 8.2: i18n via t() + bootstrapI18n().
  */
 
 import { api, requireAuth } from '../assets/js/api-client.js';
 import { mountNavHeader } from '../components/nav-header.js';
+import { t, bootstrapI18n } from '../i18n/index.js';
+
+bootstrapI18n();
 
 await requireAuth();
 
@@ -20,11 +25,11 @@ await requireAuth();
 mountNavHeader({
   container: document.getElementById('nav-header-mount'),
   crumbs: [
-    { label: 'Dashboard', href: './dashboard.html' },
-    { label: 'Patients' },
+    { label: t('nav.dashboard'), href: './dashboard.html' },
+    { label: t('nav.patients') },
   ],
   backHref: './dashboard.html',
-  backLabel: 'Back to dashboard',
+  backLabel: t('patients.back_to_dashboard'),
 });
 
 const PAGE_SIZE = 20;
@@ -49,7 +54,7 @@ try {
 
 async function render() {
   const wrap = document.getElementById('patients-table-wrap');
-  wrap.innerHTML = `<p class="muted">Loading…</p>`;
+  wrap.innerHTML = `<p class="muted">${t('common.loading')}</p>`;
   try {
     const { patients, pagination } = await api.listPatients({
       page: state.page,
@@ -58,7 +63,10 @@ async function render() {
     });
 
     if (!patients?.length) {
-      wrap.innerHTML = `<p class="muted">No patients match your filter.</p>`;
+      const empty = state.search
+        ? t('patients.empty_search')
+        : t('patients.empty_body');
+      wrap.innerHTML = `<p class="muted">${empty}</p>`;
       document.getElementById('pagination-wrap').innerHTML = '';
       return;
     }
@@ -70,9 +78,9 @@ async function render() {
         <td>${escapeHtml(p.sex ?? '—')}</td>
         <td>${escapeHtml(p.birth_date ?? (p.birth_year ? String(p.birth_year) : '—'))}</td>
         <td>${p.is_active === false
-          ? '<span class="badge muted">inactive</span>'
-          : '<span class="badge ok">active</span>'}</td>
-        <td><a href="./patient-detail.html?id=${encodeURIComponent(p.id)}">Open</a></td>
+          ? `<span class="badge muted">${t('patients.status_inactive')}</span>`
+          : `<span class="badge ok">${t('patients.status_active')}</span>`}</td>
+        <td><a href="./patient-detail.html?id=${encodeURIComponent(p.id)}">${t('common.open')}</a></td>
       </tr>
     `).join('');
 
@@ -80,7 +88,12 @@ async function render() {
       <table class="table">
         <thead>
           <tr>
-            <th>Ref</th><th>Name</th><th>Sex</th><th>DOB</th><th>Status</th><th></th>
+            <th>${t('dashboard.col_ref')}</th>
+            <th>${t('patients.col_name')}</th>
+            <th>${t('dashboard.col_sex')}</th>
+            <th>${t('dashboard.col_dob')}</th>
+            <th>${t('patients.col_status')}</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
@@ -88,16 +101,16 @@ async function render() {
 
     const totalPages = Math.max(1, Math.ceil((pagination?.total || 0) / PAGE_SIZE));
     document.getElementById('pagination-wrap').innerHTML = `
-      <div class="muted">Page ${state.page} / ${totalPages} · ${pagination?.total ?? '—'} patients</div>
+      <div class="muted">${t('patients.pagination_label', { page: state.page, total: totalPages, count: pagination?.total ?? '—' })}</div>
       <div class="flex gap-8">
-        <button class="btn secondary" id="prev-page" ${state.page <= 1 ? 'disabled' : ''}>Prev</button>
-        <button class="btn secondary" id="next-page" ${state.page >= totalPages ? 'disabled' : ''}>Next</button>
+        <button class="btn secondary" id="prev-page" ${state.page <= 1 ? 'disabled' : ''}>${t('common.previous')}</button>
+        <button class="btn secondary" id="next-page" ${state.page >= totalPages ? 'disabled' : ''}>${t('common.next')}</button>
       </div>`;
     document.getElementById('prev-page').onclick = () => { state.page--; render(); };
     document.getElementById('next-page').onclick = () => { state.page++; render(); };
   } catch (e) {
     console.error(e);
-    wrap.innerHTML = `<div class="inline-alert danger">Failed to load patients: ${escapeHtml(e.message)}</div>`;
+    wrap.innerHTML = `<div class="inline-alert danger">${t('dashboard.load_patients_failed')}: ${escapeHtml(e.message)}</div>`;
   }
 }
 
@@ -123,12 +136,12 @@ document.getElementById('new-patient-form').addEventListener('submit', async (e)
   errorEl.classList.add('hidden');
   const submitBtn = document.getElementById('np-submit');
   submitBtn.disabled = true;
-  submitBtn.textContent = 'Creating…';
+  submitBtn.textContent = t('patients.creating');
   try {
     const dobIso = form.dateOfBirth.value
       ? new Date(form.dateOfBirth.value + 'T00:00:00Z').toISOString()
       : null;
-    if (!dobIso) throw new Error('Date of birth is required');
+    if (!dobIso) throw new Error(t('patients.dob_required'));
     const body = {
       demographics: {
         firstName:    form.firstName.value.trim(),
@@ -150,11 +163,11 @@ document.getElementById('new-patient-form').addEventListener('submit', async (e)
   } catch (err) {
     errorEl.textContent = err?.details
       ? `${err.message} — ${JSON.stringify(err.details)}`
-      : (err.message || 'Failed to create patient');
+      : (err.message || t('patients.create_failed'));
     errorEl.classList.remove('hidden');
   } finally {
     submitBtn.disabled = false;
-    submitBtn.textContent = 'Create patient';
+    submitBtn.textContent = t('patients.create_patient_btn');
   }
 });
 
