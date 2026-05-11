@@ -1,4 +1,4 @@
-# RLS Staging Runbook (Sprint 5 task 5.5 / closes #55)
+# RLS Staging Runbook (Sprint 5 task 5.5 / closes #55, fail-closed elevation in Sprint 7 task 7.2)
 
 > **Purpose.** Stand up a Supabase **staging** project dedicated to running
 > RLS regression tests on every push, so the multi-tenant isolation
@@ -11,6 +11,12 @@
 > RLS test suite against a real Postgres + Supabase Auth instance with
 > all 19 migrations applied, instead of skipping it with the current
 > `[run-rls-tests] SKIP DATABASE_URL not set` line.
+>
+> **Sprint 7 status.** The CI wire-through (Section 3) is now COMMITTED
+> on `.github/workflows/ci.yml`. `scripts/run-rls-tests.mjs` was
+> elevated from skip-graceful to **fail-closed in CI** when the secret
+> is non-empty. Pending: the operator runs Section 2 once to create the
+> staging project and populate the GitHub secrets.
 
 ---
 
@@ -58,37 +64,59 @@
    - `SUPABASE_STAGING_SERVICE_ROLE_KEY`
    - `SUPABASE_STAGING_JWT_SECRET`
 
-## 3. Wire-through in `.github/workflows/ci.yml`
+## 3. Wire-through in `.github/workflows/ci.yml` (Sprint 7 task 7.2 — DONE)
 
-Add the secrets to the existing `build:check + test` job env:
+The wire-through is now committed at the **job-level** env block of
+`build-and-test` (not at step-level as the original Sprint-5 sketch
+proposed — job-level is cleaner because every step in build:check
+inherits the URL without per-step repetition):
 
 ```yaml
-- name: build:check + test
-  env:
-    DATABASE_URL: ${{ secrets.DATABASE_URL_STAGING }}
-    SUPABASE_URL: ${{ secrets.SUPABASE_STAGING_URL }}
-    SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_STAGING_ANON_KEY }}
-    SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_STAGING_SERVICE_ROLE_KEY }}
-    SUPABASE_JWT_SECRET: ${{ secrets.SUPABASE_STAGING_JWT_SECRET }}
-  run: npm run build:check && npm test
+jobs:
+  build-and-test:
+    env:
+      SBOM_CVE_FAIL_ON_HIGH: 'true'
+      DATABASE_URL_STAGING: ${{ secrets.DATABASE_URL_STAGING }}
 ```
 
-The `scripts/run-rls-tests.mjs` script already detects `DATABASE_URL`
-and switches from SKIP to ENFORCE automatically — no script change
-needed. Same for `scripts/check-rls-coverage.mjs`.
+Notes on the elevated semantics:
+
+* `scripts/run-rls-tests.mjs` now reads **both** `DATABASE_URL` and
+  `DATABASE_URL_STAGING`, preferring the latter when both are set so
+  the CI secret name cannot collide with a developer's shell export.
+* In CI (`CI=true`) with the secret non-empty, the script is
+  **fail-closed**: any psql error, missing test file, or assertion
+  failure exits 2 and breaks the build. There is **no graceful skip
+  path** in this scenario.
+* In CI with the secret empty (the rollout window before Section 2 is
+  done), the script emits a visible `WARN — SKIP` line and exits 0, so
+  the gap is auditable in build logs but does not block the build.
+* A CI step now installs `postgresql-client` defensively if the runner
+  image regresses and drops `psql` from PATH.
+* If you want fail-closed locally (paranoid mode), export
+  `RLS_GATE_REQUIRED=1` — every skip path becomes a fail.
+
+To add the other Supabase staging secrets (anon key / service-role
+key / JWT secret) if a future test needs them, follow the same
+pattern: add to the job-level env, never to a single step.
 
 ## 4. Local developer use (optional)
 
 A developer can opt-in locally by:
 
 ```sh
-export DATABASE_URL="postgresql://postgres.<ref>:<password>@…/postgres"
+export DATABASE_URL_STAGING="postgresql://postgres.<ref>:<password>@…/postgres"
 npm run test:rls
+
+# Paranoid mode — turn every skip into a fail (matches CI semantics):
+RLS_GATE_REQUIRED=1 npm run test:rls
 ```
 
 The connection string is the same one stored in the GitHub secret.
 Most engineers will NOT run RLS tests locally (CI does it on every
-push), but the option exists for debugging an RLS regression.
+push), but the option exists for debugging an RLS regression. The
+script accepts both `DATABASE_URL` (legacy) and `DATABASE_URL_STAGING`
+(canonical CI name); when both are set the latter wins.
 
 ## 5. Per-PR teardown (idempotency)
 
@@ -113,16 +141,35 @@ race with tests that count rows immediately after insert.
 
 ## 7. Verifying the gate is live
 
-After the GitHub secrets are added and CI runs, the next workflow run
-should show:
+After the GitHub secret `DATABASE_URL_STAGING` is added and the next
+CI workflow runs on a `push` to main (or a PR), the build-and-test job
+should show in its log:
 
 ```
-[run-rls-tests] OK  18/18 RLS test cases passed against DATABASE_URL_STAGING.
-[check-rls-coverage] OK  20/20 PHI tables have FORCE RLS enabled.
+[run-rls-tests] Running 1 RLS test file(s) against staging DB
+[run-rls-tests] Mode: CI fail-closed (errors will fail the build).
+[run-rls-tests] OK   tests/rls/cross_tenant_negative.sql
+[run-rls-tests] All RLS tests passed.
 ```
 
-If either step still says SKIP, the secret name doesn't match — check
-`scripts/run-rls-tests.mjs` for the exact env-var lookup.
+If the secret is empty / unset, the log shows instead:
+
+```
+[run-rls-tests] WARN SKIP — no DATABASE_URL / DATABASE_URL_STAGING configured.
+[run-rls-tests] WARN To enforce the RLS gate in CI, set the DATABASE_URL_STAGING
+                     secret in this repo.
+```
+
+That second case is the **legitimate rollout-window state** until you
+complete Section 2. It is NOT silent (the WARN lines are visible in
+build logs), but it does NOT block merges. After Section 2 the WARN
+must disappear — if it does not, the secret name is wrong or empty.
+
+To verify the fail-closed path before relying on it, intentionally
+break a RLS policy on the staging project (e.g. drop the `USING (...)`
+clause from a select policy) and push a no-op commit. The CI build
+must go red on the `Build gates` step with a non-zero exit from
+`run-rls-tests.mjs`. Then restore the policy.
 
 ## 8. Cost note
 

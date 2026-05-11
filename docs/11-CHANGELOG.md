@@ -7,6 +7,127 @@ executed per the project blueprint.
 
 ---
 
+## [Sprint 7 — Continuous gate closure & RLS fail-closed] — 2026-05-11 — **CLOSED**
+
+Sprint 7 closes the two CI-enforcement gaps left at the end of Sprint
+6: per-module coverage was a documented gate but not blocking, and
+the RLS staging suite was committed but skip-graceful in every
+absence scenario. Sprint 7 wires both into CI as first-class signals.
+Zero changes to clinical engine logic; zero changes to the formula
+registry. Pure CI/operational hardening sprint, designed to be the
+last engineering work before the launch programme for the first
+5–10 private-clinic users.
+
+### Sprint 7 outcome at a glance
+
+| Metric | Before Sprint 7 | After Sprint 7 |
+| --- | --- | --- |
+| CI jobs running per push | 3 (build-and-test, release-sbom, smoke-prod) | **4** (added `coverage-gate`) |
+| Per-module coverage enforced on PRs | ❌ documented only | ✅ Tier 1 90% / Tier 2 80% / Tier 3 70% blocking |
+| RLS gate posture in CI | SKIP-graceful always | **FAIL-CLOSED** when `DATABASE_URL_STAGING` set; SKIP-WARN otherwise |
+| `psql` reliability in CI | implicit (ubuntu-22.04 default) | explicit verify-and-install step |
+| Stale doc references to "244 tests" | 3 (CI yml + docs/35-CI-CD) | 0 |
+| `.nvmrc` parity workspace↔repo | repo-only | both, byte-identical |
+
+### Sprint 7 task 7.1 — Wire `check:coverage` in CI as separate job (CLOSED)
+
+- New job `coverage-gate` added to `.github/workflows/ci.yml`,
+  running in parallel to `build-and-test` (no `needs:` dependency).
+  Same triggers (pull_request + push main), skipped on release events.
+- Steps: checkout → setup-node from .nvmrc → npm ci → `npm run
+  test:coverage` → assert `coverage/coverage-summary.json` exists
+  (fail-loud if vitest reporter regresses) → `node
+  scripts/check-coverage-thresholds.mjs` → upload coverage HTML as
+  artifact with 7-day retention → step-summary with global lines/
+  functions/branches percentages.
+- Why parallel and not chained on build-and-test: build-and-test is
+  already tight (10-minute timeout); coverage instrumentation roughly
+  doubles vitest wall time. Trading CI minutes for time-to-signal.
+- Branch protection wire-up (require `coverage-gate` to be green
+  before merge) is **post-Sprint 7 ops work** — flip in GitHub UI
+  after a first green run validates the job in the wild.
+
+### Sprint 7 task 7.2 — RLS staging gate SKIP → ENFORCE (CLOSED)
+
+- `scripts/run-rls-tests.mjs` rewritten with an explicit
+  skip-vs-fail matrix documented in the file header. Key behaviours:
+  - Reads both `DATABASE_URL_STAGING` (canonical CI name from
+    `docs/35-RLS-STAGING-RUNBOOK.md`) and `DATABASE_URL` (legacy
+    dev-shell name); the former wins when both are set.
+  - **In CI** (`CI=true`) with `DATABASE_URL{_STAGING}` non-empty:
+    any psql error / missing test file / assertion failure exits 2
+    and breaks the build. No graceful skip path in this scenario.
+  - In CI with the secret empty (rollout window): emits visible
+    `WARN — SKIP` lines pointing at the staging runbook, exits 0.
+    Drift cannot fade into background because the WARNs are in the
+    build log.
+  - `RLS_GATE_REQUIRED=1` is an opt-in env that turns every skip
+    path into FAIL, regardless of CI/local. Use for paranoid
+    debugging.
+- `.github/workflows/ci.yml` exposes `secrets.DATABASE_URL_STAGING`
+  at job level on `build-and-test` (inherits to every step under
+  `build:check`, where `run-rls-tests.mjs` is wired).
+- New defensive CI step `Verify psql is available`: ubuntu-22.04
+  ships `postgresql-client` by default but a future runner image
+  change that drops it would otherwise turn into a silent SKIP. The
+  step verifies / installs explicitly.
+- `docs/35-RLS-STAGING-RUNBOOK.md` updated: Section 3 rewritten for
+  the job-level env wiring; Section 4 documents both env-var aliases
+  + `RLS_GATE_REQUIRED=1` paranoid-mode; Section 7 rewritten with
+  realistic expected log output and the "intentionally break a
+  policy and verify CI goes red" validation procedure.
+- **Pending operator action.** The fail-closed gate activates only
+  once the operator provisions a Supabase staging project per the
+  runbook Section 2 (~30 min) and sets `DATABASE_URL_STAGING` as a
+  repository secret. Until then the gate runs in SKIP-WARN mode.
+
+### Sprint 7 task 7.3 — CI doc hygiene + .nvmrc workspace parity (CLOSED)
+
+- `.github/workflows/ci.yml`: stale `"244 tests expected"` comment
+  on the test step replaced with a stale-count guard explanation
+  + a step-summary line that surfaces the actual test-file count
+  per build (not the test-case count — derives cleanly from
+  filesystem without depending on vitest reporter format).
+- `.nvmrc` (`20.18.0`) now committed in the Cowork workspace folder
+  as well, achieving parity with the repo. Removes a workspace/repo
+  asymmetry where editing the Node version from Cowork would not
+  propagate via the `cp` workflow.
+- `docs/35-CI-CD-WORKFLOW.md` (the developer cheatsheet, distinct
+  from `docs/35-RLS-STAGING-RUNBOOK.md` despite the shared number)
+  refreshed: 10 → 13 build gates listed with sprint provenance for
+  each, `coverage-gate` job described, CI step list re-numbered
+  with the new `Verify psql` step, "3 parallel jobs" → "4 jobs"
+  with timing breakdown.
+- No other stale "244" / "150 tests" / "10 gates" references found
+  in the codebase.
+
+### Sprint 7 task 7.4 — Wrap (this entry)
+
+- This changelog section, `docs/30-RISK-REGISTER.md` Section G
+  refreshed (H-01 substantive note + L-07 enforced note), `docs/10`
+  §13 added, `package.json` version bump 0.2.1 → 0.2.2.
+
+### Sprint 7 closed-pending summary
+
+| Workstream | Engineering done | Operator follow-up |
+| --- | --- | --- |
+| Coverage gate enforcement | ✅ job committed | flip branch protection to require `coverage-gate` |
+| RLS fail-closed | ✅ script + CI wired | provision Supabase staging (`docs/35` §2, ~30 min) + set `DATABASE_URL_STAGING` GH secret |
+| Doc hygiene | ✅ stale counts removed | none |
+| `.nvmrc` parity | ✅ committed in Cowork | none |
+
+### Sprint 7 risks accepted
+
+* The fail-closed gate is **dormant** until the operator completes
+  the staging provisioning. During the rollout window CI emits
+  visible WARN lines per build. Mitigation: the WARN log lines name
+  the runbook section directly so the work cannot be lost.
+* Branch protection requiring `coverage-gate` is intentionally not
+  flipped from CI (would create a chicken-and-egg lock on the first
+  PR after Sprint 7). Operator flips after first green run.
+
+---
+
 ## [Sprint 6 — Observability & coverage maturity] — 2026-05-07 — **CLOSED**
 
 Sprint 6 closes the operational-readiness gap left by Sprint 5: the

@@ -15,12 +15,21 @@
 #                            can download the exact SBOM that corresponds
 #                            to a tagged version.
 #
-# Required env / secrets (none mandatory yet)
-# -------------------------------------------
-#   DATABASE_URL_STAGING : optional. When set, the run-rls-tests gate
-#                          executes against a staging Supabase. Without
-#                          it, the script skips gracefully (graceful
-#                          skip is by design — see scripts/run-rls-tests.mjs).
+# Required env / secrets
+# ----------------------
+#   DATABASE_URL_STAGING : repository secret. When configured, build-and-test
+#                          exposes it via env and the run-rls-tests.mjs gate
+#                          executes 6 cross-tenant negative assertions against
+#                          the staging Supabase. The script is FAIL-CLOSED in
+#                          CI when this is set: any psql error, missing test
+#                          file, or assertion failure breaks the build (Sprint
+#                          7 task 7.2). When the secret is empty / unset the
+#                          script SKIPs with a visible WARN (rollout window
+#                          before the user has provisioned staging — see
+#                          docs/35-RLS-STAGING-RUNBOOK.md, ~30 min). Never
+#                          point this at production — psql runs RESET ROLE
+#                          but the SQL test still writes/reads against the
+#                          target DB inside a ROLLBACK transaction.
 #
 # Hardening choices
 # -----------------
@@ -73,6 +82,13 @@ jobs:
 
     env:
       SBOM_CVE_FAIL_ON_HIGH: 'true'
+      # Sprint 7 task 7.2 — expose the staging DB URL only when it is
+      # configured as a repository secret. Empty string when unset, in
+      # which case run-rls-tests.mjs SKIPs with a visible WARN (it does
+      # NOT silently no-op — see the matrix in that script's header).
+      # The secret name DATABASE_URL_STAGING is documented in
+      # docs/35-RLS-STAGING-RUNBOOK.md as the canonical CI alias.
+      DATABASE_URL_STAGING: ${{ secrets.DATABASE_URL_STAGING }}
 
     steps:
       - name: Checkout
@@ -85,6 +101,20 @@ jobs:
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
+
+      - name: Verify psql is available (Sprint 7 task 7.2)
+        # ubuntu-22.04 ships postgresql-client by default. Verify it
+        # explicitly so a future runner image change that drops psql
+        # surfaces as a failed step instead of as a silent RLS-test
+        # SKIP (which would be impossible to notice without reading
+        # build logs daily).
+        run: |
+          if ! command -v psql >/dev/null 2>&1; then
+            echo "::warning::psql not on PATH — installing postgresql-client"
+            sudo apt-get update -qq
+            sudo apt-get install -y --no-install-recommends postgresql-client
+          fi
+          psql --version
 
       - name: Print toolchain versions
         run: |
@@ -110,8 +140,26 @@ jobs:
       - name: Build gates (10 checks incl. CVE fail-on-high)
         run: npm run build:check
 
-      - name: Test suite (vitest, 244 tests expected)
-        run: npm test
+      - name: Test suite (vitest — counts surfaced in step summary)
+        # Stale-count guard
+        # -----------------
+        # The Sprint 5 commit hard-coded "244 tests expected" here. That
+        # decayed once Sprint 6 task 6.1 added the per-module coverage
+        # gate (+5 test files) and the validated-score reference golden
+        # suites (+ dual-assertion equivalence). Rather than chase a
+        # number that drifts every sprint, we let vitest report the
+        # actual count and the step summary records it; the value is
+        # informational, not gating.
+        run: |
+          npm test
+          # Render the pass count in the run summary if vitest produced one.
+          # We re-derive a quick count of test files for the audit trail —
+          # cheap and exact, no dep on vitest's reporter format.
+          TEST_FILE_COUNT=$(find tests -name "*.test.ts" -type f | wc -l | tr -d ' ')
+          echo "## Test suite — \`npm test\` passed" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "* Test files: **${TEST_FILE_COUNT}** (find tests -name '*.test.ts')" >> "$GITHUB_STEP_SUMMARY"
+          echo "* Commit: \`${GITHUB_SHA::7}\`" >> "$GITHUB_STEP_SUMMARY"
 
       - name: SBOM must be fresh
         run: |
@@ -146,6 +194,127 @@ jobs:
             exit 1
           fi
           echo "OK SBOM is bytewise idempotent across consecutive refreshes"
+
+  coverage-gate:
+    # ==========================================================================
+    # Sprint 7 task 7.1 — Per-module code-coverage gate enforced in CI.
+    # --------------------------------------------------------------------------
+    # `npm run check:coverage` (Sprint 6 task 6.1) chains `test:coverage` and
+    # `scripts/check-coverage-thresholds.mjs`. The gate enforces per-module
+    # line-coverage floors:
+    #
+    #   * Tier 1 (validated formulas — SCORE2, SCORE2-DM, eGFR, FIB-4, FRAIL,
+    #     ADA, BMI, MetS, FLI, SCORE2-eligibility): 85-90%
+    #   * Tier 2 (interpretation — composite-risk, alert-deriver, follow-up):
+    #     80%
+    #   * Tier 3 (supporting — guideline-registry, guideline-resolver): 70%
+    #
+    # Why a SEPARATE job instead of folding into `build-and-test`
+    # -----------------------------------------------------------
+    #   * `build-and-test` is already tight (10 minute timeout). Coverage
+    #     instrumentation roughly doubles vitest's wall time. Keeping it
+    #     in its own job lets the structural gates and the test suite
+    #     surface their signal faster.
+    #   * The two jobs run in parallel (no `needs:` here). CI minutes are
+    #     traded for time-to-signal. The duplicated `npm ci` cost is
+    #     amortised by the actions/setup-node cache.
+    #   * If `check:coverage` fails, the PR cannot merge once branch
+    #     protection requires this check name (planned post-Sprint 7).
+    #
+    # Skip semantics
+    # --------------
+    #   * Release events skip this job (same rationale as build-and-test:
+    #     gates already ran on the commit that produced the release).
+    #   * The gate script SKIPs gracefully if `coverage/coverage-summary.json`
+    #     is absent — but we explicitly assert it exists between
+    #     `test:coverage` and the gate, so a silent skip in CI is impossible.
+    #
+    # Artefacts
+    # ---------
+    #   The HTML coverage report is uploaded as a workflow artefact so a
+    #   reviewer can drill into per-line coverage from the run page
+    #   without re-running tests locally. 7-day retention is enough for
+    #   review windows and cheap on storage.
+    # ==========================================================================
+    name: Coverage gate (per-module Tier 1/2/3 floors)
+    if: github.event_name != 'release'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node from .nvmrc
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install (mirror Vercel — npm ci with devDeps)
+        run: npm ci --include=dev --no-audit --no-fund
+
+      - name: Generate coverage report (v8 provider, json-summary)
+        # `npm run test:coverage` writes:
+        #   coverage/coverage-summary.json  (machine-readable, gate input)
+        #   coverage/index.html              (human-readable drill-down)
+        #   coverage/lcov.info               (CI / external tools)
+        run: npm run test:coverage
+
+      - name: Assert coverage summary exists
+        # Defensive — if vitest's v8 reporter regresses and stops
+        # emitting the summary, the gate would SKIP graceful and let a
+        # silent coverage drop through. Hard-assert presence in CI to
+        # close that loop.
+        run: |
+          if [ ! -f coverage/coverage-summary.json ]; then
+            echo "::error::coverage/coverage-summary.json was not produced by \`npm run test:coverage\`."
+            echo "::error::Most likely cause: vitest v8 reporter config drift in tests/vitest.config.ts."
+            echo "::error::Expected reporters: ['text', 'html', 'lcov', 'json-summary']"
+            ls -la coverage/ 2>&1 || echo "(coverage/ directory absent)"
+            exit 1
+          fi
+          echo "OK coverage/coverage-summary.json present ($(wc -c < coverage/coverage-summary.json) bytes)"
+
+      - name: Enforce per-module coverage thresholds
+        # The gate exits 2 on any module below its floor (printed table
+        # of offenders is in the step's stderr). exits 0 otherwise.
+        run: node scripts/check-coverage-thresholds.mjs
+
+      - name: Upload coverage HTML report (artefact, 7-day retention)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-html-${{ github.sha }}
+          path: coverage/
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: Coverage summary in job output
+        if: always()
+        run: |
+          {
+            echo "## Coverage gate — commit ${GITHUB_SHA::7}"
+            echo ""
+            echo "* Result: **${{ job.status }}**"
+            if [ -f coverage/coverage-summary.json ]; then
+              # Show the global total as a quick orientation. The
+              # per-module enforcement is what actually gates the build.
+              TOTAL_LINES=$(node -e "const s=require('./coverage/coverage-summary.json'); console.log(s.total?.lines?.pct ?? 'n/a');")
+              TOTAL_FUNCS=$(node -e "const s=require('./coverage/coverage-summary.json'); console.log(s.total?.functions?.pct ?? 'n/a');")
+              TOTAL_BRANCHES=$(node -e "const s=require('./coverage/coverage-summary.json'); console.log(s.total?.branches?.pct ?? 'n/a');")
+              echo "* Lines (total): **${TOTAL_LINES}%**"
+              echo "* Functions (total): **${TOTAL_FUNCS}%**"
+              echo "* Branches (total): **${TOTAL_BRANCHES}%**"
+              echo ""
+              echo "Per-module floors enforced by \`scripts/check-coverage-thresholds.mjs\`."
+              echo "HTML drill-down attached as artefact \`coverage-html-${GITHUB_SHA::7}\`."
+            else
+              echo "* Coverage summary was not generated — see job log."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
 
   release-sbom:
     name: Attach SBOM to GitHub Release (Sprint 1 task 1.6)

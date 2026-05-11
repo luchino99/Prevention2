@@ -161,7 +161,39 @@ Status legend:  `✅ done` · `🟡 partial / follow-up` · `⬜ open`
 | 12.3 | Health check endpoint with deep probes | ✅ | Sprint 6 task 6.2 — `api/v1/health.ts` runs 4 concurrent probes (Supabase / Storage / Upstash / MFA-flag policy) each bounded by a 3 s hard timeout. Per-subsystem latency budgets: Supabase 500 ms, Storage 750 ms, Upstash 250 ms — overruns surface as `detail: "slow:<latency>ms"` without flipping the overall verdict. Storage added to the critical-subsystems set: a down storage bucket fails PDF reports, so it warrants `503 unhealthy` (HTTP 207 degraded reserved for Upstash fallback / partial MFA flags). |
 | 12.4 | Datadog dashboard templates for every structured-log event | ✅ | Sprint 6 task 6.3 — importable JSON in `docs/observability/datadog-*.json` covering `RETENTION_RUN`, `ALERTS_AUTO_CLOSE_RUN`, `AUDIT_WRITE_FAILED`, `ACCESS_DENIED`. Each template ships a count-over-time tile, a faceted breakdown, and a monitor (alert) example with the SLO-anchored thresholds. Operator imports via Datadog UI; same queries map to Grafana Loki. README at `docs/observability/README.md`. |
 | 12.5 | SLO definitions doc + burn-rate alerts | ✅ | Sprint 6 task 6.4 — `docs/41-SLO-DEFINITIONS.md` defines: 99.5 % availability initial target (99.9 % post-first-tenant), per-endpoint p95 latency budgets (read 200 ms / write 500 ms / PDF 5 s / FHIR 3 s / alert ack 300 ms), zero-tolerance audit-strict invariant, 28-hour cron-liveness budget, RBAC denial baselines per tenant. Multi-window multi-burn-rate alerting (14.4× over 1h SEV-2; 6× over 6h SEV-3) per Google SRE pattern. |
-| 12.6 | Per-module code-coverage report | ✅ | Sprint 6 task 6.1 (closes L-07) — `tests/vitest.config.ts` emits `json-summary` via `@vitest/coverage-v8`; `scripts/check-coverage-thresholds.mjs` enforces per-module floors (validated formulas 90 %, interpretation layers 80 %, supporting modules 70 %). Run via `npm run check:coverage`. |
+| 12.6 | Per-module code-coverage report | ✅ | Sprint 6 task 6.1 (closes L-07) — `tests/vitest.config.ts` emits `json-summary` via `@vitest/coverage-v8`; `scripts/check-coverage-thresholds.mjs` enforces per-module floors (validated formulas 90 %, interpretation layers 80 %, supporting modules 70 %). Run via `npm run check:coverage`. **CI-enforced Sprint 7 task 7.1** — see §13.1. |
+
+---
+
+## 13. Continuous gate enforcement (Sprint 7)
+
+This section catalogues every control whose enforcement was elevated
+from "documented and runnable" to "blocking on CI" in Sprint 7.
+Pre-Sprint-7, a developer could ship a change that violated one of
+these gates if they did not run the relevant script locally — Sprint
+7 closes that gap.
+
+| # | Gate | Pre-Sprint-7 enforcement | Post-Sprint-7 enforcement | Evidence |
+|---|---|---|---|---|
+| 13.1 | Per-module code coverage (Tier 1 / 2 / 3 floors) | Optional local `npm run check:coverage`; not in `build:check` | **Dedicated `coverage-gate` CI job** on every PR + push to main, fail-closed on any module below floor | Sprint 7 task 7.1 — `.github/workflows/ci.yml` `coverage-gate` job; HTML drill-down uploaded as 7-day artifact |
+| 13.2 | RLS regression (cross-tenant negative assertions) | `run-rls-tests.mjs` SKIP-graceful in every absence scenario (CI Vercel built without DB) | **Fail-closed in CI** when `DATABASE_URL_STAGING` GH secret is non-empty; SKIP-WARN (visible in logs, never silent) otherwise; `RLS_GATE_REQUIRED=1` paranoid-mode opt-in | Sprint 7 task 7.2 — `scripts/run-rls-tests.mjs` rewritten matrix; `.github/workflows/ci.yml` job-level env wiring + `Verify psql is available` step |
+| 13.3 | Node.js version pinning (.nvmrc) | Repo-only; Cowork workspace lacked the file | Repo + Cowork workspace, byte-identical (`20.18.0`) | Sprint 7 task 7.3 — `.nvmrc` committed in workspace folder |
+| 13.4 | CI doc accuracy (build-gate count, test-count claims) | "244 tests expected" hard-coded in CI yml + `docs/35-CI-CD-WORKFLOW.md`; decayed since Sprint 5 | Stale-count guard comment in CI yml + dynamic step-summary; `docs/35-CI-CD-WORKFLOW.md` refreshed (13 gates, 4 jobs) | Sprint 7 task 7.3 |
+
+**Operator follow-up to fully activate §13.1 and §13.2:**
+
+1. §13.1 — flip branch protection on `main` to require the
+   `coverage-gate` check before merge. Skipped from Sprint 7 itself
+   to avoid a chicken-and-egg lock on the first post-Sprint-7 PR.
+2. §13.2 — provision Supabase free-tier staging following
+   `docs/35-RLS-STAGING-RUNBOOK.md` Section 2 (~30 min), then set
+   `DATABASE_URL_STAGING` repository secret. Until done, the gate
+   runs SKIP-WARN visible in build logs.
+
+Once both are done, every PR is gated by: 13 `build:check`
+sub-gates + full vitest suite + 6 RLS SQL assertions against
+staging + per-module coverage floors. A change that violates any
+of these cannot land on `main`.
 
 ---
 

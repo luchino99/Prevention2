@@ -37,19 +37,21 @@ git pull origin main
 #    (use your editor; do NOT bypass type checking)
 
 # 3. Local verification (MANDATORY before push)
-npm run build:check        # 10 gates (~10s)
-npm test                   # 244 tests (~3s)
+npm run build:check        # 13 gates (~15s)
+npm test                   # full vitest suite (~3-5s); count printed by vitest
+npm run check:coverage     # optional locally — runs in CI as a separate job
 
 # 4. Commit + push from terminal or GitHub Desktop
 git add <changed-files>
 git commit -m "<conventional-commit-message>"
 git push origin main
 
-# 5. Watch CI — 3 parallel jobs, total ~5 min
+# 5. Watch CI — 4 jobs, total ~5-6 min
 #    https://github.com/luchino99/Prevention2/actions
 #
-#    build:check + test       ✅  ~2 min
-#    Production smoke test    ✅  ~3 min (60s wait + checks)
+#    build:check + test       ✅  ~2 min (build-and-test, parallel)
+#    Coverage gate            ✅  ~2-3 min (coverage-gate, parallel — Sprint 7 task 7.1)
+#    Production smoke test    ✅  ~3 min (60s wait + checks, after build-and-test)
 #    Attach SBOM to Release   ⏭️  Skipped (correct on push events)
 
 # 6. If CI green → done. Vercel has already deployed by then.
@@ -140,16 +142,17 @@ events — gates already passed when the commit was on main).
 ```
 1. Checkout
 2. Setup Node from .nvmrc           v20.18.0
-3. Print toolchain versions
-4. Install (npm ci --include=dev)
-5. Lockfile must be canonical       fails if npm ci modified lockfile
-6. Build gates                      10 sub-gates (see below)
-7. Test suite (vitest)              244 tests
-8. SBOM must be fresh               npm run sbom:refresh, must produce zero diff
-9. SBOM determinism                 sbom:refresh twice → byte-equal output
+3. Verify psql is available         install postgresql-client if absent (Sprint 7 task 7.2)
+4. Print toolchain versions
+5. Install (npm ci --include=dev)
+6. Lockfile must be canonical       fails if npm ci modified lockfile
+7. Build gates                      13 sub-gates (see below)
+8. Test suite (vitest)              full suite; count surfaced in step summary
+9. SBOM must be fresh               npm run sbom:refresh, must produce zero diff
+10. SBOM determinism                sbom:refresh twice → byte-equal output
 ```
 
-**The 10 build gates** (`npm run build:check`):
+**The 13 build gates** (`npm run build:check`, updated through Sprint 7):
 
 1. `fetch-noto-fonts` — vendored Noto fonts present
 2. `fetch-supabase-sdk` — Supabase SDK ESM bundle generated
@@ -159,8 +162,22 @@ events — gates already passed when the commit was on main).
 6. `check-rate-limit-async` — all `/api/v1` endpoints use async rate-limit
 7. `check-sbom` — committed SBOM matches lockfile-resolved SBOM
 8. `check-sbom-cves` — runtime CVE scan, fail on HIGH (`SBOM_CVE_FAIL_ON_HIGH=true` in CI)
-9. `run-rls-tests` — RLS regression tests (skipped if `DATABASE_URL` not set)
-10. `tsc --noEmit` — full TypeScript typecheck
+9. `check-sbom-cve-report-idempotency` — Sprint 5 task 5.3 — cve report is byte-deterministic
+10. `check-sbom-lockfile-parity` — Sprint 5 — SBOM components match package-lock.json
+11. `check-equivalence-coverage` — Sprint 4 task 4.4 — every score has ≥ 5 equivalence cases
+12. `check-no-inline-styles` — Sprint 5 task 5.1 — no `style="…"` attrs in HTML
+13. `check-bundle-budget` — Sprint 5 task 5.4 — per-file byte budget on 15 frontend assets
+14. `run-rls-tests` — Sprint 1 + Sprint 7 task 7.2 — RLS regression tests; FAIL-CLOSED in CI when `DATABASE_URL_STAGING` is set, SKIP-WARN otherwise
+15. `check-rls-coverage` — Sprint 1 — FORCE-RLS coverage check on PHI tables
+16. `tsc --noEmit` — full TypeScript typecheck
+
+Plus a separate **coverage-gate job** running in parallel (Sprint 7 task 7.1):
+
+* `test:coverage` — generates coverage/coverage-summary.json
+* `check-coverage-thresholds.mjs` — enforces per-module floors (Tier 1
+  validated formulas ≥ 85–90%, Tier 2 interpretation ≥ 80%, Tier 3
+  supporting ≥ 70%)
+* coverage HTML artifact uploaded with 7-day retention
 
 ### Job B — `Attach SBOM to GitHub Release`
 

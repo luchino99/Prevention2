@@ -1,6 +1,6 @@
 {
   "name": "uelfy-clinical",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "description": "Uelfy — B2B cardio-nephro-metabolic clinical risk assessment and longitudinal patient monitoring platform.",
   "type": "module",
