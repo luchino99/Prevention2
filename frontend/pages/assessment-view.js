@@ -17,6 +17,9 @@ import {
   resolveAssessmentNeighbours,
   computeAgeFromBirthDate,
 } from '../components/nav-header.js';
+import { t, bootstrapI18n, getCurrentLocale } from '../i18n/index.js';
+
+bootstrapI18n();
 
 await requireAuth();
 
@@ -27,7 +30,7 @@ const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
 const params = new URLSearchParams(window.location.search);
 const assessmentId = params.get('id');
 if (!assessmentId || !/^[0-9a-fA-F-]{36}$/.test(assessmentId)) {
-  document.body.innerHTML = '<main class="app-main"><div class="inline-alert danger">Invalid assessment id.</div></main>';
+  document.body.innerHTML = `<main class="app-main"><div class="inline-alert danger">${t('assessment_view.invalid_id')}</div></main>`;
   throw new Error('invalid id');
 }
 
@@ -51,8 +54,8 @@ function renderNavHeader() {
   const pid = p?.id || null;
   const chipRef = p?.external_code || (pid ? pid.slice(0, 8) : '—');
   const crumbs = [
-    { label: 'Dashboard', href: './dashboard.html' },
-    { label: 'Patients',  href: './patients.html' },
+    { label: t('nav.dashboard'), href: './dashboard.html' },
+    { label: t('nav.patients'),  href: './patients.html' },
   ];
   if (pid) {
     crumbs.push({
@@ -61,10 +64,10 @@ function renderNavHeader() {
     });
   }
   const dateLabel = navState.assessment?.createdAt
-    ? new Date(navState.assessment.createdAt).toLocaleDateString(undefined, {
+    ? new Date(navState.assessment.createdAt).toLocaleDateString(getCurrentLocale(), {
         year: 'numeric', month: 'short', day: '2-digit',
       })
-    : 'Assessment';
+    : t('assessment_view.title');
   crumbs.push({ label: dateLabel });
 
   const backHref = pid
@@ -75,7 +78,7 @@ function renderNavHeader() {
     container: mount,
     crumbs,
     backHref,
-    backLabel: 'Back to patient',
+    backLabel: t('assessment_view.back_to_patient'),
     assessment: navState.assessment,
     prevAssessmentId: navState.prevAssessmentId,
     nextAssessmentId: navState.nextAssessmentId,
@@ -140,9 +143,9 @@ function riskBadge(level) {
 // ────────────────────────────────────────────────────────────────────
 function formatEvidenceLabel(level) {
   if (!level) return '';
-  if (level === 'A' || level === 'B' || level === 'C') return `Evidence ${level}`;
-  if (level === 'consensus') return 'Consensus';
-  if (level === 'policy') return 'Internal policy';
+  if (level === 'A' || level === 'B' || level === 'C') return t('patient_detail.evidence_prefix', { level });
+  if (level === 'consensus') return t('patient_detail.evidence_consensus');
+  if (level === 'policy') return t('patient_detail.evidence_policy');
   return String(level);
 }
 
@@ -167,17 +170,17 @@ function guidelineCellHtml(item) {
 function guidelineSourceLineHtml(item) {
   const inner = guidelineCellHtml(item);
   if (!inner) return '';
-  return `<div class="muted mt-4 text-xs">Source: ${inner}</div>`;
+  return `<div class="muted mt-4 text-xs">${t('patient_detail.source_prefix')}: ${inner}</div>`;
 }
 
 function renderComposite(c) {
   const cells = [
-    ['Overall',         c.level,                  c.numeric != null ? `score ${c.numeric.toFixed(2)}` : ''],
-    ['Cardiovascular',  c.cardiovascular?.level,  c.cardiovascular?.reasoning],
-    ['Metabolic',       c.metabolic?.level,       c.metabolic?.reasoning],
-    ['Hepatic',         c.hepatic?.level,         c.hepatic?.reasoning],
-    ['Renal',           c.renal?.level,           c.renal?.reasoning],
-    ['Frailty',         c.frailty?.level ?? null, c.frailty?.reasoning ?? '—'],
+    [t('assessment_view.composite_overall'),        c.level,                  c.numeric != null ? t('assessment_view.score_prefix', { value: c.numeric.toFixed(2) }) : ''],
+    [t('assessment_view.composite_cardiovascular'), c.cardiovascular?.level,  c.cardiovascular?.reasoning],
+    [t('assessment_view.composite_metabolic'),      c.metabolic?.level,       c.metabolic?.reasoning],
+    [t('assessment_view.composite_hepatic'),        c.hepatic?.level,         c.hepatic?.reasoning],
+    [t('assessment_view.composite_renal'),          c.renal?.level,           c.renal?.reasoning],
+    [t('assessment_view.composite_frailty'),        c.frailty?.level ?? null, c.frailty?.reasoning ?? '—'],
   ];
   document.getElementById('composite-grid').innerHTML = cells.map(([label, level, reason]) => `
     <div>
@@ -190,10 +193,15 @@ function renderComposite(c) {
 
 function renderScores(scores) {
   const wrap = document.getElementById('scores-wrap');
-  if (!scores?.length) { wrap.innerHTML = `<p class="muted">No score results.</p>`; return; }
+  if (!scores?.length) { wrap.innerHTML = `<p class="muted">${t('assessment_view.no_scores')}</p>`; return; }
   wrap.innerHTML = `
     <table class="table">
-      <thead><tr><th>Score</th><th>Value</th><th>Category</th><th>Label</th></tr></thead>
+      <thead><tr>
+        <th>${t('assessment_view.col_score')}</th>
+        <th>${t('assessment_view.col_value')}</th>
+        <th>${t('assessment_view.col_category')}</th>
+        <th>${t('assessment_view.col_label')}</th>
+      </tr></thead>
       <tbody>
         ${scores.map((s) => `
           <tr>
@@ -207,13 +215,19 @@ function renderScores(scores) {
 }
 
 function renderFollowup(p) {
-  if (!p) { document.getElementById('followup-wrap').innerHTML = `<p class="muted">No follow-up plan.</p>`; return; }
+  if (!p) { document.getElementById('followup-wrap').innerHTML = `<p class="muted">${t('assessment_view.no_followup')}</p>`; return; }
   const items = Array.isArray(p.items) ? p.items : [];
   const itemsHtml = items.length ? `
     <div class="mt-16">
-      <div class="kpi-label">Structured follow-up items</div>
+      <div class="kpi-label">${t('assessment_view.followup_items_title')}</div>
       <table class="table">
-        <thead><tr><th>Item</th><th>Priority</th><th>Due (months)</th><th>Rationale</th><th>Guideline</th></tr></thead>
+        <thead><tr>
+          <th>${t('assessment_view.col_item')}</th>
+          <th>${t('assessment_view.col_priority')}</th>
+          <th>${t('assessment_view.col_due_months')}</th>
+          <th>${t('assessment_view.col_rationale')}</th>
+          <th>${t('assessment_view.col_guideline')}</th>
+        </tr></thead>
         <tbody>
           ${items.map((it) => `
             <tr>
@@ -228,16 +242,16 @@ function renderFollowup(p) {
     </div>` : '';
   document.getElementById('followup-wrap').innerHTML = `
     <div class="grid three">
-      <div><div class="kpi-label">Priority</div>${riskBadge(p.priorityLevel)}</div>
-      <div><div class="kpi-label">Interval</div><div>${escapeHtml(String(p.intervalMonths))} months</div></div>
-      <div><div class="kpi-label">Next review</div><div>${escapeHtml(p.nextReviewDate ?? '—')}</div></div>
+      <div><div class="kpi-label">${t('assessment_view.col_priority')}</div>${riskBadge(p.priorityLevel)}</div>
+      <div><div class="kpi-label">${t('assessment_view.followup_interval')}</div><div>${escapeHtml(String(p.intervalMonths))} ${t('assessment_view.months_unit')}</div></div>
+      <div><div class="kpi-label">${t('assessment_view.followup_next_review')}</div><div>${escapeHtml(p.nextReviewDate ?? '—')}</div></div>
     </div>
     <div class="mt-16">
-      <div class="kpi-label">Actions</div>
+      <div class="kpi-label">${t('assessment_view.followup_actions')}</div>
       <ul class="list-plain">${(p.actions ?? []).map((a) => `<li>${escapeHtml(a)}</li>`).join('') || '<li class="muted">—</li>'}</ul>
     </div>
     <div class="mt-16">
-      <div class="kpi-label">Domain monitoring</div>
+      <div class="kpi-label">${t('assessment_view.followup_domain_monitoring')}</div>
       <div>${(p.domainMonitoring ?? []).map((d) => `<span class="badge muted mr-6">${escapeHtml(d)}</span>`).join('') || '<span class="muted">—</span>'}</div>
     </div>
     ${itemsHtml}`;
@@ -245,16 +259,22 @@ function renderFollowup(p) {
 
 function renderScreenings(items) {
   const wrap = document.getElementById('screenings-wrap');
-  if (!items?.length) { wrap.innerHTML = `<p class="muted">No specific screenings recommended.</p>`; return; }
+  if (!items?.length) { wrap.innerHTML = `<p class="muted">${t('assessment_view.no_screenings')}</p>`; return; }
   wrap.innerHTML = `
     <table class="table">
-      <thead><tr><th>Screening</th><th>Priority</th><th>Interval</th><th>Reason</th><th>Guideline</th></tr></thead>
+      <thead><tr>
+        <th>${t('assessment_view.col_screening')}</th>
+        <th>${t('assessment_view.col_priority')}</th>
+        <th>${t('assessment_view.col_interval')}</th>
+        <th>${t('assessment_view.col_reason')}</th>
+        <th>${t('assessment_view.col_guideline')}</th>
+      </tr></thead>
       <tbody>
         ${items.map((s) => `
           <tr>
             <td>${escapeHtml(s.screening)}</td>
             <td>${riskBadge(s.priority)}</td>
-            <td>${escapeHtml(String(s.intervalMonths))} months</td>
+            <td>${escapeHtml(String(s.intervalMonths))} ${t('assessment_view.months_unit')}</td>
             <td class="muted">${escapeHtml(s.reason ?? '—')}</td>
             <td class="muted">${guidelineCellHtml(s)}</td>
           </tr>`).join('')}
@@ -282,27 +302,28 @@ function renderLifestyle(nutri, act) {
     typeof act?.metMinutesPerWeek === 'number' && Number.isFinite(act.metMinutesPerWeek)
       ? Math.round((act.metMinutesPerWeek / WHO_MET_TARGET) * 100)
       : null;
-  const metBadge = metPctOfTarget === null
+
+  const metBadgeWithTarget = metPctOfTarget === null
     ? '<span class="muted">—</span>'
-    : `<span class="badge ${metPctOfTarget >= 100 ? 'ok' : metPctOfTarget >= 50 ? 'warning' : 'danger'}">${metPctOfTarget}% of WHO target</span>`;
+    : `<span class="badge ${metPctOfTarget >= 100 ? 'ok' : metPctOfTarget >= 50 ? 'warning' : 'danger'}">${t('assessment_view.who_target_pct', { pct: metPctOfTarget })}</span>`;
 
   document.getElementById('lifestyle-wrap').innerHTML = `
     <div>
-      <h4 class="mt-0 mb-8">Nutrition</h4>
-      <div><span class="kpi-label">PREDIMED:</span> ${nutri?.predimedScore != null ? escapeHtml(String(nutri.predimedScore)) + ' / 14' : '<span class="muted">—</span>'}</div>
-      <div><span class="kpi-label">Adherence:</span> ${escapeHtml(nutri?.adherenceBand ?? '—')}</div>
-      <div><span class="kpi-label">BMR:</span> ${escapeHtml(String(Math.round(nutri?.bmrKcal ?? 0)))} kcal</div>
-      <div><span class="kpi-label">TDEE:</span> ${escapeHtml(String(Math.round(nutri?.tdeeKcal ?? 0)))} kcal</div>
+      <h4 class="mt-0 mb-8">${t('assessment_view.lifestyle_nutrition')}</h4>
+      <div><span class="kpi-label">${t('assessment_view.lifestyle_predimed')}:</span> ${nutri?.predimedScore != null ? escapeHtml(String(nutri.predimedScore)) + ' / 14' : '<span class="muted">—</span>'}</div>
+      <div><span class="kpi-label">${t('assessment_view.lifestyle_adherence')}:</span> ${escapeHtml(nutri?.adherenceBand ?? '—')}</div>
+      <div><span class="kpi-label">${t('assessment_view.lifestyle_bmr')}:</span> ${escapeHtml(String(Math.round(nutri?.bmrKcal ?? 0)))} kcal</div>
+      <div><span class="kpi-label">${t('assessment_view.lifestyle_tdee')}:</span> ${escapeHtml(String(Math.round(nutri?.tdeeKcal ?? 0)))} kcal</div>
     </div>
     <div>
-      <h4 class="mt-0 mb-8">Activity (WHO / GPAQ)</h4>
-      <div><span class="kpi-label">Moderate:</span> ${mod !== null ? escapeHtml(mod) + ' min/week' : '<span class="muted">—</span>'}</div>
-      <div><span class="kpi-label">Vigorous:</span> ${vig !== null ? escapeHtml(vig) + ' min/week' : '<span class="muted">—</span>'}</div>
-      <div><span class="kpi-label">Total:</span> ${totalMin !== null ? escapeHtml(totalMin) + ' min/week' : '<span class="muted">—</span>'}</div>
-      <div><span class="kpi-label">MET-min/week:</span> ${metMin !== null ? escapeHtml(metMin) : '<span class="muted">—</span>'} ${metBadge}</div>
-      <div><span class="kpi-label">Qualitative band:</span> ${escapeHtml(act?.qualitativeBand ?? '—')}</div>
-      <div><span class="kpi-label">Meets WHO (≥600 MET-min):</span> ${act?.meetsWhoGuidelines ? '<span class="badge ok">yes</span>' : '<span class="badge muted">no</span>'}</div>
-      <div><span class="kpi-label">Sedentary:</span> ${sedHours !== null ? escapeHtml(sedHours) + ' h/day' : '<span class="muted">—</span>'} ${riskBadge(act?.sedentaryRiskLevel)}</div>
+      <h4 class="mt-0 mb-8">${t('assessment_view.lifestyle_activity')}</h4>
+      <div><span class="kpi-label">${t('assessment_view.lifestyle_moderate')}:</span> ${mod !== null ? escapeHtml(mod) + ' ' + t('assessment_view.min_per_week_unit') : '<span class="muted">—</span>'}</div>
+      <div><span class="kpi-label">${t('assessment_view.lifestyle_vigorous')}:</span> ${vig !== null ? escapeHtml(vig) + ' ' + t('assessment_view.min_per_week_unit') : '<span class="muted">—</span>'}</div>
+      <div><span class="kpi-label">${t('assessment_view.lifestyle_total')}:</span> ${totalMin !== null ? escapeHtml(totalMin) + ' ' + t('assessment_view.min_per_week_unit') : '<span class="muted">—</span>'}</div>
+      <div><span class="kpi-label">${t('assessment_view.lifestyle_met_min')}:</span> ${metMin !== null ? escapeHtml(metMin) : '<span class="muted">—</span>'} ${metBadgeWithTarget}</div>
+      <div><span class="kpi-label">${t('assessment_view.lifestyle_qual_band')}:</span> ${escapeHtml(act?.qualitativeBand ?? '—')}</div>
+      <div><span class="kpi-label">${t('assessment_view.lifestyle_meets_who')}:</span> ${act?.meetsWhoGuidelines ? `<span class="badge ok">${t('common.yes')}</span>` : `<span class="badge muted">${t('common.no')}</span>`}</div>
+      <div><span class="kpi-label">${t('assessment_view.lifestyle_sedentary')}:</span> ${sedHours !== null ? escapeHtml(sedHours) + ' ' + t('assessment_view.h_per_day_unit') : '<span class="muted">—</span>'} ${riskBadge(act?.sedentaryRiskLevel)}</div>
     </div>`;
 }
 
@@ -318,7 +339,10 @@ function recPriorityBadge(priority) {
   const cls = label === 'urgent' ? 'danger'
     : label === 'moderate' ? 'warning'
     : 'ok';
-  return `<span class="badge ${cls}">${escapeHtml(label)}</span>`;
+  const translated = label === 'urgent' ? t('patient_detail.priority_urgent_lc')
+    : label === 'moderate' ? t('patient_detail.priority_moderate_lc')
+    : t('patient_detail.priority_routine_lc');
+  return `<span class="badge ${cls}">${escapeHtml(translated)}</span>`;
 }
 
 function renderLifestyleRecommendations(recs) {
@@ -341,9 +365,9 @@ function renderLifestyleRecommendations(recs) {
         <li class="mt-8 list-card-item list-card-item--bg-white">
           <div class="flex between align-start gap-8">
             <div>
-              <strong>${escapeHtml(r.title ?? r.code ?? 'Recommendation')}</strong>
+              <strong>${escapeHtml(r.title ?? r.code ?? t('patient_detail.recommendation_default'))}</strong>
               <span class="badge muted ml-6">${escapeHtml(r.domain ?? '—')}</span>
-              <span class="badge muted ml-6" title="Non-prescriptive counselling nudge">supportive</span>
+              <span class="badge muted ml-6" title="${escapeHtml(t('assessment_view.supportive_title'))}">${t('patient_detail.supportive_label')}</span>
               <div class="muted mt-4 text-sm">${escapeHtml(r.rationale ?? '')}</div>
               ${guidelineSourceLineHtml(r)}
             </div>
@@ -367,9 +391,9 @@ function renderCompleteness(warnings) {
       <span class="cw-title">${escapeHtml(w.title)}</span>
       <span class="muted text-xs"> · ${escapeHtml(w.code)}</span>
       <div class="muted text-sm mt-2">${escapeHtml(w.detail ?? '')}</div>
-      <span class="cw-action"><strong>Suggested action:</strong> ${escapeHtml(w.suggestedAction ?? '—')}</span>
+      <span class="cw-action"><strong>${t('patient_detail.completeness_suggested_prefix')}:</strong> ${escapeHtml(w.suggestedAction ?? '—')}</span>
       ${Array.isArray(w.missingFields) && w.missingFields.length
-        ? `<span class="cw-fields">Missing: ${w.missingFields.map((f) => `<code>${escapeHtml(f)}</code>`).join(', ')}</span>`
+        ? `<span class="cw-fields">${t('patient_detail.completeness_missing_prefix')}: ${w.missingFields.map((f) => `<code>${escapeHtml(f)}</code>`).join(', ')}</span>`
         : ''}
     </li>
   `).join('');
@@ -377,7 +401,7 @@ function renderCompleteness(warnings) {
 
 function renderAlerts(alerts) {
   const wrap = document.getElementById('alerts-wrap');
-  if (!alerts?.length) { wrap.innerHTML = `<p class="muted">No alerts triggered by this assessment.</p>`; return; }
+  if (!alerts?.length) { wrap.innerHTML = `<p class="muted">${t('assessment_view.no_alerts')}</p>`; return; }
   wrap.innerHTML = `
     <ul class="list-plain">
       ${alerts.map((a) => `
@@ -385,7 +409,7 @@ function renderAlerts(alerts) {
           <span class="badge ${escapeHtml(a.severity)}">${escapeHtml(a.severity)}</span>
           <strong>${escapeHtml(a.title)}</strong>
           <span class="muted"> · ${escapeHtml(a.message)}</span>
-          <div class="muted mt-8">${escapeHtml(new Date(a.timestamp).toLocaleString())}</div>
+          <div class="muted mt-8">${escapeHtml(new Date(a.timestamp).toLocaleString(getCurrentLocale()))}</div>
         </li>
       `).join('')}
     </ul>`;
@@ -409,7 +433,7 @@ async function load() {
     renderNavHeader();
 
     document.getElementById('page-title').textContent =
-      `Assessment · ${new Date(snapshot.assessment.createdAt).toLocaleDateString()}`;
+      `${t('assessment_view.title')} · ${new Date(snapshot.assessment.createdAt).toLocaleDateString(getCurrentLocale())}`;
     document.getElementById('page-subline').textContent =
       `${snapshot.assessment.status ?? '—'} · id ${snapshot.assessment.id.substring(0, 8)}…`;
 
@@ -482,36 +506,36 @@ async function load() {
       const existing = await api.getReportUrl(assessmentId);
       if (existing?.signedUrl) {
         showReportInfo(
-          `A report has already been generated. <a href="${existing.signedUrl}" target="_blank" rel="noopener">Open PDF</a>.`,
+          `${t('assessment_view.report_existing')} <a href="${existing.signedUrl}" target="_blank" rel="noopener">${t('assessment_view.open_pdf')}</a>.`,
           'success',
         );
       }
     } catch (_) { /* no existing report yet */ }
   } catch (e) {
-    showError(`Assessment load failed: ${e.message}`);
+    showError(`${t('assessment_view.load_failed')}: ${e.message}`);
   }
 }
 
 document.getElementById('report-btn').addEventListener('click', async () => {
   const btn = document.getElementById('report-btn');
   btn.disabled = true;
-  btn.textContent = 'Generating…';
+  btn.textContent = t('assessment_view.report_generating');
   try {
     const resp = await api.generateReport(assessmentId);
     const url = resp?.signedUrl || resp?.url;
     if (url) {
       showReportInfo(
-        `Report generated. <a href="${url}" target="_blank" rel="noopener">Open PDF</a>.`,
+        `${t('assessment_view.report_generated_link')} <a href="${url}" target="_blank" rel="noopener">${t('assessment_view.open_pdf')}</a>.`,
         'success',
       );
     } else {
-      showReportInfo('Report generated. Refresh to retrieve the signed URL.', 'success');
+      showReportInfo(t('assessment_view.report_ready'), 'success');
     }
   } catch (e) {
-    showError(`Report generation failed: ${e.message}`);
+    showError(`${t('assessment_view.report_failed')}: ${e.message}`);
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Generate PDF report';
+    btn.textContent = t('assessment_view.generate_report');
   }
 });
 
@@ -545,7 +569,7 @@ const deleteConfirm = document.getElementById('delete-confirm-btn');
 function openDeleteModal() {
   deleteConfirm.disabled = false;
   deleteCancel.disabled = false;
-  deleteConfirm.textContent = 'Confirm Delete';
+  deleteConfirm.textContent = t('assessment_view.confirm_delete');
   deleteModal.classList.remove('hidden');
   // Default focus to the SAFE button (Cancel) — pressing Enter does
   // not destroy data. The clinician must take a deliberate action
@@ -586,7 +610,7 @@ deleteConfirm.addEventListener('click', async (e) => {
   deleteConfirm.disabled = true;
   deleteCancel.disabled = true;
   deleteBtn.disabled = true;
-  deleteConfirm.textContent = 'Deleting…';
+  deleteConfirm.textContent = t('assessment_view.deleting');
   try {
     await api.deleteAssessment(assessmentId);
     // Navigate back to the patient page — all data on that page is
@@ -603,11 +627,11 @@ deleteConfirm.addEventListener('click', async (e) => {
     // so the clinician can decide whether to retry. We close the
     // modal so the inline-alert is visible — keeping the modal
     // open would obscure it.
-    deleteConfirm.textContent = 'Confirm Delete';
+    deleteConfirm.textContent = t('assessment_view.confirm_delete');
     deleteConfirm.disabled = false;
     deleteCancel.disabled = false;
     deleteBtn.disabled = false;
-    showError(`Delete failed: ${err.message}`);
+    showError(`${t('assessment_view.delete_failed')}: ${err.message}`);
     closeDeleteModal();
   }
 });

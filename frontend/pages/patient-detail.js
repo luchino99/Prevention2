@@ -14,6 +14,9 @@
 import { api, requireAuth, supabase } from '../assets/js/api-client.js';
 import { mountNavHeader, computeAgeFromBirthDate } from '../components/nav-header.js';
 import { mountProgressCharts } from '../components/progress-charts.js';
+import { t, bootstrapI18n, getCurrentLocale } from '../i18n/index.js';
+
+bootstrapI18n();
 
 await requireAuth();
 
@@ -32,9 +35,9 @@ const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
 // ────────────────────────────────────────────────────────────────────
 function formatEvidenceLabel(level) {
   if (!level) return '';
-  if (level === 'A' || level === 'B' || level === 'C') return `Evidence ${level}`;
-  if (level === 'consensus') return 'Consensus';
-  if (level === 'policy') return 'Internal policy';
+  if (level === 'A' || level === 'B' || level === 'C') return t('patient_detail.evidence_prefix', { level });
+  if (level === 'consensus') return t('patient_detail.evidence_consensus');
+  if (level === 'policy') return t('patient_detail.evidence_policy');
   return String(level);
 }
 function guidelineCellHtml(item) {
@@ -57,13 +60,13 @@ function guidelineCellHtml(item) {
 function guidelineSourceLineHtml(item) {
   const inner = guidelineCellHtml(item);
   if (!inner) return '';
-  return `<div class="muted mt-4 text-xs">Source: ${inner}</div>`;
+  return `<div class="muted mt-4 text-xs">${t('patient_detail.source_prefix')}: ${inner}</div>`;
 }
 
 const params = new URLSearchParams(window.location.search);
 const patientId = params.get('id');
 if (!patientId || !/^[0-9a-fA-F-]{36}$/.test(patientId)) {
-  document.body.innerHTML = '<main class="app-main"><div class="inline-alert danger">Invalid patient id.</div></main>';
+  document.body.innerHTML = `<main class="app-main"><div class="inline-alert danger">${t('patient_detail.invalid_id')}</div></main>`;
   throw new Error('invalid id');
 }
 
@@ -86,12 +89,12 @@ function renderNavHeader() {
   mountNavHeader({
     container: mount,
     crumbs: [
-      { label: 'Dashboard', href: './dashboard.html' },
-      { label: 'Patients',  href: './patients.html' },
+      { label: t('nav.dashboard'), href: './dashboard.html' },
+      { label: t('nav.patients'),  href: './patients.html' },
       { label: chipRef },
     ],
     backHref: './patients.html',
-    backLabel: 'Back to patients',
+    backLabel: t('patient_detail.back_to_patients'),
     patient: {
       id: patientId,
       displayName:
@@ -144,7 +147,7 @@ document.getElementById('export-btn').addEventListener('click', async (e) => {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      showError(`Export failed: ${err?.error?.message || res.statusText}`);
+      showError(`${t('patient_detail.export_failed')}: ${err?.error?.message || res.statusText}`);
       return;
     }
     const blob = await res.blob();
@@ -155,7 +158,7 @@ document.getElementById('export-btn').addEventListener('click', async (e) => {
     a.click();
     URL.revokeObjectURL(url);
   } catch (err) {
-    showError(err.message || 'Export failed');
+    showError(err.message || t('patient_detail.export_failed'));
   }
 });
 
@@ -167,20 +170,20 @@ async function renderPatient() {
     document.getElementById('patient-name').textContent =
       patient.display_name || [patient.first_name, patient.last_name].filter(Boolean).join(' ') || '—';
     document.getElementById('patient-subline').textContent =
-      `Ref: ${patient.external_code ?? '—'}`;
+      `${t('patient_detail.ref_prefix')}: ${patient.external_code ?? '—'}`;
 
     document.getElementById('d-code').textContent = patient.external_code ?? '—';
     document.getElementById('d-sex').textContent = patient.sex ?? '—';
     document.getElementById('d-dob').textContent = patient.birth_date ?? (patient.birth_year ? String(patient.birth_year) : '—');
     document.getElementById('d-status').innerHTML = patient.is_active === false
-      ? '<span class="badge muted">inactive</span>'
-      : '<span class="badge ok">active</span>';
+      ? `<span class="badge muted">${t('patients.status_inactive')}</span>`
+      : `<span class="badge ok">${t('patients.status_active')}</span>`;
     document.getElementById('d-consent').textContent = patient.consent_status ?? '—';
     document.getElementById('d-created').textContent = patient.created_at
-      ? new Date(patient.created_at).toLocaleString()
+      ? new Date(patient.created_at).toLocaleString(getCurrentLocale())
       : '—';
   } catch (e) {
-    showError(`Patient load failed: ${e.message}`);
+    showError(`${t('patient_detail.load_failed')}: ${e.message}`);
   }
 }
 
@@ -242,7 +245,7 @@ async function renderAssessments() {
       assessments?.[0]?.riskProfile?.compositeRiskLevel ?? null;
     renderNavHeader();
     if (!assessments?.length) {
-      wrap.innerHTML = `<p class="muted">No assessments recorded yet.</p>`;
+      wrap.innerHTML = `<p class="muted">${t('patient_detail.empty_assessments_body')}</p>`;
       return;
     }
     const rows = assessments.map((a) => {
@@ -256,18 +259,24 @@ async function renderAssessments() {
           <td>${escapeHtml(a.status ?? '—')}</td>
           <td>${riskBadge}</td>
           <td class="mono">${escapeHtml(a.engineVersion ?? '—')}</td>
-          <td><a href="./assessment-view.html?id=${encodeURIComponent(a.id)}">Open</a></td>
+          <td><a href="./assessment-view.html?id=${encodeURIComponent(a.id)}">${t('common.open')}</a></td>
         </tr>`;
     }).join('');
     wrap.innerHTML = `
       <table class="table">
         <thead>
-          <tr><th>Date</th><th>Status</th><th>Composite risk</th><th>Engine</th><th></th></tr>
+          <tr>
+            <th>${t('patient_detail.col_date')}</th>
+            <th>${t('patient_detail.col_status')}</th>
+            <th>${t('assessment_view.composite_risk')}</th>
+            <th>${t('patient_detail.col_engine')}</th>
+            <th></th>
+          </tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>`;
   } catch (e) {
-    wrap.innerHTML = `<div class="inline-alert danger">Failed to load assessments: ${escapeHtml(e.message)}</div>`;
+    wrap.innerHTML = `<div class="inline-alert danger">${t('patient_detail.assessments_load_failed')}: ${escapeHtml(e.message)}</div>`;
   }
 }
 
@@ -293,10 +302,10 @@ async function renderProgress() {
       trends,
     });
     subline.textContent = assessmentCount > 0
-      ? `${assessmentCount} assessment${assessmentCount === 1 ? '' : 's'} plotted`
+      ? t('patient_detail.assessments_plotted', { count: assessmentCount })
       : '—';
   } catch (e) {
-    wrap.innerHTML = `<div class="inline-alert danger">Failed to load progress charts: ${escapeHtml(e.message)}</div>`;
+    wrap.innerHTML = `<div class="inline-alert danger">${t('patient_detail.progress_load_failed')}: ${escapeHtml(e.message)}</div>`;
     subline.textContent = '—';
   }
 }
@@ -312,12 +321,13 @@ async function renderProgress() {
  */
 function dueInLabel(days) {
   if (typeof days !== 'number' || Number.isNaN(days)) return '—';
-  if (days < 0) return `Overdue ${Math.abs(days)} day${Math.abs(days) === 1 ? '' : 's'}`;
-  if (days === 0) return 'Due today';
-  if (days === 1) return 'Due in 1 day';
-  if (days < 30) return `Due in ${days} days`;
+  if (days < 0) return t('patient_detail.due_overdue', { days: Math.abs(days) });
+  if (days === 0) return t('patient_detail.due_today');
+  if (days === 1) return t('patient_detail.due_in_one_day');
+  if (days < 30) return t('patient_detail.due_in_days', { days });
   const months = Math.round(days / 30);
-  return months === 1 ? 'Due in ~1 month' : `Due in ~${months} months`;
+  if (months === 1) return t('patient_detail.due_in_one_month');
+  return t('patient_detail.due_in_months', { months });
 }
 
 /**
@@ -337,10 +347,10 @@ function countdownBadgeClass(countdownStatus, priority) {
 /** Human label for the canonical status — shown as a small secondary pill. */
 function countdownStatusLabel(countdownStatus) {
   switch (countdownStatus) {
-    case 'overdue':  return 'overdue';
-    case 'due_now':  return 'due now';
-    case 'due_soon': return 'due soon';
-    case 'upcoming': return 'upcoming';
+    case 'overdue':  return t('patient_detail.status_overdue');
+    case 'due_now':  return t('patient_detail.status_due_now');
+    case 'due_soon': return t('patient_detail.status_due_soon');
+    case 'upcoming': return t('patient_detail.status_upcoming');
     default:         return '';
   }
 }
@@ -355,8 +365,8 @@ async function renderDueItems() {
       pageSize: 100,
     });
     if (!items?.length) {
-      wrap.innerHTML = `<p class="muted">No pending follow-up or screening items.</p>`;
-      subline.textContent = '0 pending';
+      wrap.innerHTML = `<p class="muted">${t('patient_detail.due_items_empty')}</p>`;
+      subline.textContent = t('patient_detail.due_items_pending', { count: 0 });
       return;
     }
     // Trust the server `summary` (canonical bucketing from the
@@ -370,9 +380,9 @@ async function renderDueItems() {
     const dueNow = summary?.dueNow ?? items.filter(
       (it) => it.countdownStatus === 'due_now',
     ).length;
-    const parts = [`${total} pending`];
-    if (overdue > 0) parts.push(`${overdue} overdue`);
-    if (dueNow > 0) parts.push(`${dueNow} due now`);
+    const parts = [t('patient_detail.due_items_pending', { count: total })];
+    if (overdue > 0) parts.push(t('patient_detail.due_items_overdue_n', { count: overdue }));
+    if (dueNow > 0) parts.push(t('patient_detail.due_items_due_now_n', { count: dueNow }));
     subline.textContent = parts.join(' · ');
 
     const priorityOrder = { urgent: 0, moderate: 1, routine: 2 };
@@ -421,7 +431,7 @@ async function renderDueItems() {
               </div>
               <div class="text-right nowrap">
                 <span class="badge ${escapeHtml(badgeCls)}">${escapeHtml(label2)}</span>
-                <div class="muted mt-4 text-xs">Due ${escapeHtml(it.dueAt ?? '—')}</div>
+                <div class="muted mt-4 text-xs">${t('patient_detail.due_prefix')} ${escapeHtml(it.dueAt ?? '—')}</div>
               </div>
             </div>
           </li>`;
@@ -434,12 +444,12 @@ async function renderDueItems() {
     };
 
     wrap.innerHTML = [
-      renderGroup('Urgent', groups.urgent),
-      renderGroup('Moderate', groups.moderate),
-      renderGroup('Routine', groups.routine),
-    ].filter(Boolean).join('') || `<p class="muted">No pending items.</p>`;
+      renderGroup(t('patient_detail.priority_urgent'), groups.urgent),
+      renderGroup(t('patient_detail.priority_moderate'), groups.moderate),
+      renderGroup(t('patient_detail.priority_routine'), groups.routine),
+    ].filter(Boolean).join('') || `<p class="muted">${t('patient_detail.due_items_empty')}</p>`;
   } catch (e) {
-    wrap.innerHTML = `<div class="inline-alert danger">Failed to load due items: ${escapeHtml(e.message)}</div>`;
+    wrap.innerHTML = `<div class="inline-alert danger">${t('patient_detail.due_items_load_failed')}: ${escapeHtml(e.message)}</div>`;
     subline.textContent = '—';
   }
 }
@@ -461,11 +471,9 @@ async function renderAlerts() {
     const clinical = (alerts ?? []).filter(
       (a) => a?.type !== 'missing_critical_data',
     );
-    subline.textContent = clinical.length
-      ? `${clinical.length} open`
-      : '0 open';
+    subline.textContent = t('patient_detail.alerts_open_n', { count: clinical.length });
     if (!clinical.length) {
-      wrap.innerHTML = `<p class="muted">No open alerts.</p>`;
+      wrap.innerHTML = `<p class="muted">${t('patient_detail.no_open_alerts')}</p>`;
       return;
     }
     wrap.innerHTML = `
@@ -473,14 +481,14 @@ async function renderAlerts() {
         ${clinical.map((a) => `
           <li>
             <span class="badge ${escapeHtml(a.severity)}">${escapeHtml(a.severity)}</span>
-            <strong>${escapeHtml(a.title ?? a.type ?? 'Alert')}</strong>
+            <strong>${escapeHtml(a.title ?? a.type ?? t('alerts.title'))}</strong>
             <span class="muted"> · ${escapeHtml(a.message ?? '')}</span>
-            <div class="muted mt-8">Opened: ${escapeHtml(new Date(a.created_at).toLocaleString())}</div>
+            <div class="muted mt-8">${t('patient_detail.opened_prefix')}: ${escapeHtml(new Date(a.created_at).toLocaleString(getCurrentLocale()))}</div>
           </li>
         `).join('')}
       </ul>`;
   } catch (e) {
-    wrap.innerHTML = `<div class="inline-alert danger">Failed to load alerts: ${escapeHtml(e.message)}</div>`;
+    wrap.innerHTML = `<div class="inline-alert danger">${t('patient_detail.alerts_load_failed')}: ${escapeHtml(e.message)}</div>`;
     subline.textContent = '—';
   }
 }
@@ -497,8 +505,8 @@ async function renderAlerts() {
  *   - critical is never produced by the checker (see module doc).
  */
 function completenessBadge(severity) {
-  if (severity === 'warning') return '<span class="badge warning">needed</span>';
-  return '<span class="badge muted">optional</span>';
+  if (severity === 'warning') return `<span class="badge warning">${t('patient_detail.completeness_needed')}</span>`;
+  return `<span class="badge muted">${t('patient_detail.completeness_optional')}</span>`;
 }
 
 async function renderCompletenessNotices() {
@@ -507,7 +515,7 @@ async function renderCompletenessNotices() {
   try {
     const { latest, snapshot } = await getLatestAssessmentSnapshot();
     if (!latest) {
-      wrap.innerHTML = `<p class="muted">No assessments on file — completeness will be evaluated once the first assessment is recorded.</p>`;
+      wrap.innerHTML = `<p class="muted">${t('patient_detail.completeness_no_assessments')}</p>`;
       subline.textContent = '—';
       return;
     }
@@ -518,10 +526,10 @@ async function renderCompletenessNotices() {
     if (!warnings.length) {
       wrap.innerHTML = `
         <p class="muted">
-          No missing-data gaps as of the most recent assessment
+          ${t('patient_detail.completeness_no_gaps')}
           ${asOf ? `(${escapeHtml(asOf)})` : ''}.
         </p>`;
-      subline.textContent = 'up to date';
+      subline.textContent = t('patient_detail.completeness_up_to_date');
       return;
     }
 
@@ -533,26 +541,26 @@ async function renderCompletenessNotices() {
 
     const warningCount = ordered.filter((w) => w.severity === 'warning').length;
     subline.textContent = warningCount > 0
-      ? `${ordered.length} gaps · ${warningCount} needed`
-      : `${ordered.length} optional gaps`;
+      ? t('patient_detail.completeness_subline_needed', { total: ordered.length, needed: warningCount })
+      : t('patient_detail.completeness_subline_optional', { total: ordered.length });
 
     wrap.innerHTML = `
       <div class="muted mt-4 text-xs">
-        As of assessment ${escapeHtml(asOf || '—')}.
+        ${t('patient_detail.completeness_as_of', { date: escapeHtml(asOf || '—') })}
       </div>
       <ul class="list-plain mt-8">
         ${ordered.map((w) => {
           const missing = Array.isArray(w.missingFields) && w.missingFields.length
-            ? `<div class="mono muted mt-4 text-xs">Missing: ${w.missingFields.map(escapeHtml).join(', ')}</div>`
+            ? `<div class="mono muted mt-4 text-xs">${t('patient_detail.completeness_missing_prefix')}: ${w.missingFields.map(escapeHtml).join(', ')}</div>`
             : '';
           const action = w.suggestedAction
-            ? `<div class="muted mt-4 text-xs"><em>Suggested:</em> ${escapeHtml(w.suggestedAction)}</div>`
+            ? `<div class="muted mt-4 text-xs"><em>${t('patient_detail.completeness_suggested_prefix')}:</em> ${escapeHtml(w.suggestedAction)}</div>`
             : '';
           return `
             <li class="mt-8 list-card-item">
               <div class="flex between align-start gap-12">
                 <div>
-                  <strong>${escapeHtml(w.title ?? w.code ?? 'Missing data')}</strong>
+                  <strong>${escapeHtml(w.title ?? w.code ?? t('patient_detail.completeness_default_title'))}</strong>
                   <span class="mono muted ml-6 text-xs">${escapeHtml(w.code ?? '')}</span>
                   <div class="muted mt-4 text-xs">${escapeHtml(w.detail ?? '')}</div>
                   ${missing}
@@ -566,7 +574,7 @@ async function renderCompletenessNotices() {
         }).join('')}
       </ul>`;
   } catch (e) {
-    wrap.innerHTML = `<div class="inline-alert danger">Failed to load completeness notices: ${escapeHtml(e.message)}</div>`;
+    wrap.innerHTML = `<div class="inline-alert danger">${t('patient_detail.completeness_load_failed')}: ${escapeHtml(e.message)}</div>`;
     subline.textContent = '—';
   }
 }
@@ -590,30 +598,30 @@ async function renderCompletenessNotices() {
  */
 function priorityBadge(priority) {
   const p = String(priority ?? '').toLowerCase();
-  if (p === 'urgent') return '<span class="badge danger">urgent</span>';
-  if (p === 'moderate') return '<span class="badge warning">moderate</span>';
-  return '<span class="badge muted">routine</span>';
+  if (p === 'urgent') return `<span class="badge danger">${t('patient_detail.priority_urgent_lc')}</span>`;
+  if (p === 'moderate') return `<span class="badge warning">${t('patient_detail.priority_moderate_lc')}</span>`;
+  return `<span class="badge muted">${t('patient_detail.priority_routine_lc')}</span>`;
 }
 
 function adherenceBadge(band) {
-  if (band === 'high') return '<span class="badge ok">high</span>';
-  if (band === 'medium') return '<span class="badge warning">medium</span>';
-  if (band === 'low') return '<span class="badge danger">low</span>';
+  if (band === 'high') return `<span class="badge ok">${t('patient_detail.adherence_high')}</span>`;
+  if (band === 'medium') return `<span class="badge warning">${t('patient_detail.adherence_medium')}</span>`;
+  if (band === 'low') return `<span class="badge danger">${t('patient_detail.adherence_low')}</span>`;
   return '<span class="badge muted">—</span>';
 }
 
 function whoStatusBadge(meets) {
-  if (meets === true)  return '<span class="badge ok">met</span>';
-  if (meets === false) return '<span class="badge warning">not met</span>';
+  if (meets === true)  return `<span class="badge ok">${t('patient_detail.who_met')}</span>`;
+  if (meets === false) return `<span class="badge warning">${t('patient_detail.who_not_met')}</span>`;
   return '<span class="badge muted">—</span>';
 }
 
 function sedentaryBadge(level) {
   const v = String(level ?? '').toLowerCase();
-  if (v === 'very_high') return '<span class="badge danger">very high</span>';
-  if (v === 'high')      return '<span class="badge warning">high</span>';
-  if (v === 'moderate')  return '<span class="badge warning">moderate</span>';
-  if (v === 'low')       return '<span class="badge ok">low</span>';
+  if (v === 'very_high') return `<span class="badge danger">${t('patient_detail.sedentary_very_high')}</span>`;
+  if (v === 'high')      return `<span class="badge warning">${t('patient_detail.sedentary_high')}</span>`;
+  if (v === 'moderate')  return `<span class="badge warning">${t('patient_detail.sedentary_moderate')}</span>`;
+  if (v === 'low')       return `<span class="badge ok">${t('patient_detail.sedentary_low')}</span>`;
   return '<span class="badge muted">—</span>';
 }
 
@@ -623,7 +631,7 @@ async function renderLifestyleProfile() {
   try {
     const { latest, snapshot } = await getLatestAssessmentSnapshot();
     if (!latest || !snapshot) {
-      wrap.innerHTML = `<p class="muted">No assessments on file — lifestyle profile will be available once the first assessment is recorded.</p>`;
+      wrap.innerHTML = `<p class="muted">${t('patient_detail.lifestyle_no_assessments')}</p>`;
       subline.textContent = '—';
       return;
     }
@@ -650,26 +658,25 @@ async function renderLifestyleProfile() {
     const metMin = activity.metMinutesPerWeek;
     const minsWeek = activity.minutesPerWeek;
     const metaPieces = [];
-    if (metMin != null) metaPieces.push(`${Math.round(metMin)} MET-min/wk`);
-    if (minsWeek != null) metaPieces.push(`${minsWeek} min/wk`);
+    if (metMin != null) metaPieces.push(t('patient_detail.met_min_per_week', { value: Math.round(metMin) }));
+    if (minsWeek != null) metaPieces.push(t('patient_detail.min_per_week', { value: minsWeek }));
     const activityCell = metaPieces.length
       ? `<strong>${escapeHtml(metaPieces.join(' · '))}</strong> ${whoStatusBadge(activity.meetsWhoGuidelines)}`
       : `<span class="muted">—</span> ${whoStatusBadge(activity.meetsWhoGuidelines)}`;
 
     const sedentaryCell = sedentaryBadge(activity.sedentaryRiskLevel);
     const smokingCell = smokingFlag
-      ? '<span class="badge danger">current smoker</span>'
-      : '<span class="badge ok">non-smoker</span>';
+      ? `<span class="badge danger">${t('patient_detail.smoking_current')}</span>`
+      : `<span class="badge ok">${t('patient_detail.smoking_non')}</span>`;
 
     const summaryCount = recommendations.length;
     subline.textContent = summaryCount > 0
-      ? `${summaryCount} recommendation${summaryCount === 1 ? '' : 's'}`
-      : 'no nudges';
+      ? t('patient_detail.recommendations_n', { count: summaryCount })
+      : t('patient_detail.no_nudges');
 
     const recsHtml = top.length === 0
       ? `<p class="muted mt-8">
-           No lifestyle nudges from the most recent assessment — current
-           profile is within the engine's supportive thresholds.
+           ${t('patient_detail.lifestyle_no_nudges_body')}
          </p>`
       : `
         <ul class="list-plain mt-8">
@@ -679,8 +686,8 @@ async function renderLifestyleProfile() {
               <li class="mt-8 list-card-item">
                 <div class="flex between align-start gap-12">
                   <div>
-                    <strong>${escapeHtml(r.title ?? r.code ?? 'Recommendation')}</strong>
-                    <span class="badge muted ml-6">supportive</span>
+                    <strong>${escapeHtml(r.title ?? r.code ?? t('patient_detail.recommendation_default'))}</strong>
+                    <span class="badge muted ml-6">${t('patient_detail.supportive_label')}</span>
                     <div class="muted mt-4 text-xs">${escapeHtml(r.rationale ?? '')}</div>
                     ${sourceLine}
                   </div>
@@ -693,27 +700,27 @@ async function renderLifestyleProfile() {
         </ul>
         ${remaining > 0
           ? `<div class="muted mt-8 text-xs">
-               + ${remaining} additional recommendation${remaining === 1 ? '' : 's'} —
-               <a href="./assessment-view.html?id=${encodeURIComponent(latest.id)}">open the latest assessment</a>
-               for the full list.
+               ${t('patient_detail.more_recommendations', { count: remaining })} —
+               <a href="./assessment-view.html?id=${encodeURIComponent(latest.id)}">${t('patient_detail.open_latest_assessment')}</a>
+               ${t('patient_detail.for_full_list')}
              </div>`
           : ''}
       `;
 
     wrap.innerHTML = `
       <div class="muted mt-4 text-xs">
-        As of assessment ${escapeHtml(asOf || '—')}.
+        ${t('patient_detail.completeness_as_of', { date: escapeHtml(asOf || '—') })}
       </div>
       <div class="grid two mt-8 lifestyle-grid">
-        <div><div class="kpi-label">PREDIMED (MEDAS)</div><div>${predimedCell}</div></div>
-        <div><div class="kpi-label">Physical activity</div><div>${activityCell}</div></div>
-        <div><div class="kpi-label">Sedentary risk</div><div>${sedentaryCell}</div></div>
-        <div><div class="kpi-label">Smoking</div><div>${smokingCell}</div></div>
+        <div><div class="kpi-label">${t('patient_detail.kpi_predimed')}</div><div>${predimedCell}</div></div>
+        <div><div class="kpi-label">${t('patient_detail.kpi_physical_activity')}</div><div>${activityCell}</div></div>
+        <div><div class="kpi-label">${t('patient_detail.kpi_sedentary_risk')}</div><div>${sedentaryCell}</div></div>
+        <div><div class="kpi-label">${t('patient_detail.kpi_smoking')}</div><div>${smokingCell}</div></div>
       </div>
       ${recsHtml}
     `;
   } catch (e) {
-    wrap.innerHTML = `<div class="inline-alert danger">Failed to load lifestyle profile: ${escapeHtml(e.message)}</div>`;
+    wrap.innerHTML = `<div class="inline-alert danger">${t('patient_detail.lifestyle_load_failed')}: ${escapeHtml(e.message)}</div>`;
     subline.textContent = '—';
   }
 }
@@ -723,28 +730,33 @@ async function renderConsents() {
   try {
     const { consents } = await api.listConsents(patientId);
     if (!consents?.length) {
-      wrap.innerHTML = `<p class="muted">No consent records.</p>`;
+      wrap.innerHTML = `<p class="muted">${t('patient_detail.consents_empty')}</p>`;
       return;
     }
     wrap.innerHTML = `
       <table class="table">
         <thead>
-          <tr><th>Type</th><th>Status</th><th>Policy version</th><th>Recorded</th></tr>
+          <tr>
+            <th>${t('patient_detail.consents_col_type')}</th>
+            <th>${t('patient_detail.consents_col_status')}</th>
+            <th>${t('patient_detail.consents_col_policy')}</th>
+            <th>${t('patient_detail.consents_col_recorded')}</th>
+          </tr>
         </thead>
         <tbody>
           ${consents.map((c) => `
             <tr>
               <td>${escapeHtml(c.consent_type)}</td>
               <td>${c.granted
-                ? '<span class="badge ok">granted</span>'
-                : '<span class="badge muted">revoked</span>'}</td>
+                ? `<span class="badge ok">${t('patient_detail.consent_granted')}</span>`
+                : `<span class="badge muted">${t('patient_detail.consent_revoked')}</span>`}</td>
               <td class="mono">${escapeHtml(c.policy_version ?? '—')}</td>
-              <td>${escapeHtml(new Date(c.recorded_at ?? c.created_at).toLocaleString())}</td>
+              <td>${escapeHtml(new Date(c.recorded_at ?? c.created_at).toLocaleString(getCurrentLocale()))}</td>
             </tr>`).join('')}
         </tbody>
       </table>`;
   } catch (e) {
-    wrap.innerHTML = `<div class="inline-alert danger">Failed to load consents: ${escapeHtml(e.message)}</div>`;
+    wrap.innerHTML = `<div class="inline-alert danger">${t('patient_detail.consents_load_failed')}: ${escapeHtml(e.message)}</div>`;
   }
 }
 

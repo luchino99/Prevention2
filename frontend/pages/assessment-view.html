@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex,nofollow" />
-  <title>Assessment — Uelfy Clinical</title>
+  <title>Dettaglio valutazione — Uelfy Clinical</title>
   <!-- Favicon set (clinical-context) — see frontend/assets/icons/favicon.svg -->
   <link rel="icon" type="image/svg+xml" href="../assets/icons/favicon.svg" />
   <link rel="alternate icon" type="image/png" sizes="32x32" href="../assets/icons/favicon-32.png" />
@@ -20,17 +20,17 @@
   -->
 </head>
 <body>
-  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <a class="skip-link" href="#main-content" data-i18n="common.skip_to_content">Vai al contenuto principale</a>
   <div class="app-shell">
-    <aside class="app-sidebar" aria-label="Primary navigation">
-      <div class="brand">Uelfy Clinical</div>
+    <aside class="app-sidebar" data-i18n-attr="aria-label:nav.primary_navigation">
+      <div class="brand" data-i18n="common.app_name">Uelfy Clinical</div>
       <nav>
-        <a href="./dashboard.html">Dashboard</a>
-        <a href="./patients.html" class="active">Patients</a>
-        <a href="./alerts.html">Alerts</a>
-        <a href="./audit.html" id="nav-audit" class="hidden">Audit log</a>
-        <a href="./tenant-settings.html">Tenant settings</a>
-        <a href="#" id="signout-link">Sign out</a>
+        <a href="./dashboard.html" data-i18n="nav.dashboard">Cruscotto</a>
+        <a href="./patients.html" class="active" data-i18n="nav.patients">Pazienti</a>
+        <a href="./alerts.html" data-i18n="nav.alerts">Alert clinici</a>
+        <a href="./audit.html" id="nav-audit" class="hidden" data-i18n="nav.audit">Log di sicurezza</a>
+        <a href="./tenant-settings.html" data-i18n="nav.tenant_settings">Impostazioni</a>
+        <a href="#" id="signout-link" data-i18n="common.sign_out">Esci</a>
       </nav>
     </aside>
 
@@ -39,12 +39,12 @@
 
       <div class="topbar">
         <div>
-          <h1 id="page-title" class="mb-2">Assessment</h1>
-          <div class="muted" id="page-subline">Loading…</div>
+          <h1 id="page-title" class="mb-2" data-i18n="assessment_view.title">Dettaglio valutazione</h1>
+          <div class="muted" id="page-subline" data-i18n="common.loading">Caricamento in corso…</div>
         </div>
         <div class="flex gap-8">
-          <button class="btn" id="report-btn" type="button">Generate PDF report</button>
-          <button class="btn danger" id="delete-btn" type="button" title="Delete this assessment">Delete</button>
+          <button class="btn" id="report-btn" type="button" data-i18n="assessment_view.generate_report">Genera PDF clinico</button>
+          <button class="btn danger" id="delete-btn" type="button" data-i18n="assessment_view.delete" data-i18n-attr="title:assessment_view.delete_title">Elimina</button>
         </div>
       </div>
 
@@ -53,16 +53,6 @@
 
       <!--
         Delete-assessment confirmation modal (REFINE-4).
-        ------------------------------------
-        Purpose: gate an irreversible destructive action behind a single
-        explicit confirmation click — no typing. The previous typed-id
-        gate was deemed friction without commensurate safety value
-        (server-side authZ + audit trail are the actual safety net).
-        We retain: focus management on open, backdrop click cancel,
-        Escape cancel, ARIA dialog semantics. The destructive button is
-        styled `btn danger` and is *not* the default focus target — the
-        Cancel button is — to bias the user toward the safe action when
-        confirming with Enter.
       -->
       <div id="delete-modal"
            class="modal-backdrop hidden"
@@ -71,70 +61,61 @@
            aria-labelledby="delete-modal-title"
            aria-describedby="delete-modal-desc">
         <div class="modal-card">
-          <h3 id="delete-modal-title">Delete this assessment?</h3>
-          <p id="delete-modal-desc" class="muted">
-            This permanently removes the assessment and everything derived from
-            it — measurements, score results, risk profile, nutrition &amp;
-            activity snapshots, follow-up plan, alerts, due-items, and any
-            generated PDF reports. <strong>This action cannot be undone.</strong>
+          <h3 id="delete-modal-title" data-i18n="assessment_view.delete_modal_title">Eliminare questa valutazione?</h3>
+          <p id="delete-modal-desc" class="muted" data-i18n-html="assessment_view.delete_modal_body">
+            Questa operazione rimuove in modo permanente la valutazione e tutti gli elementi derivati — misurazioni, risultati degli score, profilo di rischio, snapshot di nutrizione e attività, piano di follow-up, alert, scadenze e qualsiasi PDF clinico generato. <strong>L'operazione non può essere annullata.</strong>
           </p>
           <div class="flex gap-8 mt-12 justify-end">
-            <button class="btn ghost" id="delete-cancel-btn" type="button">Cancel</button>
-            <button class="btn danger" id="delete-confirm-btn" type="button">Confirm Delete</button>
+            <button class="btn ghost" id="delete-cancel-btn" type="button" data-i18n="common.cancel">Annulla</button>
+            <button class="btn danger" id="delete-confirm-btn" type="button" data-i18n="assessment_view.confirm_delete">Conferma eliminazione</button>
           </div>
         </div>
       </div>
 
       <section class="card">
-        <h3>Composite risk</h3>
+        <h3 data-i18n="assessment_view.composite_risk">Rischio composito</h3>
         <div class="grid three" id="composite-grid"></div>
       </section>
 
       <section class="card hidden" id="completeness-card">
-        <h3>Data completeness</h3>
-        <p class="muted mt-neg-4 text-sm">
-          Scores that could not be computed because of missing inputs.
-          These are <strong>not</strong> clinical alerts — they describe data
-          collection gaps, not acute findings.
+        <h3 data-i18n="assessment_view.completeness_title">Completezza dei dati</h3>
+        <p class="muted mt-neg-4 text-sm" data-i18n="assessment_view.completeness_note">
+          Score che non hanno potuto essere calcolati per dati mancanti. Questi <strong>non</strong> sono alert clinici — descrivono lacune nella raccolta dati, non rilievi acuti.
         </p>
         <ul class="completeness-list" id="completeness-wrap"></ul>
       </section>
 
       <section class="card">
-        <h3>Score results</h3>
-        <div id="scores-wrap"><p class="muted">Loading…</p></div>
+        <h3 data-i18n="assessment_view.section_scores">Punteggi calcolati</h3>
+        <div id="scores-wrap"><p class="muted" data-i18n="common.loading">Caricamento in corso…</p></div>
       </section>
 
       <section class="card">
-        <h3>Follow-up plan</h3>
-        <div id="followup-wrap"><p class="muted">Loading…</p></div>
+        <h3 data-i18n="assessment_view.section_followup">Piano di follow-up</h3>
+        <div id="followup-wrap"><p class="muted" data-i18n="common.loading">Caricamento in corso…</p></div>
       </section>
 
       <section class="card">
-        <h3>Recommended screenings</h3>
-        <div id="screenings-wrap"><p class="muted">Loading…</p></div>
+        <h3 data-i18n="assessment_view.section_screenings">Screening raccomandati</h3>
+        <div id="screenings-wrap"><p class="muted" data-i18n="common.loading">Caricamento in corso…</p></div>
       </section>
 
       <section class="card">
-        <h3>Lifestyle (nutrition &amp; activity)</h3>
+        <h3 data-i18n="assessment_view.section_lifestyle">Stile di vita (nutrizione e attività)</h3>
         <div class="grid two" id="lifestyle-wrap"></div>
       </section>
 
       <section class="card hidden" id="lifestyle-recs-card">
-        <h3>Lifestyle recommendations</h3>
-        <p class="muted mt-neg-4 text-sm">
-          Bounded, guideline-sourced counselling nudges derived from the
-          patient's own data. All entries carry an explicit
-          <strong>supportive</strong> authority flag — they are
-          <em>not</em> prescriptions and do not replace clinician
-          judgement. No meal plans, no training plans.
+        <h3 data-i18n="assessment_view.section_lifestyle_recs">Raccomandazioni di stile di vita</h3>
+        <p class="muted mt-neg-4 text-sm" data-i18n="assessment_view.lifestyle_recs_note">
+          Suggerimenti di counselling vincolati alle linee guida, derivati dai dati del paziente. Ogni voce porta un esplicito flag di autorità <strong>di supporto</strong> — <em>non</em> sono prescrizioni e non sostituiscono il giudizio clinico. Nessun piano alimentare, nessun piano di allenamento.
         </p>
         <div id="lifestyle-recs-wrap"></div>
       </section>
 
       <section class="card">
-        <h3>Alerts triggered by this assessment</h3>
-        <div id="alerts-wrap"><p class="muted">Loading…</p></div>
+        <h3 data-i18n="assessment_view.section_alerts">Alert generati da questa valutazione</h3>
+        <div id="alerts-wrap"><p class="muted" data-i18n="common.loading">Caricamento in corso…</p></div>
       </section>
     </main>
   </div>

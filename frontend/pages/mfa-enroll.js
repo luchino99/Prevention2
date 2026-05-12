@@ -37,6 +37,9 @@
  */
 
 import { supabase } from '../assets/js/api-client.js';
+import { t, bootstrapI18n } from '../i18n/index.js';
+
+bootstrapI18n();
 
 // ---------------------------------------------------------------------
 // DOM helpers
@@ -114,8 +117,8 @@ let enrollFactorId = null;
 
 async function startEnrollFlow(existingUnverified) {
   setHeader(
-    'Enable two-factor authentication',
-    'Clinical accounts must be protected with a TOTP authenticator app.',
+    t('mfa.enroll_header_title'),
+    t('mfa.enroll_header_body'),
   );
   hide('mode-loading');
   hide('mode-challenge');
@@ -165,8 +168,7 @@ async function startEnrollFlow(existingUnverified) {
       $('qr-image').style.display = 'block';
       $('qr-loading').style.display = 'none';
     } else {
-      $('qr-loading').textContent =
-        'QR code unavailable. Use the manual setup below.';
+      $('qr-loading').textContent = t('mfa.qr_unavailable');
       // Reveal the manual-entry block by default in this fallback path.
       const manualBlock = $('qr-manual');
       if (manualBlock) manualBlock.removeAttribute('hidden');
@@ -181,7 +183,7 @@ async function startEnrollFlow(existingUnverified) {
       if (uriField) uriField.textContent = totpUri;
     }
   } catch (e) {
-    showError(e?.message ?? 'Failed to start MFA enrolment');
+    showError(e?.message ?? t('mfa.enroll_start_failed'));
   }
 
   $('enroll-verify-form').addEventListener('submit', async (ev) => {
@@ -189,11 +191,11 @@ async function startEnrollFlow(existingUnverified) {
     clearError();
     const code = String($('enroll-code').value ?? '').trim();
     if (!/^[0-9]{6}$/.test(code)) {
-      showError('Code must be 6 digits.');
+      showError(t('mfa.code_must_be_6_digits'));
       return;
     }
     if (!enrollFactorId) {
-      showError('Enrolment not initialised. Please refresh and try again.');
+      showError(t('mfa.enroll_not_initialised'));
       return;
     }
     const btn = $('enroll-verify-btn');
@@ -208,9 +210,9 @@ async function startEnrollFlow(existingUnverified) {
       });
       if (ver.error) throw ver.error;
 
-      await onMfaVerified('Two-factor authentication enabled for your account.');
+      await onMfaVerified(t('mfa.enroll_success'));
     } catch (e) {
-      showError(e?.message ?? 'Verification failed. Please try again.');
+      showError(e?.message ?? t('mfa.verify_failed_retry'));
     } finally {
       btn.disabled = false;
     }
@@ -222,8 +224,8 @@ async function startEnrollFlow(existingUnverified) {
 // ---------------------------------------------------------------------
 async function startChallengeFlow(verifiedFactor) {
   setHeader(
-    'Enter your authenticator code',
-    'Open your authenticator app and enter the current 6-digit code.',
+    t('mfa.challenge_header_title'),
+    t('mfa.challenge_header_body'),
   );
   hide('mode-loading');
   hide('mode-enroll');
@@ -235,7 +237,7 @@ async function startChallengeFlow(verifiedFactor) {
     clearError();
     const code = String($('challenge-code').value ?? '').trim();
     if (!/^[0-9]{6}$/.test(code)) {
-      showError('Code must be 6 digits.');
+      showError(t('mfa.code_must_be_6_digits'));
       return;
     }
     const btn = $('challenge-btn');
@@ -250,9 +252,9 @@ async function startChallengeFlow(verifiedFactor) {
       });
       if (ver.error) throw ver.error;
 
-      await onMfaVerified('Verified — your session is now MFA-protected.');
+      await onMfaVerified(t('mfa.challenge_success'));
     } catch (e) {
-      showError(e?.message ?? 'Verification failed. Please try again.');
+      showError(e?.message ?? t('mfa.verify_failed_retry'));
     } finally {
       btn.disabled = false;
     }
@@ -293,10 +295,7 @@ async function onMfaVerified(successMsg) {
   // If we get here, mfa.verify() reported success but the token didn't
   // pick up aal2. This is rare but observable in offline test doubles.
   // Surface it to the user instead of redirecting into a 403 loop.
-  showError(
-    'Verification reported success but the session is still single-factor. ' +
-    'Please sign out and sign back in, then re-enter the code.',
-  );
+  showError(t('mfa.aal_stuck'));
 }
 
 // ---------------------------------------------------------------------
@@ -341,6 +340,6 @@ async function dispatch() {
 // ---------------------------------------------------------------------
 dispatch().catch((e) => {
   // Last-resort guard: never leave the user on the loading state.
-  showError(e?.message ?? 'Could not initialise the MFA page. Please refresh.');
+  showError(e?.message ?? t('mfa.init_failed'));
   hide('mode-loading');
 });

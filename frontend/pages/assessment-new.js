@@ -16,6 +16,9 @@ import {
   mountNavHeader,
   computeAgeFromBirthDate,
 } from '../components/nav-header.js';
+import { t, bootstrapI18n } from '../i18n/index.js';
+
+bootstrapI18n();
 
 await requireAuth();
 
@@ -26,7 +29,7 @@ const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
 const params = new URLSearchParams(window.location.search);
 const patientId = params.get('patientId');
 if (!patientId || !/^[0-9a-fA-F-]{36}$/.test(patientId)) {
-  document.body.innerHTML = '<main class="app-main"><div class="inline-alert danger">Invalid patient id.</div></main>';
+  document.body.innerHTML = `<main class="app-main"><div class="inline-alert danger">${t('patient_detail.invalid_id')}</div></main>`;
   throw new Error('invalid id');
 }
 
@@ -48,13 +51,13 @@ function renderNavHeader() {
   mountNavHeader({
     container: mount,
     crumbs: [
-      { label: 'Dashboard', href: './dashboard.html' },
-      { label: 'Patients',  href: './patients.html' },
-      { label: chipRef,     href: backUrl },
-      { label: 'New assessment' },
+      { label: t('nav.dashboard'), href: './dashboard.html' },
+      { label: t('nav.patients'),  href: './patients.html' },
+      { label: chipRef,            href: backUrl },
+      { label: t('assessment_new.title') },
     ],
     backHref: backUrl,
-    backLabel: 'Back to patient',
+    backLabel: t('assessment_view.back_to_patient'),
     patient: {
       id: patientId,
       displayName:
@@ -79,7 +82,7 @@ function showError(msg) {
 try {
   const { user } = await api.me();
   if (!['clinician', 'tenant_admin', 'platform_admin'].includes(user.role)) {
-    document.body.innerHTML = '<main class="app-main"><div class="inline-alert danger">Your role cannot create clinical assessments.</div></main>';
+    document.body.innerHTML = `<main class="app-main"><div class="inline-alert danger">${t('assessment_new.role_forbidden')}</div></main>`;
     throw new Error('forbidden');
   }
 } catch (e) { if (e.message === 'forbidden') throw e; }
@@ -101,7 +104,7 @@ try {
       String(new Date().getUTCFullYear() - birthYear);
   }
 } catch (e) {
-  showError(`Patient load failed: ${e.message}`);
+  showError(`${t('patient_detail.load_failed')}: ${e.message}`);
 }
 
 function num(form, name) {
@@ -140,7 +143,7 @@ document.getElementById('assessment-form').addEventListener('submit', async (e) 
   errorBanner.classList.add('hidden');
   const btn = document.getElementById('submit-btn');
   btn.disabled = true;
-  btn.textContent = 'Computing…';
+  btn.textContent = t('assessment_new.computing');
   try {
     const labs = {};
     ['totalCholMgDl','hdlMgDl','ldlMgDl','triglyceridesMgDl','glucoseMgDl','hba1cPct',
@@ -205,18 +208,18 @@ document.getElementById('assessment-form').addEventListener('submit', async (e) 
     const { snapshot } = await api.createAssessment(patientId, payload);
     const assessmentId = snapshot?.assessment?.id || snapshot?.id;
     if (!assessmentId) {
-      showError('Assessment created, but response missing id.');
+      showError(t('assessment_new.error_missing_id'));
       return;
     }
     window.location.href = `./assessment-view.html?id=${encodeURIComponent(assessmentId)}`;
   } catch (err) {
     const msg = err?.details
       ? `${err.message} — ${JSON.stringify(err.details).substring(0, 400)}`
-      : (err.message || 'Assessment creation failed');
+      : (err.message || t('assessment_new.error_create'));
     showError(msg);
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Compute assessment';
+    btn.textContent = t('assessment_new.compute');
   }
 });
 
@@ -313,15 +316,15 @@ function readinessSnapshot(form) {
   return {
     cvFocus,
     items: [
-      { key: 'SCORE2',          label: 'SCORE2 (non-diabetic)',            ready: score2Ready,   applicable: !hasDiabetes && Number.isFinite(age) && age >= 40 && age <= 69 },
-      { key: 'SCORE2-Diabetes', label: 'SCORE2-Diabetes',                   ready: score2DmReady, applicable: hasDiabetes && Number.isFinite(age) && age >= 40 && age <= 69 },
-      { key: 'eGFR',            label: 'eGFR (CKD-EPI 2021)',               ready: egfrReady,     applicable: true },
-      { key: 'ACR',             label: 'ACR (direct or urine-derived)',    ready: acrReady,      applicable: true },
-      { key: 'FIB-4',           label: 'FIB-4 (liver fibrosis)',            ready: fib4Ready,     applicable: true },
-      { key: 'FLI',             label: 'Fatty Liver Index',                 ready: fliReady,      applicable: true },
-      { key: 'MetS',            label: 'Metabolic syndrome (ATP III)',      ready: metsReady,     applicable: true },
-      { key: 'FRAIL',           label: 'FRAIL scale',                       ready: anyFrail,      applicable: frailtyExpected },
-      { key: 'PREDIMED',        label: 'PREDIMED MEDAS (14 items)',         ready: predimedReady, applicable: true },
+      { key: 'SCORE2',          label: t('readiness.score2'),         ready: score2Ready,   applicable: !hasDiabetes && Number.isFinite(age) && age >= 40 && age <= 69 },
+      { key: 'SCORE2-Diabetes', label: t('readiness.score2_dm'),      ready: score2DmReady, applicable: hasDiabetes && Number.isFinite(age) && age >= 40 && age <= 69 },
+      { key: 'eGFR',            label: t('readiness.egfr'),           ready: egfrReady,     applicable: true },
+      { key: 'ACR',             label: t('readiness.acr'),            ready: acrReady,      applicable: true },
+      { key: 'FIB-4',           label: t('readiness.fib4'),           ready: fib4Ready,     applicable: true },
+      { key: 'FLI',             label: t('readiness.fli'),            ready: fliReady,      applicable: true },
+      { key: 'MetS',            label: t('readiness.mets'),           ready: metsReady,     applicable: true },
+      { key: 'FRAIL',           label: t('readiness.frail'),          ready: anyFrail,      applicable: frailtyExpected },
+      { key: 'PREDIMED',        label: t('readiness.predimed'),       ready: predimedReady, applicable: true },
     ],
   };
 }
@@ -336,14 +339,14 @@ function renderReadiness() {
     .map((it) => {
       const cls = it.ready ? 'r-ok' : 'r-missing';
       const mark = it.ready ? '✓' : '◌';
-      return `<div class="r-item ${cls}">${mark} <code>${escapeHtml(it.key)}</code> — ${escapeHtml(it.label)}${it.ready ? '' : ' <span class="muted">(inputs missing)</span>'}</div>`;
+      return `<div class="r-item ${cls}">${mark} <code>${escapeHtml(it.key)}</code> — ${escapeHtml(it.label)}${it.ready ? '' : ` <span class="muted">(${t('readiness.inputs_missing')})</span>`}</div>`;
     });
   if (snap.cvFocus) {
-    lines.unshift('<div class="r-item muted">Scope: cardiovascular-focused visit</div>');
+    lines.unshift(`<div class="r-item muted">${t('readiness.scope_cv')}</div>`);
   }
   wrap.innerHTML = lines.length
     ? lines.join('')
-    : '<div class="muted">Fill in the form to see readiness…</div>';
+    : `<div class="muted">${t('assessment_new.readiness_empty')}</div>`;
 }
 
 (() => {

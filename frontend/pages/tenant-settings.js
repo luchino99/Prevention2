@@ -22,6 +22,9 @@
  */
 
 import { api, requireAuth, supabase } from '../assets/js/api-client.js';
+import { t, bootstrapI18n, getCurrentLocale } from '../i18n/index.js';
+
+bootstrapI18n();
 
 await requireAuth();
 
@@ -38,7 +41,7 @@ try {
 } catch (e) {
   // requireAuth above already covers the unauthenticated case; this
   // catch handles the rare DB error path.
-  $('forbidden-banner').textContent = 'Could not load your profile.';
+  $('forbidden-banner').textContent = t('tenant_settings.profile_load_failed');
   $('forbidden-banner').style.display = 'block';
   throw e;
 }
@@ -55,7 +58,7 @@ if (!['tenant_admin', 'platform_admin'].includes(role)) {
 async function loadTenant() {
   // The api-client doesn't expose admin/tenant yet; call apiFetch directly.
   const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.access_token) throw new Error('No active session');
+  if (!session?.access_token) throw new Error(t('errors.unauthorized'));
 
   const res = await fetch('/api/v1/admin/tenant', {
     headers: { Authorization: `Bearer ${session.access_token}` },
@@ -70,7 +73,7 @@ async function loadTenant() {
 
 async function patchTenant(patch) {
   const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.access_token) throw new Error('No active session');
+  if (!session?.access_token) throw new Error(t('errors.unauthorized'));
 
   const res = await fetch('/api/v1/admin/tenant', {
     method: 'PATCH',
@@ -93,7 +96,7 @@ function paint(t) {
   $('t-slug').textContent    = t.slug ?? '—';
   $('t-plan').textContent    = t.plan ?? '—';
   $('t-status').textContent  = t.status ?? '—';
-  $('t-created').textContent = t.created_at ? new Date(t.created_at).toLocaleString() : '—';
+  $('t-created').textContent = t.created_at ? new Date(t.created_at).toLocaleString(getCurrentLocale()) : '—';
 
   // Numeric fields — empty input means "platform default" (NULL).
   $('rd-audit').value  = t.retention_days_audit ?? '';
@@ -110,7 +113,7 @@ try {
   paint(t);
 } catch (e) {
   $('general-card').style.display = '';
-  $('general-card').innerHTML = `<div class="inline-alert danger">Failed to load tenant: ${escapeHtml(e.message)}</div>`;
+  $('general-card').innerHTML = `<div class="inline-alert danger">${t('tenant_settings.tenant_load_failed')}: ${escapeHtml(e.message)}</div>`;
   throw e;
 }
 
@@ -130,7 +133,7 @@ $('retention-form').addEventListener('submit', async (ev) => {
     } else {
       const n = Number.parseInt(trimmed, 10);
       if (!Number.isFinite(n)) {
-        status.textContent = `Invalid number for ${k}`;
+        status.textContent = t('tenant_settings.invalid_number', { field: k });
         status.style.color = '#b3261e';
         return;
       }
@@ -138,21 +141,21 @@ $('retention-form').addEventListener('submit', async (ev) => {
     }
   }
   if (Object.keys(patch).length === 0) {
-    status.textContent = 'Nothing to save.';
+    status.textContent = t('tenant_settings.nothing_to_save');
     return;
   }
 
   btn.disabled = true;
   status.style.color = '';
-  status.textContent = 'Saving…';
+  status.textContent = t('tenant_settings.saving');
   try {
-    const t = await patchTenant(patch);
-    paint(t);
+    const tenantRow = await patchTenant(patch);
+    paint(tenantRow);
     status.style.color = '#1f7a1f';
-    status.textContent = 'Saved.';
+    status.textContent = t('tenant_settings.saved_ok');
   } catch (e) {
     status.style.color = '#b3261e';
-    status.textContent = `Failed: ${e.message}`;
+    status.textContent = `${t('tenant_settings.save_failed')}: ${e.message}`;
   } finally {
     btn.disabled = false;
   }

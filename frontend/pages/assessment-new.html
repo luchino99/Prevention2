@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex,nofollow" />
-  <title>New assessment — Uelfy Clinical</title>
+  <title>Nuova valutazione — Uelfy Clinical</title>
   <!-- Favicon set (clinical-context) — see frontend/assets/icons/favicon.svg -->
   <link rel="icon" type="image/svg+xml" href="../assets/icons/favicon.svg" />
   <link rel="alternate icon" type="image/png" sizes="32x32" href="../assets/icons/favicon-32.png" />
@@ -20,17 +20,17 @@
   -->
 </head>
 <body>
-  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <a class="skip-link" href="#main-content" data-i18n="common.skip_to_content">Vai al contenuto principale</a>
   <div class="app-shell">
-    <aside class="app-sidebar" aria-label="Primary navigation">
-      <div class="brand">Uelfy Clinical</div>
+    <aside class="app-sidebar" data-i18n-attr="aria-label:nav.primary_navigation">
+      <div class="brand" data-i18n="common.app_name">Uelfy Clinical</div>
       <nav>
-        <a href="./dashboard.html">Dashboard</a>
-        <a href="./patients.html" class="active">Patients</a>
-        <a href="./alerts.html">Alerts</a>
-        <a href="./audit.html" id="nav-audit" class="hidden">Audit log</a>
-        <a href="./tenant-settings.html">Tenant settings</a>
-        <a href="#" id="signout-link">Sign out</a>
+        <a href="./dashboard.html" data-i18n="nav.dashboard">Cruscotto</a>
+        <a href="./patients.html" class="active" data-i18n="nav.patients">Pazienti</a>
+        <a href="./alerts.html" data-i18n="nav.alerts">Alert clinici</a>
+        <a href="./audit.html" id="nav-audit" class="hidden" data-i18n="nav.audit">Log di sicurezza</a>
+        <a href="./tenant-settings.html" data-i18n="nav.tenant_settings">Impostazioni</a>
+        <a href="#" id="signout-link" data-i18n="common.sign_out">Esci</a>
       </nav>
     </aside>
 
@@ -39,208 +39,186 @@
 
       <div class="topbar">
         <div>
-          <h1 class="mb-2">New assessment</h1>
-          <div class="muted" id="patient-subline">Loading…</div>
+          <h1 class="mb-2" data-i18n="assessment_new.title">Nuova valutazione</h1>
+          <div class="muted" id="patient-subline" data-i18n="common.loading">Caricamento in corso…</div>
         </div>
       </div>
 
       <div id="error-banner" class="inline-alert danger hidden" role="alert" aria-live="assertive"></div>
 
       <form id="assessment-form" class="card" autocomplete="off">
-        <h3>Demographics (snapshot)</h3>
+        <h3 data-i18n="assessment_new.demographics_title">Dati anagrafici (snapshot della valutazione)</h3>
         <div class="grid two">
           <div class="field">
-            <label>Age (years) *</label>
+            <label data-i18n="assessment_new.field_age">Età (anni) *</label>
             <input name="age" type="number" min="18" max="120" required />
           </div>
           <div class="field">
-            <label>Sex *</label>
+            <label data-i18n="patients.field_sex">Sesso *</label>
             <select name="sex" required>
               <option value="">—</option>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
+              <option value="male" data-i18n="patients.sex_male">Maschio</option>
+              <option value="female" data-i18n="patients.sex_female">Femmina</option>
             </select>
           </div>
         </div>
 
-        <h3 class="mt-16">Vitals</h3>
+        <h3 class="mt-16" data-i18n="assessment_new.vitals_title">Parametri vitali</h3>
         <div class="grid three">
           <div class="field">
-            <label>Height (cm) *</label>
+            <label data-i18n="assessment_new.field_height">Altezza (cm) *</label>
             <input name="heightCm" type="number" step="0.1" min="100" max="230" required />
           </div>
           <div class="field">
-            <label>Weight (kg) *</label>
+            <label data-i18n="assessment_new.field_weight">Peso (kg) *</label>
             <input name="weightKg" type="number" step="0.1" min="30" max="300" required />
           </div>
           <div class="field">
-            <label>Waist (cm) *</label>
+            <label data-i18n="assessment_new.field_waist">Circonferenza vita (cm) *</label>
             <input name="waistCm" type="number" step="0.1" min="40" max="200" required />
           </div>
           <div class="field">
-            <label>SBP (mmHg) *</label>
+            <label data-i18n="assessment_new.field_sbp">PAS (mmHg) *</label>
             <input name="sbpMmHg" type="number" min="70" max="260" required />
           </div>
           <div class="field">
-            <label>DBP (mmHg) *</label>
+            <label data-i18n="assessment_new.field_dbp">PAD (mmHg) *</label>
             <input name="dbpMmHg" type="number" min="40" max="160" required />
           </div>
         </div>
 
-        <h3 class="mt-16">Labs</h3>
-        <p class="section-note">
-          The cardio-nephro-metabolic workflow requires a core panel of 10
-          lab values to produce a defensible stratification. Fields marked
-          <strong>*</strong> are required; the remaining fields are
-          supporting data (staging, passthrough). Submissions missing any
-          required lab will be rejected at validation.
+        <h3 class="mt-16" data-i18n="assessment_new.labs_title">Esami di laboratorio</h3>
+        <p class="section-note" data-i18n="assessment_new.labs_note">
+          Il flusso cardio-nefro-metabolico richiede un pannello di 10 valori di laboratorio per produrre una stratificazione difendibile. I campi contrassegnati <strong>*</strong> sono obbligatori; i campi rimanenti sono dati di supporto (staging, passthrough). I valori mancanti sui campi obbligatori vengono rifiutati a validazione.
         </p>
         <div class="grid three">
-          <div class="field"><label>Total cholesterol (mg/dL) *</label><input name="totalCholMgDl" type="number" step="0.1" required /></div>
-          <div class="field"><label>HDL (mg/dL) *</label><input name="hdlMgDl" type="number" step="0.1" required /></div>
-          <div class="field"><label>LDL (mg/dL) *</label><input name="ldlMgDl" type="number" step="0.1" required /></div>
-          <div class="field"><label>Triglycerides (mg/dL) *</label><input name="triglyceridesMgDl" type="number" step="0.1" required /></div>
-          <div class="field"><label>Glucose (mg/dL) *</label><input name="glucoseMgDl" type="number" step="0.1" required /></div>
-          <div class="field"><label>HbA1c (%) *</label><input name="hba1cPct" type="number" step="0.01" required /></div>
-          <div class="field"><label>Creatinine (mg/dL) *</label><input name="creatinineMgDl" type="number" step="0.01" required /></div>
-          <div class="field"><label>GGT (U/L) *</label><input name="ggtUL" type="number" step="0.1" required /></div>
-          <div class="field"><label>AST (U/L) *</label><input name="astUL" type="number" step="0.1" required /></div>
-          <div class="field"><label>Platelets (G/L) *</label><input name="plateletsGigaL" type="number" step="0.1" required /></div>
-          <div class="field"><label>eGFR (optional — derived from creatinine)</label><input name="eGFR" type="number" step="0.1" /></div>
-          <div class="field"><label>ALT (U/L) (optional)</label><input name="altUL" type="number" step="0.1" /></div>
-          <div class="field"><label>ACR (mg/g) (optional)</label><input name="albuminCreatinineRatio" type="number" step="0.01" /></div>
-          <div class="field"><label>Urine albumin (mg/L) (optional)</label><input name="urineAlbuminMgL" type="number" step="0.1" /></div>
-          <div class="field"><label>Urine creatinine (mg/dL) (optional)</label><input name="urineCreatinineMgDl" type="number" step="0.1" /></div>
+          <div class="field"><label data-i18n="assessment_new.field_total_chol">Colesterolo totale (mg/dL) *</label><input name="totalCholMgDl" type="number" step="0.1" required /></div>
+          <div class="field"><label data-i18n="assessment_new.field_hdl">HDL (mg/dL) *</label><input name="hdlMgDl" type="number" step="0.1" required /></div>
+          <div class="field"><label data-i18n="assessment_new.field_ldl">LDL (mg/dL) *</label><input name="ldlMgDl" type="number" step="0.1" required /></div>
+          <div class="field"><label data-i18n="assessment_new.field_triglycerides">Trigliceridi (mg/dL) *</label><input name="triglyceridesMgDl" type="number" step="0.1" required /></div>
+          <div class="field"><label data-i18n="assessment_new.field_glucose">Glicemia (mg/dL) *</label><input name="glucoseMgDl" type="number" step="0.1" required /></div>
+          <div class="field"><label data-i18n="assessment_new.field_hba1c">HbA1c (%) *</label><input name="hba1cPct" type="number" step="0.01" required /></div>
+          <div class="field"><label data-i18n="assessment_new.field_creatinine">Creatinina (mg/dL) *</label><input name="creatinineMgDl" type="number" step="0.01" required /></div>
+          <div class="field"><label data-i18n="assessment_new.field_ggt">GGT (U/L) *</label><input name="ggtUL" type="number" step="0.1" required /></div>
+          <div class="field"><label data-i18n="assessment_new.field_ast">AST (U/L) *</label><input name="astUL" type="number" step="0.1" required /></div>
+          <div class="field"><label data-i18n="assessment_new.field_platelets">Piastrine (G/L) *</label><input name="plateletsGigaL" type="number" step="0.1" required /></div>
+          <div class="field"><label data-i18n="assessment_new.field_egfr">eGFR (facoltativo — derivato da creatinina)</label><input name="eGFR" type="number" step="0.1" /></div>
+          <div class="field"><label data-i18n="assessment_new.field_alt">ALT (U/L) (facoltativo)</label><input name="altUL" type="number" step="0.1" /></div>
+          <div class="field"><label data-i18n="assessment_new.field_acr">ACR (mg/g) (facoltativo)</label><input name="albuminCreatinineRatio" type="number" step="0.01" /></div>
+          <div class="field"><label data-i18n="assessment_new.field_urine_alb">Albumina urinaria (mg/L) (facoltativo)</label><input name="urineAlbuminMgL" type="number" step="0.1" /></div>
+          <div class="field"><label data-i18n="assessment_new.field_urine_cre">Creatinina urinaria (mg/dL) (facoltativo)</label><input name="urineCreatinineMgDl" type="number" step="0.1" /></div>
         </div>
-        <p class="section-note">
-          If ACR is not provided but both urine albumin (mg/L) and urine
-          creatinine (mg/dL) are, the backend will derive ACR automatically
-          (mg/g). A directly entered ACR always takes precedence.
+        <p class="section-note" data-i18n="assessment_new.acr_note">
+          Se l'ACR non è fornito ma sono presenti sia albumina urinaria (mg/L) sia creatinina urinaria (mg/dL), il backend deriva automaticamente l'ACR (mg/g). Un ACR inserito direttamente prevale sempre.
         </p>
 
-        <h3 class="mt-16">Clinical context</h3>
+        <h3 class="mt-16" data-i18n="assessment_new.clinical_context_title">Contesto clinico</h3>
         <div class="grid two">
           <div class="field">
-            <label>CV risk region *</label>
+            <label data-i18n="assessment_new.field_cv_region">Regione di rischio CV *</label>
             <select name="cvRiskRegion" required>
-              <option value="low">Low</option>
-              <option value="moderate" selected>Moderate</option>
-              <option value="high">High</option>
-              <option value="very_high">Very high</option>
+              <option value="low" data-i18n="assessment_new.region_low">Bassa</option>
+              <option value="moderate" selected data-i18n="assessment_new.region_moderate">Moderata</option>
+              <option value="high" data-i18n="assessment_new.region_high">Alta</option>
+              <option value="very_high" data-i18n="assessment_new.region_very_high">Molto alta</option>
             </select>
           </div>
           <div class="field">
-            <label>Age at diabetes diagnosis (if known)</label>
+            <label data-i18n="assessment_new.field_age_at_diabetes">Età alla diagnosi di diabete (se nota)</label>
             <input name="ageAtDiabetesDiagnosis" type="number" min="1" max="120" />
           </div>
         </div>
-        <label class="checkbox-row"><input name="smoking" type="checkbox" /> Current smoker</label>
-        <label class="checkbox-row"><input name="hasDiabetes" type="checkbox" /> Diabetes diagnosis</label>
-        <label class="checkbox-row"><input name="hypertension" type="checkbox" /> Hypertension</label>
-        <label class="checkbox-row"><input name="familyHistoryDiabetes" type="checkbox" /> Family history of diabetes</label>
-        <label class="checkbox-row"><input name="familyHistoryCvd" type="checkbox" /> Family history of CVD</label>
-        <label class="checkbox-row"><input name="gestationalDiabetes" type="checkbox" /> Gestational diabetes history</label>
+        <label class="checkbox-row"><input name="smoking" type="checkbox" /> <span data-i18n="assessment_new.cb_smoking">Fumatore attuale</span></label>
+        <label class="checkbox-row"><input name="hasDiabetes" type="checkbox" /> <span data-i18n="assessment_new.cb_diabetes">Diagnosi di diabete</span></label>
+        <label class="checkbox-row"><input name="hypertension" type="checkbox" /> <span data-i18n="assessment_new.cb_hypertension">Ipertensione</span></label>
+        <label class="checkbox-row"><input name="familyHistoryDiabetes" type="checkbox" /> <span data-i18n="assessment_new.cb_fh_diabetes">Familiarità per diabete</span></label>
+        <label class="checkbox-row"><input name="familyHistoryCvd" type="checkbox" /> <span data-i18n="assessment_new.cb_fh_cvd">Familiarità per malattia cardiovascolare</span></label>
+        <label class="checkbox-row"><input name="gestationalDiabetes" type="checkbox" /> <span data-i18n="assessment_new.cb_gestational">Storia di diabete gestazionale</span></label>
 
-        <h3 class="mt-16">Lifestyle — Physical activity (WHO / GPAQ)</h3>
-        <p class="section-note">
-          Split the weekly activity into <strong>moderate</strong>
-          (e.g. brisk walking, leisurely cycling) and <strong>vigorous</strong>
-          (e.g. running, fast cycling). The engine computes MET-minutes
-          using the WHO/GPAQ convention (moderate ≈ 4 METs, vigorous ≈
-          8 METs) and evaluates the ≥600 MET-min/week target. Sedentary
-          hours are captured independently, because prolonged sitting is
-          an independent CV risk factor (ESC 2021 §3).
+        <h3 class="mt-16" data-i18n="assessment_new.lifestyle_title">Stile di vita — Attività fisica (OMS / GPAQ)</h3>
+        <p class="section-note" data-i18n="assessment_new.lifestyle_note">
+          Suddivida l'attività settimanale in <strong>moderata</strong> (es. camminata veloce, ciclismo leggero) e <strong>vigorosa</strong> (es. corsa, ciclismo veloce). Il motore calcola i MET-minuti con la convenzione OMS/GPAQ (moderata ≈ 4 METs, vigorosa ≈ 8 METs) e valuta il target ≥ 600 MET-min/sett. Le ore di sedentarietà sono raccolte separatamente, perché la sedentarietà prolungata è un fattore di rischio CV indipendente (ESC 2021 §3).
         </p>
         <div class="grid two">
           <div class="field">
-            <label>Moderate activity — min/week (~4 METs)</label>
+            <label data-i18n="assessment_new.field_moderate_min">Attività moderata — min/sett (~4 METs)</label>
             <input name="moderateActivityMinutes" type="number" min="0" max="10080" step="5" />
           </div>
           <div class="field">
-            <label>Vigorous activity — min/week (~8 METs)</label>
+            <label data-i18n="assessment_new.field_vigorous_min">Attività vigorosa — min/sett (~8 METs)</label>
             <input name="vigorousActivityMinutes" type="number" min="0" max="10080" step="5" />
           </div>
           <div class="field">
-            <label>Sedentary hours per day (excl. sleep)</label>
+            <label data-i18n="assessment_new.field_sedentary_h">Ore di sedentarietà al giorno (escluso sonno)</label>
             <input name="sedentaryHoursPerDay" type="number" min="0" max="24" step="0.5" />
           </div>
           <div class="field">
-            <label>Weekly activity — legacy aggregate (min, optional)</label>
+            <label data-i18n="assessment_new.field_weekly_legacy">Attività settimanale — aggregato legacy (min, facoltativo)</label>
             <input name="weeklyActivityMinutes" type="number" min="0" max="10080" />
           </div>
           <div class="field">
-            <label>Sedentary level — qualitative (optional)</label>
+            <label data-i18n="assessment_new.field_sedentary_qual">Livello di sedentarietà — qualitativo (facoltativo)</label>
             <select name="sedentaryLevel">
               <option value="">—</option>
-              <option value="low">Low</option>
-              <option value="moderate">Moderate</option>
-              <option value="high">High</option>
+              <option value="low" data-i18n="assessment_new.region_low">Basso</option>
+              <option value="moderate" data-i18n="assessment_new.region_moderate">Moderato</option>
+              <option value="high" data-i18n="assessment_new.region_high">Alto</option>
             </select>
           </div>
         </div>
 
-        <h3 class="mt-16">PREDIMED MEDAS — Mediterranean diet adherence (optional, 14 items)</h3>
-        <p class="section-note">
-          Validated Mediterranean diet adherence questionnaire (Estruch et al.,
-          PREDIMED trial). Enable the questionnaire to record all 14 yes/no
-          items — partial responses are <em>not</em> submitted because they
-          would bias the adherence band. When disabled, the completeness
-          checker will report <code>PREDIMED_INCOMPLETE</code> as a low-priority
-          data-collection gap.
+        <h3 class="mt-16" data-i18n="assessment_new.predimed_title">PREDIMED MEDAS — Aderenza alla dieta mediterranea (facoltativo, 14 voci)</h3>
+        <p class="section-note" data-i18n="assessment_new.predimed_note">
+          Questionario validato di aderenza alla dieta mediterranea (Estruch et al., trial PREDIMED). Attivi il questionario per registrare tutte le 14 voci sì/no — le risposte parziali <em>non</em> vengono inviate perché distorcerebbero la banda di aderenza. Quando disattivato, il controllo di completezza segnalerà <code>PREDIMED_INCOMPLETE</code> come lacuna di raccolta dati a bassa priorità.
         </p>
         <label class="checkbox-row">
           <input name="predimedEnabled" type="checkbox" id="predimed-enabled" />
-          Administer the 14-item PREDIMED MEDAS questionnaire for this visit
+          <span data-i18n="assessment_new.predimed_enable_label">Somministra il questionario PREDIMED MEDAS a 14 voci per questa visita</span>
         </label>
         <div id="predimed-items" class="predimed-block hidden">
-          <label class="checkbox-row"><input name="predimed_1"  type="checkbox" /> 1. Olive oil is the main source of fat for cooking</label>
-          <label class="checkbox-row"><input name="predimed_2"  type="checkbox" /> 2. ≥ 4 tablespoons (≈ 60 g) of olive oil per day</label>
-          <label class="checkbox-row"><input name="predimed_3"  type="checkbox" /> 3. ≥ 2 servings of vegetables per day</label>
-          <label class="checkbox-row"><input name="predimed_4"  type="checkbox" /> 4. ≥ 3 pieces of fruit per day</label>
-          <label class="checkbox-row"><input name="predimed_5"  type="checkbox" /> 5. &lt; 1 serving/day of red or processed meat</label>
-          <label class="checkbox-row"><input name="predimed_6"  type="checkbox" /> 6. &lt; 1 serving/day of butter, margarine or cream</label>
-          <label class="checkbox-row"><input name="predimed_7"  type="checkbox" /> 7. &lt; 1 sugary/carbonated drink per day</label>
-          <label class="checkbox-row"><input name="predimed_8"  type="checkbox" /> 8. ≥ 7 glasses of wine per week (only when culturally and clinically appropriate)</label>
-          <label class="checkbox-row"><input name="predimed_9"  type="checkbox" /> 9. ≥ 3 servings of legumes per week</label>
-          <label class="checkbox-row"><input name="predimed_10" type="checkbox" /> 10. ≥ 3 servings of fish or shellfish per week</label>
-          <label class="checkbox-row"><input name="predimed_11" type="checkbox" /> 11. ≤ 2 commercial sweets/pastries per week</label>
-          <label class="checkbox-row"><input name="predimed_12" type="checkbox" /> 12. ≥ 3 servings of nuts per week</label>
-          <label class="checkbox-row"><input name="predimed_13" type="checkbox" /> 13. Prefers white meat over red meat</label>
-          <label class="checkbox-row"><input name="predimed_14" type="checkbox" /> 14. Sofrito (tomato-based sauce with olive oil) ≥ 2 times/week</label>
+          <label class="checkbox-row"><input name="predimed_1"  type="checkbox" /> <span data-i18n="assessment_new.predimed_1">1. Olio d'oliva come grasso principale per cucinare</span></label>
+          <label class="checkbox-row"><input name="predimed_2"  type="checkbox" /> <span data-i18n="assessment_new.predimed_2">2. ≥ 4 cucchiai (≈ 60 g) di olio d'oliva al giorno</span></label>
+          <label class="checkbox-row"><input name="predimed_3"  type="checkbox" /> <span data-i18n="assessment_new.predimed_3">3. ≥ 2 porzioni di verdura al giorno</span></label>
+          <label class="checkbox-row"><input name="predimed_4"  type="checkbox" /> <span data-i18n="assessment_new.predimed_4">4. ≥ 3 pezzi di frutta al giorno</span></label>
+          <label class="checkbox-row"><input name="predimed_5"  type="checkbox" /> <span data-i18n="assessment_new.predimed_5">5. &lt; 1 porzione/giorno di carne rossa o lavorata</span></label>
+          <label class="checkbox-row"><input name="predimed_6"  type="checkbox" /> <span data-i18n="assessment_new.predimed_6">6. &lt; 1 porzione/giorno di burro, margarina o panna</span></label>
+          <label class="checkbox-row"><input name="predimed_7"  type="checkbox" /> <span data-i18n="assessment_new.predimed_7">7. &lt; 1 bibita zuccherata/gassata al giorno</span></label>
+          <label class="checkbox-row"><input name="predimed_8"  type="checkbox" /> <span data-i18n="assessment_new.predimed_8">8. ≥ 7 bicchieri di vino alla settimana (solo se culturalmente e clinicamente appropriato)</span></label>
+          <label class="checkbox-row"><input name="predimed_9"  type="checkbox" /> <span data-i18n="assessment_new.predimed_9">9. ≥ 3 porzioni di legumi alla settimana</span></label>
+          <label class="checkbox-row"><input name="predimed_10" type="checkbox" /> <span data-i18n="assessment_new.predimed_10">10. ≥ 3 porzioni di pesce o crostacei alla settimana</span></label>
+          <label class="checkbox-row"><input name="predimed_11" type="checkbox" /> <span data-i18n="assessment_new.predimed_11">11. ≤ 2 dolci/pasticcini industriali alla settimana</span></label>
+          <label class="checkbox-row"><input name="predimed_12" type="checkbox" /> <span data-i18n="assessment_new.predimed_12">12. ≥ 3 porzioni di frutta secca alla settimana</span></label>
+          <label class="checkbox-row"><input name="predimed_13" type="checkbox" /> <span data-i18n="assessment_new.predimed_13">13. Preferisce carne bianca alla carne rossa</span></label>
+          <label class="checkbox-row"><input name="predimed_14" type="checkbox" /> <span data-i18n="assessment_new.predimed_14">14. Sofrito (sugo a base di pomodoro con olio d'oliva) ≥ 2 volte/sett</span></label>
         </div>
 
-        <h3 class="mt-16">Frailty (FRAIL scale, optional)</h3>
-        <label class="checkbox-row"><input name="fatigue"      type="checkbox" /> Fatigue</label>
-        <label class="checkbox-row"><input name="resistance"   type="checkbox" /> Resistance (stairs difficulty)</label>
-        <label class="checkbox-row"><input name="ambulation"   type="checkbox" /> Ambulation (cannot walk a block)</label>
-        <label class="checkbox-row"><input name="illnesses"    type="checkbox" /> 5+ comorbidities</label>
-        <label class="checkbox-row"><input name="weightLoss"   type="checkbox" /> Weight loss &gt;5% in last year</label>
+        <h3 class="mt-16" data-i18n="assessment_new.frail_title">Fragilità (scala FRAIL, facoltativo)</h3>
+        <label class="checkbox-row"><input name="fatigue"      type="checkbox" /> <span data-i18n="assessment_new.frail_fatigue">Astenia</span></label>
+        <label class="checkbox-row"><input name="resistance"   type="checkbox" /> <span data-i18n="assessment_new.frail_resistance">Resistenza (difficoltà a fare le scale)</span></label>
+        <label class="checkbox-row"><input name="ambulation"   type="checkbox" /> <span data-i18n="assessment_new.frail_ambulation">Deambulazione (non riesce a camminare per un isolato)</span></label>
+        <label class="checkbox-row"><input name="illnesses"    type="checkbox" /> <span data-i18n="assessment_new.frail_illnesses">5+ comorbidità</span></label>
+        <label class="checkbox-row"><input name="weightLoss"   type="checkbox" /> <span data-i18n="assessment_new.frail_weight_loss">Perdita di peso &gt;5% nell'ultimo anno</span></label>
 
-        <h3 class="mt-16">Assessment scope</h3>
-        <p class="section-note">
-          Declare the clinical intent of this visit. This flag does not
-          change score formulas — it only sharpens completeness warnings
-          (e.g. when scope is CV-focused, a missing lipid panel is raised
-          as a <em>warning</em> instead of a passive <em>info</em>).
+        <h3 class="mt-16" data-i18n="assessment_new.scope_title">Scopo della valutazione</h3>
+        <p class="section-note" data-i18n="assessment_new.scope_note">
+          Dichiari l'intento clinico di questa visita. Questo flag non modifica le formule degli score — affina solo gli avvisi di completezza (es. quando lo scopo è cardiovascolare, un pannello lipidico mancante è sollevato come <em>avvertimento</em> invece di <em>informativo</em>).
         </p>
         <label class="checkbox-row">
           <input name="cvAssessmentFocus" type="checkbox" />
-          This visit is primarily a cardiovascular risk assessment
+          <span data-i18n="assessment_new.scope_cv_label">Questa visita è principalmente una valutazione del rischio cardiovascolare</span>
         </label>
 
-        <h3 class="mt-16">Readiness preview</h3>
-        <p class="section-note">
-          Live estimate of which scores the backend will be able to compute
-          with the current form state. Purely informational — server-side
-          validation is the source of truth.
+        <h3 class="mt-16" data-i18n="assessment_new.readiness_title">Anteprima di disponibilità degli score</h3>
+        <p class="section-note" data-i18n="assessment_new.readiness_note">
+          Stima in tempo reale degli score che il backend sarà in grado di calcolare con lo stato corrente del modulo. Solo informativa — la validazione lato server è la fonte di verità.
         </p>
         <div id="readiness-wrap" class="readiness-panel">
-          <div class="muted">Fill in the form to see readiness…</div>
+          <div class="muted" data-i18n="assessment_new.readiness_empty">Compili il modulo per vedere la disponibilità degli score…</div>
         </div>
 
         <div class="flex gap-8 mt-16 justify-end">
-          <a class="btn secondary" id="cancel-link" href="#">Cancel</a>
-          <button type="submit" class="btn" id="submit-btn">Compute assessment</button>
+          <a class="btn secondary" id="cancel-link" href="#" data-i18n="common.cancel">Annulla</a>
+          <button type="submit" class="btn" id="submit-btn" data-i18n="assessment_new.compute">Calcola valutazione</button>
         </div>
       </form>
     </main>

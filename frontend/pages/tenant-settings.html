@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex,nofollow" />
-  <title>Tenant settings — Uelfy Clinical</title>
+  <title>Impostazioni — Uelfy Clinical</title>
   <link rel="icon" type="image/svg+xml" href="../assets/icons/favicon.svg" />
   <link rel="alternate icon" type="image/png" sizes="32x32" href="../assets/icons/favicon-32.png" />
   <link rel="alternate icon" type="image/png" sizes="16x16" href="../assets/icons/favicon-16.png" />
@@ -14,86 +14,76 @@
   <link rel="stylesheet" href="../assets/css/app.css" />
 </head>
 <body>
-  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <a class="skip-link" href="#main-content" data-i18n="common.skip_to_content">Vai al contenuto principale</a>
   <div class="app-shell">
-    <aside class="app-sidebar" aria-label="Primary navigation">
-      <div class="brand">Uelfy Clinical</div>
+    <aside class="app-sidebar" data-i18n-attr="aria-label:nav.primary_navigation">
+      <div class="brand" data-i18n="common.app_name">Uelfy Clinical</div>
       <nav>
-        <a href="./dashboard.html">Dashboard</a>
-        <a href="./patients.html">Patients</a>
-        <a href="./alerts.html">Alerts</a>
-        <a href="./audit.html">Audit log</a>
-        <a href="./tenant-settings.html" class="active" aria-current="page">Tenant settings</a>
-        <a href="#" id="signout-link">Sign out</a>
+        <a href="./dashboard.html" data-i18n="nav.dashboard">Cruscotto</a>
+        <a href="./patients.html" data-i18n="nav.patients">Pazienti</a>
+        <a href="./alerts.html" data-i18n="nav.alerts">Alert clinici</a>
+        <a href="./audit.html" data-i18n="nav.audit">Log di sicurezza</a>
+        <a href="./tenant-settings.html" class="active" aria-current="page" data-i18n="nav.tenant_settings">Impostazioni</a>
+        <a href="#" id="signout-link" data-i18n="common.sign_out">Esci</a>
       </nav>
     </aside>
 
     <main class="app-main" id="main-content" tabindex="-1">
       <div class="topbar">
         <div>
-          <h1 class="mb-2">Tenant settings</h1>
-          <div class="muted" id="tenant-label">Loading…</div>
+          <h1 class="mb-2" data-i18n="tenant_settings.title">Impostazioni</h1>
+          <div class="muted" id="tenant-label" data-i18n="common.loading">Caricamento in corso…</div>
         </div>
       </div>
 
-      <div id="forbidden-banner" class="inline-alert danger hidden" role="alert" aria-live="assertive">
-        Tenant settings are accessible only to <code>tenant_admin</code> or
-        <code>platform_admin</code>.
+      <div id="forbidden-banner" class="inline-alert danger hidden" role="alert" aria-live="assertive" data-i18n-html="tenant_settings.forbidden">
+        Le impostazioni sono accessibili solo ai ruoli <code>tenant_admin</code> o <code>platform_admin</code>.
       </div>
 
       <section class="card mb-16 hidden" id="general-card">
-        <h2>General</h2>
+        <h2 data-i18n="tenant_settings.general_title">Generale</h2>
         <dl class="kv-list">
-          <dt>Name</dt>     <dd id="t-name">—</dd>
-          <dt>Slug</dt>     <dd id="t-slug" class="mono">—</dd>
-          <dt>Plan</dt>     <dd id="t-plan">—</dd>
-          <dt>Status</dt>   <dd id="t-status">—</dd>
-          <dt>Created</dt>  <dd id="t-created">—</dd>
+          <dt data-i18n="tenant_settings.field_name">Nome</dt>     <dd id="t-name">—</dd>
+          <dt data-i18n="tenant_settings.field_slug">Slug</dt>     <dd id="t-slug" class="mono">—</dd>
+          <dt data-i18n="tenant_settings.field_plan">Piano</dt>    <dd id="t-plan">—</dd>
+          <dt data-i18n="tenant_settings.field_status">Stato</dt>  <dd id="t-status">—</dd>
+          <dt data-i18n="tenant_settings.field_created">Creato il</dt> <dd id="t-created">—</dd>
         </dl>
       </section>
 
       <section class="card mb-16 hidden" id="retention-card">
-        <h2>Data retention overrides</h2>
-        <p class="muted">
-          Each window controls how long a class of records is kept before
-          the daily cron (<code>fn_retention_prune</code>, migrations
-          003+015) can prune it. <strong>Leave a field empty</strong> to
-          inherit the platform default — that is the recommended setting
-          unless a regulator or controller requires a tighter window.
+        <h2 data-i18n="tenant_settings.retention_title">Conservazione dei dati</h2>
+        <p class="muted" data-i18n-html="tenant_settings.retention_intro">
+          Ogni finestra controlla per quanto tempo una classe di record viene conservata prima che il cron giornaliero (<code>fn_retention_prune</code>, migrations 003+015) possa eliminarla. <strong>Lasciare un campo vuoto</strong> per ereditare il valore predefinito della piattaforma — è l'impostazione consigliata salvo che un regolatore o controller richieda una finestra più stretta.
         </p>
-        <div class="inline-alert success alert--success-soft">
-          <strong>Per-tenant retention is active.</strong>
-          The cron worker reads each value below and prunes that
-          tenant's audit / alerts / notification rows on the configured
-          window. Empty fields fall back to the platform defaults
-          (audit&nbsp;3650, alerts-resolved&nbsp;365, notifications&nbsp;90,
-          reports&nbsp;730). Cron run reports include a per-tenant
-          breakdown in the <code>retention.run</code> structured log.
+        <div class="inline-alert success alert--success-soft" data-i18n-html="tenant_settings.retention_active_note">
+          <strong>Conservazione per tenant attiva.</strong>
+          Il cron legge ciascun valore qui sotto e elimina audit / alert / notifiche del tenant secondo la finestra configurata. I campi vuoti ricadono sui valori predefiniti (audit&nbsp;3650, alert risolti&nbsp;365, notifiche&nbsp;90, report&nbsp;730). I report di esecuzione del cron includono una scomposizione per tenant nel log strutturato <code>retention.run</code>.
         </div>
 
         <form id="retention-form" class="grid-auto-220 mt-16">
           <div>
-            <label for="rd-audit">Audit events (days, 30…3650)</label>
-            <input id="rd-audit" name="retentionDaysAudit" type="number" min="30" max="3650" placeholder="default ~3650" />
+            <label for="rd-audit" data-i18n="tenant_settings.field_audit_days">Eventi di audit (giorni, 30…3650)</label>
+            <input id="rd-audit" name="retentionDaysAudit" type="number" min="30" max="3650" data-i18n-attr="placeholder:tenant_settings.placeholder_default_3650" placeholder="predefinito ~3650" />
           </div>
           <div>
-            <label for="rd-grace">Anonymisation grace (days, 0…365)</label>
-            <input id="rd-grace" name="retentionDaysAnonymizeGrace" type="number" min="0" max="365" placeholder="default 30" />
+            <label for="rd-grace" data-i18n="tenant_settings.field_grace_days">Grazia per anonimizzazione (giorni, 0…365)</label>
+            <input id="rd-grace" name="retentionDaysAnonymizeGrace" type="number" min="0" max="365" data-i18n-attr="placeholder:tenant_settings.placeholder_default_30" placeholder="predefinito 30" />
           </div>
           <div>
-            <label for="rd-alerts">Resolved alerts (days, 7…1825)</label>
-            <input id="rd-alerts" name="retentionDaysAlertsResolved" type="number" min="7" max="1825" placeholder="default 365" />
+            <label for="rd-alerts" data-i18n="tenant_settings.field_alerts_days">Alert risolti (giorni, 7…1825)</label>
+            <input id="rd-alerts" name="retentionDaysAlertsResolved" type="number" min="7" max="1825" data-i18n-attr="placeholder:tenant_settings.placeholder_default_365" placeholder="predefinito 365" />
           </div>
           <div>
-            <label for="rd-notif">Notification rows (days, 7…365)</label>
-            <input id="rd-notif" name="retentionDaysNotifications" type="number" min="7" max="365" placeholder="default 90" />
+            <label for="rd-notif" data-i18n="tenant_settings.field_notif_days">Notifiche (giorni, 7…365)</label>
+            <input id="rd-notif" name="retentionDaysNotifications" type="number" min="7" max="365" data-i18n-attr="placeholder:tenant_settings.placeholder_default_90" placeholder="predefinito 90" />
           </div>
           <div>
-            <label for="rd-reports">PDF report storage (days, 90…3650)</label>
-            <input id="rd-reports" name="retentionDaysReports" type="number" min="90" max="3650" placeholder="default 730" />
+            <label for="rd-reports" data-i18n="tenant_settings.field_reports_days">Archiviazione PDF clinici (giorni, 90…3650)</label>
+            <input id="rd-reports" name="retentionDaysReports" type="number" min="90" max="3650" data-i18n-attr="placeholder:tenant_settings.placeholder_default_730" placeholder="predefinito 730" />
           </div>
           <div class="form-row-actions">
-            <button class="btn primary" type="submit" id="save-btn">Save</button>
+            <button class="btn primary" type="submit" id="save-btn" data-i18n="common.save">Salva</button>
             <span id="save-status" class="muted" role="status" aria-live="polite"></span>
           </div>
         </form>

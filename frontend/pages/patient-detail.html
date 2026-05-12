@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex,nofollow" />
-  <title>Patient — Uelfy Clinical</title>
+  <title>Scheda paziente — Uelfy Clinical</title>
   <!-- Favicon set (clinical-context) — see frontend/assets/icons/favicon.svg -->
   <link rel="icon" type="image/svg+xml" href="../assets/icons/favicon.svg" />
   <link rel="alternate icon" type="image/png" sizes="32x32" href="../assets/icons/favicon-32.png" />
@@ -15,17 +15,17 @@
   <link rel="stylesheet" href="../assets/css/app.css" />
 </head>
 <body>
-  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <a class="skip-link" href="#main-content" data-i18n="common.skip_to_content">Vai al contenuto principale</a>
   <div class="app-shell">
-    <aside class="app-sidebar" aria-label="Primary navigation">
-      <div class="brand">Uelfy Clinical</div>
+    <aside class="app-sidebar" data-i18n-attr="aria-label:nav.primary_navigation">
+      <div class="brand" data-i18n="common.app_name">Uelfy Clinical</div>
       <nav>
-        <a href="./dashboard.html">Dashboard</a>
-        <a href="./patients.html" class="active" aria-current="page">Patients</a>
-        <a href="./alerts.html">Alerts</a>
-        <a href="./audit.html" id="nav-audit" class="hidden">Audit log</a>
-        <a href="./tenant-settings.html">Tenant settings</a>
-        <a href="#" id="signout-link">Sign out</a>
+        <a href="./dashboard.html" data-i18n="nav.dashboard">Cruscotto</a>
+        <a href="./patients.html" class="active" aria-current="page" data-i18n="nav.patients">Pazienti</a>
+        <a href="./alerts.html" data-i18n="nav.alerts">Alert clinici</a>
+        <a href="./audit.html" id="nav-audit" class="hidden" data-i18n="nav.audit">Log di sicurezza</a>
+        <a href="./tenant-settings.html" data-i18n="nav.tenant_settings">Impostazioni</a>
+        <a href="#" id="signout-link" data-i18n="common.sign_out">Esci</a>
       </nav>
     </aside>
 
@@ -34,101 +34,95 @@
 
       <div class="topbar">
         <div>
-          <h1 id="patient-name" class="mb-2">Loading…</h1>
+          <h1 id="patient-name" class="mb-2" data-i18n="common.loading">Caricamento in corso…</h1>
           <div class="muted" id="patient-subline">—</div>
         </div>
         <div class="flex gap-8">
-          <a class="btn secondary" id="export-btn" href="#">Export (GDPR Art.15)</a>
-          <a class="btn" id="new-assessment-btn" href="#">+ New assessment</a>
+          <a class="btn secondary" id="export-btn" href="#" data-i18n="patient_detail.export_gdpr">Esporta (GDPR Art. 15)</a>
+          <a class="btn" id="new-assessment-btn" href="#" data-i18n="patient_detail.new_assessment_btn">+ Nuova valutazione</a>
         </div>
       </div>
 
       <div id="error-banner" class="inline-alert danger hidden" role="alert" aria-live="assertive"></div>
 
       <section class="card">
-        <h3>Demographics</h3>
+        <h3 data-i18n="patient_detail.demographics_title">Dati anagrafici</h3>
         <div class="grid three" id="demographics-grid">
-          <div><div class="kpi-label">External code</div><div id="d-code" class="mono">—</div></div>
-          <div><div class="kpi-label">Sex</div><div id="d-sex">—</div></div>
-          <div><div class="kpi-label">Date of birth</div><div id="d-dob">—</div></div>
-          <div><div class="kpi-label">Status</div><div id="d-status">—</div></div>
-          <div><div class="kpi-label">Consent</div><div id="d-consent">—</div></div>
-          <div><div class="kpi-label">Created</div><div id="d-created">—</div></div>
+          <div><div class="kpi-label" data-i18n="patient_detail.demo_external_code">Codice paziente</div><div id="d-code" class="mono">—</div></div>
+          <div><div class="kpi-label" data-i18n="patient_detail.demo_sex">Sesso</div><div id="d-sex">—</div></div>
+          <div><div class="kpi-label" data-i18n="patient_detail.demo_dob">Data di nascita</div><div id="d-dob">—</div></div>
+          <div><div class="kpi-label" data-i18n="patient_detail.demo_status">Stato</div><div id="d-status">—</div></div>
+          <div><div class="kpi-label" data-i18n="patient_detail.demo_consent">Consenso</div><div id="d-consent">—</div></div>
+          <div><div class="kpi-label" data-i18n="patient_detail.demo_created">Creato il</div><div id="d-created">—</div></div>
         </div>
       </section>
 
       <section class="card">
         <div class="flex between">
-          <h3 class="m-0">Assessment history</h3>
-          <a class="btn secondary" id="new-assessment-btn-2" href="#">+ New assessment</a>
+          <h3 class="m-0" data-i18n="patient_detail.assessment_history_title">Storico valutazioni</h3>
+          <a class="btn secondary" id="new-assessment-btn-2" href="#" data-i18n="patient_detail.new_assessment_btn">+ Nuova valutazione</a>
         </div>
-        <div id="assessments-wrap" class="mt-16"><p class="muted">Loading…</p></div>
+        <div id="assessments-wrap" class="mt-16"><p class="muted" data-i18n="common.loading">Caricamento in corso…</p></div>
       </section>
 
       <section class="card">
         <div class="flex between">
-          <h3 class="m-0">Progress</h3>
+          <h3 class="m-0" data-i18n="patient_detail.progress_title">Andamento</h3>
           <span class="muted" id="progress-subline">—</span>
         </div>
-        <div class="muted mt-4 text-xs">
-          Longitudinal trends across clinical domains. Each sparkline is
-          anchored on the assessment dates; latest value on the right.
+        <div class="muted mt-4 text-xs" data-i18n="patient_detail.progress_hint">
+          Tendenze longitudinali sui domini clinici. Ogni sparkline è ancorata alle date delle valutazioni; valore più recente a destra.
         </div>
-        <div id="progress-wrap" class="mt-16"><p class="muted">Loading…</p></div>
+        <div id="progress-wrap" class="mt-16"><p class="muted" data-i18n="common.loading">Caricamento in corso…</p></div>
       </section>
 
       <section class="card">
         <div class="flex between">
-          <h3 class="m-0">Lifestyle profile</h3>
+          <h3 class="m-0" data-i18n="patient_detail.lifestyle_title">Profilo di stile di vita</h3>
           <span class="muted" id="lifestyle-subline">—</span>
         </div>
-        <div class="muted mt-4 text-xs">
-          Snapshot from the most recent assessment — Mediterranean-diet
-          adherence, physical-activity volume and the supportive
-          recommendations the engine emitted.
+        <div class="muted mt-4 text-xs" data-i18n="patient_detail.lifestyle_hint">
+          Istantanea dalla valutazione più recente — aderenza alla dieta mediterranea, volume di attività fisica e raccomandazioni di supporto emesse dal motore clinico.
         </div>
-        <div id="lifestyle-wrap" class="mt-16"><p class="muted">Loading…</p></div>
+        <div id="lifestyle-wrap" class="mt-16"><p class="muted" data-i18n="common.loading">Caricamento in corso…</p></div>
       </section>
 
       <section class="card">
         <div class="flex between">
-          <h3 class="m-0">Due items</h3>
+          <h3 class="m-0" data-i18n="patient_detail.due_items_title">Scadenze cliniche</h3>
           <span class="muted" id="due-items-subline">—</span>
         </div>
-        <div class="muted mt-4 text-xs">
-          Follow-up and screening items materialised from the deterministic
-          clinical engines. Countdown is computed from server time.
+        <div class="muted mt-4 text-xs" data-i18n="patient_detail.due_items_hint">
+          Elementi di follow-up e screening generati dai motori clinici deterministici. Il conteggio rimanente è calcolato sull'orario del server.
         </div>
-        <div id="due-items-wrap" class="mt-16"><p class="muted">Loading…</p></div>
+        <div id="due-items-wrap" class="mt-16"><p class="muted" data-i18n="common.loading">Caricamento in corso…</p></div>
       </section>
 
       <section class="card">
         <div class="flex between">
-          <h3 class="m-0">Open alerts</h3>
+          <h3 class="m-0" data-i18n="patient_detail.alerts_title">Alert aperti</h3>
           <span class="muted" id="alerts-subline">—</span>
         </div>
-        <div class="muted mt-4 text-xs">
-          Real-time clinical alerts and safety flags that require attention.
-          Data-collection gaps are surfaced separately below.
+        <div class="muted mt-4 text-xs" data-i18n="patient_detail.alerts_hint">
+          Alert clinici in tempo reale e segnalazioni di sicurezza che richiedono attenzione. Le lacune di raccolta dati sono mostrate separatamente più sotto.
         </div>
-        <div id="alerts-wrap" class="mt-16"><p class="muted">Loading…</p></div>
+        <div id="alerts-wrap" class="mt-16"><p class="muted" data-i18n="common.loading">Caricamento in corso…</p></div>
       </section>
 
       <section class="card">
         <div class="flex between">
-          <h3 class="m-0">Completeness notices</h3>
+          <h3 class="m-0" data-i18n="patient_detail.completeness_title">Avvisi di completezza</h3>
           <span class="muted" id="completeness-subline">—</span>
         </div>
-        <div class="muted mt-4 text-xs">
-          Data-collection gaps that prevented one or more scores from being
-          computed. Soft nudges — not time-bound clinical alerts.
+        <div class="muted mt-4 text-xs" data-i18n="patient_detail.completeness_hint">
+          Lacune nella raccolta dati che hanno impedito il calcolo di uno o più punteggi. Suggerimenti non vincolanti — non sono alert clinici tempo-dipendenti.
         </div>
-        <div id="completeness-wrap" class="mt-16"><p class="muted">Loading…</p></div>
+        <div id="completeness-wrap" class="mt-16"><p class="muted" data-i18n="common.loading">Caricamento in corso…</p></div>
       </section>
 
       <section class="card">
-        <h3>Consents</h3>
-        <div id="consents-wrap"><p class="muted">Loading…</p></div>
+        <h3 data-i18n="patient_detail.consents_title">Consensi</h3>
+        <div id="consents-wrap"><p class="muted" data-i18n="common.loading">Caricamento in corso…</p></div>
       </section>
     </main>
   </div>
